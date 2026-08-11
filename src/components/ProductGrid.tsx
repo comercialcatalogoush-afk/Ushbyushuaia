@@ -5,14 +5,29 @@ import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { Filter, Sparkles, Flame, Check } from 'lucide-react';
 
+import { getLocalProductsOverride } from '@/lib/supabase';
+
 interface ProductGridProps {
   products: Product[];
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'nuevo' | 'mas_vendido'>('all');
+  const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
 
-  const filteredProducts = products.filter((p) => {
+  React.useEffect(() => {
+    const updateList = () => {
+      const local = getLocalProductsOverride();
+      if (local && local.length > 0) {
+        setDisplayProducts(local.filter((p) => !p.hidden));
+      }
+    };
+    updateList();
+    window.addEventListener('ush_products_updated', updateList);
+    return () => window.removeEventListener('ush_products_updated', updateList);
+  }, []);
+
+  const filteredProducts = displayProducts.filter((p) => {
     if (activeTab === 'nuevo') {
       return p.ribbon?.toLowerCase().includes('nuevo');
     }
@@ -47,7 +62,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                   : 'bg-neutral-50 text-neutral-600 border-gray-200 hover:bg-gray-100'
               }`}
             >
-              Todos ({products.length})
+              Todos ({displayProducts.length})
             </button>
 
             <button

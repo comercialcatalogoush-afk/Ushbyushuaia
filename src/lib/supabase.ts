@@ -7,7 +7,42 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publish
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+const PRODUCTS_STORAGE_KEY = 'ush_products_override_v2';
+
+export function getLocalProductsOverride(): Product[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error reading local products override:', e);
+  }
+  return null;
+}
+
+export function saveLocalProductsOverride(products: Product[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    window.dispatchEvent(new Event('ush_products_updated'));
+  } catch (e) {
+    console.error('Error saving local products override:', e);
+  }
+}
+
 export async function fetchProductsFromSupabase(): Promise<Product[]> {
+  // 1. Check local storage override first (for immediate admin edits reflection)
+  const localOverride = getLocalProductsOverride();
+  if (localOverride && localOverride.length > 0) {
+    return localOverride;
+  }
+
+  // 2. Fallback to Supabase fetch
   try {
     const { data, error } = await supabase
       .from('products')
@@ -15,7 +50,6 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       .order('created_at', { ascending: false });
 
     if (error || !data || data.length === 0) {
-      console.warn('Supabase fetch products empty or returned error, using initial dataset:', error?.message);
       return INITIAL_PRODUCTS;
     }
 
@@ -38,7 +72,6 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       category_id: item.category_id
     }));
   } catch (err) {
-    console.error('Error connecting to Supabase:', err);
     return INITIAL_PRODUCTS;
   }
 }
@@ -53,12 +86,10 @@ export async function submitWholesaleLead(lead: WholesaleLead) {
   try {
     const { data, error } = await supabase.from('wholesale_leads').insert([lead]);
     if (error) {
-      console.error('Error inserting wholesale lead:', error);
       return { success: false, error: error.message };
     }
     return { success: true, data };
   } catch (err: any) {
-    console.error('Submission failed:', err);
     return { success: false, error: err.message };
   }
 }
@@ -67,12 +98,10 @@ export async function submitOrder(orderData: any) {
   try {
     const { data, error } = await supabase.from('orders').insert([orderData]);
     if (error) {
-      console.error('Error submitting order:', error);
       return { success: false, error: error.message };
     }
     return { success: true, data };
   } catch (err: any) {
-    console.error('Order submission failed:', err);
     return { success: false, error: err.message };
   }
 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
+import { fetchProductsFromSupabase, supabase, saveLocalProductsOverride } from '@/lib/supabase';
 import { Product } from '@/types';
 import { Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, CheckSquare, Square, Lock, LogOut, ShieldCheck, Key } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -125,24 +125,59 @@ export default function AdminCatalogPage() {
       images: editingProduct.images || []
     };
 
+    const updatedProductObj: Product = {
+      id: editingProduct.id || 'custom-' + Date.now(),
+      name: editingProduct.name || 'Nueva Referencia',
+      reference,
+      slug,
+      suggested_price: Number(editingProduct.suggested_price || editingProduct.price || 79900),
+      price: Number(editingProduct.price || 54900),
+      compare_price: Number(editingProduct.suggested_price || 0),
+      ribbon: editingProduct.ribbon || '',
+      description: editingProduct.description || '',
+      full_description: editingProduct.full_description || '',
+      video_url: editingProduct.video_url || '',
+      in_stock: editingProduct.in_stock !== false,
+      hidden: editingProduct.hidden === true,
+      options: optionsPayload,
+      images: editingProduct.images || []
+    };
+
+    let updatedList: Product[] = [];
     if (editingProduct.id) {
-      const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
-      if (error) console.error('Error updating product:', error.message);
+      updatedList = products.map(p => p.id === editingProduct.id ? updatedProductObj : p);
     } else {
-      const { error } = await supabase.from('products').insert([payload]);
-      if (error) console.error('Error inserting product:', error.message);
+      updatedList = [updatedProductObj, ...products];
+    }
+
+    setProducts(updatedList);
+    saveLocalProductsOverride(updatedList);
+
+    try {
+      if (editingProduct.id) {
+        await supabase.from('products').update(payload).eq('id', editingProduct.id);
+      } else {
+        await supabase.from('products').insert([payload]);
+      }
+    } catch (e) {
+      console.error('Supabase sync error:', e);
     }
 
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
     setEditingProduct(null);
-    await loadProducts();
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar esta referencia del catálogo?')) {
-      await supabase.from('products').delete().eq('id', id);
-      await loadProducts();
+      const updatedList = products.filter(p => p.id !== id);
+      setProducts(updatedList);
+      saveLocalProductsOverride(updatedList);
+      try {
+        await supabase.from('products').delete().eq('id', id);
+      } catch (e) {
+        console.error('Supabase delete error:', e);
+      }
     }
   };
 

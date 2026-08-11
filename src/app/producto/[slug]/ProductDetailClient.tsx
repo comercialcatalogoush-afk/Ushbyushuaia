@@ -8,15 +8,32 @@ import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 
+import { getLocalProductsOverride } from '@/lib/supabase';
+
 export default function ProductDetailClient({ product }: { product: Product }) {
+  const [currentProduct, setCurrentProduct] = useState<Product>(product);
+
+  React.useEffect(() => {
+    const syncLocal = () => {
+      const local = getLocalProductsOverride();
+      if (local) {
+        const match = local.find(p => p.id === product.id || p.slug === product.slug);
+        if (match) setCurrentProduct(match);
+      }
+    };
+    syncLocal();
+    window.addEventListener('ush_products_updated', syncLocal);
+    return () => window.removeEventListener('ush_products_updated', syncLocal);
+  }, [product]);
+
   const { addToCart, formatCOP } = useCart();
-  const [selectedImage, setSelectedImage] = useState<string>(product.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600');
+  const [selectedImage, setSelectedImage] = useState<string>(currentProduct.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600');
   
-  const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
+  const sizeOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'talla');
   const availableSizes = sizeOption?.values.filter(s => ['6', '8', '10', '12', '14'].includes(s)) || ['6', '8', '10', '12', '14'];
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   
-  const colorOption = product.options?.find((o) => o.key.toLowerCase() === 'color');
+  const colorOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'color');
   const availableColors = colorOption?.values || [];
   const [selectedColor, setSelectedColor] = useState<string>(availableColors[0] || '');
 
@@ -24,8 +41,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
-  const suggestedPrice = product.suggested_price || product.compare_price || 49900;
-  const wholesalePrice = product.price || Math.round(suggestedPrice * 0.65);
+  const suggestedPrice = currentProduct.suggested_price || currentProduct.compare_price || 49900;
+  const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * 0.65);
 
   const handleAddToCart = () => {
     addToCart(product, selectedSize, selectedColor || undefined, quantity);
@@ -63,13 +80,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 </span>
               )}
 
-              <span className="absolute top-4 right-4 z-10 text-xs font-extrabold uppercase tracking-wider px-3 py-1 bg-emerald-600 text-white shadow-md flex items-center gap-1">
-                <Truck size={14} /> Envío Gratis (12+ Uds)
-              </span>
-
               <Image
                 src={selectedImage}
-                alt={product.name}
+                alt={currentProduct.name}
                 fill
                 priority
                 className="object-cover object-center"
@@ -77,9 +90,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
 
             {/* Thumbnails */}
-            {product.images.length > 1 && (
+            {currentProduct.images.length > 1 && (
               <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                {product.images.map((img, idx) => (
+                {currentProduct.images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(img)}
@@ -94,13 +107,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             )}
 
             {/* Promotional Video Player if available */}
-            {product.video_url && (
+            {currentProduct.video_url && (
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-ush-navy flex items-center gap-2 mb-3">
                   <Film size={16} className="text-ush-pink" /> Video de la Prenda en Movimiento
                 </h4>
                 <div className="aspect-video w-full bg-black overflow-hidden shadow-sm">
-                  <video src={product.video_url} controls className="w-full h-full object-cover" />
+                  <video src={currentProduct.video_url} controls className="w-full h-full object-cover" />
                 </div>
               </div>
             )}
@@ -111,10 +124,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <div className="lg:col-span-5 space-y-6">
             <div>
               <span className="text-xs font-bold uppercase tracking-[0.25em] text-neutral-400 block mb-1">
-                Ref. Oficial #{product.reference}
+                Ref. Oficial #{currentProduct.reference}
               </span>
               <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-                {product.name}
+                {currentProduct.name}
               </h1>
 
               {/* Dual Price Display */}
