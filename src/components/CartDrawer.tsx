@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, MessageCircle, Truck, AlertTriangle, Sparkles } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, MessageCircle, Truck, AlertTriangle, Sparkles, Layers } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export const CartDrawer: React.FC = () => {
@@ -21,6 +21,18 @@ export const CartDrawer: React.FC = () => {
   } = useCart();
 
   if (!isCartOpen) return null;
+
+  // Build map of sizes per reference to detect multi-size selections
+  const referenceSizesMap: Record<string, string[]> = {};
+  items.forEach((it) => {
+    const refKey = it.product.reference || it.product.name;
+    if (!referenceSizesMap[refKey]) referenceSizesMap[refKey] = [];
+    if (it.selectedSize && !referenceSizesMap[refKey].includes(it.selectedSize)) {
+      referenceSizesMap[refKey].push(it.selectedSize);
+    }
+  });
+
+  const hasMultiSizeReferences = Object.values(referenceSizesMap).some((sizes) => sizes.length > 1);
 
   // WhatsApp Order message
   const whatsappMessage = encodeURIComponent(
@@ -86,97 +98,122 @@ export const CartDrawer: React.FC = () => {
                 </button>
               </div>
             ) : (
-              items.map((item, index) => {
-                const unitPrice = calculateItemUnitPrice(item);
-                return (
-                  <div key={index} className="py-4 flex gap-4 items-center">
-                    {/* Thumbnail */}
-                    <div className="relative w-20 h-24 bg-neutral-100 flex-shrink-0 overflow-hidden border border-gray-200">
-                      <Image
-                        src={item.product.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200'}
-                        alt={item.product.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+              <>
+                {/* Multi-size alert banner */}
+                {hasMultiSizeReferences && (
+                  <div className="mb-4 p-3.5 bg-rose-50 border border-rose-200 text-xs text-neutral-800 animate-fadeIn">
+                    <p className="font-bold text-[#c06579] flex items-center gap-1.5 mb-1">
+                      <Layers size={14} /> Múltiples Tallas por Referencia
+                    </p>
+                    <p className="text-[11px] text-neutral-600 font-light leading-relaxed">
+                      Confirmado: Has agregado la misma referencia en diferentes tallas. Cada combinación se desglosa individualmente para mayor claridad en tu pedido.
+                    </p>
+                  </div>
+                )}
 
-                    {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-black text-ush-navy uppercase truncate">
-                        {item.product.name}
-                      </h3>
-                      
-                      <div className="flex items-center gap-2 mt-1 text-xs text-neutral-500">
-                        {item.selectedSize && (
-                          <span className="bg-neutral-100 px-2 py-0.5 font-bold text-neutral-800">
-                            Talla: {item.selectedSize}
-                          </span>
-                        )}
-                        {item.selectedColor && (
-                          <span className="bg-neutral-100 px-2 py-0.5 text-neutral-800">
-                            {item.selectedColor}
-                          </span>
-                        )}
+                {items.map((item, index) => {
+                  const unitPrice = calculateItemUnitPrice(item);
+                  const refKey = item.product.reference || item.product.name;
+                  const siblingSizes = (referenceSizesMap[refKey] || []).filter((s) => s !== item.selectedSize);
+
+                  return (
+                    <div key={index} className="py-4 flex gap-4 items-center">
+                      {/* Thumbnail */}
+                      <div className="relative w-20 h-24 bg-neutral-100 flex-shrink-0 overflow-hidden border border-gray-200">
+                        <Image
+                          src={item.product.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200'}
+                          alt={item.product.name}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
 
-                      <div className="mt-1.5 flex items-baseline gap-2">
-                        <span className="text-sm font-black text-neutral-900">
-                          {formatCOP(unitPrice)}
-                        </span>
-                        <span className="text-[10px] text-gray-400">c/u</span>
-                      </div>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-3 mt-3">
-                        <div className="flex items-center border border-gray-300 bg-white">
-                          <button
-                            onClick={() => updateQuantity(index, item.quantity - 1)}
-                            className="p-1 hover:bg-neutral-100 text-neutral-600 transition-colors"
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <span className="px-3 text-xs font-black text-neutral-900">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(index, item.quantity + 1)}
-                            className="p-1 hover:bg-neutral-100 text-neutral-600 transition-colors"
-                          >
-                            <Plus size={14} />
-                          </button>
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-black text-ush-navy uppercase truncate">
+                          {item.product.name}
+                        </h3>
+                        
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-neutral-500">
+                          {item.selectedSize && (
+                            <span className="bg-neutral-100 px-2 py-0.5 font-bold text-neutral-800 border border-gray-200">
+                              Talla: {item.selectedSize}
+                            </span>
+                          )}
+                          {item.selectedColor && (
+                            <span className="bg-neutral-100 px-2 py-0.5 text-neutral-800 border border-gray-200">
+                              {item.selectedColor}
+                            </span>
+                          )}
                         </div>
 
-                        <button
-                          onClick={() => removeFromCart(index)}
-                          className="text-red-500 hover:text-red-700 transition-colors p-1"
-                          title="Eliminar producto"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {/* Multi-size confirmation badge */}
+                        {siblingSizes.length > 0 && (
+                          <div className="mt-1.5 text-[10px] text-[#c06579] bg-rose-50 border border-rose-200 px-2 py-1 font-semibold flex items-center gap-1">
+                            <Layers size={12} className="flex-shrink-0" />
+                            <span>Misma ref en Talla {item.selectedSize} (también llevas Talla {siblingSizes.join(', ')})</span>
+                          </div>
+                        )}
+
+                        <div className="mt-1.5 flex items-baseline gap-2">
+                          <span className="text-sm font-black text-neutral-900">
+                            {formatCOP(unitPrice)}
+                          </span>
+                          <span className="text-[10px] text-gray-400">c/u</span>
+                        </div>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-3 mt-3">
+                          <div className="flex items-center border border-gray-300 bg-white">
+                            <button
+                              onClick={() => updateQuantity(index, item.quantity - 1)}
+                              className="p-1 hover:bg-neutral-100 text-neutral-600 transition-colors"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="px-3 text-xs font-black text-neutral-900">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(index, item.quantity + 1)}
+                              className="p-1 hover:bg-neutral-100 text-neutral-600 transition-colors"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => removeFromCart(index)}
+                            className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                            title="Eliminar del carrito"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </>
             )}
           </div>
 
-          {/* Footer Subtotal & Action Buttons */}
+          {/* Footer Summary */}
           {items.length > 0 && (
-            <div className="p-6 border-t border-gray-100 bg-neutral-50 space-y-4">
+            <div className="p-6 border-t border-gray-100 bg-gray-50 space-y-4">
               
-              {/* Discount & Shipping Banner */}
+              {/* Pricing Tier Notice */}
               {isWholesaleTier ? (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold text-center space-y-1">
-                  <div className="flex items-center justify-center gap-1 font-bold text-emerald-800">
-                    <Sparkles size={14} /> ¡TARIFA MAYORISTA APLICADA (35%-42% OFF)!
-                  </div>
-                  <div className="flex items-center justify-center gap-1 text-[11px] text-emerald-700">
-                    <Truck size={14} /> <strong>¡Envío Gratis Incluido!</strong>
-                  </div>
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1">
+                  <p className="font-bold text-emerald-900 flex items-center gap-1.5">
+                    <Sparkles size={14} /> ¡CALIFICAS A PRECIO MAYORISTA (35%-42% OFF)!
+                  </p>
+                  <p className="text-[11px] text-emerald-800">
+                    🎉 Has acumulado <strong>{totalItemsCount} prendas</strong>. Aplica tarifa de distribuidor + <strong>ENVÍO GRATIS INCLUIDO</strong>.
+                  </p>
                 </div>
               ) : (
-                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs text-center space-y-1">
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
                   <p className="font-bold text-amber-900">
                     🏷️ Descuento Detal (20% OFF aplicado).
                   </p>
@@ -205,7 +242,7 @@ export const CartDrawer: React.FC = () => {
                 </Link>
 
                 <a
-                  href={`https://wa.me/573000000000?text=${whatsappMessage}`}
+                  href={`https://wa.me/573022028477?text=${whatsappMessage}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-emerald-600 text-white font-bold py-3 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"

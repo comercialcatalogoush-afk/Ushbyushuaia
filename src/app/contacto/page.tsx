@@ -72,7 +72,7 @@ export default function ContactoPage() {
                 Respuesta inmediata para pedidos urgentes y confirmación de stock.
               </p>
               <a
-                href="https://wa.me/573000000000?text=Hola%20USH%20BY%20USHUAIA,%20quisiera%20solicitar%20informaci%C3%B3n%20mayorista"
+                href="https://wa.me/573022028477?text=Hola%20USH%20BY%20USHUAIA,%20quisiera%20solicitar%20informaci%C3%B3n%20mayorista"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block w-full text-center bg-white text-emerald-950 text-xs font-extrabold uppercase py-3 tracking-widest hover:bg-emerald-100 transition-colors"

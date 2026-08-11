@@ -62,7 +62,7 @@ export default async function HomePage() {
       </section>
 
       {/* Wholesale Lead Form & Guarantee Banner */}
-      <section className="py-20 bg-neutral-900 text-white border-t border-neutral-800">
+      <section className="py-20 bg-neutral-50 text-neutral-900 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             
@@ -70,26 +70,26 @@ export default async function HomePage() {
               <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#d88193]">
                 Atención a Distribuidores
               </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase leading-tight">
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase leading-tight text-neutral-900">
                 ¿Buscas despachos continuos para tu negocio o boutique?
               </h2>
-              <p className="text-sm text-neutral-300 font-light leading-relaxed">
+              <p className="text-sm text-neutral-600 font-light leading-relaxed">
                 Trabajamos de la mano con comerciantes de toda Colombia. Te brindamos asesoría directa en la selección de referencias con mayor rotación y logística de envío segura desde Itagüí, Antioquia.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                <div className="flex items-start gap-3 p-4 bg-neutral-800/60 border border-neutral-700/50">
+                <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 shadow-sm">
                   <Truck size={22} className="text-[#d88193] flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="text-xs font-bold uppercase">Envíos Nacionales</h3>
-                    <p className="text-[11px] text-neutral-400">Coordinación con tu empresa transportadora preferida.</p>
+                    <h3 className="text-xs font-bold uppercase text-neutral-900">Envíos Nacionales</h3>
+                    <p className="text-[11px] text-neutral-500 font-light">Coordinación con tu empresa transportadora preferida.</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-4 bg-neutral-800/60 border border-neutral-700/50">
+                <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 shadow-sm">
                   <Award size={22} className="text-[#d88193] flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="text-xs font-bold uppercase">Mezclilla Premium</h3>
-                    <p className="text-[11px] text-neutral-400">Telas rígidas y acabados de alta confección nacional.</p>
+                    <h3 className="text-xs font-bold uppercase text-neutral-900">Mezclilla Premium</h3>
+                    <p className="text-[11px] text-neutral-500 font-light">Telas rígidas y acabados de alta confección nacional.</p>
                   </div>
                 </div>
               </div>

@@ -233,7 +233,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </button>
 
               <a
-                href={`https://wa.me/573000000000?text=${encodeURIComponent(
+                href={`https://wa.me/573022028477?text=${encodeURIComponent(
                   `Hola USH BY USHUAIA, me interesa la referencia ${product.name} en talla ${selectedSize} (Cantidad: ${quantity} uds). ¿Tienen disponibilidad?`
                 )}`}
                 target="_blank"
