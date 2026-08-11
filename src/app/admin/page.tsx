@@ -5,10 +5,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
 import { Product } from '@/types';
-import { Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, CheckSquare, Square } from 'lucide-react';
+import { Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, CheckSquare, Square, Lock, LogOut, ShieldCheck, Key } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function AdminCatalogPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
@@ -18,16 +23,42 @@ export default function AdminCatalogPage() {
 
   const allAvailableSizes = ['6', '8', '10', '12', '14'];
 
+  useEffect(() => {
+    // Check local session storage for admin login persistence
+    const authStatus = sessionStorage.getItem('ush_admin_auth');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+      loadProducts();
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+
+    if (
+      loginEmail.trim().toLowerCase() === 'comercialmayoristas@ushuaiajeans.com.co' &&
+      loginPassword === 'Colombia2025*'
+    ) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('ush_admin_auth', 'true');
+      loadProducts();
+    } else {
+      setLoginError('Credenciales incorrectas. Verifique el correo o la contraseña de administrador.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('ush_admin_auth');
+  };
+
   const loadProducts = async () => {
     setLoading(true);
     const data = await fetchProductsFromSupabase();
     setProducts(data);
     setLoading(false);
   };
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
 
   const handleOpenNew = () => {
     setSelectedSizes(['6', '8', '10', '12', '14']);
@@ -36,8 +67,8 @@ export default function AdminCatalogPage() {
       name: 'REF: ',
       reference: '',
       slug: '',
-      suggested_price: 49900,
-      price: 32400,
+      suggested_price: 79900,
+      price: 54900,
       ribbon: 'Nuevo',
       description: 'Prenda confeccionada en mezclilla rígida de alta calidad.',
       full_description: 'Prenda en mezclilla rígida con corte estilizador confeccionada en Colombia.',
@@ -81,8 +112,8 @@ export default function AdminCatalogPage() {
       name: editingProduct.name,
       reference,
       slug,
-      suggested_price: editingProduct.suggested_price || editingProduct.price || 49900,
-      price: editingProduct.price || 32400,
+      suggested_price: editingProduct.suggested_price || editingProduct.price || 79900,
+      price: editingProduct.price || 54900,
       compare_price: editingProduct.suggested_price || 0,
       ribbon: editingProduct.ribbon || '',
       description: editingProduct.description || '',
@@ -114,31 +145,116 @@ export default function AdminCatalogPage() {
     }
   };
 
+  // 1. ADMIN LOGIN VIEW (Protected Access)
+  if (!isAuthenticated) {
+    return (
+      <div className="py-20 bg-neutral-900 min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white p-8 border border-gray-200 shadow-2xl space-y-6">
+          
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 bg-ush-navy text-ush-pink rounded-full flex items-center justify-center mx-auto shadow-md">
+              <Lock size={26} />
+            </div>
+            <h1 className="text-xl font-black uppercase text-ush-navy tracking-tight">
+              Acceso Restringido Administrador
+            </h1>
+            <p className="text-xs text-neutral-500 font-light">
+              Ingresa tus credenciales autorizadas de USH BY USHUAIA para gestionar el catálogo.
+            </p>
+          </div>
+
+          {loginError && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-medium text-center">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                Correo Electrónico Administrador *
+              </label>
+              <input
+                type="email"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="comercialmayoristas@ushuaiajeans.com.co"
+                className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                Contraseña de Seguridad *
+              </label>
+              <input
+                type="password"
+                required
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink font-medium"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-ush-navy text-white font-bold py-3.5 px-4 text-xs uppercase tracking-widest hover:bg-ush-pink transition-colors shadow-md flex items-center justify-center gap-2"
+            >
+              <Key size={16} />
+              <span>Iniciar Sesión como Admin</span>
+            </button>
+          </form>
+
+          <div className="pt-4 border-t border-gray-100 text-center">
+            <Link href="/" className="text-xs font-bold uppercase text-neutral-500 hover:text-black">
+              ← Volver a la Tienda
+            </Link>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // 2. AUTHORIZED ADMIN PANEL VIEW
   return (
     <div className="py-12 bg-neutral-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header */}
+        {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-gray-200">
           <div>
-            <Link href="/" className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-ush-pink hover:underline mb-2">
-              <ArrowLeft size={14} /> Volver a la Tienda
-            </Link>
+            <div className="flex items-center gap-3 mb-1">
+              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded flex items-center gap-1">
+                <ShieldCheck size={12} /> Sesión Admin Activa
+              </span>
+              <span className="text-xs text-neutral-500">comercialmayoristas@ushuaiajeans.com.co</span>
+            </div>
             <h1 className="text-2xl font-black uppercase text-ush-navy tracking-tight">
-              Panel de Administración & Edición del Catálogo
+              Panel de Administración del Catálogo
             </h1>
-            <p className="text-xs text-neutral-500 mt-1">
-              Gestiona referencias, precios mayoristas vs e-commerce, tallas disponibles (6 a 14), fotos y videos promocionales.
-            </p>
           </div>
 
-          <button
-            onClick={handleOpenNew}
-            className="bg-ush-pink hover:bg-ush-pinkHover text-white font-bold px-5 py-3 text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm"
-          >
-            <Plus size={18} />
-            <span>Agregar Nueva Referencia</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleOpenNew}
+              className="bg-ush-pink hover:bg-ush-pinkHover text-white font-bold px-5 py-3 text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm"
+            >
+              <Plus size={18} />
+              <span>Agregar Referencia</span>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="bg-neutral-800 hover:bg-black text-white font-bold px-4 py-3 text-xs uppercase tracking-wider flex items-center gap-1.5"
+              title="Cerrar sesión de administrador"
+            >
+              <LogOut size={16} />
+              <span>Salir</span>
+            </button>
+          </div>
         </div>
 
         {saveSuccess && (
@@ -206,7 +322,7 @@ export default function AdminCatalogPage() {
                       required
                       value={editingProduct.suggested_price || 0}
                       onChange={(e) => setEditingProduct({ ...editingProduct, suggested_price: parseFloat(e.target.value) || 0 })}
-                      placeholder="49900"
+                      placeholder="79900"
                       className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink font-bold"
                     />
                   </div>
@@ -220,7 +336,7 @@ export default function AdminCatalogPage() {
                       required
                       value={editingProduct.price || 0}
                       onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
-                      placeholder="32400"
+                      placeholder="54900"
                       className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink font-bold"
                     />
                   </div>
@@ -255,7 +371,7 @@ export default function AdminCatalogPage() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                    Descripción Corta (Resumen para la tarjeta)
+                    Descripción Corta (Resumen)
                   </label>
                   <input
                     type="text"
@@ -274,14 +390,14 @@ export default function AdminCatalogPage() {
                     rows={3}
                     value={editingProduct.full_description || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct, full_description: e.target.value })}
-                    placeholder="Prenda confeccionada en mezclilla de alta durabilidad con costuras en contraste..."
+                    placeholder="Prenda confeccionada en mezclilla de alta durabilidad..."
                     className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1 flex items-center gap-1">
-                    <ImageIcon size={14} /> URLs de Imágenes (una por línea)
+                    <ImageIcon size={14} /> URLs de Imágenes (Adaptación Automática de Formato)
                   </label>
                   <textarea
                     rows={3}
@@ -290,6 +406,9 @@ export default function AdminCatalogPage() {
                     placeholder="https://static.wixstatic.com/media/..."
                     className="w-full border border-gray-300 p-2.5 text-xs font-mono text-neutral-900 focus:outline-none focus:border-ush-pink"
                   />
+                  <p className="text-[10px] text-neutral-500 mt-1">
+                    💡 <strong>Auto-Formato:</strong> Las imágenes se encuadran automáticamente al formato de catálogo de moda (3:4) sin importar su tamaño horizontal o vertical.
+                  </p>
                 </div>
 
                 <div>
@@ -330,7 +449,7 @@ export default function AdminCatalogPage() {
         <div className="bg-white border border-gray-200 shadow-sm overflow-hidden">
           <div className="p-4 bg-ush-navy text-white flex justify-between items-center">
             <h2 className="text-sm font-bold uppercase tracking-wider">
-              Referencias Actuales en el Catálogo ({products.length})
+              Catálogo Actual ({products.length} referencias)
             </h2>
           </div>
 
