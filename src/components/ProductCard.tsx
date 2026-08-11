@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, Eye, Check, Plus, Minus, Ruler, Truck, Sparkles } from 'lucide-react';
+import { ShoppingBag, Eye, Check, Plus, Minus, Ruler, Truck, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from './SizeGuideModal';
@@ -25,7 +25,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
-  const mainImage = product.images[currentImageIndex] || product.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600';
+  const hasImages = product.images && product.images.length > 0 && product.images[0] !== '';
+  const mainImage = hasImages ? (product.images[currentImageIndex] || product.images[0]) : '';
 
   const suggestedPrice = product.suggested_price || product.compare_price || 49900;
   const wholesalePrice = product.price || Math.round(suggestedPrice * 0.65);
@@ -65,20 +66,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <Truck size={12} /> Envío Gratis (12+ Uds)
         </span>
 
-        <Image
-          src={mainImage}
-          alt={product.name}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-        />
+        {hasImages ? (
+          <Image
+            src={mainImage}
+            alt={product.name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        ) : (
+          // En Construcción placeholder
+          <div className="absolute inset-0 bg-gradient-to-br from-neutral-100 to-rose-50 flex flex-col items-center justify-center text-center p-6">
+            <div className="w-16 h-16 rounded-full bg-ush-pinkLight border-2 border-dashed border-ush-pink flex items-center justify-center mb-4">
+              <ImageIcon size={28} className="text-ush-pink opacity-60" />
+            </div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-ush-navy mb-1">Foto Próximamente</p>
+            <p className="text-[10px] text-neutral-400 font-light">El administrador puede agregar la imagen desde el panel de edición.</p>
+          </div>
+        )}
 
-        {/* Quick View Button */}
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <span className="bg-white/95 backdrop-blur-md text-ush-navy px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-            <Eye size={14} /> Ver Detalle
-          </span>
-        </div>
+        {/* Quick View Button (only if has images) */}
+        {hasImages && (
+          <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <span className="bg-white/95 backdrop-blur-md text-ush-navy px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+              <Eye size={14} /> Ver Detalle
+            </span>
+          </div>
+        )}
       </Link>
 
       {/* Content Info */}

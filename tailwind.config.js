@@ -9,14 +9,15 @@ module.exports = {
     extend: {
       colors: {
         ush: {
-          pink: '#e27376',
-          pinkHover: '#d46063',
-          pinkLight: '#fdf2f4',
-          pinkSoft: '#f7d8dc',
-          navy: '#2b3445',
-          navyDark: '#1b2333',
+          pink: '#d88193',
+          pinkDark: '#c06579',
+          pinkHover: '#b5586c',
+          pinkLight: '#fdf3f5',
+          pinkSoft: '#f8e4e8',
+          navy: '#1b2333',
+          navyDark: '#121824',
           card: '#ffffff',
-          accent: '#e27376',
+          accent: '#d88193',
         }
       },
       fontFamily: {

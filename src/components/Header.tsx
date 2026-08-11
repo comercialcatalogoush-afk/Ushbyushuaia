@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -11,21 +11,30 @@ export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const pathname = usePathname();
   const { totalItemsCount, setIsCartOpen } = useCart();
+
+  useEffect(() => {
+    // Check if admin is logged in
+    const authStatus = sessionStorage.getItem('ush_admin_auth');
+    setIsAdminLoggedIn(authStatus === 'true');
+  }, [pathname]);
 
   const navLinks = [
     { name: 'Inicio', href: '/' },
     { name: 'Beneficios', href: '/como-comprar' },
     { name: 'Catálogo', href: '/#catalogo' },
     { name: 'Contacto', href: '/contacto' },
-    { name: 'Grupos VIP', href: '/grupos' },
-    { name: 'Editar Catálogo', href: '/admin' },
   ];
+
+  if (isAdminLoggedIn) {
+    navLinks.push({ name: 'Editar Catálogo (Admin)', href: '/admin' });
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
-      {/* Top Banner Notice - Pink Theme */}
+      {/* Top Banner Notice */}
       <div className="bg-ush-navy text-white text-xs py-2 px-4 text-center tracking-wider font-light flex items-center justify-center gap-2">
         <span className="bg-ush-pink text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded">
           Mayorista
@@ -47,23 +56,31 @@ export const Header: React.FC = () => {
             </button>
           </div>
 
-          {/* Logo / Brand */}
+          {/* Logo / Brand - Adaptive Circular Logo */}
           <div className="flex-1 lg:flex-none text-center lg:text-left">
             <Link href="/" className="inline-flex items-center gap-3">
-              <div className="relative w-36 h-12">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-ush-pink shadow-sm bg-white p-1">
                 <Image
                   src="/images/ush-logo.jpg"
                   alt="USH by USHUAIA"
                   fill
                   priority
-                  className="object-contain"
+                  className="object-contain p-0.5 rounded-full"
                 />
+              </div>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-xl font-black tracking-[0.2em] text-ush-navy uppercase">
+                  USH
+                </span>
+                <span className="text-[9px] tracking-[0.35em] text-ush-pink font-bold uppercase -mt-1">
+                  BY USHUAIA
+                </span>
               </div>
             </Link>
           </div>
 
           {/* Navigation Links - Desktop */}
-          <nav className="hidden lg:flex items-center space-x-7">
+          <nav className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -94,14 +111,16 @@ export const Header: React.FC = () => {
               <Search size={20} />
             </button>
 
-            {/* Admin catalog editor direct button */}
-            <Link
-              href="/admin"
-              className="p-2 text-neutral-700 hover:text-ush-pink transition-colors hidden sm:block"
-              title="Editar / Agregar Productos al Catálogo"
-            >
-              <Settings size={20} />
-            </Link>
+            {/* Admin catalog editor button - ONLY VISIBLE IF LOGGED IN */}
+            {isAdminLoggedIn && (
+              <Link
+                href="/admin"
+                className="p-2 text-ush-pink hover:text-ush-pinkHover transition-colors hidden sm:block font-bold"
+                title="Editar Catálogo (Admin)"
+              >
+                <Settings size={20} />
+              </Link>
+            )}
 
             {/* Login / User */}
             <Link
