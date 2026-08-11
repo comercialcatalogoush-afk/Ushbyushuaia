@@ -13,6 +13,8 @@ export interface Product {
   compare_price?: number;
   ribbon?: string;
   description?: string;
+  full_description?: string;
+  video_url?: string;
   in_stock: boolean;
   options: ProductOption[];
   images: string[];
@@ -27,6 +29,8 @@ export interface CartItem {
 }
 
 export interface WholesaleLead {
+  doc_type: string;
+  doc_number: string;
   name: string;
   email: string;
   phone: string;

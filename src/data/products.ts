@@ -9,13 +9,14 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 49900,
     compare_price: 0,
     ribbon: 'Nuevo',
-    description: 'Short largo de alta calidad confeccionado con denim flexible de alta durabilidad. Diseñado para ofrecer máximo confort y ajuste perfecto.',
+    description: 'Short largo de alta calidad confeccionado con denim flexible de alta resistencia. Diseñado para ofrecer máximo confort, estilización y durabilidad.',
+    full_description: 'Short bermuda largo confeccionado en mezclilla flexible premium con dobladillo reforzado. Excelente rotación en catálogo mayorista para clima cálido y templado. Disponible en tallas 6 a 14.',
     in_stock: true,
     options: [
       {
         id: '1fb7b7af-e9d7-4e1f-a2e2-8ba56001405c',
         key: 'Talla',
-        values: ['6', '8', '10', '12', '14', '16']
+        values: ['6', '8', '10', '12', '14']
       }
     ],
     images: [
@@ -32,6 +33,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     compare_price: 0,
     ribbon: '',
     description: 'Falda Dama Rígida Color Crudo. Prenda versátil y en tendencia con acabado premium para distribución mayorista.',
+    full_description: 'Falda en denim rígido tono crudo marfil con pretina alta estilizadora y botones metálicos antioxidantes. Diseño moderno y sofisticado de alta rotación para boutiques.',
     in_stock: true,
     options: [
       {
@@ -54,6 +56,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     compare_price: 0,
     ribbon: 'Más vendido',
     description: 'Jean Dama Wide Leg Tiro Alto Rígido Color Azul Oscuro. Silueta moderna de tiro alto con horma estilizadora.',
+    full_description: 'Jean Wide Leg rígido tiro alto en índigo azul oscuro con bolsillos estilo cargo y costuras en contraste. La referencia más vendida de la marca por su excelente ajuste y tendencia.',
     in_stock: true,
     options: [
       {
@@ -64,7 +67,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       {
         id: '1fb7b7af-e9d7-4e1f-a2e2-8ba56001405c',
         key: 'Talla',
-        values: ['6', '8', '10', '12', '14', '16']
+        values: ['6', '8', '10', '12', '14']
       }
     ],
     images: [
