@@ -6,12 +6,12 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Ref: 556218',
     reference: '556218',
     slug: 'ref-556218-short-largo',
-    suggested_price: 49900,
-    price: 32400, // Precio Mayorista (35% off)
-    compare_price: 49900,
+    suggested_price: 79900,
+    price: 54900, // Precio Mayorista (12+ Uds)
+    compare_price: 79900,
     ribbon: 'Nuevo',
     description: 'Short largo de alta calidad confeccionado con denim flexible de alta resistencia. Diseñado para ofrecer máximo confort, estilización y durabilidad.',
-    full_description: 'Short bermuda largo confeccionado en mezclilla flexible premium con dobladillo reforzado. Excelente rotación en catálogo mayorista para clima cálido y templado. Disponible en tallas 6 a 14.',
+    full_description: 'Short bermuda largo confeccionado en mezclilla flexible premium con dobladillo reinforced. Excelente rotación en catálogo mayorista para clima cálido y templado. Disponible en tallas 6 a 14.',
     in_stock: true,
     options: [
       {
@@ -31,7 +31,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     reference: '558077',
     slug: 'ref-558077-falda-dama-rigida-color-crudo',
     suggested_price: 79900,
-    price: 49900, // Precio Mayorista (38% off)
+    price: 54900, // Precio Mayorista (12+ Uds)
     compare_price: 79900,
     ribbon: '',
     description: 'Falda Dama Rígida Color Crudo. Prenda versátil y en tendencia con acabado premium para distribución mayorista.',
@@ -54,9 +54,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'REF: 552851',
     reference: '552851',
     slug: 'ref-552851-jean-dama-wide-leg-tiro-alto-rigido-color-azul-oscuro',
-    suggested_price: 125000,
-    price: 75000, // Precio Mayorista (40% off)
-    compare_price: 125000,
+    suggested_price: 149900,
+    price: 94900, // Precio Mayorista (12+ Uds)
+    compare_price: 149900,
     ribbon: 'Más vendido',
     description: 'Jean Dama Wide Leg Tiro Alto Rígido Color Azul Oscuro. Silueta moderna de tiro alto con horma estilizadora.',
     full_description: 'Jean Wide Leg rígido tiro alto en índigo azul oscuro con bolsillos estilo cargo y costuras en contraste. La referencia más vendida de la marca por su excelente ajuste y tendencia.',
