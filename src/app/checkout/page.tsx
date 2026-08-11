@@ -60,14 +60,28 @@ export default function CheckoutPage() {
   };
 
   if (completedOrder) {
+    // Build detailed items list
+    const itemLines = (completedOrder.items || []).map((it: any) =>
+      `• REF ${it.reference} | Talla: ${it.size || 'Única'} | ${it.quantity} und × ${formatCOP(it.unit_price)} = ${formatCOP(it.unit_price * it.quantity)}`
+    ).join('\n');
+
     const whatsappMsg = encodeURIComponent(
-      `¡Hola USH BY USHUAIA! Acabo de registrar mi pedido #${completedOrder.id}:\n\n` +
-        `Cliente: ${completedOrder.customer_name} (${completedOrder.customer_doc})\n` +
-        `Ciudad: ${completedOrder.city}\n` +
-        `Dirección: ${completedOrder.shipping_address}\n` +
-        `Total: ${formatCOP(completedOrder.total)}\n` +
-        `Condición de envío: ${completedOrder.is_wholesale ? 'ENVÍO GRATIS INCLUIDO (12+ uds)' : 'Cliente asume costo de envío (<12 uds)'}\n\n` +
-        `¿Me confirman para realizar el pago y acordar el despacho?`
+      `🛍️ *PEDIDO USH BY USHUAIA* #${completedOrder.id}\n` +
+      `───────────────────────\n` +
+      `👤 *Cliente:* ${completedOrder.customer_name}\n` +
+      `🪪 *Documento:* ${completedOrder.customer_doc}\n` +
+      `📍 *Ciudad:* ${completedOrder.city}\n` +
+      `🏠 *Dirección:* ${completedOrder.shipping_address}\n` +
+      `📞 *Teléfono:* ${completedOrder.customer_phone || 'No indicado'}\n` +
+      `✉️ *Correo:* ${completedOrder.customer_email || 'No indicado'}\n` +
+      `───────────────────────\n` +
+      `📦 *DETALLE DEL PEDIDO:*\n${itemLines}\n` +
+      `───────────────────────\n` +
+      `💰 *TOTAL:* ${formatCOP(completedOrder.total)}\n` +
+      `🚚 *Envío:* ${completedOrder.is_wholesale ? '✅ GRATIS (12+ unidades)' : '⚠️ Asume el cliente (<12 unidades)'}\n` +
+      `💳 *Tarifa:* ${completedOrder.is_wholesale ? 'Mayorista (35–42% OFF)' : 'Detal (20% OFF)'}\n` +
+      `───────────────────────\n` +
+      `¿Pueden confirmar el pedido y acordar el pago y despacho? Gracias 🙏`
     );
 
     return (
@@ -98,7 +112,7 @@ export default function CheckoutPage() {
 
           <div className="pt-2 space-y-3">
             <a
-              href={`https://wa.me/573000000000?text=${whatsappMsg}`}
+              href={`https://wa.me/573022028477?text=${whatsappMsg}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md transition-colors"

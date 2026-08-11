@@ -3,7 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone, Instagram, Facebook, Youtube } from 'lucide-react';
+
+// TikTok icon (not in lucide)
+const TikTokIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.22 8.22 0 0 0 4.83 1.56V6.81a4.85 4.85 0 0 1-1.07-.12z"/>
+  </svg>
+);
 
 export const Footer: React.FC = () => {
   return (
@@ -47,16 +54,16 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Contact Details */}
+          {/* Contact & Socials */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/60 mb-4">
-              Contacto Mayorista
+              Contacto y Redes
             </h4>
-            <ul className="space-y-3 text-xs text-white/90 font-light">
+            <ul className="space-y-3 text-xs text-white/90 font-light mb-6">
               <li className="flex items-center gap-2.5">
                 <Mail size={16} className="text-white/70 flex-shrink-0" />
-                <a href="mailto:info@ushbyushuaia.com.co" className="hover:underline">
-                  info@ushbyushuaia.com.co
+                <a href="mailto:comercialmayoristas@ushuaiajeans.com.co" className="hover:underline break-all">
+                  comercialmayoristas@ushuaiajeans.com.co
                 </a>
               </li>
               <li className="flex items-start gap-2.5">
@@ -65,10 +72,31 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone size={16} className="text-white/70 flex-shrink-0" />
-                <span>Atención directa a distribuidores</span>
+                <span>+57 302 202 8477</span>
               </li>
             </ul>
+
+            <h5 className="text-[11px] font-bold uppercase tracking-wider text-white/70 mb-3">Síguenos en Redes</h5>
+            <div className="flex items-center gap-3 text-white">
+              <a href="https://www.instagram.com/ushuaiajeans.co" target="_blank" rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors" title="Instagram">
+                <Instagram size={16} />
+              </a>
+              <a href="https://www.facebook.com/ushuaiajeans" target="_blank" rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors" title="Facebook">
+                <Facebook size={16} />
+              </a>
+              <a href="https://www.tiktok.com/@ushuaiajeans" target="_blank" rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors" title="TikTok">
+                <TikTokIcon />
+              </a>
+              <a href="https://wa.me/573022028477" target="_blank" rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors" title="WhatsApp">
+                <Phone size={16} />
+              </a>
+            </div>
           </div>
+
 
           {/* Wholesale Notice */}
           <div className="bg-white/10 p-6 border border-white/20 backdrop-blur-sm flex flex-col justify-between">

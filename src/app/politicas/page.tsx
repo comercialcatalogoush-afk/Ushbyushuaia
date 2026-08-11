@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { RefreshCw, ShieldCheck, RotateCcw, CreditCard, Phone, Mail, Clock, MapPin, Truck, ArrowLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, ShieldCheck, RotateCcw, CreditCard, Phone, Mail, MapPin, Truck, ArrowLeft, ChevronRight } from 'lucide-react';
 
 export const metadata = {
   title: 'Políticas de Cambios, Devoluciones y Envíos | USH BY USHUAIA',
@@ -12,14 +12,13 @@ const sections = [
     id: 'cambios',
     icon: RefreshCw,
     tag: '15 días calendario',
-    title: 'Cambios de Prenda',
-    color: 'from-[#d88193] to-[#c06579]',
-    lightColor: 'bg-rose-50',
-    borderColor: 'border-rose-200',
+    title: '1. CAMBIOS',
+    titleColor: 'text-[#d88193]', // Soft Rose
+    badgeBg: 'bg-[#d88193]/10 text-[#c06579] border-[#d88193]/30',
     content: [
       {
         subtitle: '¿Cuándo aplica?',
-        text: 'Cuando el cliente no queda conforme con la prenda por un motivo distinto a la garantía. El cambio debe solicitarse dentro de los 15 días calendario siguientes a la fecha de compra.',
+        text: 'Aplica cuando el cliente no queda conforme con la prenda por un motivo distinto a la garantía. El cambio debe solicitarse dentro de los 15 días calendario siguientes a la fecha de compra.',
       },
       {
         subtitle: 'Requisitos de la prenda:',
@@ -47,14 +46,13 @@ const sections = [
     id: 'garantia',
     icon: ShieldCheck,
     tag: '45 días calendario',
-    title: 'Garantía de Calidad',
-    color: 'from-[#1b2333] to-[#2b3445]',
-    lightColor: 'bg-slate-50',
-    borderColor: 'border-slate-200',
+    title: '2. GARANTÍA',
+    titleColor: 'text-[#1b2333]', // Navy/Dark
+    badgeBg: 'bg-neutral-100 text-neutral-800 border-neutral-300',
     content: [
       {
         subtitle: '¿Qué cubre?',
-        text: 'Cubre defectos de calidad, idoneidad o seguridad de la prenda, siempre que el consumidor le haya dado un uso adecuado y haya seguido las instrucciones de lavado y cuidado. El plazo es de 45 días calendario contados desde la entrega del producto.',
+        text: 'Cubre defectos de calidad, idoneidad o seguridad de la prenda, siempre que el consumidor le haya dado un uso adecuado y haya seguido las instrucciones de lavado y cuidado. El plazo de garantía es de 45 días calendario contados desde la entrega del producto.',
       },
       {
         subtitle: 'Procedimiento del reclamo:',
@@ -82,10 +80,9 @@ const sections = [
     id: 'retracto',
     icon: RotateCcw,
     tag: '5 días hábiles',
-    title: 'Derecho de Retracto',
-    color: 'from-emerald-600 to-emerald-700',
-    lightColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
+    title: '3. DERECHO DE RETRACTO',
+    titleColor: 'text-[#2e7d32]', // Forest Green
+    badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     content: [
       {
         subtitle: '¿Cuándo aplica?',
@@ -96,7 +93,7 @@ const sections = [
         list: [
           'Sin uso, sin suciedad y con todas sus etiquetas.',
           'Sin rastros de químicos, blanqueador, desodorantes o maquillaje que decoloren la tela, ni desteñido.',
-          'Sin alteraciones ni modificaciones; horma original conservada.',
+          'Sin alterations ni modificaciones; horma original conservada.',
           'Estampados, apliques o bordados sin inconsistencias por lavado o planchado.',
           'En condiciones aptas para su posterior venta a otro consumidor.',
         ],
@@ -115,10 +112,9 @@ const sections = [
     id: 'reversion',
     icon: CreditCard,
     tag: '5 + 15 días hábiles',
-    title: 'Reversión del Pago',
-    color: 'from-amber-600 to-amber-700',
-    lightColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
+    title: '4. REVERSIÓN DEL PAGO',
+    titleColor: 'text-[#d97706]', // Warm Amber/Gold
+    badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
     content: [
       {
         subtitle: '¿Cuándo aplica?',
@@ -139,79 +135,80 @@ const sections = [
 
 export default function PoliticasPage() {
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-neutral-50 min-h-screen">
 
-      {/* Hero Header */}
-      <section className="bg-gradient-to-br from-[#1b2333] via-[#2b3445] to-[#d88193] text-white py-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white text-xs font-bold uppercase tracking-wider mb-8">
+      {/* Header Clean Banner */}
+      <section className="bg-white border-b border-gray-200 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-900 font-bold uppercase tracking-wider mb-6 transition-colors">
             <ArrowLeft size={14} /> Volver al Inicio
           </Link>
-          <span className="inline-block bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-white/80 mb-4">
-            Información Legal
+          <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193] mb-2">
+            Términos y Condiciones Legales
           </span>
-          <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-white">
-            Políticas de Cambios,<br />
-            <span className="text-[#f5b8c4]">Devoluciones & Envíos</span>
+          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900">
+            Políticas de Cambios, Devoluciones y Envíos
           </h1>
-          <p className="mt-4 text-sm text-white/70 max-w-2xl mx-auto leading-relaxed font-light">
-            En USH BY USHUAIA cumplimos con todas las normas de protección al consumidor establecidas por la Ley 1480 de 2011 y el Decreto 587 de 2016 de la República de Colombia.
+          <p className="mt-3 text-xs sm:text-sm text-neutral-500 max-w-xl mx-auto font-light leading-relaxed">
+            En <strong>USH BY USHUAIA</strong> garantizamos tus derechos como consumidor de acuerdo con la Ley 1480 de 2011 y el Decreto 587 de 2016 de la República de Colombia.
           </p>
 
-          {/* Quick Nav Pills */}
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {/* Nav Pills */}
+          <div className="mt-8 flex flex-wrap justify-center gap-2">
             {sections.map((s) => (
               <a key={s.id} href={`#${s.id}`}
-                className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white transition-all">
+                className="inline-flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-700 transition-all">
                 <ChevronRight size={12} />
                 {s.title}
               </a>
             ))}
+            <a href="#envios"
+              className="inline-flex items-center gap-1 bg-[#d88193]/10 hover:bg-[#d88193]/20 border border-[#d88193]/30 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#c06579] transition-all">
+              <ChevronRight size={12} />
+              5. POLÍTICA DE ENVÍO
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Policy Sections */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
-        {sections.map((section, idx) => {
+      {/* Main Neutral Content Container */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+        {sections.map((section) => {
           const Icon = section.icon;
           return (
             <div key={section.id} id={section.id}
-              className={`rounded-none border ${section.borderColor} overflow-hidden shadow-sm`}>
+              className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm">
 
-              {/* Section Header */}
-              <div className={`bg-gradient-to-r ${section.color} text-white p-6 flex items-center gap-4`}>
-                <div className="w-12 h-12 bg-white/15 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Icon size={24} />
+              {/* Title with Custom Color & Badge */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0 text-neutral-700">
+                    <Icon size={20} />
+                  </div>
+                  <h2 className={`text-xl sm:text-2xl font-black uppercase tracking-tight ${section.titleColor}`}>
+                    {section.title}
+                  </h2>
                 </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">
-                    Política {idx + 1}
-                  </span>
-                  <h2 className="text-xl font-black uppercase tracking-tight">{section.title}</h2>
-                  <span className="inline-block mt-0.5 bg-white/20 border border-white/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-widest">
-                    Plazo: {section.tag}
-                  </span>
-                </div>
+                <span className={`inline-self-start sm:inline-self-auto border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${section.badgeBg}`}>
+                  {section.tag}
+                </span>
               </div>
 
-              {/* Section Content */}
-              <div className={`${section.lightColor} p-8 space-y-6`}>
+              {/* Section Details */}
+              <div className="space-y-6">
                 {section.content.map((block, bIdx) => (
-                  <div key={bIdx}>
-                    <h3 className="text-sm font-black uppercase tracking-wider text-neutral-800 mb-3">
+                  <div key={bIdx} className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-800">
                       {block.subtitle}
                     </h3>
                     {block.text && (
-                      <p className="text-sm text-neutral-700 leading-relaxed font-light">{block.text}</p>
+                      <p className="text-xs text-neutral-600 leading-relaxed font-light">{block.text}</p>
                     )}
                     {block.list && (
-                      <ul className="space-y-2">
+                      <ul className="space-y-2 pt-1">
                         {block.list.map((item, iIdx) => (
-                          <li key={iIdx} className="flex items-start gap-3 text-sm text-neutral-700 font-light">
-                            <span className="w-5 h-5 rounded-full bg-[#d88193]/20 text-[#c06579] flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-black">
-                              {iIdx + 1}
-                            </span>
+                          <li key={iIdx} className="flex items-start gap-2.5 text-xs text-neutral-600 font-light">
+                            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 flex-shrink-0 mt-1.5" />
                             <span className="leading-relaxed">{item}</span>
                           </li>
                         ))}
@@ -224,69 +221,73 @@ export default function PoliticasPage() {
           );
         })}
 
-        {/* Shipping Policy */}
-        <div id="envios" className="border border-[#d88193]/30 overflow-hidden shadow-sm">
-          <div className="bg-gradient-to-r from-[#d88193] to-[#c06579] text-white p-6 flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/15 rounded-full flex items-center justify-center flex-shrink-0">
-              <Truck size={24} />
+        {/* 5. POLÍTICA DE ENVÍO */}
+        <div id="envios" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0 text-[#d88193]">
+                <Truck size={20} />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[#c06579]">
+                5. POLÍTICA DE ENVÍO
+              </h2>
             </div>
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">Política 5</span>
-              <h2 className="text-xl font-black uppercase tracking-tight">Política de Envíos</h2>
-            </div>
+            <span className="border border-rose-200 bg-rose-50 text-[#c06579] px-3 py-1 text-[11px] font-bold uppercase tracking-wider">
+              Envíos Nacionales
+            </span>
           </div>
-          <div className="bg-rose-50 p-8 space-y-6">
-            <p className="text-sm text-neutral-700 leading-relaxed font-light">
-              En <strong>www.ushuaiajeans.com.co</strong>, nuestro compromiso es cumplir con los tiempos de entrega. Si el día que llegue tu pedido no estás presente para recibirlo, la transportadora estará autorizada para dejarlo en el lugar indicado informado por el medio de atención donde se tomó el pedido.
+
+          <div className="space-y-4 text-xs text-neutral-600 font-light leading-relaxed">
+            <p>
+              En <strong>www.ushuaiajeans.com.co</strong>, nuestro compromiso es cumplir con los tiempos de entrega, por lo tanto, si el día que llegue tu pedido no estás presente para recibirlo, la transportadora estará autorizada para dejarlo en el lugar indicado informado por el medio de atención donde se tomó el pedido.
             </p>
-            <p className="text-sm text-neutral-700 leading-relaxed font-light">
-              En Ush By Ushuaia queremos entregar tu pedido en el menor tiempo posible, por eso nuestra promesa de entrega es:
+            <p>
+              En Ush By Ushuaia queremos entregar tu pedido en el menor tiempo posible, por eso nuestra promesa de entrega es de:
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white border border-rose-200 p-5 text-center">
-                <p className="text-2xl font-black text-[#d88193]">5 – 8</p>
-                <p className="text-xs font-bold uppercase tracking-wider text-neutral-800 mt-1">Días Hábiles</p>
-                <p className="text-[11px] text-neutral-500 mt-1">Ciudades principales e intermedias</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="bg-neutral-50 border border-neutral-200 p-4 text-center space-y-1">
+                <p className="text-2xl font-black text-[#d88193]">5 a 8</p>
+                <p className="text-xs font-bold uppercase text-neutral-800">Días Hábiles</p>
+                <p className="text-[11px] text-neutral-500">Ciudades principales e intermedias</p>
               </div>
-              <div className="bg-white border border-rose-200 p-5 text-center">
-                <p className="text-2xl font-black text-[#d88193]">8 – 15</p>
-                <p className="text-xs font-bold uppercase tracking-wider text-neutral-800 mt-1">Días Hábiles</p>
-                <p className="text-[11px] text-neutral-500 mt-1">Municipios y poblaciones pequeñas</p>
+              <div className="bg-neutral-50 border border-neutral-200 p-4 text-center space-y-1">
+                <p className="text-2xl font-black text-[#d88193]">8 a 15</p>
+                <p className="text-xs font-bold uppercase text-neutral-800">Días Hábiles</p>
+                <p className="text-[11px] text-neutral-500">Municipios y demás poblaciones</p>
               </div>
             </div>
-            <p className="text-[11px] text-neutral-500 italic font-light border-t border-rose-200 pt-4">
-              * Contados a partir del momento en que el consumidor reciba el correo electrónico <strong>"Confirmación pedido"</strong>.
+
+            <p className="text-[11px] text-neutral-400 italic pt-2">
+              * Contados a partir del momento en que el consumidor reciba el correo electrónico "Confirmación pedido".
             </p>
           </div>
         </div>
 
-        {/* Contact Channels */}
-        <div className="bg-[#1b2333] text-white p-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="sm:col-span-3 mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193]">Canales de Atención</span>
-            <h3 className="text-xl font-black uppercase mt-1">¿Necesitas Ayuda?</h3>
+        {/* 6. CANALES DE ATENCIÓN */}
+        <div className="bg-[#1b2333] text-white p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 shadow-md">
+          <div className="sm:col-span-3 border-b border-white/10 pb-3">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193]">Contacto Directo</span>
+            <h3 className="text-lg font-black uppercase mt-0.5">Canales de Atención</h3>
           </div>
-          <div className="flex items-start gap-3">
-            <Phone size={20} className="text-[#d88193] flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-white/60">WhatsApp</p>
-              <p className="text-sm font-bold">317 435 9968</p>
-              <p className="text-[11px] text-white/50 mt-1">Lun – Jue: 7:00 a.m. – 4:00 p.m.<br />Vie: 7:00 a.m. – 3:30 p.m.</p>
-            </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#d88193]">WhatsApp</p>
+            <p className="text-sm font-bold">317 435 9968</p>
+            <p className="text-[11px] text-white/60 font-light pt-1">
+              Lunes a jueves: 7:00 a. m. a 4:00 p. m.<br />
+              Viernes: 7:00 a. m. a 3:30 p. m.
+            </p>
           </div>
-          <div className="flex items-start gap-3">
-            <Mail size={20} className="text-[#d88193] flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-white/60">Correo</p>
-              <p className="text-sm font-bold break-all">comercialmayoristas@ushuaiajeans.com.co</p>
-            </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#d88193]">Correo Electrónico</p>
+            <p className="text-xs font-bold break-all">comercialmayoristas@ushuaiajeans.com.co</p>
           </div>
-          <div className="flex items-start gap-3">
-            <MapPin size={20} className="text-[#d88193] flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-white/60">Tienda Virtual</p>
-              <p className="text-sm font-bold">www.ushuaiajeans.com.co</p>
-            </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#d88193]">Tienda Virtual</p>
+            <p className="text-xs font-bold">www.ushuaiajeans.com.co</p>
           </div>
         </div>
 
