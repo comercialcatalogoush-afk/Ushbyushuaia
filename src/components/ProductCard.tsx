@@ -10,9 +10,10 @@ import { SizeGuideModal } from './SizeGuideModal';
 
 interface ProductCardProps {
   product: Product;
+  isTopSeller?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }) => {
   const { addToCart, formatCOP } = useCart();
   
   // Tallas 6 to 14
@@ -30,6 +31,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const suggestedPrice = product.suggested_price || product.compare_price || 49900;
   const wholesalePrice = product.price || Math.round(suggestedPrice * 0.65);
+
+  const isBestSellerBadge = isTopSeller || product.is_best_seller || product.ribbon?.toLowerCase().includes('más vendido') || product.ribbon?.toLowerCase().includes('mas vendido');
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -52,12 +55,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         onMouseEnter={() => product.images.length > 1 && setCurrentImageIndex(1)}
         onMouseLeave={() => setCurrentImageIndex(0)}
       >
-        {/* Ribbon Badge */}
-        {product.ribbon && (
+        {/* Ribbon / Top Seller Badge */}
+        {isBestSellerBadge ? (
+          <span className="absolute top-3 left-3 z-10 text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-[#1b2333] text-white shadow-md flex items-center gap-1">
+            🔥 Más vendido
+          </span>
+        ) : product.ribbon ? (
           <span className={`absolute top-3 left-3 z-10 text-[10px] font-black uppercase tracking-widest px-3 py-1 text-white shadow-md ${
-            product.ribbon.toLowerCase().includes('nuevo') ? 'bg-ush-pink' : 'bg-ush-navyDark'
+            product.ribbon.toLowerCase().includes('nuevo') ? 'bg-[#d88193]' : 'bg-[#1b2333]'
           }`}>
             {product.ribbon}
+          </span>
+        ) : null}
+
+        {/* Fit Badge */}
+        {product.fit && (
+          <span className="absolute bottom-3 left-3 z-10 text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 bg-white/95 text-[#1b2333] shadow-sm border border-gray-200 backdrop-blur-sm">
+            Fit: {product.fit}
           </span>
         )}
 

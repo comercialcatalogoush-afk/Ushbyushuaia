@@ -3,10 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchProductsFromSupabase, supabase, saveLocalProductsOverride } from '@/lib/supabase';
-import { Product } from '@/types';
-import { Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, CheckSquare, Square, Lock, LogOut, ShieldCheck, Key } from 'lucide-react';
+import { fetchProductsFromSupabase, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory } from '@/lib/supabase';
+import { Product, PriceHistoryRecord } from '@/types';
+import { 
+  Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
+  CheckSquare, Square, Lock, LogOut, ShieldCheck, Key, Search, Filter, History, 
+  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw
+} from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+
+const DEFAULT_FITS = ['Wide Leg', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
+const ALL_SIZES = ['6', '8', '10', '12', '14'];
 
 export default function AdminCatalogPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,41 +23,86 @@ export default function AdminCatalogPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'products' | 'history' | 'fits'>('products');
+
+  // Filters & Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterFit, setFilterFit] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  // Fit Management State
+  const [availableFits, setAvailableFits] = useState<string[]>(DEFAULT_FITS);
+  const [newFitInput, setNewFitInput] = useState('');
+
+  // Editing state
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>(['6', '8', '10', '12', '14']);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(ALL_SIZES);
+  const [stockBySize, setStockBySize] = useState<Record<string, number>>({ '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 });
+  const [imagePreviewList, setImagePreviewList] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Price History Audit Log
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryRecord[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const { formatCOP } = useCart();
 
-  const allAvailableSizes = ['6', '8', '10', '12', '14'];
-
   useEffect(() => {
-    // Check local session storage for admin login persistence
-    const authStatus = sessionStorage.getItem('ush_admin_auth');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
-      loadProducts();
-    }
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/admin/check');
+        const data = await res.json();
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+          loadProducts();
+          loadHistory();
+        } else {
+          setIsAuthenticated(false);
+          setLoading(false);
+        }
+      } catch (e) {
+        setIsAuthenticated(false);
+        setLoading(false);
+      }
+    };
+    checkAuth();
+
+    try {
+      const savedFits = localStorage.getItem('ush_admin_fits');
+      if (savedFits) setAvailableFits(JSON.parse(savedFits));
+    } catch (e) {}
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
 
-    if (
-      loginEmail.trim().toLowerCase() === 'comercialmayoristas@ushuaiajeans.com.co' &&
-      loginPassword === 'Colombia2025*'
-    ) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('ush_admin_auth', 'true');
-      loadProducts();
-    } else {
-      setLoginError('Credenciales incorrectas. Verifique el correo o la contraseña de administrador.');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        loadProducts();
+        loadHistory();
+      } else {
+        setLoginError(data.error || 'Credenciales incorrectas. Verifique el correo o la contraseña.');
+      }
+    } catch (err) {
+      setLoginError('Error de conexión con el servidor de autenticación.');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (e) {}
     setIsAuthenticated(false);
-    sessionStorage.removeItem('ush_admin_auth');
   };
 
   const loadProducts = async () => {
@@ -60,8 +112,103 @@ export default function AdminCatalogPage() {
     setLoading(false);
   };
 
+  const loadHistory = async () => {
+    setLoadingHistory(true);
+    const history = await fetchPriceHistory();
+    setPriceHistory(history);
+    setLoadingHistory(false);
+  };
+
+  // Fits Management
+  const handleAddFit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFitInput.trim()) return;
+    const cleanFit = newFitInput.trim();
+    if (!availableFits.includes(cleanFit)) {
+      const updated = [...availableFits, cleanFit];
+      setAvailableFits(updated);
+      try { localStorage.setItem('ush_admin_fits', JSON.stringify(updated)); } catch (e) {}
+      window.dispatchEvent(new Event('ush_fits_updated'));
+    }
+    setNewFitInput('');
+  };
+
+  const handleDeleteFit = (fitToDelete: string) => {
+    const updated = availableFits.filter(f => f !== fitToDelete);
+    setAvailableFits(updated);
+    try { localStorage.setItem('ush_admin_fits', JSON.stringify(updated)); } catch (e) {}
+    window.dispatchEvent(new Event('ush_fits_updated'));
+  };
+
+  // Compress Image Utility (Client-side Canvas)
+  const compressAndReadImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = document.createElement('img');
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+            resolve(compressedUrl);
+          } else {
+            resolve(event.target?.result as string);
+          }
+        };
+        img.onerror = reject;
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    try {
+      const compressedUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const url = await compressAndReadImage(files[i]);
+        compressedUrls.push(url);
+      }
+      setImagePreviewList(prev => [...prev, ...compressedUrls]);
+      if (editingProduct) {
+        setEditingProduct({
+          ...editingProduct,
+          images: [...(editingProduct.images || []), ...compressedUrls]
+        });
+      }
+    } catch (err) {
+      console.error('Error compressing image:', err);
+    }
+    setUploadingImage(false);
+  };
+
   const handleOpenNew = () => {
-    setSelectedSizes(['6', '8', '10', '12', '14']);
+    setSelectedSizes(ALL_SIZES);
+    setStockBySize({ '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 });
+    setImagePreviewList(['https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600']);
     setEditingProduct({
       id: '',
       name: 'REF: ',
@@ -70,10 +217,12 @@ export default function AdminCatalogPage() {
       suggested_price: 79900,
       price: 54900,
       ribbon: 'Nuevo',
+      fit: 'Wide Leg',
+      status: 'published',
       description: 'Prenda confeccionada en mezclilla rígida de alta calidad.',
       full_description: 'Prenda en mezclilla rígida con corte estilizador confeccionada en Colombia.',
       in_stock: true,
-      options: [{ id: 'talla-opt', key: 'Talla', values: ['6', '8', '10', '12', '14'] }],
+      options: [{ id: 'talla-opt', key: 'Talla', values: ALL_SIZES }],
       images: ['https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600'],
       video_url: ''
     });
@@ -81,21 +230,21 @@ export default function AdminCatalogPage() {
 
   const handleEditOpen = (product: Product) => {
     const sizeOpt = product.options?.find(o => o.key.toLowerCase() === 'talla');
-    setSelectedSizes(sizeOpt?.values || ['6', '8', '10', '12', '14']);
+    setSelectedSizes(sizeOpt?.values || ALL_SIZES);
+    setStockBySize(product.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 });
+    setImagePreviewList(product.images || []);
     setEditingProduct(product);
-  };
-
-  const toggleSize = (size: string) => {
-    if (selectedSizes.includes(size)) {
-      setSelectedSizes(selectedSizes.filter(s => s !== size));
-    } else {
-      setSelectedSizes([...selectedSizes, size].sort((a, b) => parseInt(a) - parseInt(b)));
-    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
+
+    const existingProd = products.find(p => p.id === editingProduct.id);
+    const oldWholesale = existingProd ? existingProd.price : 0;
+    const newWholesale = Number(editingProduct.price || 54900);
+    const oldSuggested = existingProd ? existingProd.suggested_price : 0;
+    const newSuggested = Number(editingProduct.suggested_price || 79900);
 
     const slug = editingProduct.slug || editingProduct.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'ref-' + Date.now();
     const reference = editingProduct.reference || editingProduct.name?.replace(/ref:?/i, '').trim() || 'REF';
@@ -104,7 +253,7 @@ export default function AdminCatalogPage() {
       {
         id: 'talla-opt',
         key: 'Talla',
-        values: selectedSizes.length > 0 ? selectedSizes : ['6', '8', '10', '12', '14']
+        values: selectedSizes.length > 0 ? selectedSizes : ALL_SIZES
       }
     ];
 
@@ -112,17 +261,20 @@ export default function AdminCatalogPage() {
       name: editingProduct.name,
       reference,
       slug,
-      suggested_price: editingProduct.suggested_price || editingProduct.price || 79900,
-      price: editingProduct.price || 54900,
-      compare_price: editingProduct.suggested_price || 0,
+      suggested_price: newSuggested,
+      price: newWholesale,
+      compare_price: newSuggested,
       ribbon: editingProduct.ribbon || '',
+      fit: editingProduct.fit || 'Wide Leg',
+      status: editingProduct.status || 'published',
+      stock_by_size: JSON.stringify(stockBySize),
       description: editingProduct.description || '',
       full_description: editingProduct.full_description || '',
       video_url: editingProduct.video_url || '',
       in_stock: editingProduct.in_stock !== false,
-      hidden: editingProduct.hidden === true,
+      hidden: editingProduct.status === 'draft',
       options: JSON.stringify(optionsPayload),
-      images: editingProduct.images || []
+      images: editingProduct.images || imagePreviewList
     };
 
     const updatedProductObj: Product = {
@@ -130,17 +282,20 @@ export default function AdminCatalogPage() {
       name: editingProduct.name || 'Nueva Referencia',
       reference,
       slug,
-      suggested_price: Number(editingProduct.suggested_price || editingProduct.price || 79900),
-      price: Number(editingProduct.price || 54900),
-      compare_price: Number(editingProduct.suggested_price || 0),
+      suggested_price: newSuggested,
+      price: newWholesale,
+      compare_price: newSuggested,
       ribbon: editingProduct.ribbon || '',
+      fit: editingProduct.fit || 'Wide Leg',
+      status: editingProduct.status || 'published',
+      stock_by_size: stockBySize,
       description: editingProduct.description || '',
       full_description: editingProduct.full_description || '',
       video_url: editingProduct.video_url || '',
       in_stock: editingProduct.in_stock !== false,
-      hidden: editingProduct.hidden === true,
+      hidden: editingProduct.status === 'draft',
       options: optionsPayload,
-      images: editingProduct.images || []
+      images: editingProduct.images || imagePreviewList
     };
 
     let updatedList: Product[] = [];
@@ -152,6 +307,20 @@ export default function AdminCatalogPage() {
 
     setProducts(updatedList);
     saveLocalProductsOverride(updatedList);
+
+    // Audit log if price changed
+    if (existingProd && (oldWholesale !== newWholesale || oldSuggested !== newSuggested)) {
+      logPriceChange({
+        product_id: existingProd.id,
+        product_name: existingProd.name,
+        old_wholesale_price: oldWholesale,
+        new_wholesale_price: newWholesale,
+        old_suggested_price: oldSuggested,
+        new_suggested_price: newSuggested,
+        changed_by: 'Admin'
+      });
+      loadHistory();
+    }
 
     try {
       if (editingProduct.id) {
@@ -384,13 +553,19 @@ export default function AdminCatalogPage() {
                     Tallas Disponibles para esta Referencia:
                   </label>
                   <div className="flex flex-wrap gap-3">
-                    {allAvailableSizes.map((size) => {
+                    {ALL_SIZES.map((size) => {
                       const isChecked = selectedSizes.includes(size);
                       return (
                         <button
                           key={size}
                           type="button"
-                          onClick={() => toggleSize(size)}
+                          onClick={() => {
+                            if (isChecked) {
+                              setSelectedSizes(selectedSizes.filter(s => s !== size));
+                            } else {
+                              setSelectedSizes([...selectedSizes, size].sort((a, b) => parseInt(a) - parseInt(b)));
+                            }
+                          }}
                           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border transition-all ${
                             isChecked
                               ? 'bg-ush-pink text-white border-ush-pink'

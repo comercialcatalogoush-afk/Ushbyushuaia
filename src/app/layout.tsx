@@ -5,6 +5,7 @@ import { CartProvider } from '@/context/CartContext';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartDrawer } from '@/components/CartDrawer';
+import { ToastContainer } from '@/components/ToastContainer';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
@@ -34,6 +35,7 @@ export default function RootLayout({
         <CartProvider>
           <Header />
           <CartDrawer />
+          <ToastContainer />
           <main className="flex-grow">{children}</main>
           <Footer />
         </CartProvider>

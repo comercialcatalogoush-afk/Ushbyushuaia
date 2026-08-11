@@ -62,11 +62,15 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       price: Number(item.price),
       compare_price: item.compare_price ? Number(item.compare_price) : 0,
       ribbon: item.ribbon || '',
+      fit: item.fit || 'Wide Leg',
+      status: item.status || (item.hidden ? 'draft' : 'published'),
+      stock_by_size: typeof item.stock_by_size === 'string' ? JSON.parse(item.stock_by_size) : (item.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 }),
+      is_best_seller: item.is_best_seller === true,
       description: item.description || '',
       full_description: item.full_description || '',
       video_url: item.video_url || '',
       in_stock: item.in_stock !== false,
-      hidden: item.hidden === true,
+      hidden: item.hidden === true || item.status === 'draft',
       options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options || []),
       images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
       category_id: item.category_id
@@ -94,14 +98,118 @@ export async function submitWholesaleLead(lead: WholesaleLead) {
   }
 }
 
-export async function submitOrder(orderData: any) {
+export async function submitOrder(orderData: any): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    const { data, error } = await supabase.from('orders').insert([orderData]);
+    const { data, error } = await supabase.from('orders').insert([orderData]).select();
     if (error) {
       return { success: false, error: error.message };
     }
     return { success: true, data };
   } catch (err: any) {
     return { success: false, error: err.message };
+  }
+}
+
+// ── PRICE HISTORY LOGGING ──────────────────────────────────────────
+export async function logPriceChange(record: {
+  product_id: string;
+  product_name: string;
+  old_wholesale_price: number;
+  new_wholesale_price: number;
+  old_suggested_price: number;
+  new_suggested_price: number;
+  changed_by?: string;
+}) {
+  try {
+    const payload = {
+      product_id: record.product_id,
+      product_name: record.product_name,
+      old_wholesale_price: record.old_wholesale_price,
+      new_wholesale_price: record.new_wholesale_price,
+      old_suggested_price: record.old_suggested_price,
+      new_suggested_price: record.new_suggested_price,
+      changed_at: new Date().toISOString(),
+      changed_by: record.changed_by || 'admin@ushuaiajeans.com.co',
+    };
+    await supabase.from('price_history').insert([payload]);
+  } catch (e) {
+    console.error('Failed to log price history to Supabase:', e);
+  }
+}
+
+export async function fetchPriceHistory() {
+  try {
+    const { data, error } = await supabase
+      .from('price_history')
+      .select('*')
+      .order('changed_at', { ascending: false });
+    if (error || !data) return [];
+    return data;
+  } catch (e) {
+    console.error('Failed to fetch price history:', e);
+    return [];
+  }
+}
+
+// ── TOP SELLERS CALCULATION (Last 30 days) ──────────────────────────
+const TOP_SELLERS_CACHE_KEY = 'ush_top_sellers_cache_v1';
+
+export async function getTopSellingProductIds(): Promise<string[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem(TOP_SELLERS_CACHE_KEY);
+      if (cached) {
+        const { timestamp, ids } = JSON.parse(cached);
+        // Cache valid for 12 hours
+        if (Date.now() - timestamp < 12 * 60 * 60 * 1000 && Array.isArray(ids) && ids.length > 0) {
+          return ids;
+        }
+      }
+    } catch (e) {
+      console.error('Error reading top sellers cache:', e);
+    }
+  }
+
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select('items')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    if (error || !data || data.length === 0) {
+      return [];
+    }
+
+    const salesMap: Record<string, number> = {};
+    data.forEach((order: any) => {
+      const itemsArr = Array.isArray(order.items) ? order.items : [];
+      itemsArr.forEach((item: any) => {
+        const key = item.product_id || item.reference;
+        if (key) {
+          salesMap[key] = (salesMap[key] || 0) + (Number(item.quantity) || 1);
+        }
+      });
+    });
+
+    const topIds = Object.entries(salesMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([id]) => id);
+
+    if (typeof window !== 'undefined' && topIds.length > 0) {
+      try {
+        localStorage.setItem(
+          TOP_SELLERS_CACHE_KEY,
+          JSON.stringify({ timestamp: Date.now(), ids: topIds })
+        );
+      } catch (e) {}
+    }
+
+    return topIds;
+  } catch (e) {
+    return [];
   }
 }

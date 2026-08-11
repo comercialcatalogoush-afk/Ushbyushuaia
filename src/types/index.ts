@@ -13,6 +13,10 @@ export interface Product {
   price: number;
   compare_price?: number;
   ribbon?: string;
+  fit?: 'Wide Leg' | 'Mom' | 'Cargo' | 'Bermuda' | 'Straight' | string;
+  status?: 'draft' | 'published';
+  stock_by_size?: Record<string, number>;
+  is_best_seller?: boolean;
   description?: string;
   full_description?: string;
   video_url?: string;
@@ -21,6 +25,18 @@ export interface Product {
   options: ProductOption[];
   images: string[];
   category_id?: string;
+}
+
+export interface PriceHistoryRecord {
+  id: string;
+  product_id: string;
+  product_name: string;
+  old_wholesale_price: number;
+  new_wholesale_price: number;
+  old_suggested_price: number;
+  new_suggested_price: number;
+  changed_at: string;
+  changed_by: string;
 }
 
 export interface CartItem {

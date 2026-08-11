@@ -20,12 +20,15 @@ export default function CheckoutPage() {
   });
   const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
 
     setLoading(true);
+    setErrorMessage(null);
+
     const orderPayload = {
       customer_name: formData.name,
       customer_doc: `${formData.doc_type} ${formData.doc_number}`,
@@ -51,11 +54,14 @@ export default function CheckoutPage() {
     setLoading(false);
 
     if (res.success) {
-      setCompletedOrder({ ...orderPayload, id: (res.data as any)?.[0]?.id || 'ORD-' + Math.floor(Math.random() * 10000) });
+      const generatedId = res.data?.[0]?.id || 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+      setCompletedOrder({ ...orderPayload, id: generatedId });
       clearCart();
     } else {
-      setCompletedOrder({ ...orderPayload, id: 'ORD-' + Math.floor(Math.random() * 10000) });
-      clearCart();
+      console.error('Database insertion error:', res.error);
+      setErrorMessage(
+        `Hubo un problema al registrar tu pedido en la base de datos (${res.error || 'error de conexión'}). Por favor verifica tus datos e intenta de nuevo, o ponte en contacto con nuestro equipo.`
+      );
     }
   };
 
@@ -169,6 +175,16 @@ export default function CheckoutPage() {
               <h2 className="text-base font-bold uppercase tracking-wider text-neutral-900 border-b border-gray-100 pb-3">
                 Datos de Envío & Documento del Cliente
               </h2>
+
+              {errorMessage && (
+                <div className="p-4 bg-red-50 border-l-4 border-red-600 text-xs text-red-900 space-y-1 animate-fadeIn">
+                  <p className="font-bold flex items-center gap-1.5 text-red-800">
+                    <AlertTriangle size={16} className="flex-shrink-0 text-red-600" />
+                    Error al Procesar el Pedido
+                  </p>
+                  <p className="text-neutral-700">{errorMessage}</p>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Document Type & Number */}

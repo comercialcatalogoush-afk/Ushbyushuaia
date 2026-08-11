@@ -1,39 +1,77 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Filter, Sparkles, Flame, Check } from 'lucide-react';
-
-import { getLocalProductsOverride } from '@/lib/supabase';
+import { Filter, Sparkles, Flame, Check, Tag } from 'lucide-react';
+import { getLocalProductsOverride, getTopSellingProductIds } from '@/lib/supabase';
 
 interface ProductGridProps {
   products: Product[];
 }
 
+const DEFAULT_FITS = ['Wide Leg', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
+
 export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'nuevo' | 'mas_vendido'>('all');
+  const [selectedFit, setSelectedFit] = useState<string>('all');
   const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
+  const [topSellerIds, setTopSellerIds] = useState<string[]>([]);
+  const [availableFits, setAvailableFits] = useState<string[]>(DEFAULT_FITS);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const updateList = () => {
       const local = getLocalProductsOverride();
       if (local && local.length > 0) {
-        setDisplayProducts(local.filter((p) => !p.hidden));
+        setDisplayProducts(local.filter((p) => !p.hidden && p.status !== 'draft'));
       }
     };
     updateList();
+
+    // Fetch Top 5 Sellers (cached for 12h)
+    getTopSellingProductIds().then(ids => {
+      setTopSellerIds(ids);
+    });
+
+    // Load available fits
+    try {
+      const saved = localStorage.getItem('ush_admin_fits');
+      if (saved) setAvailableFits(JSON.parse(saved));
+    } catch (e) {}
+
     window.addEventListener('ush_products_updated', updateList);
-    return () => window.removeEventListener('ush_products_updated', updateList);
+    window.addEventListener('ush_fits_updated', () => {
+      try {
+        const saved = localStorage.getItem('ush_admin_fits');
+        if (saved) setAvailableFits(JSON.parse(saved));
+      } catch (e) {}
+    });
+
+    return () => {
+      window.removeEventListener('ush_products_updated', updateList);
+    };
   }, []);
 
   const filteredProducts = displayProducts.filter((p) => {
+    // Status / hidden filter
+    if (p.hidden || p.status === 'draft') return false;
+
+    // Tab filter
     if (activeTab === 'nuevo') {
-      return p.ribbon?.toLowerCase().includes('nuevo');
+      if (!p.ribbon?.toLowerCase().includes('nuevo')) return false;
     }
     if (activeTab === 'mas_vendido') {
-      return p.ribbon?.toLowerCase().includes('más vendido') || p.ribbon?.toLowerCase().includes('mas vendido');
+      const isTop5 = topSellerIds.includes(p.id) || topSellerIds.includes(p.reference);
+      const isRibbon = p.ribbon?.toLowerCase().includes('más vendido') || p.ribbon?.toLowerCase().includes('mas vendido') || p.is_best_seller;
+      if (!isTop5 && !isRibbon) return false;
     }
+
+    // Fit filter
+    if (selectedFit !== 'all') {
+      const prodFit = p.fit || 'Wide Leg';
+      if (prodFit.toLowerCase() !== selectedFit.toLowerCase()) return false;
+    }
+
     return true;
   });
 
@@ -84,29 +122,58 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                   : 'bg-neutral-50 text-neutral-600 border-gray-200 hover:bg-gray-100'
               }`}
             >
-              <Flame size={14} /> Más vendidos
+              <Flame size={14} className="text-amber-500" /> Más vendidos
             </button>
           </div>
+        </div>
+
+        {/* Fit Filter Selector Bar */}
+        <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-100">
+          <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1 mr-2">
+            <Tag size={14} className="text-[#d88193]" /> Fit:
+          </span>
+
+          <button
+            onClick={() => setSelectedFit('all')}
+            className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all border ${
+              selectedFit === 'all'
+                ? 'bg-[#1b2333] text-white border-[#1b2333]'
+                : 'bg-neutral-50 text-neutral-600 border-gray-200 hover:bg-neutral-100'
+            }`}
+          >
+            Todos los Fits
+          </button>
+
+          {availableFits.map((fit) => (
+            <button
+              key={fit}
+              onClick={() => setSelectedFit(fit)}
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all border ${
+                selectedFit.toLowerCase() === fit.toLowerCase()
+                  ? 'bg-[#d88193] text-white border-[#d88193]'
+                  : 'bg-neutral-50 text-neutral-600 border-gray-200 hover:bg-neutral-100'
+              }`}
+            >
+              {fit}
+            </button>
+          ))}
         </div>
 
         {/* Product Cards Grid */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {filteredProducts.map((product) => {
+              const isTopSeller = topSellerIds.includes(product.id) || topSellerIds.includes(product.reference) || product.is_best_seller;
+              return (
+                <ProductCard key={product.id} product={product} isTopSeller={isTopSeller} />
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-16 bg-neutral-50 border border-dashed border-gray-200">
-            <p className="text-neutral-500 font-medium text-sm">
-              No hay productos con este filtro actualmente.
-            </p>
-            <button
-              onClick={() => setActiveTab('all')}
-              className="mt-4 text-xs font-bold uppercase underline tracking-wider text-black"
-            >
-              Ver todos los productos
-            </button>
+            <Filter size={32} className="mx-auto text-neutral-400 mb-2" />
+            <p className="text-sm font-bold uppercase text-neutral-800">No hay prendas disponibles</p>
+            <p className="text-xs text-neutral-500 mt-1">Prueba cambiando los filtros de corte o estado.</p>
           </div>
         )}
       </div>

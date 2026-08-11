@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, MessageCircle, Truck, AlertTriangle, Sparkles, Layers } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, AlertTriangle, Sparkles, Layers } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export const CartDrawer: React.FC = () => {
@@ -34,21 +34,7 @@ export const CartDrawer: React.FC = () => {
 
   const hasMultiSizeReferences = Object.values(referenceSizesMap).some((sizes) => sizes.length > 1);
 
-  // WhatsApp Order message
-  const whatsappMessage = encodeURIComponent(
-    `Hola USH BY USHUAIA, deseo realizar un pedido:\n\n` +
-      items
-        .map(
-          (item, idx) =>
-            `${idx + 1}. Ref: ${item.product.reference} | Talla: ${item.selectedSize || '6'} | Cant: ${
-              item.quantity
-            } x ${formatCOP(calculateItemUnitPrice(item))}`
-        )
-        .join('\n') +
-      `\n\nTotal estimado: ${formatCOP(subtotalCOP)}\n` +
-      `Tipo de tarifa: ${isWholesaleTier ? 'MAYORISTA (35%-42% OFF + ENVÍO GRATIS)' : 'DETAL (20% OFF - Cliente asume envío)'}\n\n` +
-      `¿Me ayudan a confirmarlo?`
-  );
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -240,16 +226,6 @@ export const CartDrawer: React.FC = () => {
                   <span>Tramitar Pedido</span>
                   <ArrowRight size={16} />
                 </Link>
-
-                <a
-                  href={`https://wa.me/573022028477?text=${whatsappMessage}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-emerald-600 text-white font-bold py-3 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
-                >
-                  <MessageCircle size={16} />
-                  <span>Enviar Pedido al Asesor por WhatsApp</span>
-                </a>
               </div>
             </div>
           )}
