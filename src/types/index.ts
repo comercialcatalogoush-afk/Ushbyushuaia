@@ -9,7 +9,8 @@ export interface Product {
   name: string;
   reference: string;
   slug: string;
-  price: number;
+  suggested_price: number; // Precio Sugerido E-commerce (PVP)
+  price: number; // Precio Mayorista (35%-42% off)
   compare_price?: number;
   ribbon?: string;
   description?: string;

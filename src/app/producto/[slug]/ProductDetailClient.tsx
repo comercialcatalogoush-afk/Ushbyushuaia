@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, MessageCircle, Ruler, Film } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, MessageCircle, Ruler, Film, Sparkles } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -23,6 +23,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState<number>(1);
   const [added, setAdded] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+
+  const suggestedPrice = product.suggested_price || product.compare_price || 49900;
+  const wholesalePrice = product.price || Math.round(suggestedPrice * 0.65);
 
   const handleAddToCart = () => {
     addToCart(product, selectedSize, selectedColor || undefined, quantity);
@@ -59,6 +62,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   {product.ribbon}
                 </span>
               )}
+
+              <span className="absolute top-4 right-4 z-10 text-xs font-extrabold uppercase tracking-wider px-3 py-1 bg-emerald-600 text-white shadow-md flex items-center gap-1">
+                <Truck size={14} /> Envío Gratis (12+ Uds)
+              </span>
 
               <Image
                 src={selectedImage}
@@ -110,14 +117,24 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 {product.name}
               </h1>
 
-              {/* Price - NO TRAILING ZERO */}
-              <div className="mt-4 flex items-baseline gap-3">
-                <span className="text-3xl font-black text-neutral-900">
-                  {formatCOP(product.price)}
-                </span>
-                <span className="text-xs font-bold uppercase tracking-wider text-ush-pink bg-ush-pinkLight px-2.5 py-1 border border-rose-200">
-                  Precio Mayorista
-                </span>
+              {/* Dual Price Display */}
+              <div className="mt-4 p-4 bg-neutral-50 border border-gray-200 space-y-2">
+                <div className="flex items-baseline justify-between text-xs">
+                  <span className="font-semibold text-neutral-500 uppercase">Precio Sugerido E-commerce (PVP):</span>
+                  <span className="font-bold text-gray-400 line-through">{formatCOP(suggestedPrice)}</span>
+                </div>
+
+                <div className="flex items-baseline justify-between pt-2 border-t border-gray-200">
+                  <span className="text-sm font-extrabold text-ush-pink uppercase flex items-center gap-1">
+                    <Sparkles size={16} /> Precio Mayorista (12+ Uds):
+                  </span>
+                  <span className="text-3xl font-black text-neutral-900">
+                    {formatCOP(wholesalePrice)}
+                  </span>
+                </div>
+                <p className="text-[10px] text-neutral-500 font-medium text-right">
+                  Descuento del 35% al 42% aplicado a partir de 12 unidades combinadas + ENVÍO GRATIS.
+                </p>
               </div>
             </div>
 
@@ -127,9 +144,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 {product.full_description || product.description || 'Prenda de alta durabilidad confeccionada en mezclilla rígida de confección nacional.'}
               </p>
               <div className="text-xs text-neutral-500 space-y-1 pt-2">
-                <p>• <strong>Material:</strong> Mezclilla Rígida Premium (100% Algodón / Stretch según ref).</p>
-                <p>• <strong>Confección:</strong> Nacional de alta resistencia desde Itagüí, Antioquia.</p>
-                <p>• <strong>Disponibilidad:</strong> Entrega inmediata para pedidos mayoristas.</p>
+                <p>• <strong>Material:</strong> Mezclilla Rígida Premium (100% Algodón de alta resistencia).</p>
+                <p>• <strong>Confección:</strong> Nacional estilizadora desde Itagüí, Antioquia.</p>
+                <p>• <strong>Despachos:</strong> Envíos a todo el país con entrega coordinada.</p>
               </div>
             </div>
 

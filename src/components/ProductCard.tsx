@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, Eye, Check, Plus, Minus, Ruler } from 'lucide-react';
+import { ShoppingBag, Eye, Check, Plus, Minus, Ruler, Truck, Sparkles } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from './SizeGuideModal';
@@ -26,6 +26,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
   const mainImage = product.images[currentImageIndex] || product.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600';
+
+  const suggestedPrice = product.suggested_price || product.compare_price || 49900;
+  const wholesalePrice = product.price || Math.round(suggestedPrice * 0.65);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -57,6 +60,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </span>
         )}
 
+        {/* Free Shipping Badge */}
+        <span className="absolute top-3 right-3 z-10 text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 bg-emerald-600 text-white shadow-md flex items-center gap-1">
+          <Truck size={12} /> Envío Gratis (12+ Uds)
+        </span>
+
         <Image
           src={mainImage}
           alt={product.name}
@@ -68,7 +76,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Quick View Button */}
         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <span className="bg-white/95 backdrop-blur-md text-ush-navy px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-            <Eye size={14} /> Ver Detalle Completo
+            <Eye size={14} /> Ver Detalle
           </span>
         </div>
       </Link>
@@ -85,14 +93,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           {/* Description Snippet */}
           <p className="text-xs text-neutral-600 mt-1 line-clamp-2 font-light">
-            {product.description || 'Short o prenda de alta calidad confeccionada con mezclilla rígida flexible.'}
+            {product.description || 'Prenda confeccionada en mezclilla rígida de alta resistencia.'}
           </p>
 
-          {/* Price - NO TRAILING ZERO */}
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-xl font-black text-neutral-900">
-              {formatCOP(product.price)}
-            </span>
+          {/* Price Display */}
+          <div className="mt-3 bg-neutral-50 p-2.5 border border-gray-100 space-y-1">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-neutral-500 font-semibold uppercase">P. Sugerido Venta:</span>
+              <span className="text-xs text-gray-400 line-through font-bold">
+                {formatCOP(suggestedPrice)}
+              </span>
+            </div>
+
+            <div className="flex items-baseline justify-between pt-0.5 border-t border-gray-200">
+              <span className="text-xs font-extrabold text-ush-pink uppercase flex items-center gap-1">
+                <Sparkles size={12} /> Precio Mayorista:
+              </span>
+              <span className="text-lg font-black text-neutral-900">
+                {formatCOP(wholesalePrice)}
+              </span>
+            </div>
+            <p className="text-[9px] text-neutral-500 font-medium text-right">
+              (Aplica 35%-42% OFF al llevar 12+ uds)
+            </p>
           </div>
 
           {/* Tallas Selector (6 to 14) */}

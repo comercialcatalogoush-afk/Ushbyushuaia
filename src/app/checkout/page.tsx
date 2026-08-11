@@ -4,11 +4,13 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { submitOrder } from '@/lib/supabase';
-import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles } from 'lucide-react';
 
 export default function CheckoutPage() {
-  const { items, subtotalCOP, formatCOP, clearCart } = useCart();
+  const { items, subtotalCOP, formatCOP, clearCart, isWholesaleTier, calculateItemUnitPrice } = useCart();
   const [formData, setFormData] = useState({
+    doc_type: 'CC',
+    doc_number: '',
     name: '',
     email: '',
     phone: '',
@@ -26,6 +28,7 @@ export default function CheckoutPage() {
     setLoading(true);
     const orderPayload = {
       customer_name: formData.name,
+      customer_doc: `${formData.doc_type} ${formData.doc_number}`,
       customer_email: formData.email,
       customer_phone: formData.phone,
       shipping_address: formData.address,
@@ -38,8 +41,9 @@ export default function CheckoutPage() {
         size: i.selectedSize,
         color: i.selectedColor,
         quantity: i.quantity,
-        price: i.product.price,
+        unit_price: calculateItemUnitPrice(i),
       })),
+      is_wholesale: isWholesaleTier,
       status: 'pending'
     };
 
@@ -50,7 +54,6 @@ export default function CheckoutPage() {
       setCompletedOrder({ ...orderPayload, id: (res.data as any)?.[0]?.id || 'ORD-' + Math.floor(Math.random() * 10000) });
       clearCart();
     } else {
-      // Fallback completion even if DB RLS blocks
       setCompletedOrder({ ...orderPayload, id: 'ORD-' + Math.floor(Math.random() * 10000) });
       clearCart();
     }
@@ -59,11 +62,12 @@ export default function CheckoutPage() {
   if (completedOrder) {
     const whatsappMsg = encodeURIComponent(
       `¡Hola USH BY USHUAIA! Acabo de registrar mi pedido #${completedOrder.id}:\n\n` +
-        `Cliente: ${completedOrder.customer_name}\n` +
+        `Cliente: ${completedOrder.customer_name} (${completedOrder.customer_doc})\n` +
         `Ciudad: ${completedOrder.city}\n` +
         `Dirección: ${completedOrder.shipping_address}\n` +
-        `Total: ${formatCOP(completedOrder.total)}\n\n` +
-        `¿Me confirman para realizar el pago y acordar la transportadora?`
+        `Total: ${formatCOP(completedOrder.total)}\n` +
+        `Condición de envío: ${completedOrder.is_wholesale ? 'ENVÍO GRATIS INCLUIDO (12+ uds)' : 'Cliente asume costo de envío (<12 uds)'}\n\n` +
+        `¿Me confirman para realizar el pago y acordar el despacho?`
     );
 
     return (
@@ -75,7 +79,7 @@ export default function CheckoutPage() {
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400">
               Pedido Registrado
             </span>
-            <h1 className="text-2xl font-black uppercase text-neutral-900 mt-1">
+            <h1 className="text-2xl font-black uppercase text-ush-navy mt-1">
               ¡Gracias por tu compra!
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -84,9 +88,12 @@ export default function CheckoutPage() {
           </div>
 
           <div className="p-4 bg-neutral-50 border border-gray-100 text-left text-xs space-y-2 text-neutral-700">
-            <p><span className="font-bold">Cliente:</span> {completedOrder.customer_name}</p>
+            <p><span className="font-bold">Cliente:</span> {completedOrder.customer_name} ({completedOrder.customer_doc})</p>
             <p><span className="font-bold">Destino:</span> {completedOrder.city} - {completedOrder.shipping_address}</p>
             <p><span className="font-bold">Total a pagar:</span> {formatCOP(completedOrder.total)}</p>
+            <p className="pt-1 text-ush-pink font-bold border-t border-gray-200">
+              {completedOrder.is_wholesale ? '🎉 Tarifa Mayorista (35%-42% OFF) + ENVÍO GRATIS' : '⚠️ Tarifa Detal (20% OFF) - El cliente asume el costo de envío.'}
+            </p>
           </div>
 
           <div className="pt-2 space-y-3">
@@ -97,7 +104,7 @@ export default function CheckoutPage() {
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md transition-colors"
             >
               <MessageCircle size={18} />
-              <span>Confirmar Pedido por WhatsApp</span>
+              <span>Confirmar Pedido con Asesor por WhatsApp</span>
             </a>
 
             <Link
@@ -124,8 +131,8 @@ export default function CheckoutPage() {
           <span>Continuar Comprando</span>
         </Link>
 
-        <h1 className="text-3xl font-black uppercase text-neutral-900 mb-8 tracking-tight">
-          Tramitar Pedido Mayorista
+        <h1 className="text-3xl font-black uppercase text-ush-navy mb-8 tracking-tight">
+          Tramitar Pedido
         </h1>
 
         {items.length === 0 ? (
@@ -135,7 +142,7 @@ export default function CheckoutPage() {
             <p className="text-xs text-neutral-500 mt-1 mb-6">Agrega prendas antes de proceder al pago.</p>
             <Link
               href="/#catalogo"
-              className="bg-neutral-900 text-white text-xs font-bold uppercase tracking-widest px-6 py-3"
+              className="bg-ush-navy text-white text-xs font-bold uppercase tracking-widest px-6 py-3"
             >
               Ir al Catálogo
             </Link>
@@ -146,10 +153,43 @@ export default function CheckoutPage() {
             {/* Form Column */}
             <div className="lg:col-span-7 bg-white p-8 border border-gray-200 shadow-sm space-y-6">
               <h2 className="text-base font-bold uppercase tracking-wider text-neutral-900 border-b border-gray-100 pb-3">
-                Datos de Envío & Facturación
+                Datos de Envío & Documento del Cliente
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Document Type & Number */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                      Tipo Doc. *
+                    </label>
+                    <select
+                      value={formData.doc_type}
+                      onChange={(e) => setFormData({ ...formData, doc_type: e.target.value })}
+                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
+                    >
+                      <option value="CC">C.C. (Cédula)</option>
+                      <option value="NIT">NIT (Empresa)</option>
+                      <option value="CE">C.E. (Extranjería)</option>
+                      <option value="PAS">Pasaporte</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                      Número de Documento / NIT *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.doc_number}
+                      onChange={(e) => setFormData({ ...formData, doc_number: e.target.value })}
+                      placeholder="Ej: 1020304050 o 900123456-1"
+                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                     Nombre Completo / Razón Social *
@@ -160,7 +200,7 @@ export default function CheckoutPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ej: Carolina Restrepo"
-                    className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-black"
+                    className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                   />
                 </div>
 
@@ -175,7 +215,7 @@ export default function CheckoutPage() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="carolina@ejemplo.com"
-                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-black"
+                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                     />
                   </div>
 
@@ -189,7 +229,7 @@ export default function CheckoutPage() {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+57 300 000 0000"
-                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-black"
+                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                     />
                   </div>
                 </div>
@@ -205,7 +245,7 @@ export default function CheckoutPage() {
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       placeholder="Ej: Medellín, Bogotá, Bucaramanga..."
-                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-black"
+                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                     />
                   </div>
 
@@ -219,28 +259,28 @@ export default function CheckoutPage() {
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       placeholder="Calle / Carrera / Local / Barrio"
-                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-black"
+                      className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                    Notas adicionales para el despacho
+                    Notas adicionales para la entrega
                   </label>
                   <textarea
                     rows={2}
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     placeholder="Transportadora preferida (Servientrega, Envía, Interrapidísimo, etc)..."
-                    className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-black"
+                    className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-neutral-900 text-white font-bold py-4 px-6 text-xs uppercase tracking-widest hover:bg-neutral-800 transition-colors shadow-md disabled:opacity-50 mt-6"
+                  className="w-full bg-ush-navy text-white font-bold py-4 px-6 text-xs uppercase tracking-widest hover:bg-ush-pink transition-colors shadow-md disabled:opacity-50 mt-6"
                 >
                   {loading ? 'Registrando Pedido...' : 'Confirmar & Tramitar Pedido'}
                 </button>
@@ -254,27 +294,55 @@ export default function CheckoutPage() {
               </h2>
 
               <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto pr-2">
-                {items.map((item, index) => (
-                  <div key={index} className="py-3 flex justify-between items-center text-xs">
-                    <div>
-                      <p className="font-bold text-neutral-900 uppercase">{item.product.name}</p>
-                      <p className="text-neutral-500">Talla: {item.selectedSize || 'Estándar'} | Cant: {item.quantity}</p>
+                {items.map((item, index) => {
+                  const unitPrice = calculateItemUnitPrice(item);
+                  return (
+                    <div key={index} className="py-3 flex justify-between items-center text-xs">
+                      <div>
+                        <p className="font-black text-ush-navy uppercase">{item.product.name}</p>
+                        <p className="text-neutral-500">Talla: {item.selectedSize || '6'} | Cant: {item.quantity}</p>
+                      </div>
+                      <span className="font-extrabold text-neutral-900">
+                        {formatCOP(unitPrice * item.quantity)}
+                      </span>
                     </div>
-                    <span className="font-extrabold text-neutral-900">
-                      {formatCOP(item.product.price * item.quantity)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
+              {/* Discount Tier Notice */}
+              {isWholesaleTier ? (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold space-y-1">
+                  <p className="flex items-center gap-1 font-bold">
+                    <Sparkles size={14} /> Tarifa Mayorista Aplicada (35%-42% OFF)
+                  </p>
+                  <p className="flex items-center gap-1 text-[11px] text-emerald-700">
+                    <Truck size={14} /> <strong>¡Envío Gratis Incluido!</strong>
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
+                  <p className="font-bold">🏷️ Tarifa Detal (20% OFF Aplicado).</p>
+                  <p className="text-[11px] text-red-700 font-semibold flex items-center gap-1">
+                    <AlertTriangle size={12} /> Para compras menores a 12 uds, el cliente debe asumir el costo de envío.
+                  </p>
+                </div>
+              )}
 
               <div className="border-t border-gray-200 pt-4 space-y-2">
                 <div className="flex justify-between text-xs text-neutral-600">
-                  <span>Subtotal</span>
+                  <span>Subtotal prendas</span>
                   <span>{formatCOP(subtotalCOP)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-neutral-600">
-                  <span>Despacho</span>
-                  <span className="text-amber-700 font-semibold">Por acordar con transportadora</span>
+                  <span>Costo de envío</span>
+                  <span className="font-semibold">
+                    {isWholesaleTier ? (
+                      <span className="text-emerald-600 font-bold">GRATIS</span>
+                    ) : (
+                      <span className="text-amber-700">A asumir por el cliente</span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between text-base font-black text-neutral-900 pt-2 border-t border-gray-100">
                   <span>Total Estimado</span>

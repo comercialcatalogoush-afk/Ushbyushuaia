@@ -14,6 +14,8 @@ interface CartContextType {
   totalItemsCount: number;
   subtotalCOP: number;
   formatCOP: (amount: number) => string;
+  isWholesaleTier: boolean; // True if >= 12 units
+  calculateItemUnitPrice: (item: CartItem) => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -76,13 +78,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const subtotalCOP = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  // Check if wholesale threshold (12+ units) is reached
+  const isWholesaleTier = totalItemsCount >= 12;
+
+  // Calculate unit price for an item depending on wholesale tier (12+ vs <12)
+  const calculateItemUnitPrice = (item: CartItem) => {
+    const suggested = item.product.suggested_price || item.product.price || 49900;
+    const wholesale = item.product.price || suggested * 0.65;
+
+    if (isWholesaleTier) {
+      // Wholesale price (35% to 42% discount)
+      return wholesale;
+    } else {
+      // 20% discount on suggested e-commerce price for retail orders (<12 units)
+      return Math.round(suggested * 0.8);
+    }
+  };
+
+  const subtotalCOP = items.reduce((sum, item) => sum + calculateItemUnitPrice(item) * item.quantity, 0);
 
   // Clean COP formatting without trailing single zero
   const formatCOP = (amount: number) => {
     if (isNaN(amount)) return '$ 0';
-    // Format number with dots as thousand separators (e.g. 49900 -> 49.900)
-    const formattedNum = amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const cleanNum = Math.round(amount);
+    const formattedNum = cleanNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return `$ ${formattedNum}`;
   };
 
@@ -99,6 +118,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         totalItemsCount,
         subtotalCOP,
         formatCOP,
+        isWholesaleTier,
+        calculateItemUnitPrice,
       }}
     >
       {children}

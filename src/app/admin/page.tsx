@@ -5,15 +5,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
 import { Product } from '@/types';
-import { Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, Sparkles } from 'lucide-react';
+import { Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, CheckSquare, Square } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function AdminCatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(['6', '8', '10', '12', '14']);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const { formatCOP } = useCart();
+
+  const allAvailableSizes = ['6', '8', '10', '12', '14'];
 
   const loadProducts = async () => {
     setLoading(true);
@@ -27,20 +30,36 @@ export default function AdminCatalogPage() {
   }, []);
 
   const handleOpenNew = () => {
+    setSelectedSizes(['6', '8', '10', '12', '14']);
     setEditingProduct({
       id: '',
       name: 'REF: ',
       reference: '',
       slug: '',
-      price: 50000,
+      suggested_price: 49900,
+      price: 32400,
       ribbon: 'Nuevo',
-      description: 'Prenda confeccionada en mezclilla de alta calidad.',
-      full_description: 'Prenda en mezclilla rígida con corte estilizador.',
+      description: 'Prenda confeccionada en mezclilla rígida de alta calidad.',
+      full_description: 'Prenda en mezclilla rígida con corte estilizador confeccionada en Colombia.',
       in_stock: true,
       options: [{ id: 'talla-opt', key: 'Talla', values: ['6', '8', '10', '12', '14'] }],
       images: ['https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600'],
       video_url: ''
     });
+  };
+
+  const handleEditOpen = (product: Product) => {
+    const sizeOpt = product.options?.find(o => o.key.toLowerCase() === 'talla');
+    setSelectedSizes(sizeOpt?.values || ['6', '8', '10', '12', '14']);
+    setEditingProduct(product);
+  };
+
+  const toggleSize = (size: string) => {
+    if (selectedSizes.includes(size)) {
+      setSelectedSizes(selectedSizes.filter(s => s !== size));
+    } else {
+      setSelectedSizes([...selectedSizes, size].sort((a, b) => parseInt(a) - parseInt(b)));
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -50,27 +69,34 @@ export default function AdminCatalogPage() {
     const slug = editingProduct.slug || editingProduct.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'ref-' + Date.now();
     const reference = editingProduct.reference || editingProduct.name?.replace(/ref:?/i, '').trim() || 'REF';
 
+    const optionsPayload = [
+      {
+        id: 'talla-opt',
+        key: 'Talla',
+        values: selectedSizes.length > 0 ? selectedSizes : ['6', '8', '10', '12', '14']
+      }
+    ];
+
     const payload = {
       name: editingProduct.name,
       reference,
       slug,
-      price: editingProduct.price,
-      compare_price: editingProduct.compare_price || 0,
+      suggested_price: editingProduct.suggested_price || editingProduct.price || 49900,
+      price: editingProduct.price || 32400,
+      compare_price: editingProduct.suggested_price || 0,
       ribbon: editingProduct.ribbon || '',
       description: editingProduct.description || '',
       full_description: editingProduct.full_description || '',
       video_url: editingProduct.video_url || '',
       in_stock: editingProduct.in_stock !== false,
-      options: JSON.stringify(editingProduct.options || []),
+      options: JSON.stringify(optionsPayload),
       images: editingProduct.images || []
     };
 
     if (editingProduct.id) {
-      // Update existing
       const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
       if (error) console.error('Error updating product:', error.message);
     } else {
-      // Create new
       const { error } = await supabase.from('products').insert([payload]);
       if (error) console.error('Error inserting product:', error.message);
     }
@@ -99,10 +125,10 @@ export default function AdminCatalogPage() {
               <ArrowLeft size={14} /> Volver a la Tienda
             </Link>
             <h1 className="text-2xl font-black uppercase text-ush-navy tracking-tight">
-              Panel de Edición del Catálogo
+              Panel de Administración & Edición del Catálogo
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
-              Agrega nuevas referencias, edita fotos, videos, descripciones y precios en tiempo real.
+              Gestiona referencias, precios mayoristas vs e-commerce, tallas disponibles (6 a 14), fotos y videos promocionales.
             </p>
           </div>
 
@@ -154,22 +180,6 @@ export default function AdminCatalogPage() {
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                      Precio COP (sin puntos) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={editingProduct.price || 0}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
-                      placeholder="49900"
-                      className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                       Etiqueta / Ribbon
                     </label>
                     <select
@@ -183,19 +193,63 @@ export default function AdminCatalogPage() {
                       <option value="Oferta">Oferta</option>
                     </select>
                   </div>
+                </div>
 
+                {/* Dual Pricing */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-neutral-50 border border-gray-200">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                      Estado de Inventario
+                      Precio Sugerido Venta E-commerce (PVP) *
                     </label>
-                    <select
-                      value={editingProduct.in_stock ? 'true' : 'false'}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, in_stock: e.target.value === 'true' })}
-                      className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
-                    >
-                      <option value="true">Disponible (En Stock)</option>
-                      <option value="false">Agotado</option>
-                    </select>
+                    <input
+                      type="number"
+                      required
+                      value={editingProduct.suggested_price || 0}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, suggested_price: parseFloat(e.target.value) || 0 })}
+                      placeholder="49900"
+                      className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ush-pink mb-1">
+                      Precio Mayorista (12+ Uds - 35% a 42% OFF) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={editingProduct.price || 0}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                      placeholder="32400"
+                      className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Available Sizes Selector */}
+                <div className="p-3 bg-rose-50/50 border border-rose-200">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-ush-navy mb-2">
+                    Tallas Disponibles para esta Referencia:
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {allAvailableSizes.map((size) => {
+                      const isChecked = selectedSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => toggleSize(size)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border transition-all ${
+                            isChecked
+                              ? 'bg-ush-pink text-white border-ush-pink'
+                              : 'bg-white text-neutral-600 border-gray-300 hover:border-gray-400'
+                          }`}
+                        >
+                          {isChecked ? <CheckSquare size={14} /> : <Square size={14} />}
+                          <span>Talla {size}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -281,51 +335,58 @@ export default function AdminCatalogPage() {
           </div>
 
           <div className="divide-y divide-gray-200 overflow-x-auto">
-            {products.map((p) => (
-              <div key={p.id} className="p-4 flex items-center justify-between gap-4 hover:bg-neutral-50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="relative w-16 h-20 bg-neutral-100 border border-gray-200 overflow-hidden flex-shrink-0">
-                    <Image
-                      src={p.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200'}
-                      alt={p.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-black text-ush-navy uppercase">{p.name}</h3>
-                      {p.ribbon && (
-                        <span className="text-[9px] font-bold uppercase px-2 py-0.5 bg-ush-pink text-white">
-                          {p.ribbon}
-                        </span>
-                      )}
+            {products.map((p) => {
+              const sizeOpt = p.options?.find(o => o.key.toLowerCase() === 'talla');
+              const sizes = sizeOpt?.values || ['6', '8', '10', '12', '14'];
+              return (
+                <div key={p.id} className="p-4 flex items-center justify-between gap-4 hover:bg-neutral-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-16 h-20 bg-neutral-100 border border-gray-200 overflow-hidden flex-shrink-0">
+                      <Image
+                        src={p.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200'}
+                        alt={p.name}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
-                    <p className="text-xs font-bold text-neutral-900 mt-1">{formatCOP(p.price)}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1 font-light max-w-md">
-                      {p.description || 'Sin descripción'}
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-black text-ush-navy uppercase">{p.name}</h3>
+                        {p.ribbon && (
+                          <span className="text-[9px] font-bold uppercase px-2 py-0.5 bg-ush-pink text-white">
+                            {p.ribbon}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-xs font-black text-neutral-900">Mayorista: {formatCOP(p.price)}</span>
+                        <span className="text-[11px] text-gray-400 line-through">PVP: {formatCOP(p.suggested_price || p.price * 1.5)}</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 mt-1">
+                        Tallas activas: <span className="font-bold text-neutral-800">{sizes.join(', ')}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditOpen(p)}
+                      className="p-2 border border-gray-300 text-neutral-700 hover:border-ush-pink hover:text-ush-pink transition-colors text-xs font-bold flex items-center gap-1"
+                    >
+                      <Edit3 size={16} /> Editar
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(p.id)}
+                      className="p-2 border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                      title="Eliminar producto"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setEditingProduct(p)}
-                    className="p-2 border border-gray-300 text-neutral-700 hover:border-ush-pink hover:text-ush-pink transition-colors text-xs font-bold flex items-center gap-1"
-                  >
-                    <Edit3 size={16} /> Editar
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="p-2 border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
-                    title="Eliminar producto"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
