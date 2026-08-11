@@ -59,20 +59,20 @@ export const Header: React.FC = () => {
           {/* Logo / Brand - Adaptive Circular Logo */}
           <div className="flex-1 lg:flex-none text-center lg:text-left">
             <Link href="/" className="inline-flex items-center gap-3">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-ush-pink shadow-sm bg-white p-1">
+              <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-ush-pink shadow-sm bg-white p-0.5">
                 <Image
                   src="/images/ush-logo.jpg"
                   alt="USH by USHUAIA"
                   fill
                   priority
-                  className="object-contain p-0.5 rounded-full"
+                  className="object-contain rounded-full"
                 />
               </div>
               <div className="hidden sm:flex flex-col">
-                <span className="text-xl font-black tracking-[0.2em] text-ush-navy uppercase">
+                <span className="text-xl font-black tracking-[0.2em] text-neutral-900 uppercase">
                   USH
                 </span>
-                <span className="text-[9px] tracking-[0.35em] text-ush-pink font-bold uppercase -mt-1">
+                <span className="text-[9px] tracking-[0.35em] text-neutral-900 font-bold uppercase -mt-1 opacity-90">
                   BY USHUAIA
                 </span>
               </div>

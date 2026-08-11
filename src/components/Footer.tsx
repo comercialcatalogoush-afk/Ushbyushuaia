@@ -19,21 +19,21 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
 
           {/* Brand Col - Circular Logo */}
-          <div className="space-y-4">
-            <Link href="/" className="inline-block">
-              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-white/50 shadow-md bg-white/10 p-1">
+          <div className="space-y-3">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/60 shadow-sm bg-white p-0.5">
                 <Image
                   src="/images/ush-logo.jpg"
                   alt="USH by USHUAIA"
                   fill
-                  className="object-contain rounded-full p-0.5"
+                  className="object-cover rounded-full"
                 />
               </div>
+              <div>
+                <p className="text-lg font-black uppercase tracking-widest text-white leading-none">USH</p>
+                <p className="text-[9px] tracking-[0.35em] text-white font-bold uppercase mt-0.5 opacity-90">BY USHUAIA</p>
+              </div>
             </Link>
-            <div>
-              <p className="text-base font-black uppercase tracking-widest text-white">USH</p>
-              <p className="text-[10px] tracking-[0.35em] text-white/80 font-bold uppercase">BY USHUAIA</p>
-            </div>
             <p className="text-xs text-white/80 leading-relaxed font-light">
               Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.
             </p>

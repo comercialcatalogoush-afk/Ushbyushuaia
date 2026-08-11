@@ -265,29 +265,29 @@ export default function PoliticasPage() {
         </div>
 
         {/* 6. CANALES DE ATENCIÓN */}
-        <div className="bg-[#1b2333] text-white p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 shadow-md">
-          <div className="sm:col-span-3 border-b border-white/10 pb-3">
+        <div className="bg-white border border-gray-200 p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 shadow-sm">
+          <div className="sm:col-span-3 border-b border-gray-100 pb-3">
             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193]">Contacto Directo</span>
-            <h3 className="text-lg font-black uppercase mt-0.5">Canales de Atención</h3>
+            <h3 className="text-lg font-black uppercase tracking-tight text-neutral-900 mt-0.5">Canales de Atención</h3>
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#d88193]">WhatsApp</p>
-            <p className="text-sm font-bold">317 435 9968</p>
-            <p className="text-[11px] text-white/60 font-light pt-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#c06579]">WhatsApp</p>
+            <p className="text-sm font-black text-neutral-900">+57 302 202 8477 / 317 435 9968</p>
+            <p className="text-[11px] text-neutral-500 font-light pt-1">
               Lunes a jueves: 7:00 a. m. a 4:00 p. m.<br />
               Viernes: 7:00 a. m. a 3:30 p. m.
             </p>
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#d88193]">Correo Electrónico</p>
-            <p className="text-xs font-bold break-all">comercialmayoristas@ushuaiajeans.com.co</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#c06579]">Correo Electrónico</p>
+            <p className="text-xs font-bold text-neutral-900 break-all">comercialmayoristas@ushuaiajeans.com.co</p>
           </div>
 
           <div className="space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#d88193]">Tienda Virtual</p>
-            <p className="text-xs font-bold">www.ushuaiajeans.com.co</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#c06579]">Tienda Virtual</p>
+            <p className="text-xs font-bold text-neutral-900">www.ushuaiajeans.com.co</p>
           </div>
         </div>
 

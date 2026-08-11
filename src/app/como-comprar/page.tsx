@@ -35,15 +35,15 @@ export default function ComoComprarPage() {
   return (
     <div className="py-12 bg-white space-y-16">
       {/* Header Banner */}
-      <div className="bg-neutral-900 text-white py-16 px-4">
+      <div className="bg-neutral-50 border-b border-gray-200 text-neutral-900 py-16 px-4">
         <div className="max-w-4xl mx-auto text-center space-y-4">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-amber-400">
+          <span className="text-xs font-bold uppercase tracking-[0.25em] text-[#d88193]">
             Escala & Condiciones
           </span>
-          <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-neutral-900">
             Beneficios & Cómo Comprar
           </h1>
-          <p className="text-sm text-neutral-300 max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="text-sm text-neutral-600 max-w-2xl mx-auto font-light leading-relaxed">
             Te ofrecemos un modelo comercial ágil y transparente diseñado especialmente para maximizar el margen de ganancia de tu tienda.
           </p>
         </div>
@@ -65,8 +65,8 @@ export default function ComoComprarPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, idx) => (
-            <div key={idx} className="bg-neutral-50 p-6 border border-gray-200 relative">
-              <span className="text-4xl font-black text-amber-500/30 absolute top-4 right-4">
+            <div key={idx} className="bg-white p-6 border border-gray-200 shadow-sm relative">
+              <span className="text-4xl font-black text-[#d88193]/30 absolute top-4 right-4">
                 {step.num}
               </span>
               <h3 className="text-base font-bold text-neutral-900 mb-2 pr-8 uppercase">
@@ -82,7 +82,7 @@ export default function ComoComprarPage() {
         <div className="mt-12 text-center">
           <Link
             href="/#catalogo"
-            className="inline-flex items-center gap-2 bg-neutral-900 text-white font-bold px-8 py-4 text-xs uppercase tracking-widest hover:bg-neutral-800 transition-colors shadow-md"
+            className="inline-flex items-center gap-2 bg-[#1b2333] hover:bg-[#d88193] text-white font-bold px-8 py-4 text-xs uppercase tracking-widest transition-colors shadow-md"
           >
             <span>Ver Productos Disponibles</span>
             <ArrowRight size={16} />
