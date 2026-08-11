@@ -9,14 +9,15 @@ export interface Product {
   name: string;
   reference: string;
   slug: string;
-  suggested_price: number; // Precio Sugerido E-commerce (PVP)
-  price: number; // Precio Mayorista (35%-42% off)
+  suggested_price: number;
+  price: number;
   compare_price?: number;
   ribbon?: string;
   description?: string;
   full_description?: string;
   video_url?: string;
   in_stock: boolean;
+  hidden?: boolean; // Admin-only: hidden products not shown to regular users
   options: ProductOption[];
   images: string[];
   category_id?: string;

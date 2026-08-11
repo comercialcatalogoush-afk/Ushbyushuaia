@@ -32,6 +32,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       full_description: item.full_description || '',
       video_url: item.video_url || '',
       in_stock: item.in_stock !== false,
+      hidden: item.hidden === true,
       options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options || []),
       images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
       category_id: item.category_id

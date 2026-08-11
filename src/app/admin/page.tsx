@@ -120,6 +120,7 @@ export default function AdminCatalogPage() {
       full_description: editingProduct.full_description || '',
       video_url: editingProduct.video_url || '',
       in_stock: editingProduct.in_stock !== false,
+      hidden: editingProduct.hidden === true,
       options: JSON.stringify(optionsPayload),
       images: editingProduct.images || []
     };
@@ -424,6 +425,27 @@ export default function AdminCatalogPage() {
                   />
                 </div>
 
+                {/* Visibility Toggle */}
+                <div className="p-3 bg-amber-50 border border-amber-200 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-amber-900">Visibilidad en el Catálogo</p>
+                    <p className="text-[10px] text-amber-700 mt-0.5">
+                      {editingProduct.hidden ? '🔴 Oculto — Solo el admin puede verlo' : '🟢 Visible — Todos los clientes lo ven'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingProduct({ ...editingProduct, hidden: !editingProduct.hidden })}
+                    className={`relative w-14 h-7 rounded-full transition-colors flex-shrink-0 ${
+                      editingProduct.hidden ? 'bg-red-400' : 'bg-emerald-500'
+                    }`}
+                  >
+                    <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                      editingProduct.hidden ? 'left-1 translate-x-0' : 'left-1 translate-x-7'
+                    }`} />
+                  </button>
+                </div>
+
                 <div className="pt-4 border-t border-gray-200 flex justify-end gap-3">
                   <button
                     type="button"
@@ -438,6 +460,7 @@ export default function AdminCatalogPage() {
                   >
                     <Save size={16} /> Guardar Referencia
                   </button>
+
                 </div>
               </form>
 

@@ -38,21 +38,12 @@ export const Footer: React.FC = () => {
               Navegación
             </h4>
             <ul className="space-y-2.5 text-xs text-white/90 font-light">
-              <li>
-                <Link href="/" className="hover:text-white transition-colors hover:font-semibold">Inicio</Link>
-              </li>
-              <li>
-                <Link href="/como-comprar" className="hover:text-white transition-colors hover:font-semibold">Beneficios Mayoristas</Link>
-              </li>
-              <li>
-                <Link href="/#catalogo" className="hover:text-white transition-colors hover:font-semibold">Catálogo de Productos</Link>
-              </li>
-              <li>
-                <Link href="/contacto" className="hover:text-white transition-colors hover:font-semibold">Contacto Directo</Link>
-              </li>
-              <li>
-                <Link href="/profile" className="hover:text-white transition-colors hover:font-semibold">Iniciar Sesión / Mi Cuenta</Link>
-              </li>
+              <li><Link href="/" className="hover:text-white transition-colors hover:font-semibold">Inicio</Link></li>
+              <li><Link href="/como-comprar" className="hover:text-white transition-colors hover:font-semibold">Beneficios Mayoristas</Link></li>
+              <li><Link href="/#catalogo" className="hover:text-white transition-colors hover:font-semibold">Catálogo de Productos</Link></li>
+              <li><Link href="/contacto" className="hover:text-white transition-colors hover:font-semibold">Contacto Directo</Link></li>
+              <li><Link href="/profile" className="hover:text-white transition-colors hover:font-semibold">Iniciar Sesión / Mi Cuenta</Link></li>
+              <li><Link href="/politicas" className="hover:text-white transition-colors hover:font-semibold flex items-center gap-1">📋 Políticas y Devoluciones</Link></li>
             </ul>
           </div>
 
