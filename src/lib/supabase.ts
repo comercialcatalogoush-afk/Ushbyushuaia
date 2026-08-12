@@ -7,16 +7,19 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publish
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const PRODUCTS_STORAGE_KEY = 'ush_products_override_v2';
+const PRODUCTS_STORAGE_KEY = 'ush_products_override_v3';
 
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;
   try {
+    // Purge obsolete legacy cache keys that were trapping 63 items
+    localStorage.removeItem('ush_products_override_v2');
+    localStorage.removeItem('ush_products_override');
+
     const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Merge with INITIAL_PRODUCTS to ensure any missing references (e.g. from an old 63-item override) are included
         const existingRefs = new Set(parsed.map((p: Product) => p.reference || p.id));
         const missing = INITIAL_PRODUCTS.filter((p) => !existingRefs.has(p.reference) && !existingRefs.has(p.id));
         return [...parsed, ...missing];
