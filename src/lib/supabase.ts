@@ -80,6 +80,60 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
   }
 }
 
+// ── ADMIN-ONLY: Always fetch directly from Supabase + merge with INITIAL_PRODUCTS ──
+// This bypasses localStorage so the admin always sees ALL products (including ones
+// not yet saved to localStorage on the current device).
+export async function fetchAllProductsAdmin(): Promise<Product[]> {
+  const mapItem = (item: any): Product => ({
+    id: item.id,
+    name: item.name,
+    reference: item.reference || item.name.replace(/ref:?/i, '').trim(),
+    slug: item.slug,
+    suggested_price: item.suggested_price ? Number(item.suggested_price) : Number(item.compare_price || item.price || 49900),
+    price: Number(item.price),
+    compare_price: item.compare_price ? Number(item.compare_price) : 0,
+    ribbon: item.ribbon || '',
+    fit: item.fit || 'Wide Leg',
+    status: item.status || (item.hidden ? 'draft' : 'published'),
+    stock_by_size: typeof item.stock_by_size === 'string' ? JSON.parse(item.stock_by_size) : (item.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 }),
+    is_best_seller: item.is_best_seller === true,
+    description: item.description || '',
+    full_description: item.full_description || '',
+    video_url: item.video_url || '',
+    in_stock: item.in_stock !== false,
+    hidden: item.hidden === true || item.status === 'draft',
+    options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options || []),
+    images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
+    category_id: item.category_id,
+  });
+
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1000); // ensure no implicit 100-row cap
+
+    if (!error && data && data.length > 0) {
+      const supabaseProducts = data.map(mapItem);
+      // Merge: add any INITIAL_PRODUCTS not already in Supabase (by id or slug)
+      const supabaseIds = new Set(supabaseProducts.map((p) => p.id));
+      const supabaseSlugs = new Set(supabaseProducts.map((p) => p.slug));
+      const localOnly = INITIAL_PRODUCTS.filter(
+        (p) => !supabaseIds.has(p.id) && !supabaseSlugs.has(p.slug)
+      );
+      return [...supabaseProducts, ...localOnly];
+    }
+  } catch (e) {
+    console.error('fetchAllProductsAdmin Supabase error:', e);
+  }
+
+  // Fallback: return local override if available, else INITIAL_PRODUCTS
+  const localOverride = getLocalProductsOverride();
+  return localOverride && localOverride.length > 0 ? localOverride : INITIAL_PRODUCTS;
+}
+
+
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
   // On the server localStorage is unavailable, so we query Supabase directly
   // to ensure newly-added products (not yet in INITIAL_PRODUCTS) resolve correctly.

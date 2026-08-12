@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Filter, Tag, ChevronDown } from 'lucide-react';
+import { Filter, Tag, ChevronDown, ChevronRight } from 'lucide-react';
 import { getLocalProductsOverride, getTopSellingProductIds } from '@/lib/supabase';
 
 interface ProductGridProps {
   products: Product[];
 }
 
+const PAGE_SIZE = 12;
 const DEFAULT_FITS = ['Wide Leg', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
 const CATEGORIES = ['Todos', 'Nuevo', 'Jeans', 'Shorts', 'Faldas', 'Cargo', 'Bermuda', 'Rebajas'];
 
@@ -21,6 +22,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [availableFits, setAvailableFits] = useState<string[]>(DEFAULT_FITS);
   const [availableCategories, setAvailableCategories] = useState<string[]>(CATEGORIES);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     const updateList = () => {
@@ -64,13 +66,22 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     };
   }, [products]);
 
-  // Compute which fits actually have products (only show active fits)
+  // Reset pagination when filters change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedCategory, selectedFit]);
+
+  // Only show fits that have at least one product
   const activeFits = availableFits.filter((fit) =>
     displayProducts.some((p) => p.fit && p.fit.toLowerCase() === fit.toLowerCase())
   );
 
   const filteredProducts = displayProducts.filter((p) => {
     if (p.hidden || p.status === 'draft') return false;
+
+    // Only show products that have at least one valid image
+    const hasImage = p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '';
+    if (!hasImage) return false;
 
     // Category filter
     if (selectedCategory !== 'Todos') {
@@ -90,6 +101,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
     return true;
   });
+
+  const paginatedProducts = filteredProducts.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredProducts.length;
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + PAGE_SIZE);
+  };
 
   return (
     <section id="catalogo" className="scroll-mt-20">
@@ -192,20 +210,41 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 {selectedCategory === 'Todos' ? 'Colección Completa' : selectedCategory}
                 {selectedFit !== 'all' && <span className="text-[#d88193]"> · {selectedFit}</span>}
               </h2>
-              <p className="text-xs text-neutral-500 mt-0.5">{filteredProducts.length} referencias disponibles</p>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                {filteredProducts.length} referencias disponibles
+                {filteredProducts.length > visibleCount && ` · Mostrando ${paginatedProducts.length} de ${filteredProducts.length}`}
+              </p>
             </div>
           </div>
 
-          {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => {
-                const isTopSeller =
-                  topSellerIds.includes(product.id) ||
-                  topSellerIds.includes(product.reference) ||
-                  product.is_best_seller;
-                return <ProductCard key={product.id} product={product} isTopSeller={isTopSeller} />;
-              })}
-            </div>
+          {paginatedProducts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                {paginatedProducts.map((product) => {
+                  const isTopSeller =
+                    topSellerIds.includes(product.id) ||
+                    topSellerIds.includes(product.reference) ||
+                    product.is_best_seller;
+                  return <ProductCard key={product.id} product={product} isTopSeller={isTopSeller} />;
+                })}
+              </div>
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="mt-12 text-center">
+                  <button
+                    onClick={handleLoadMore}
+                    className="inline-flex items-center gap-2 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-10 py-4 hover:bg-[#d88193] transition-colors shadow-md group"
+                  >
+                    <span>Cargar más ({filteredProducts.length - visibleCount} referencias restantes)</span>
+                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  <p className="text-[11px] text-neutral-400 mt-3">
+                    Mostrando {paginatedProducts.length} de {filteredProducts.length} referencias
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-20 bg-neutral-50 border border-dashed border-gray-200">
               <Filter size={36} className="mx-auto text-neutral-300 mb-3" />

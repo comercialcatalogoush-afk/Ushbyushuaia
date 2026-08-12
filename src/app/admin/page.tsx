@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchProductsFromSupabase, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory } from '@/lib/supabase';
 import { Product, PriceHistoryRecord } from '@/types';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
@@ -123,7 +123,8 @@ export default function AdminCatalogPage() {
 
   const loadProducts = async () => {
     setLoading(true);
-    const data = await fetchProductsFromSupabase();
+    // Always fetch directly — bypasses localStorage so admin sees ALL 90 products
+    const data = await fetchAllProductsAdmin();
     setProducts(data);
     setLoading(false);
   };

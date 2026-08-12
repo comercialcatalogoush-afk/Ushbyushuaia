@@ -38,10 +38,7 @@ export const Hero: React.FC = () => {
             </span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-rose-50 text-sm sm:text-base font-medium leading-relaxed drop-shadow">
-            Catálogo mayorista oficial en mezclilla rígida. Jeans wide leg tiro alto, faldas y shorts con confección colombiana estilizadora. Escala especial de precios a partir de 12 unidades + Envío Gratis.
-          </p>
+
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
@@ -62,21 +59,7 @@ export const Hero: React.FC = () => {
             </Link>
           </div>
 
-          {/* Feature Counters */}
-          <div className="mt-12 pt-8 border-t border-white/20 grid grid-cols-3 gap-4">
-            <div>
-              <p className="text-xl sm:text-2xl font-black text-white">6 a 14</p>
-              <p className="text-[10px] text-rose-100 uppercase tracking-wider font-bold">Tallas Colombia</p>
-            </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-black text-white">12+ Uds</p>
-              <p className="text-[10px] text-rose-100 uppercase tracking-wider font-bold">Escala Mayorista</p>
-            </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-black text-white">Itagüí</p>
-              <p className="text-[10px] text-rose-100 uppercase tracking-wider font-bold">Despachos Directos</p>
-            </div>
-          </div>
+
 
         </div>
       </div>

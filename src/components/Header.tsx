@@ -35,13 +35,6 @@ export const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
-      {/* Top Banner Notice */}
-      <div className="bg-ush-navy text-white text-xs py-2 px-4 text-center tracking-wider font-light flex items-center justify-center gap-2">
-        <span className="bg-ush-pink text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded">
-          Mayorista
-        </span>
-        <span>Atención directa a tiendas y distribuidores - Envíos desde Itagüí, Antioquia</span>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
