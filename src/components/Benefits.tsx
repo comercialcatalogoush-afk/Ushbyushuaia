@@ -32,7 +32,7 @@ export const Benefits: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 bg-neutral-50 border-b border-gray-100">
+    <section className="py-16 bg-neutral-50 border-b border-gray-100" data-aos="fade-up">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink mb-2">

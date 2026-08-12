@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, Search, Bell, User, Menu, X, Settings } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, X, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from './Logo';
 
@@ -13,28 +12,25 @@ export const Header: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [activeSubSubmenu, setActiveSubSubmenu] = useState<boolean>(false);
   const pathname = usePathname();
   const { totalItemsCount, setIsCartOpen } = useCart();
 
   useEffect(() => {
-    // Check if admin is logged in
     const authStatus = sessionStorage.getItem('ush_admin_auth');
     setIsAdminLoggedIn(authStatus === 'true');
   }, [pathname]);
 
-  const navLinks = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Beneficios', href: '/como-comprar' },
-    { name: 'Catálogo', href: '/#catalogo' },
-    { name: 'Contacto', href: '/contacto' },
-  ];
-
-  if (isAdminLoggedIn) {
-    navLinks.push({ name: 'Editar Catálogo (Admin)', href: '/admin' });
-  }
+  const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY'];
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
+      
+      {/* ── Top Notice Bar (estilo ushuaiajeans.com.co) ── */}
+      <div className="bg-[#d88193] text-white text-[11px] py-1.5 px-4 text-center tracking-widest font-bold uppercase flex items-center justify-center gap-2">
+        <span>60 DÍAS DE GARANTÍA EN TODAS LAS PRENDAS - 30 DÍAS PARA CAMBIOS</span>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -55,25 +51,127 @@ export const Header: React.FC = () => {
             <Logo variant="dark" size="md" />
           </div>
 
-          {/* Navigation Links - Desktop */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`text-xs uppercase tracking-widest font-semibold transition-colors hover:text-ush-pink relative py-1 ${
-                    isActive ? 'text-ush-pink font-bold' : 'text-ush-navy'
-                  }`}
-                >
-                  {link.name}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-ush-pink rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
+          {/* Navigation Links - Desktop (ushuaiajeans.com.co style) */}
+          <nav className="hidden lg:flex items-center space-x-7">
+            <Link
+              href="/#catalogo"
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            >
+              NUEVO
+            </Link>
+
+            {/* MUJER Mega Dropdown */}
+            <div
+              className="relative group py-2"
+              onMouseEnter={() => setActiveDropdown('mujer')}
+              onMouseLeave={() => { setActiveDropdown(null); setActiveSubSubmenu(false); }}
+            >
+              <button
+                className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors flex items-center gap-1 py-1"
+              >
+                <span>MUJER</span>
+                <ChevronDown size={14} className="group-hover:rotate-180 transition-transform" />
+              </button>
+
+              {/* Submenu Level 1 */}
+              {activeDropdown === 'mujer' && (
+                <div className="absolute top-full left-0 bg-white border border-gray-200 shadow-xl w-48 py-2 z-50 animate-fadeIn">
+                  <Link
+                    href="/#catalogo"
+                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-rose-50 border-b border-gray-100"
+                  >
+                    VER TODO
+                  </Link>
+
+                  {/* JEANS item with nested sub-submenu */}
+                  <div
+                    className="relative group/jeans"
+                    onMouseEnter={() => setActiveSubSubmenu(true)}
+                  >
+                    <Link
+                      href="/#catalogo"
+                      className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#d88193] bg-rose-50/50 hover:bg-rose-50"
+                    >
+                      <span>JEANS</span>
+                      <ChevronRight size={14} />
+                    </Link>
+
+                    {/* Submenu Level 2 (Fits) */}
+                    {activeSubSubmenu && (
+                      <div className="absolute top-0 left-full bg-white border border-gray-200 shadow-xl w-44 py-2 z-50 animate-fadeIn">
+                        {jeansFits.map((fit) => (
+                          <Link
+                            key={fit}
+                            href="/#catalogo"
+                            className="block px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                          >
+                            {fit}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <Link
+                    href="/#catalogo"
+                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                  >
+                    PANTALONES
+                  </Link>
+
+                  <Link
+                    href="/#catalogo"
+                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                  >
+                    CARGOS
+                  </Link>
+
+                  <Link
+                    href="/#catalogo"
+                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                  >
+                    SHORTS
+                  </Link>
+
+                  <Link
+                    href="/#catalogo"
+                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                  >
+                    FALDAS
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            <Link
+              href="/#catalogo"
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            >
+              REBAJAS
+            </Link>
+
+            <Link
+              href="/como-comprar"
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            >
+              BENEFICIOS
+            </Link>
+
+            <Link
+              href="/contacto"
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            >
+              CONTACTO
+            </Link>
+
+            {isAdminLoggedIn && (
+              <Link
+                href="/admin"
+                className="text-xs uppercase tracking-widest font-extrabold text-[#d88193] hover:underline py-2"
+              >
+                ADMIN (CATÁLOGO)
+              </Link>
+            )}
           </nav>
 
           {/* Right Action Icons */}
@@ -87,7 +185,7 @@ export const Header: React.FC = () => {
               <Search size={20} />
             </button>
 
-            {/* Admin catalog editor button - ONLY VISIBLE IF LOGGED IN */}
+            {/* Admin button if logged in */}
             {isAdminLoggedIn && (
               <Link
                 href="/admin"
@@ -146,16 +244,41 @@ export const Header: React.FC = () => {
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-6 space-y-3">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-sm font-bold uppercase tracking-wider text-ush-navy hover:text-ush-pink py-2 border-b border-gray-50"
-            >
-              {link.name}
-            </Link>
-          ))}
+          <Link
+            href="/#catalogo"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            NUEVO
+          </Link>
+          <Link
+            href="/#catalogo"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            MUJER — JEANS / SHORTS / FALDAS
+          </Link>
+          <Link
+            href="/#catalogo"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            REBAJAS
+          </Link>
+          <Link
+            href="/como-comprar"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            BENEFICIOS MAYORISTAS
+          </Link>
+          <Link
+            href="/contacto"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            CONTACTO
+          </Link>
           <div className="pt-2 flex items-center justify-between text-xs text-neutral-600">
             <Link
               href="/profile"

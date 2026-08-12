@@ -21,7 +21,7 @@ export const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-[#b5586c] via-[#d88193]/80 to-transparent z-10" />
       </div>
 
-      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28" data-aos="fade-up">
         <div className="max-w-2xl space-y-6">
           
           {/* Badge */}

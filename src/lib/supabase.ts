@@ -16,7 +16,10 @@ export function getLocalProductsOverride(): Product[] | null {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        // Merge with INITIAL_PRODUCTS to ensure any missing references (e.g. from an old 63-item override) are included
+        const existingRefs = new Set(parsed.map((p: Product) => p.reference || p.id));
+        const missing = INITIAL_PRODUCTS.filter((p) => !existingRefs.has(p.reference) && !existingRefs.has(p.id));
+        return [...parsed, ...missing];
       }
     }
   } catch (e) {

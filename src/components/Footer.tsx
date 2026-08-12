@@ -129,7 +129,6 @@ export const Footer: React.FC = () => {
                 Escala de precios especiales aplicables a partir de 12 unidades combinadas por pedido. Envío gratis incluido.
               </p>
               <ul className="space-y-1.5 text-[11px] text-white/80 font-light">
-                <li>✓ Envío con todas las transportadoras</li>
                 <li>✓ Garantía 45 días por defectos de fábrica</li>
                 <li>✓ Cambios en 15 días</li>
                 <li>✓ Asesoría comercial directa</li>

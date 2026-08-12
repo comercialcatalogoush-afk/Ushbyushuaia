@@ -134,10 +134,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Clean COP formatting without trailing single zero
   const formatCOP = (amount: number) => {
-    if (isNaN(amount)) return '$ 0';
+    if (isNaN(amount)) return '$0';
     const cleanNum = Math.round(amount);
     const formattedNum = cleanNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `$ ${formattedNum}`;
+    return `$${formattedNum}`;
   };
 
   return (

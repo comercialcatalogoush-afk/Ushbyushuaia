@@ -31,6 +31,7 @@ export default function AdminCatalogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterFit, setFilterFit] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterMedia, setFilterMedia] = useState('all');
 
   // Category & Fit Management State
   const [availableCategories, setAvailableCategories] = useState<string[]>(DEFAULT_CATEGORIES);
@@ -480,6 +481,11 @@ export default function AdminCatalogPage() {
       if (filterStatus === 'published' && isDraft) return false;
       if (filterStatus === 'draft' && !isDraft) return false;
     }
+    if (filterMedia !== 'all') {
+      const hasPhoto = p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '';
+      if (filterMedia === 'with_photo' && !hasPhoto) return false;
+      if (filterMedia === 'no_photo' && hasPhoto) return false;
+    }
     return true;
   });
 
@@ -614,8 +620,18 @@ export default function AdminCatalogPage() {
                   className="border border-gray-300 p-2 text-xs font-medium text-neutral-700 bg-white focus:outline-none focus:border-[#d88193]"
                 >
                   <option value="all">Todos los Estados</option>
-                  <option value="published">Publicados 🟢</option>
-                  <option value="draft">Borradores / Ocultos 🔴</option>
+                  <option value="published">🟢 Publicados (Visibles)</option>
+                  <option value="draft">🔴 Borradores (Ocultos)</option>
+                </select>
+
+                <select
+                  value={filterMedia}
+                  onChange={(e) => setFilterMedia(e.target.value)}
+                  className="border border-gray-300 p-2 text-xs font-medium text-neutral-700 bg-white focus:outline-none focus:border-[#d88193]"
+                >
+                  <option value="all">Todas las Fotos</option>
+                  <option value="with_photo">🖼️ Con Fotos ({products.filter(p => p.images && p.images.length > 0 && p.images[0]).length})</option>
+                  <option value="no_photo">📷 Sin Foto / Por Editar ({products.filter(p => !p.images || p.images.length === 0 || !p.images[0]).length})</option>
                 </select>
               </div>
             </div>
