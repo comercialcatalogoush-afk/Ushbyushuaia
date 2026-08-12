@@ -32,10 +32,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${inter.variable} ${playfair.variable} scroll-smooth`}>
-      <head>
-        {/* AOS (Animate On Scroll) CDN */}
-        <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
-      </head>
       <body className="flex flex-col min-h-screen">
         <CartProvider>
           <Header />
@@ -44,25 +40,6 @@ export default function RootLayout({
           <main className="flex-grow">{children}</main>
           <Footer />
         </CartProvider>
-
-        {/* AOS Init Script */}
-        <Script
-          src="https://unpkg.com/aos@next/dist/aos.js"
-          strategy="afterInteractive"
-        />
-        <Script id="aos-init" strategy="afterInteractive">
-          {`
-            document.addEventListener('DOMContentLoaded', function() {
-              if (window.AOS) {
-                window.AOS.init({
-                  duration: 700,
-                  once: true,
-                  easing: 'ease-out-cubic'
-                });
-              }
-            });
-          `}
-        </Script>
       </body>
     </html>
   );

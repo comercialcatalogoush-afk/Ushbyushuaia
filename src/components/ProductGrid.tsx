@@ -161,43 +161,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
         </div>
       </div>
 
-      {/* ── Fit Filter Selector Bar ── */}
-      {activeFits.length > 0 && (
-        <div className="bg-neutral-50 border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
-              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1 mr-1 shrink-0">
-                <Tag size={12} className="text-[#d88193]" /> Fit:
-              </span>
 
-              <button
-                onClick={() => setSelectedFit('all')}
-                className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all border shrink-0 ${
-                  selectedFit === 'all'
-                    ? 'bg-[#1b2333] text-white border-[#1b2333]'
-                    : 'bg-white text-neutral-600 border-gray-200 hover:bg-neutral-100'
-                }`}
-              >
-                Todos los Fits
-              </button>
-
-              {activeFits.map((fit) => (
-                <button
-                  key={fit}
-                  onClick={() => setSelectedFit(fit)}
-                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all border shrink-0 ${
-                    selectedFit.toLowerCase() === fit.toLowerCase()
-                      ? 'bg-[#d88193] text-white border-[#d88193]'
-                      : 'bg-white text-neutral-600 border-gray-200 hover:bg-neutral-100'
-                  }`}
-                >
-                  {fit}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Product Grid ── */}
       <div className="py-12 bg-white">
