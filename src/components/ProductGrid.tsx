@@ -19,6 +19,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
   const [topSellerIds, setTopSellerIds] = useState<string[]>([]);
   const [availableFits, setAvailableFits] = useState<string[]>(DEFAULT_FITS);
+  const [availableCategories, setAvailableCategories] = useState<string[]>(CATEGORIES);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
 
   useEffect(() => {
@@ -34,24 +35,32 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
     getTopSellingProductIds().then((ids) => setTopSellerIds(ids));
 
-    try {
-      const saved = localStorage.getItem('ush_admin_fits');
-      if (saved) setAvailableFits(JSON.parse(saved));
-    } catch {}
-
-    const onProductsUpdated = () => updateList();
-    const onFitsUpdated = () => {
+    const loadSaved = () => {
       try {
-        const saved = localStorage.getItem('ush_admin_fits');
-        if (saved) setAvailableFits(JSON.parse(saved));
+        const savedFits = localStorage.getItem('ush_admin_fits');
+        if (savedFits) setAvailableFits(JSON.parse(savedFits));
+
+        const savedCats = localStorage.getItem('ush_admin_categories');
+        if (savedCats) {
+          const parsed = JSON.parse(savedCats);
+          setAvailableCategories(['Todos', 'Nuevo', ...parsed.filter((c: string) => c !== 'Todos' && c !== 'Nuevo')]);
+        }
       } catch {}
     };
+    loadSaved();
+
+    const onProductsUpdated = () => updateList();
+    const onFitsUpdated = () => loadSaved();
+    const onCatsUpdated = () => loadSaved();
 
     window.addEventListener('ush_products_updated', onProductsUpdated);
     window.addEventListener('ush_fits_updated', onFitsUpdated);
+    window.addEventListener('ush_categories_updated', onCatsUpdated);
+
     return () => {
       window.removeEventListener('ush_products_updated', onProductsUpdated);
       window.removeEventListener('ush_fits_updated', onFitsUpdated);
+      window.removeEventListener('ush_categories_updated', onCatsUpdated);
     };
   }, [products]);
 
@@ -91,7 +100,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
           {/* Desktop category tabs */}
           <nav className="hidden md:flex items-center gap-0 overflow-x-auto scrollbar-none">
-            {CATEGORIES.map((cat) => (
+            {availableCategories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -117,7 +126,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
             </button>
             {mobileCatOpen && (
               <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-lg z-50">
-                {CATEGORIES.map((cat) => (
+                {availableCategories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => { setSelectedCategory(cat); setMobileCatOpen(false); }}

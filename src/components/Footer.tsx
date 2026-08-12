@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Logo } from './Logo';
 import { Mail, MapPin, Phone, Instagram, Facebook, Youtube } from 'lucide-react';
 
 // TikTok icon (not in lucide)
@@ -18,22 +19,9 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
 
-          {/* Brand Col - Circular Logo */}
+          {/* Brand Col - Official Logo */}
           <div className="space-y-3">
-            <Link href="/" className="inline-flex items-center gap-3">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/60 shadow-sm bg-white p-0.5">
-                <Image
-                  src="/images/ush-logo.jpg"
-                  alt="USH by USHUAIA"
-                  fill
-                  className="object-cover rounded-full"
-                />
-              </div>
-              <div>
-                <p className="text-lg font-black uppercase tracking-widest text-white leading-none">USH</p>
-                <p className="text-[9px] tracking-[0.35em] text-white font-bold uppercase mt-0.5 opacity-90">BY USHUAIA</p>
-              </div>
-            </Link>
+            <Logo variant="light" size="md" />
             <p className="text-xs text-white/80 leading-relaxed font-light">
               Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.
             </p>
