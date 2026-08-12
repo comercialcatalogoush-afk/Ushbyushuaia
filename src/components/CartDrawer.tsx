@@ -1,9 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, AlertTriangle, Sparkles, Layers } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  X, Plus, Minus, Trash2, ShoppingBag, ArrowRight,
+  AlertTriangle, Sparkles, Layers, User, Phone, MapPin, CheckCircle2
+} from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export const CartDrawer: React.FC = () => {
@@ -20,6 +24,15 @@ export const CartDrawer: React.FC = () => {
     calculateItemUnitPrice,
   } = useCart();
 
+  const router = useRouter();
+
+  // Mini-modal state for required customer data
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerCity, setCustomerCity] = useState('');
+  const [formError, setFormError] = useState('');
+
   if (!isCartOpen) return null;
 
   // Build map of sizes per reference to detect multi-size selections
@@ -34,19 +47,36 @@ export const CartDrawer: React.FC = () => {
 
   const hasMultiSizeReferences = Object.values(referenceSizesMap).some((sizes) => sizes.length > 1);
 
-
+  const handleConfirmOrder = () => {
+    setFormError('');
+    if (!customerName.trim() || !customerPhone.trim() || !customerCity.trim()) {
+      setFormError('Por favor completa todos los campos para continuar.');
+      return;
+    }
+    if (customerPhone.trim().length < 7) {
+      setFormError('Ingresa un número de teléfono válido.');
+      return;
+    }
+    // Store pre-filled data in sessionStorage so checkout can use it
+    sessionStorage.setItem('ush_prefill_name', customerName.trim());
+    sessionStorage.setItem('ush_prefill_phone', customerPhone.trim());
+    sessionStorage.setItem('ush_prefill_city', customerCity.trim());
+    setShowCustomerModal(false);
+    setIsCartOpen(false);
+    router.push('/checkout');
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop overlay */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-        onClick={() => setIsCartOpen(false)}
+        onClick={() => { setIsCartOpen(false); setShowCustomerModal(false); }}
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
-          
+
           {/* Header */}
           <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-ush-navy text-white">
             <div className="flex items-center gap-3">
@@ -57,13 +87,91 @@ export const CartDrawer: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => setIsCartOpen(false)}
+              onClick={() => { setIsCartOpen(false); setShowCustomerModal(false); }}
               className="p-2 text-neutral-300 hover:text-white transition-colors"
               aria-label="Cerrar carrito"
             >
               <X size={22} />
             </button>
           </div>
+
+          {/* ── Mini-modal: datos del cliente (obligatorio) ── */}
+          {showCustomerModal && (
+            <div className="absolute inset-0 z-60 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+              <div className="w-full bg-white shadow-2xl border-t-4 border-ush-pink p-6 space-y-4 animate-[slideDown_0.3s_ease-out]">
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-wider text-ush-navy">Datos del Cliente</h3>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">Requerido para confirmar el pedido</p>
+                  </div>
+                  <button onClick={() => setShowCustomerModal(false)} className="text-neutral-400 hover:text-neutral-700">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Name */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1 mb-1">
+                    <User size={11} /> Nombre Completo *
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Ej: María Rodríguez"
+                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1 mb-1">
+                    <Phone size={11} /> Teléfono / WhatsApp *
+                  </label>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="Ej: 3001234567"
+                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                  />
+                </div>
+
+                {/* City */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1 mb-1">
+                    <MapPin size={11} /> Ciudad *
+                  </label>
+                  <input
+                    type="text"
+                    value={customerCity}
+                    onChange={(e) => setCustomerCity(e.target.value)}
+                    placeholder="Ej: Medellín"
+                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                  />
+                </div>
+
+                {/* Error */}
+                {formError && (
+                  <p className="text-[11px] text-red-600 font-bold flex items-center gap-1">
+                    <AlertTriangle size={12} /> {formError}
+                  </p>
+                )}
+
+                <p className="text-[10px] text-neutral-400">
+                  Estos datos se usan para preparar tu pedido. Podrás completar el formulario completo en el siguiente paso.
+                </p>
+
+                <button
+                  onClick={handleConfirmOrder}
+                  className="w-full bg-ush-navy text-white font-bold py-3.5 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-ush-pink transition-all shadow-md"
+                >
+                  <CheckCircle2 size={16} /> Continuar con el Pedido
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Cart Items List */}
           <div className="flex-1 overflow-y-auto p-6 divide-y divide-gray-100">
@@ -119,7 +227,7 @@ export const CartDrawer: React.FC = () => {
                         <h3 className="text-sm font-black text-ush-navy uppercase truncate">
                           {item.product.name}
                         </h3>
-                        
+
                         <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-neutral-500">
                           {item.selectedSize && (
                             <span className="bg-neutral-100 px-2 py-0.5 font-bold text-neutral-800 border border-gray-200">
@@ -187,7 +295,7 @@ export const CartDrawer: React.FC = () => {
           {/* Footer Summary */}
           {items.length > 0 && (
             <div className="p-6 border-t border-gray-100 bg-gray-50 space-y-4">
-              
+
               {/* Pricing Tier Notice */}
               {isWholesaleTier ? (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1">
@@ -218,14 +326,17 @@ export const CartDrawer: React.FC = () => {
               </div>
 
               <div className="space-y-2 pt-2">
-                <Link
-                  href="/checkout"
-                  onClick={() => setIsCartOpen(false)}
+                {/* ÚNICO CTA: abre mini-modal de datos obligatorios */}
+                <button
+                  onClick={() => { setFormError(''); setShowCustomerModal(true); }}
                   className="w-full bg-ush-navy text-white font-bold py-3.5 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-ush-pink transition-all shadow-md"
                 >
-                  <span>Tramitar Pedido</span>
+                  <span>Confirmar Pedido</span>
                   <ArrowRight size={16} />
-                </Link>
+                </button>
+                <p className="text-[10px] text-neutral-400 text-center">
+                  Se requieren tus datos para procesar el pedido.
+                </p>
               </div>
             </div>
           )}

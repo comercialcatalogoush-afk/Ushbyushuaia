@@ -23,8 +23,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   const [quantity, setQuantity] = useState<number>(1);
   const [addedAnimation, setAddedAnimation] = useState(false);
+  const [showAddedToast, setShowAddedToast] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+
+  const handleSizeChange = (size: string) => {
+    setSelectedSize(size);
+    setQuantity(1); // Reset quantity when size changes
+  };
 
   const hasImages = product.images && product.images.length > 0 && product.images[0] !== '';
   const mainImage = hasImages ? (product.images[currentImageIndex] || product.images[0]) : '';
@@ -39,11 +45,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
     e.stopPropagation();
     addToCart(product, selectedSize, undefined, quantity);
     setAddedAnimation(true);
-    setTimeout(() => setAddedAnimation(false), 1500);
+    setShowAddedToast(true);
+    setTimeout(() => setAddedAnimation(false), 1800);
+    setTimeout(() => setShowAddedToast(false), 2800);
   };
 
   return (
     <div className="group relative bg-white border border-gray-200 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:border-ush-pink overflow-hidden">
+
+      {/* Added-to-cart floating toast */}
+      {showAddedToast && (
+        <div className="absolute inset-x-0 top-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="mt-3 mx-3 w-full bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide px-4 py-2.5 shadow-xl flex items-center gap-2 animate-[fadeInDown_0.3s_ease-out]">
+            <Check size={14} className="shrink-0" />
+            <span>¡Talla {selectedSize} × {quantity} ud{quantity > 1 ? 's' : '.'} agregada al carrito!</span>
+          </div>
+        </div>
+      )}
       
       {/* Size Guide Modal */}
       <SizeGuideModal isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
@@ -169,7 +187,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
                 <button
                   key={size}
                   type="button"
-                  onClick={() => setSelectedSize(size)}
+                  onClick={() => handleSizeChange(size)}
                   className={`text-xs w-8 h-8 font-bold border transition-all flex items-center justify-center ${
                     selectedSize === size
                       ? 'border-ush-pink bg-ush-pink text-white shadow-sm'

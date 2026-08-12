@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { submitOrder } from '@/lib/supabase';
@@ -21,6 +21,27 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Pre-fill from CartDrawer mini-modal (sessionStorage)
+  useEffect(() => {
+    try {
+      const prefillName = sessionStorage.getItem('ush_prefill_name');
+      const prefillPhone = sessionStorage.getItem('ush_prefill_phone');
+      const prefillCity = sessionStorage.getItem('ush_prefill_city');
+      if (prefillName || prefillPhone || prefillCity) {
+        setFormData((prev) => ({
+          ...prev,
+          name: prefillName || prev.name,
+          phone: prefillPhone || prev.phone,
+          city: prefillCity || prev.city,
+        }));
+        // Clear after use
+        sessionStorage.removeItem('ush_prefill_name');
+        sessionStorage.removeItem('ush_prefill_phone');
+        sessionStorage.removeItem('ush_prefill_city');
+      }
+    } catch {}
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
