@@ -81,8 +81,46 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
 }
 
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
-  const allProducts = await fetchProductsFromSupabase();
-  const match = allProducts.find(p => p.slug === slug || p.id === slug);
+  // On the server localStorage is unavailable, so we query Supabase directly
+  // to ensure newly-added products (not yet in INITIAL_PRODUCTS) resolve correctly.
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .or(`slug.eq.${slug},id.eq.${slug}`)
+      .limit(1)
+      .single();
+
+    if (!error && data) {
+      return {
+        id: data.id,
+        name: data.name,
+        reference: data.reference || data.name.replace(/ref:?/i, '').trim(),
+        slug: data.slug,
+        suggested_price: data.suggested_price ? Number(data.suggested_price) : Number(data.compare_price || data.price || 49900),
+        price: Number(data.price),
+        compare_price: data.compare_price ? Number(data.compare_price) : 0,
+        ribbon: data.ribbon || '',
+        fit: data.fit || 'Wide Leg',
+        status: data.status || (data.hidden ? 'draft' : 'published'),
+        stock_by_size: typeof data.stock_by_size === 'string' ? JSON.parse(data.stock_by_size) : (data.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 }),
+        is_best_seller: data.is_best_seller === true,
+        description: data.description || '',
+        full_description: data.full_description || '',
+        video_url: data.video_url || '',
+        in_stock: data.in_stock !== false,
+        hidden: data.hidden === true || data.status === 'draft',
+        options: typeof data.options === 'string' ? JSON.parse(data.options) : (data.options || []),
+        images: Array.isArray(data.images) ? data.images : (data.images ? [data.images] : []),
+        category_id: data.category_id,
+      };
+    }
+  } catch (_) {
+    // Supabase unavailable – fall through to static data
+  }
+
+  // Fallback: search in static INITIAL_PRODUCTS list
+  const match = INITIAL_PRODUCTS.find(p => p.slug === slug || p.id === slug);
   return match || null;
 }
 
