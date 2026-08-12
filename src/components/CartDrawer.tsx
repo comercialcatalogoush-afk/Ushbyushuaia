@@ -97,12 +97,12 @@ export const CartDrawer: React.FC = () => {
 
           {/* ── Mini-modal: datos del cliente (obligatorio) ── */}
           {showCustomerModal && (
-            <div className="absolute inset-0 z-60 flex items-end justify-center bg-black/50 backdrop-blur-sm">
-              <div className="w-full bg-white shadow-2xl border-t-4 border-ush-pink p-6 space-y-4 animate-[slideDown_0.3s_ease-out]">
+            <div className="absolute inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm">
+              <div className="w-full bg-white shadow-2xl border-t-4 border-[#d88193] p-6 space-y-4 animate-[slideDown_0.3s_ease-out]">
                 <div className="flex items-center justify-between mb-1">
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-wider text-ush-navy">Datos del Cliente</h3>
-                    <p className="text-[11px] text-neutral-500 mt-0.5">Requerido para confirmar el pedido</p>
+                    <h3 className="text-sm font-black uppercase tracking-wider text-[#1b2333]">Datos de Confirmación Mayorista</h3>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">Requerido para preparar y confirmar tu pedido</p>
                   </div>
                   <button onClick={() => setShowCustomerModal(false)} className="text-neutral-400 hover:text-neutral-700">
                     <X size={18} />
@@ -112,14 +112,14 @@ export const CartDrawer: React.FC = () => {
                 {/* Name */}
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1 mb-1">
-                    <User size={11} /> Nombre Completo *
+                    <User size={11} /> Nombre Completo / Contacto *
                   </label>
                   <input
                     type="text"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Ej: María Rodríguez"
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193]"
                     autoFocus
                   />
                 </div>
@@ -134,21 +134,21 @@ export const CartDrawer: React.FC = () => {
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="Ej: 3001234567"
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193]"
                   />
                 </div>
 
                 {/* City */}
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1 mb-1">
-                    <MapPin size={11} /> Ciudad *
+                    <MapPin size={11} /> Ciudad y Departamento *
                   </label>
                   <input
                     type="text"
                     value={customerCity}
                     onChange={(e) => setCustomerCity(e.target.value)}
-                    placeholder="Ej: Medellín"
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                    placeholder="Ej: Medellín, Antioquia"
+                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193]"
                   />
                 </div>
 
@@ -160,14 +160,14 @@ export const CartDrawer: React.FC = () => {
                 )}
 
                 <p className="text-[10px] text-neutral-400">
-                  Estos datos se usan para preparar tu pedido. Podrás completar el formulario completo en el siguiente paso.
+                  Estos datos se registrarán en tu pedido. Serás redirigido al resumen final para enviarlo directamente al asesor por WhatsApp.
                 </p>
 
                 <button
                   onClick={handleConfirmOrder}
-                  className="w-full bg-ush-navy text-white font-bold py-3.5 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-ush-pink transition-all shadow-md"
+                  className="w-full bg-[#1b2333] text-white font-bold py-3.5 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#d88193] transition-all shadow-md"
                 >
-                  <CheckCircle2 size={16} /> Continuar con el Pedido
+                  <CheckCircle2 size={16} /> Continuar al Resumen del Pedido
                 </button>
               </div>
             </div>
@@ -186,7 +186,7 @@ export const CartDrawer: React.FC = () => {
                 </p>
                 <button
                   onClick={() => setIsCartOpen(false)}
-                  className="mt-6 bg-ush-navy text-white text-xs font-bold uppercase tracking-widest px-6 py-3 hover:bg-ush-pink transition-colors"
+                  className="mt-6 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-6 py-3 hover:bg-[#d88193] transition-colors"
                 >
                   Explorar Catálogo
                 </button>
@@ -209,17 +209,27 @@ export const CartDrawer: React.FC = () => {
                   const unitPrice = calculateItemUnitPrice(item);
                   const refKey = item.product.reference || item.product.name;
                   const siblingSizes = (referenceSizesMap[refKey] || []).filter((s) => s !== item.selectedSize);
+                  const firstImgUrl = item.product.images && item.product.images.length > 0 ? item.product.images[0] : '';
 
                   return (
                     <div key={index} className="py-4 flex gap-4 items-center">
-                      {/* Thumbnail */}
-                      <div className="relative w-20 h-24 bg-neutral-100 flex-shrink-0 overflow-hidden border border-gray-200">
-                        <Image
-                          src={item.product.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200'}
-                          alt={item.product.name}
-                          fill
-                          className="object-cover"
-                        />
+                      {/* Thumbnail with standard img + fallback */}
+                      <div className="relative w-20 h-24 bg-neutral-100 flex-shrink-0 overflow-hidden border border-gray-200 flex items-center justify-center">
+                        {firstImgUrl ? (
+                          <img
+                            src={firstImgUrl}
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`${firstImgUrl ? 'hidden' : ''} flex flex-col items-center justify-center text-neutral-400 p-1 text-center`}>
+                          <ShoppingBag size={20} />
+                          <span className="text-[8px] font-bold uppercase mt-1">Prenda</span>
+                        </div>
                       </div>
 
                       {/* Details */}

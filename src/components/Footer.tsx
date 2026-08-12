@@ -62,8 +62,8 @@ export const Footer: React.FC = () => {
             <ul className="space-y-3 text-xs text-white/90 font-light mb-6">
               <li className="flex items-center gap-2.5">
                 <Mail size={16} className="text-white/70 flex-shrink-0" />
-                <a href="mailto:comercialmayoristas@ushuaiajeans.com.co" className="hover:underline break-all">
-                  comercialmayoristas@ushuaiajeans.com.co
+                <a href="mailto:comercialmayoristas@ushuauajeans.com.co" className="hover:underline break-all">
+                  comercialmayoristas@ushuauajeans.com.co
                 </a>
               </li>
               <li className="flex items-start gap-2.5">
@@ -75,6 +75,14 @@ export const Footer: React.FC = () => {
                 <span>+57 302 202 8477</span>
               </li>
             </ul>
+
+            {/* Horario de atención */}
+            <div className="bg-white/10 border border-white/20 p-3 mb-4 text-xs">
+              <p className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 Horario de Atención</p>
+              <p className="text-white/90 font-light">Lun – Jue: <span className="font-bold">7:00 AM – 4:00 PM</span></p>
+              <p className="text-white/90 font-light">Viernes: <span className="font-bold">7:00 AM – 3:30 PM</span></p>
+              <p className="text-white/60 text-[10px] mt-1">Sábados y domingos no hay atención.</p>
+            </div>
 
             <h5 className="text-[11px] font-bold uppercase tracking-wider text-white/70 mb-3">Síguenos en Redes</h5>
             <div className="flex items-center gap-3 text-white">
@@ -120,7 +128,7 @@ export const Footer: React.FC = () => {
         {/* Bottom copyright */}
         <div className="mt-12 pt-8 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between text-xs text-white/60 font-light">
           <p>© {new Date().getFullYear()} USH BY USHUAIA. Marca Tu Identidad. Todos los derechos reservados.</p>
-          <p className="mt-2 sm:mt-0 text-[11px]">info@ushbyushuaia.com.co | Itagüí, Antioquia</p>
+          <p className="mt-2 sm:mt-0 text-[11px]">comercialmayoristas@ushuauajeans.com.co | Itagüí, Antioquia</p>
         </div>
       </div>
     </footer>

@@ -21,10 +21,12 @@ export interface Product {
   full_description?: string;
   video_url?: string;
   in_stock: boolean;
-  hidden?: boolean; // Admin-only: hidden products not shown to regular users
+  hidden?: boolean;
   options: ProductOption[];
   images: string[];
   category_id?: string;
+  category?: string;
+  tags?: string[];
 }
 
 export interface PriceHistoryRecord {

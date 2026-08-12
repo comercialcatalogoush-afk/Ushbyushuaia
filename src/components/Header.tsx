@@ -57,9 +57,10 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Logo / Brand - Adaptive Circular Logo */}
+          {/* Logo / Brand - Official Ushuaia Style */}
           <div className="flex-1 lg:flex-none text-center lg:text-left">
             <Link href="/" className="inline-flex items-center gap-3">
-              <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-ush-pink shadow-sm bg-white p-0.5">
+              <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-[#d88193] shadow-sm bg-white p-0.5">
                 <Image
                   src="/images/ush-logo.jpg"
                   alt="USH by USHUAIA"
@@ -68,12 +69,12 @@ export const Header: React.FC = () => {
                   className="object-contain rounded-full"
                 />
               </div>
-              <div className="hidden sm:flex flex-col">
-                <span className="text-xl font-black tracking-[0.2em] text-neutral-900 uppercase">
-                  USH
+              <div className="flex items-center gap-1.5">
+                <span className="text-2xl font-black text-[#1b2333] lowercase tracking-tight">
+                  ush
                 </span>
-                <span className="text-[9px] tracking-[0.35em] text-neutral-900 font-bold uppercase -mt-1 opacity-90">
-                  BY USHUAIA
+                <span className="text-[10px] font-extrabold text-[#1b2333] uppercase tracking-wider opacity-85 mt-1">
+                  by USHUAIA
                 </span>
               </div>
             </Link>

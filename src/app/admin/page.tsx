@@ -512,7 +512,48 @@ export default function AdminCatalogPage() {
                       <option value="Nuevo">Nuevo</option>
                       <option value="Más vendido">Más vendido</option>
                       <option value="Oferta">Oferta</option>
+                      <option value="Exclusivo">Exclusivo</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Category + Fit */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                      Categoría
+                    </label>
+                    <select
+                      value={editingProduct.category || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                      className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
+                    >
+                      <option value="">Sin categoría</option>
+                      <option value="Jeans">Jeans</option>
+                      <option value="Shorts">Shorts</option>
+                      <option value="Faldas">Faldas</option>
+                      <option value="Cargo">Cargo</option>
+                      <option value="Bermuda">Bermuda</option>
+                      <option value="Nuevo">Nuevo</option>
+                      <option value="Rebajas">Rebajas</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-ush-pink mb-1">
+                      Fit / Corte de la Prenda
+                    </label>
+                    <select
+                      value={editingProduct.fit || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, fit: e.target.value })}
+                      className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
+                    >
+                      <option value="">Sin fit asignado</option>
+                      {availableFits.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-neutral-400 mt-0.5">Solo aparecerá en ese filtro de fit y en "Todos los Fits"</p>
                   </div>
                 </div>
 
@@ -582,15 +623,31 @@ export default function AdminCatalogPage() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                    Descripción Corta (Resumen)
+                    Nombre del Producto (Display para el Cliente)
                   </label>
                   <input
                     type="text"
                     value={editingProduct.description || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                    placeholder="Short largo en denim flexible..."
+                    placeholder="Ej: Jean Wide Leg Tiro Alto Premium"
                     className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
                   />
+                  <p className="text-[10px] text-neutral-400 mt-0.5">Nombre descriptivo que verá el cliente en el catálogo público.</p>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                    Etiquetas / Tags (separadas por coma)
+                  </label>
+                  <input
+                    type="text"
+                    value={(editingProduct.tags || []).join(', ')}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                    placeholder="Ej: denim, tiro alto, wide leg, tendencia 2025"
+                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                  />
+                  <p className="text-[10px] text-neutral-400 mt-0.5">Mejora la búsqueda interna. Ej: denim, tiro alto, verano.</p>
                 </div>
 
                 <div>
@@ -608,31 +665,44 @@ export default function AdminCatalogPage() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1 flex items-center gap-1">
-                    <ImageIcon size={14} /> URLs de Imágenes (Adaptación Automática de Formato)
+                    <ImageIcon size={14} /> URLs de Imágenes (Una por línea — desde tu carpeta externa)
                   </label>
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={editingProduct.images?.join('\n') || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, images: e.target.value.split('\n').filter(Boolean) })}
-                    placeholder="https://static.wixstatic.com/media/..."
+                    onChange={(e) => setEditingProduct({ ...editingProduct, images: e.target.value.split('\n').map(l => l.trim()).filter(Boolean) })}
+                    placeholder={`https://static.wixstatic.com/media/imagen1.jpg\nhttps://static.wixstatic.com/media/imagen2.jpg`}
                     className="w-full border border-gray-300 p-2.5 text-xs font-mono text-neutral-900 focus:outline-none focus:border-ush-pink"
                   />
                   <p className="text-[10px] text-neutral-500 mt-1">
-                    💡 <strong>Auto-Formato:</strong> Las imágenes se encuadran automáticamente al formato de catálogo de moda (3:4) sin importar su tamaño horizontal o vertical.
+                    📁 <strong>Las imágenes NO se suben al servidor</strong> — se enlazan desde tu carpeta externa (Wix, Drive, Dropbox, etc.). Una URL por línea. Formato automático 3:4.
                   </p>
+                  {/* Image previews */}
+                  {(editingProduct.images || []).filter(Boolean).length > 0 && (
+                    <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                      {(editingProduct.images || []).filter(Boolean).map((url, i) => (
+                        <div key={i} className="relative w-16 h-20 flex-shrink-0 border border-gray-200 overflow-hidden bg-neutral-100">
+                          <img src={url} alt={`Vista previa ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = ''; }} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1 flex items-center gap-1">
-                    <Video size={14} /> URL de Video Promocional (Opcional MP4 o YouTube)
+                    <Video size={14} /> URL de Video Promocional (MP4 externo o YouTube)
                   </label>
                   <input
                     type="text"
                     value={editingProduct.video_url || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct, video_url: e.target.value })}
-                    placeholder="https://video.wixstatic.com/...mp4"
+                    placeholder="https://video.wixstatic.com/...mp4  o  https://youtube.com/..."
                     className="w-full border border-gray-300 p-2.5 text-xs font-mono text-neutral-900 focus:outline-none focus:border-ush-pink"
                   />
+                  <p className="text-[10px] text-neutral-500 mt-1">
+                    📁 <strong>El video NO se aloja en la página</strong> — se enlaza desde tu carpeta o canal externo.
+                  </p>
                 </div>
 
                 {/* Visibility Toggle */}
