@@ -49,7 +49,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     e.stopPropagation();
     const imgEl = (e.currentTarget.closest('.group') as HTMLElement)?.querySelector('img');
     if (imgEl) animateFlyToCart(imgEl as HTMLElement);
-    addToCart(product, selectedSize, undefined, quantity);
+    const productColor = product.color || undefined;
+    addToCart(product, selectedSize, productColor, quantity);
     setAddedAnimation(true);
     setShowAddedToast(true);
     setTimeout(() => setAddedAnimation(false), 1800);
@@ -97,13 +98,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         <div className="p-2.5">
           {(() => {
             const { short, color } = abbreviateProductName(product);
+            const finalColor = product.color || color;
             return (
               <>
                 <h3 className="text-[13px] font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight">
                   {short}
-                  {color && (
+                  {finalColor && (
                     <span className="block text-[9px] font-extrabold text-[#d88193] mt-0.5 uppercase tracking-[0.12em]">
-                      · {color}
+                      · {finalColor}
                     </span>
                   )}
                 </h3>
@@ -204,12 +206,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             <h3 className="text-lg font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight">
               {(() => {
                 const { short, color } = abbreviateProductName(product);
+                const finalColor = product.color || color;
                 return (
                   <>
                     {short}
-                    {color && (
+                    {finalColor && (
                       <span className="block text-[11px] font-extrabold text-[#d88193] mt-1 uppercase tracking-[0.12em]">
-                        · {color}
+                        · {finalColor}
                       </span>
                     )}
                     <span className="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mt-1">

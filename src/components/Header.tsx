@@ -105,7 +105,7 @@ export const Header: React.FC = () => {
                     onMouseEnter={() => setActiveSubSubmenu(true)}
                   >
                     <Link
-                      href="/catalogo"
+                      href="/catalogo?categoria=Jeans"
                       className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#d88193] bg-rose-50/50 hover:bg-rose-50"
                     >
                       <span>JEANS</span>
@@ -118,7 +118,7 @@ export const Header: React.FC = () => {
                         {jeansFits.map((fit) => (
                           <Link
                             key={fit}
-                            href="/catalogo"
+                            href={`/catalogo?categoria=Jeans&fit=${encodeURIComponent(fit)}`}
                             className="block px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                           >
                             {fit}
@@ -129,28 +129,28 @@ export const Header: React.FC = () => {
                   </div>
 
                   <Link
-                    href="/catalogo"
+                    href="/catalogo?categoria=Pantalones"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     PANTALONES
                   </Link>
 
                   <Link
-                    href="/catalogo"
+                    href="/catalogo?categoria=Cargo"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     CARGOS
                   </Link>
 
                   <Link
-                    href="/catalogo"
+                    href="/catalogo?categoria=Shorts"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     SHORTS
                   </Link>
 
                   <Link
-                    href="/catalogo"
+                    href="/catalogo?categoria=Faldas"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     FALDAS
@@ -160,7 +160,7 @@ export const Header: React.FC = () => {
             </div>
 
             <Link
-              href="/catalogo"
+              href="/rebajas"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
               REBAJAS
@@ -283,7 +283,7 @@ export const Header: React.FC = () => {
             MUJER â€” JEANS / SHORTS / FALDAS
           </Link>
           <Link
-            href="/catalogo"
+            href="/rebajas"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >

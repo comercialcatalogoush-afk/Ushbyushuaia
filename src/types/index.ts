@@ -26,6 +26,7 @@ export interface Product {
   images: string[];
   category_id?: string;
   category?: string;
+  color?: string;
   tags?: string[];
 }
 

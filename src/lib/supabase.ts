@@ -78,6 +78,7 @@ const mapProductRow = (item: any): Product => ({
   images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
   tags: Array.isArray(item.tags) ? item.tags : [],
   category: item.category || '',
+  color: item.color || '',
   category_id: item.category_id
 });
 
@@ -140,36 +141,44 @@ export async function fetchAllProductsAdmin(): Promise<Product[]> {
 
 // ── PERSISTENCE: Save / Update / Delete a product in Supabase ──
 export async function upsertProduct(product: Product): Promise<{ success: boolean; error?: string }> {
+  const buildPayload = (withColor: boolean) => ({
+    id: product.id,
+    name: product.name,
+    reference: product.reference || product.name.replace(/ref:?/i, '').trim(),
+    slug: product.slug,
+    suggested_price: product.suggested_price || 0,
+    price: product.price || 0,
+    compare_price: product.compare_price || product.suggested_price || 0,
+    ribbon: product.ribbon || '',
+    fit: product.fit || 'Wide Leg',
+    status: product.status || (product.hidden ? 'draft' : 'published'),
+    stock_by_size: product.stock_by_size || {},
+    is_best_seller: product.is_best_seller === true,
+    description: product.description || '',
+    full_description: product.full_description || '',
+    video_url: product.video_url || '',
+    in_stock: product.in_stock !== false,
+    hidden: product.hidden === true || product.status === 'draft',
+    options: product.options || [],
+    images: product.images || [],
+    tags: product.tags || [],
+    category: product.category || '',
+    category_id: product.category_id || null,
+    ...(withColor ? { color: product.color || '' } : {})
+  });
+
   try {
     const { error } = await supabase
       .from('products')
-      .upsert(
-        {
-          id: product.id,
-          name: product.name,
-          reference: product.reference || product.name.replace(/ref:?/i, '').trim(),
-          slug: product.slug,
-          suggested_price: product.suggested_price || 0,
-          price: product.price || 0,
-          compare_price: product.compare_price || product.suggested_price || 0,
-          ribbon: product.ribbon || '',
-          fit: product.fit || 'Wide Leg',
-          status: product.status || (product.hidden ? 'draft' : 'published'),
-          stock_by_size: product.stock_by_size || {},
-          is_best_seller: product.is_best_seller === true,
-          description: product.description || '',
-          full_description: product.full_description || '',
-          video_url: product.video_url || '',
-          in_stock: product.in_stock !== false,
-          hidden: product.hidden === true || product.status === 'draft',
-          options: product.options || [],
-          images: product.images || [],
-          tags: product.tags || [],
-          category: product.category || '',
-          category_id: product.category_id || null
-        },
-        { onConflict: 'id' }
-      );
+      .upsert(buildPayload(true), { onConflict: 'id' });
+    if (error && /column\s+"color"|column color/i.test(error.message)) {
+      // Columna aún no existe en la BD: reintenta sin color (no romper el guardado)
+      const { error: retryError } = await supabase
+        .from('products')
+        .upsert(buildPayload(false), { onConflict: 'id' });
+      if (retryError) return { success: false, error: retryError.message };
+      return { success: true, error: undefined };
+    }
     if (error) {
       return { success: false, error: error.message };
     }

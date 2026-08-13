@@ -114,9 +114,10 @@ export default function CheckoutPage() {
   };
 
   if (completedOrder) {
-    const itemLines = (completedOrder.items || []).map((it: any) =>
-      `• REF ${it.reference} | Talla: ${it.size || 'Única'} | ${it.quantity} und × ${formatCOP(it.unit_price)} = ${formatCOP(it.unit_price * it.quantity)}`
-    ).join('\n');
+    const itemLines = (completedOrder.items || []).map((it: any) => {
+      const colorPart = it.color ? ` | Color: ${it.color}` : '';
+      return `• REF ${it.reference} | Talla: ${it.size || 'Única'}${colorPart} | ${it.quantity} und × ${formatCOP(it.unit_price)} = ${formatCOP(it.unit_price * it.quantity)}`;
+    }).join('\n');
 
     const whatsappMsg = encodeURIComponent(
       `🛍️ *PEDIDO USH BY USHUAIA*\n` +
@@ -525,7 +526,7 @@ export default function CheckoutPage() {
                     <div key={index} className="py-3 flex justify-between items-center text-xs">
                       <div>
                         <p className="font-black text-ush-navy uppercase">{item.product.name}</p>
-                        <p className="text-neutral-500">Talla: {item.selectedSize || '6'} | Cant: {item.quantity}</p>
+                        <p className="text-neutral-500">Talla: {item.selectedSize || '6'}{item.selectedColor ? ` | Color: ${item.selectedColor}` : ''} | Cant: {item.quantity}</p>
                         <p className="text-neutral-400">REF: {item.product.reference}</p>
                       </div>
                       <span className="font-extrabold text-neutral-900">

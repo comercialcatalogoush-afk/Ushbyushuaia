@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     images TEXT[] DEFAULT '{}',
     tags TEXT[] DEFAULT '{}',
     category TEXT,
+    color TEXT,
     category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -16,6 +16,30 @@ const COLOR_KEYWORDS = [
   'babyblue', 'oliva', 'café', 'cafe', 'mostaza', 'vino', 'burdeos',
 ];
 
+export function extractColorFromName(name: string): string {
+  let color = '';
+  const colorMatch = name.match(/color[:\s]+([^,;]+)/i);
+  if (colorMatch) {
+    color = colorMatch[1].replace(/\s*\d+%\s*$/i, '').replace(/\s+$/g, '').trim();
+  }
+  if (!color) {
+    const lower = name.toLowerCase();
+    for (const kw of COLOR_KEYWORDS) {
+      if (lower.includes(kw)) {
+        color = kw;
+        break;
+      }
+    }
+  }
+  if (color) {
+    color = color
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+  return color;
+}
+
 export function abbreviateProductName(input: AbbrevInput): AbbreviatedName {
   const name = input.name || '';
 
@@ -33,20 +57,7 @@ export function abbreviateProductName(input: AbbrevInput): AbbreviatedName {
   const fit = input.fit && input.fit !== 'No definido' ? input.fit : '';
 
   // Color: después de "color" o al final del nombre
-  let color = '';
-  const colorMatch = name.match(/color[:\s]+([^,;]+)/i);
-  if (colorMatch) {
-    color = colorMatch[1].replace(/\s*\d+%\s*$/i, '').replace(/\s+$/g, '').trim();
-  }
-  if (!color) {
-    const lower = name.toLowerCase();
-    for (const kw of COLOR_KEYWORDS) {
-      if (lower.includes(kw)) {
-        color = kw;
-        break;
-      }
-    }
-  }
+  let color = extractColorFromName(name);
   if (color) {
     color = color
       .split(' ')

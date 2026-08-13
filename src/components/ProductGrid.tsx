@@ -45,7 +45,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const isTopSeller = (p: Product): boolean =>
     topSellerIds.includes(p.id) ||
     topSellerIds.includes(p.reference) ||
-    p.is_best_seller === true;
+    p.is_best_seller === true ||
+    (p.ribbon || '').toLowerCase().includes('más vendido') ||
+    (p.ribbon || '').toLowerCase().includes('mas vendido');
 
   // Public grid: only products with at least one valid image
   const visibleProducts = displayProducts.filter(

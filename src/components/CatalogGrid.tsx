@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { Flame, ChevronDown, ChevronRight } from 'lucide-react';
@@ -16,7 +17,19 @@ const PAGE_SIZE = 12;
 // Orden preferido de fits (estilo colecciones de la tienda)
 const FIT_ORDER = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Straight'];
 
+// Normaliza la etiqueta del menú (ej: "VAQUERO", "WIDE LEG") al fit real del producto
+function normalizeFitLabel(label: string): string {
+  const map: Record<string, string> = {
+    'WIDE LEG': 'Wide Leg', 'WIDELEG': 'Wide Leg', 'BARREL': 'Barrel',
+    'STRAIGHT BOOT': 'Straight Boot', 'STRAIGHTBOOT': 'Straight Boot',
+    'VAQUERO': 'Vaquero', 'BOTA FLARE': 'Bota Flare', 'BOTAFLARE': 'Bota Flare',
+    'SKINNY': 'Skinny', 'STRAIGHT': 'Straight', 'MOM': 'Mom', 'CARGO': 'Cargo', 'BERMUDA': 'Bermuda'
+  };
+  return map[label.toUpperCase()] || label;
+}
+
 export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader = true }) => {
+  const searchParams = useSearchParams();
   const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -24,6 +37,14 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [activeFit, setActiveFit] = useState<string>('Todos');
   const [fitMenuOpen, setFitMenuOpen] = useState(false);
+
+  // Lee los filtros del menú superior (?categoria=...&fit=...)
+  useEffect(() => {
+    const cat = searchParams.get('categoria');
+    const fit = searchParams.get('fit');
+    if (cat) setActiveCategory(cat);
+    if (fit) setActiveFit(normalizeFitLabel(fit));
+  }, [searchParams]);
 
   useEffect(() => {
     const updateList = () => {
@@ -56,8 +77,21 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
 
   // ── Filtro de prendas (aplica al catálogo completo) ──
   const catalogProducts = visibleProducts.filter((p) => {
-    if (activeCategory !== 'Todos' && (p.category || '') !== activeCategory) return false;
-    if (activeFit !== 'Todos' && (p.fit || '') !== activeFit) return false;
+    if (activeCategory !== 'Todos') {
+      const cat = (p.category || '').toLowerCase();
+      const catActive = activeCategory.toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const tags = (p.tags || []).join(' ').toLowerCase();
+      const matchCat = cat === catActive || name.includes(catActive) || tags.includes(catActive);
+      if (!matchCat) return false;
+    }
+    if (activeFit !== 'Todos') {
+      const fit = (p.fit || '').toLowerCase();
+      const fitActive = activeFit.toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const matchFit = fit === fitActive || name.includes(fitActive);
+      if (!matchFit) return false;
+    }
     return true;
   });
 

@@ -1,5 +1,6 @@
 import { Product } from '@/types';
 import { DRIVE_IMAGES } from './drive-map';
+import { extractColorFromName } from '@/lib/productName';
 
 // Referencias destacadas como "Más Vendidas"
 const BEST_SELLER_REFS = new Set<string>([
@@ -832,6 +833,7 @@ export const INITIAL_PRODUCTS: Product[] = OFFICIAL_90_REFS.map((refNum, index) 
     ribbon: BEST_SELLER_REFS.has(refStr) ? 'Más vendido' : (index % 5 === 0 ? 'Nuevo' : ''),
     category,
     fit,
+    color: extractColorFromName(name) || undefined,
     description: store?.name ? store.name.replace(/^REF:?\s*/i, '') : `Prenda USH BY USHUAIA (${category}).`,
     full_description: store?.name ? store.name.replace(/^REF:?\s*/i, '') : `Referencia oficial ${refNum} del catálogo USH BY USHUAIA.`,
     in_stock: true,

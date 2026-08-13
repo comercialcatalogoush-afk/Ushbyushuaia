@@ -16,6 +16,11 @@ import { Logo } from '@/components/Logo';
 const DEFAULT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
 const DEFAULT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargo', 'Bermuda', 'Nuevo', 'Rebajas'];
 const ALL_SIZES = ['6', '8', '10', '12', '14'];
+const DEFAULT_COLORS = [
+  'Azul Claro', 'Azul Oscuro', 'Azul Medio', 'Azul Dirty', 'Gris Oscuro', 'Gris Humo',
+  'Negro', 'Blanco', 'Ivory', 'Crudo', 'Kaki', 'Mocca', 'Baby Blue', 'Oliva',
+  'Café', 'Mostaza', 'Vino', 'Burdeos'
+];
 
 export default function AdminCatalogPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -384,6 +389,7 @@ export default function AdminCatalogPage() {
       ribbon: editingProduct.ribbon || '',
       category: editingProduct.category || 'Jeans',
       fit: editingProduct.fit || '',
+      color: editingProduct.color || '',
       status: editingProduct.status || 'published',
       stock_by_size: stockBySize,
       is_best_seller: editingProduct.is_best_seller === true,
@@ -799,13 +805,15 @@ export default function AdminCatalogPage() {
                         <p className="text-[10px] text-neutral-400 mt-0.5">
                           {variantCount} tallas · {p.images?.length || 0} foto{(p.images?.length || 0) !== 1 ? 's' : ''}
                           {p.video_url ? ' · 🎥 video' : ''}
+                          {p.color ? ` · 🎨 ${p.color}` : ''}
                           {p.ribbon ? ` · 🏷️ ${p.ribbon}` : ''}
                         </p>
                       </div>
 
                       {/* Type */}
                       <div className="px-3 py-3">
-                        <span className="text-xs text-neutral-600">Físico</span>
+                        <span className="text-xs font-semibold text-neutral-700">{p.category || '—'}</span>
+                        {p.fit && <p className="text-[10px] text-neutral-400">{p.fit}</p>}
                       </div>
 
                       {/* Price */}
@@ -1388,6 +1396,24 @@ export default function AdminCatalogPage() {
                       <option key={f} value={f}>{f}</option>
                     ))}
                   </select>
+                </div>
+
+                {/* Color */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-neutral-800">Color</h4>
+                  <select
+                    value={editingProduct.color || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
+                  >
+                    <option value="">Sin color</option>
+                    {DEFAULT_COLORS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-neutral-500">
+                    Se muestra en la tarjeta y se envía por WhatsApp al asesor al pedir el producto.
+                  </p>
                 </div>
 
                 {/* Ribbon / Badge */}

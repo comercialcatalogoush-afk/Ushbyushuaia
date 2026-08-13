@@ -35,8 +35,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   
   const colorOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'color');
-  const availableColors = colorOption?.values || [];
-  const [selectedColor, setSelectedColor] = useState<string>(availableColors[0] || '');
+  const availableColors = colorOption?.values || (currentProduct.color ? [currentProduct.color] : []);
+  const [selectedColor, setSelectedColor] = useState<string>(availableColors[0] || currentProduct.color || '');
 
   const [quantity, setQuantity] = useState<number>(1);
   const [added, setAdded] = useState(false);
@@ -219,6 +219,30 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </div>
             </div>
 
+            {/* Color Selection (si la prenda tiene color) */}
+            {availableColors.length > 0 && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-2">
+                  Color: <span className="text-ush-pink font-black">{selectedColor || 'Único'}</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {availableColors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-4 py-2 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
+                        selectedColor === color
+                          ? 'border-ush-pink bg-ush-pink text-white shadow-md'
+                          : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
+                      }`}
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Quantity Selector - Any number */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-2">
@@ -270,7 +294,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
               <a
                 href={`https://wa.me/573022028477?text=${encodeURIComponent(
-                  `Hola USH BY USHUAIA, me interesa la referencia ${product.name} en talla ${selectedSize} (Cantidad: ${quantity} uds). ¿Tienen disponibilidad?`
+                  `Hola USH BY USHUAIA, me interesa la referencia ${product.name} en talla ${selectedSize}${selectedColor ? `, color ${selectedColor}` : ''} (Cantidad: ${quantity} uds). ¿Tienen disponibilidad?`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
