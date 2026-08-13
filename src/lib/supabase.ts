@@ -26,26 +26,15 @@ export function getLocalProductsOverride(): Product[] | null {
         const missing = INITIAL_PRODUCTS.filter((p) => !existingRefs.has(p.reference) && !existingRefs.has(p.id));
         const merged = [...parsed, ...missing];
 
-        // Always fill images from the static catalog (Google Drive) so stale
-        // overrides saved before the Drive connection never hide photos.
+        // The admin override is authoritative for edits (name, prices, category,
+        // fit, description, tags, stock, hidden, ribbon). Only complete images
+        // from the static catalog when the override has none (stale Drive data).
         const byRef = new Map(INITIAL_PRODUCTS.map((p) => [p.reference || p.id, p]));
         return merged.map((p) => {
           const base = byRef.get(p.reference || p.id);
           const hasImage = p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '';
-          // Prefer the fresh static catalog data (name/prices/description/images)
-          // and keep admin-only edits (hidden, ribbon, status, stock).
-          if (base) {
-            return {
-              ...base,
-              hidden: p.hidden === true || base.hidden === true,
-              status: p.status === 'draft' ? 'draft' : base.status,
-              ribbon: p.ribbon || base.ribbon,
-              in_stock: p.in_stock !== false && base.in_stock,
-              is_best_seller: base.is_best_seller,
-              options: base.options && base.options.length > 0 ? base.options : p.options,
-              images: hasImage ? p.images : base.images,
-              stock_by_size: p.stock_by_size || base.stock_by_size,
-            };
+          if (base && !hasImage && base.images && base.images.length > 0) {
+            return { ...p, images: base.images };
           }
           return p;
         });

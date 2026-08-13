@@ -443,6 +443,23 @@ export default function AdminCatalogPage() {
     }
   };
 
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  const handleSyncAll = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    let ok = 0;
+    let fail = 0;
+    for (const p of products) {
+      const res = await upsertProduct(p);
+      if (res.success) ok++; else fail++;
+    }
+    setSyncing(false);
+    setSyncResult(`Sincronización completada: ${ok} referencias en la nube${fail ? `, ${fail} con error` : ''}.`);
+    setTimeout(() => setSyncResult(null), 5000);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
@@ -578,6 +595,13 @@ export default function AdminCatalogPage() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleSyncAll}
+              disabled={syncing}
+              className="bg-white text-[#1b2333] border-2 border-[#1b2333] text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-[#1b2333] hover:text-white transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Upload size={16} /> {syncing ? 'Sincronizando...' : 'Sincronizar todo a la nube'}
+            </button>
+            <button
               onClick={handleOpenNew}
               className="bg-[#d88193] text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-md hover:bg-[#c06579] transition-all flex items-center gap-2"
             >
@@ -585,6 +609,13 @@ export default function AdminCatalogPage() {
             </button>
           </div>
         </div>
+
+        {syncResult && (
+          <div className="p-4 bg-sky-50 border border-sky-200 text-sky-900 text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-6">
+            <CheckCircle size={18} className="text-sky-600" />
+            <span>{syncResult}</span>
+          </div>
+        )}
 
         {/* Tabs Bar */}
         <div className="flex items-center gap-2 border-b border-gray-200 bg-white p-2 mb-6 shadow-sm overflow-x-auto">
