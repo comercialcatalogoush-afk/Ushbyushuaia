@@ -7,12 +7,13 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publish
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const PRODUCTS_STORAGE_KEY = 'ush_products_override_v4';
+const PRODUCTS_STORAGE_KEY = 'ush_products_override_v5';
 
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;
   try {
     // Purge obsolete legacy cache keys that were trapping old empty-image data
+    localStorage.removeItem('ush_products_override_v4');
     localStorage.removeItem('ush_products_override_v3');
     localStorage.removeItem('ush_products_override_v2');
     localStorage.removeItem('ush_products_override');
@@ -31,8 +32,20 @@ export function getLocalProductsOverride(): Product[] | null {
         return merged.map((p) => {
           const base = byRef.get(p.reference || p.id);
           const hasImage = p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '';
-          if (!hasImage && base && base.images && base.images.length > 0) {
-            return { ...p, images: base.images };
+          // Prefer the fresh static catalog data (name/prices/description/images)
+          // and keep admin-only edits (hidden, ribbon, status, stock).
+          if (base) {
+            return {
+              ...base,
+              hidden: p.hidden === true || base.hidden === true,
+              status: p.status === 'draft' ? 'draft' : base.status,
+              ribbon: p.ribbon || base.ribbon,
+              in_stock: p.in_stock !== false && base.in_stock,
+              is_best_seller: base.is_best_seller,
+              options: base.options && base.options.length > 0 ? base.options : p.options,
+              images: hasImage ? p.images : base.images,
+              stock_by_size: p.stock_by_size || base.stock_by_size,
+            };
           }
           return p;
         });
