@@ -71,25 +71,25 @@
 }
 @keyframes kenburns-zoom {
   0%   { transform: scale(1) translate(0, 0); }
-  50%  { transform: scale(1.15) translate(1.5%, -1.5%); }
+  50%  { transform: scale(1.08) translate(1%, -1%); }
   100% { transform: scale(1) translate(0, 0); }
 }
 @keyframes kenburns-pan-left {
-  0%   { transform: scale(1.2) translateX(3%); }
-  100% { transform: scale(1.2) translateX(-3%); }
+  0%   { transform: scale(1.1) translateX(2%); }
+  100% { transform: scale(1.1) translateX(-2%); }
 }
 @keyframes kenburns-pan-right {
-  0%   { transform: scale(1.2) translateX(-3%); }
-  100% { transform: scale(1.2) translateX(3%); }
+  0%   { transform: scale(1.1) translateX(-2%); }
+  100% { transform: scale(1.1) translateX(2%); }
 }
 @keyframes kenburns-tilt {
-  0%   { transform: scale(1.15) rotate(0deg); }
-  50%  { transform: scale(1.15) rotate(1.2deg); }
-  100% { transform: scale(1.15) rotate(0deg); }
+  0%   { transform: scale(1.08) rotate(0deg); }
+  50%  { transform: scale(1.08) rotate(0.8deg); }
+  100% { transform: scale(1.08) rotate(0deg); }
 }
 @keyframes kenburns-float {
-  0%, 100% { transform: scale(1.08) translateY(0); }
-  50%      { transform: scale(1.08) translateY(-2%); }
+  0%, 100% { transform: scale(1.04) translateY(0); }
+  50%      { transform: scale(1.04) translateY(-1.5%); }
 }
 
 /* ── Nuevas animaciones gratuitas (plus visual) ───── */

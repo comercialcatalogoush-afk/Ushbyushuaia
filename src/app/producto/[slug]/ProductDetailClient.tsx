@@ -89,7 +89,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                           : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-300'
                       }`}
                     >
-                      <Image src={img} alt={`Vista ${idx + 1}`} fill className="object-cover" />
+                      <Image src={img} alt={`Vista ${idx + 1}`} fill sizes="80px" quality={90} className="object-cover" />
                     </button>
                   ))}
 
@@ -122,6 +122,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   alt={currentProduct.name}
                   fill
                   priority
+                  quality={100}
+                  sizes="(max-width: 1024px) 90vw, 60vw"
                   className="object-cover object-center"
                 />
               </div>

@@ -43,7 +43,7 @@ export const Hero: React.FC = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
             <Link
-              href="#catalogo"
+              href="/catalogo"
               className="inline-flex items-center justify-center gap-3 bg-white text-ush-navyDark font-black px-8 py-4 rounded-none shadow-xl tracking-widest text-xs uppercase group hover:bg-neutral-100 transition-all"
             >
               <span>VER CATÁLOGO MAYORISTA</span>

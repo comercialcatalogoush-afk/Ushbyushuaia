@@ -149,6 +149,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                           product={product}
                           isTopSeller
                           imageAnimation={KENBURNS[i % KENBURNS.length]}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                         {/* Number badge */}
                         <span className="absolute -top-2 -left-2 z-10 w-7 h-7 bg-[#d88193] text-white text-[11px] font-black flex items-center justify-center shadow-lg border-2 border-white">

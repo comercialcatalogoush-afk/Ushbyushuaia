@@ -14,9 +14,10 @@ interface ProductCardProps {
   product: Product;
   isTopSeller?: boolean;
   imageAnimation?: string;
+  sizes?: string;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, imageAnimation }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, imageAnimation, sizes }) => {
   const { addToCart, formatCOP } = useCart();
   
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
@@ -83,7 +84,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               src={mainImage}
               alt={product.name}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes={sizes || "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
+              quality={100}
               className={`object-cover object-center ${imageAnimation || 'transition-transform duration-700 ease-out group-hover:scale-105'}`}
             />
           </div>
