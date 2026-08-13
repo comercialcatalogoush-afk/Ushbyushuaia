@@ -692,12 +692,22 @@ export default function AdminCatalogPage() {
                       <div className="px-2 py-2 flex items-center">
                         <div className="relative w-10 h-12 bg-neutral-100 border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                           {firstImg ? (
-                            <img
-                              src={firstImg}
-                              alt={p.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
-                            />
+                            <>
+                              <img
+                                src={firstImg}
+                                alt={p.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                  const fallbackEl = (e.target as HTMLElement).nextElementSibling;
+                                  if (fallbackEl) fallbackEl.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="hidden absolute inset-0 bg-gradient-to-br from-neutral-100 to-rose-50 flex-col items-center justify-center text-center p-1">
+                                <ImageIcon size={12} className="text-ush-pink opacity-60 mb-0.5" />
+                                <p className="text-[6px] font-black uppercase tracking-widest text-ush-navy leading-tight">Foto<br />Próximamente</p>
+                              </div>
+                            </>
                           ) : (
                             <ImageIcon size={14} className="text-neutral-300" />
                           )}
@@ -1138,12 +1148,22 @@ export default function AdminCatalogPage() {
                     const isPrincipal = idx === 0;
                     return (
                       <div key={idx} className="group relative aspect-[3/4] bg-neutral-200 border border-gray-300 overflow-hidden shadow-sm flex items-center justify-center">
-                        <img
-                          src={imgUrl}
-                          alt={`Imagen ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
-                        />
+                        <div className="relative w-full h-full">
+                          <img
+                            src={imgUrl}
+                            alt={`Imagen ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              const fallbackEl = (e.target as HTMLElement).nextElementSibling;
+                              if (fallbackEl) fallbackEl.classList.remove('hidden');
+                            }}
+                          />
+                          <div className="hidden absolute inset-0 bg-gradient-to-br from-neutral-100 to-rose-50 flex-col items-center justify-center text-center p-2">
+                            <ImageIcon size={20} className="text-ush-pink opacity-60 mb-1" />
+                            <p className="text-[8px] font-black uppercase tracking-widest text-ush-navy leading-tight">Foto<br />Próximamente</p>
+                          </div>
+                        </div>
 
                         {/* Badge */}
                         {isPrincipal ? (

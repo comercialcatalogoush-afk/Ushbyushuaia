@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { INITIAL_PRODUCTS } from '@/data/products';
+import { getGoogleDriveImageUrl } from '@/lib/drive';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -44,17 +45,17 @@ export const CartDrawer: React.FC = () => {
     router.push('/checkout');
   };
 
-  // Helper to get image URL with fallback to INITIAL_PRODUCTS
+  // Helper to get image URL with fallback to INITIAL_PRODUCTS + Drive conversion
   const getItemImage = (product: any): string => {
     if (product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0]) {
-      return product.images[0];
+      return getGoogleDriveImageUrl(product.images[0]);
     }
     // Fallback: search in INITIAL_PRODUCTS
     const match = INITIAL_PRODUCTS.find(
       (p) => p.id === product.id || p.reference === product.reference || p.slug === product.slug
     );
     if (match && match.images && match.images.length > 0 && match.images[0]) {
-      return match.images[0];
+      return getGoogleDriveImageUrl(match.images[0]);
     }
     return '';
   };
