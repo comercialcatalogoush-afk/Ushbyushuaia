@@ -184,6 +184,13 @@ export const Header: React.FC = () => {
             </Link>
 
             <Link
+              href="/rastreo"
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            >
+              RASTREAR
+            </Link>
+
+            <Link
               href="/contacto"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
@@ -312,6 +319,13 @@ export const Header: React.FC = () => {
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             BENEFICIOS MAYORISTAS
+          </Link>
+          <Link
+            href="/rastreo"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            RASTREAR PEDIDO
           </Link>
           <Link
             href="/contacto"

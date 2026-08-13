@@ -10,8 +10,14 @@ import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
 
 import { getLocalProductsOverride } from '@/lib/supabase';
+import { ProductCard } from '@/components/ProductCard';
 
-export default function ProductDetailClient({ product }: { product: Product }) {
+interface ProductDetailClientProps {
+  product: Product;
+  related?: Product[];
+}
+
+export default function ProductDetailClient({ product, related = [] }: ProductDetailClientProps) {
   const [currentProduct, setCurrentProduct] = useState<Product>(product);
 
   React.useEffect(() => {
@@ -325,6 +331,32 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
           </div>
         </div>
+
+        {/* ── Productos Sugeridos (carrusel) ── */}
+        {related.length > 0 && (
+          <div className="mt-16">
+            <div className="flex items-end justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-black uppercase text-ush-navy tracking-tight">
+                  Productos Sugeridos
+                </h2>
+                <p className="text-xs text-neutral-500 font-medium mt-1">
+                  Mismo estilo, referencias similares y los más vendidos de la colección.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin snap-x snap-mandatory">
+                {related.map((rel) => (
+                  <div key={rel.id} className="w-[200px] sm:w-[220px] flex-shrink-0 snap-start">
+                    <ProductCard product={rel} compact sizes="(max-width: 640px) 45vw, 200px" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

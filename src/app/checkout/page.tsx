@@ -35,6 +35,8 @@ export default function CheckoutPage() {
   const [cityQuery, setCityQuery] = useState('');
   const [cityOpen, setCityOpen] = useState(false);
   const [phoneCountry, setPhoneCountry] = useState<string>('+57');
+  const [phoneCountryOpen, setPhoneCountryOpen] = useState(false);
+  const [phoneQuery, setPhoneQuery] = useState('');
 
   // Pre-fill from CartDrawer mini-modal (sessionStorage)
   useEffect(() => {
@@ -187,6 +189,13 @@ export default function CheckoutPage() {
               className="block text-xs font-bold uppercase tracking-wider text-neutral-600 hover:text-black py-2"
             >
               Volver al inicio
+            </Link>
+
+            <Link
+              href="/rastreo"
+              className="block text-xs font-bold uppercase tracking-wider text-ush-pink hover:underline py-1"
+            >
+              Cuando tengas tu guía, rastrea aquí →
             </Link>
           </div>
         </div>
@@ -342,19 +351,48 @@ export default function CheckoutPage() {
                       <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                         Celular / WhatsApp *
                       </label>
-                      <div className="flex items-stretch">
-                        <div className="relative">
-                          <select
-                            value={phoneCountry}
-                            onChange={(e) => setPhoneCountry(e.target.value)}
-                            className="h-full border border-gray-300 border-r-0 bg-white px-2 text-xs font-bold text-neutral-800 focus:outline-none focus:border-ush-pink"
-                            title="Código de país"
-                          >
-                            {PHONE_COUNTRIES.map((c) => (
-                              <option key={c.code} value={c.code}>{c.code}</option>
-                            ))}
-                          </select>
-                        </div>
+                      <div className="flex items-stretch relative">
+                        <button
+                          type="button"
+                          onClick={() => { setPhoneCountryOpen((o) => !o); setPhoneQuery(''); }}
+                          className="border border-gray-300 border-r-0 bg-white px-2 text-xs font-bold text-neutral-800 focus:outline-none focus:border-ush-pink flex items-center gap-1"
+                          title="Código de país"
+                        >
+                          <span className="text-base leading-none">{PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.flag}</span>
+                          <span>{phoneCountry}</span>
+                          <ChevronDown size={12} className="text-neutral-400" />
+                        </button>
+
+                        {phoneCountryOpen && (
+                          <div className="absolute z-30 left-0 top-full mt-1 w-64 bg-white border border-gray-300 shadow-xl">
+                            <div className="flex items-center gap-2 p-2 border-b border-gray-200">
+                              <Search size={14} className="text-neutral-400" />
+                              <input
+                                type="text"
+                                value={phoneQuery}
+                                onChange={(e) => setPhoneQuery(e.target.value)}
+                                placeholder="Buscar país o código..."
+                                autoFocus
+                                className="w-full text-xs focus:outline-none text-neutral-900"
+                              />
+                            </div>
+                            <div className="max-h-48 overflow-y-auto">
+                              {PHONE_COUNTRIES.filter((c) => c.country.toLowerCase().includes(phoneQuery.toLowerCase()) || c.code.includes(phoneQuery)).map((c) => (
+                                <button
+                                  key={c.code}
+                                  type="button"
+                                  onClick={() => { setPhoneCountry(c.code); setPhoneCountryOpen(false); }}
+                                  className={`w-full text-left px-3 py-2 text-xs hover:bg-ush-pinkLight flex items-center gap-2 ${phoneCountry === c.code ? 'font-bold text-ush-pink bg-ush-pinkLight' : 'text-neutral-700'}`}
+                                >
+                                  <span className="text-base leading-none">{c.flag}</span>
+                                  <span className="font-bold">{c.code}</span>
+                                  <span className="text-neutral-500">{c.country}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <input
                           type="tel"
                           required

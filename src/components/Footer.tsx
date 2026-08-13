@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Logo } from './Logo';
-import { Mail, MapPin, Phone, Instagram, Facebook, Shield, FileText, MessageCircle } from 'lucide-react';
+import { Mail, MapPin, Phone, Instagram, Facebook, Shield, FileText, MessageCircle, Truck } from 'lucide-react';
 
 // TikTok icon (not in lucide)
 const TikTokIcon = () => (
@@ -54,6 +54,10 @@ export const Footer: React.FC = () => {
               <li><Link href="/" className="hover:text-white transition-colors hover:font-semibold">Inicio</Link></li>
               <li><Link href="/como-comprar" className="hover:text-white transition-colors hover:font-semibold">Beneficios Mayoristas</Link></li>
               <li><Link href="/catalogo" className="hover:text-white transition-colors hover:font-semibold">Catálogo de Productos</Link></li>
+              <li><Link href="/rastreo" className="hover:text-white transition-colors hover:font-semibold flex items-center gap-1.5">
+                <Truck size={12} className="text-white/60 shrink-0" />
+                Rastrear mi Pedido
+              </Link></li>
               <li><Link href="/contacto" className="hover:text-white transition-colors hover:font-semibold">Contacto Directo</Link></li>
             </ul>
 

@@ -33,5 +33,25 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     notFound();
   }
 
-  return <ProductDetailClient product={product} />;
+  // Productos sugeridos: mismo fit/categoría, rango de precio similar y más vendidos
+  let related: Awaited<ReturnType<typeof fetchProductsFromSupabase>> = [];
+  try {
+    const all = await fetchProductsFromSupabase();
+    const others = all.filter((p) => p.id !== product.id && p.slug !== product.slug && p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '' && !p.hidden && p.status !== 'draft');
+
+    const score = (p: (typeof all)[number]) => {
+      let s = 0;
+      if (p.fit && product.fit && p.fit.toLowerCase() === product.fit.toLowerCase()) s += 5;
+      if (p.category && product.category && p.category.toLowerCase() === product.category.toLowerCase()) s += 3;
+      if (p.ribbon?.toLowerCase().includes('más vendido') || p.ribbon?.toLowerCase().includes('mas vendido') || p.is_best_seller) s += 2;
+      const diff = Math.abs((p.price || 0) - (product.price || 0));
+      if (diff < 10000) s += 2;
+      else if (diff < 20000) s += 1;
+      return s;
+    };
+
+    related = [...others].sort((a, b) => score(b) - score(a)).slice(0, 12);
+  } catch (_) {}
+
+  return <ProductDetailClient product={product} related={related} />;
 }
