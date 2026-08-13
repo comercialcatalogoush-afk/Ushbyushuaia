@@ -636,82 +636,125 @@ export default function AdminCatalogPage() {
               </div>
             </div>
 
-            {/* Product Table List */}
-            <div className="bg-white border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-4 bg-[#1b2333] text-white flex justify-between items-center">
-                <h2 className="text-sm font-bold uppercase tracking-wider">
-                  Listado de Referencias ({filteredProductsList.length} de {products.length})
+            {/* Product Table List — Wix Studio Style */}
+            <div className="bg-white border border-gray-200 shadow-sm overflow-hidden rounded-sm">
+
+              {/* Table Header Row */}
+              <div className="bg-[#116dff] text-white px-5 py-3 flex items-center justify-between">
+                <h2 className="text-sm font-bold tracking-wide">
+                  Productos ({filteredProductsList.length}{filteredProductsList.length !== products.length ? ` de ${products.length}` : ''})
                 </h2>
+                <button
+                  onClick={handleOpenNew}
+                  className="flex items-center gap-1.5 bg-white text-[#116dff] text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-50 transition-colors"
+                >
+                  <Plus size={14} /> Nuevo producto
+                </button>
               </div>
 
-              <div className="divide-y divide-gray-200 overflow-x-auto">
-                {filteredProductsList.map((p) => {
-                  const sizeOpt = p.options?.find(o => o.key.toLowerCase() === 'talla');
-                  const sizes = sizeOpt?.values || ALL_SIZES;
+              {/* Column Headers */}
+              <div className="grid grid-cols-[40px_56px_1fr_100px_120px_110px_80px] gap-0 border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                <div className="px-3 py-2.5 flex items-center"></div>
+                <div className="px-2 py-2.5 flex items-center"></div>
+                <div className="px-3 py-2.5 flex items-center">Nombre</div>
+                <div className="px-3 py-2.5 flex items-center">Tipo</div>
+                <div className="px-3 py-2.5 flex items-center">Precio</div>
+                <div className="px-3 py-2.5 flex items-center">Estado</div>
+                <div className="px-3 py-2.5 flex items-center"></div>
+              </div>
+
+              {/* Table Body */}
+              <div className="divide-y divide-gray-100">
+                {filteredProductsList.length === 0 ? (
+                  <div className="py-16 text-center text-neutral-400">
+                    <ImageIcon size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">No se encontraron productos</p>
+                    <p className="text-xs mt-1">Ajusta los filtros de búsqueda</p>
+                  </div>
+                ) : filteredProductsList.map((p) => {
                   const isDraft = p.status === 'draft' || p.hidden;
                   const firstImg = p.images && p.images.length > 0 ? p.images[0] : '';
+                  const sizeOpt = p.options?.find(o => o.key.toLowerCase() === 'talla');
+                  const variantCount = (sizeOpt?.values || ALL_SIZES).length;
 
                   return (
-                    <div key={p.id} className="p-4 flex items-center justify-between gap-4 hover:bg-neutral-50 transition-colors">
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="relative w-16 h-20 bg-neutral-100 border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <div
+                      key={p.id}
+                      className="grid grid-cols-[40px_56px_1fr_100px_120px_110px_80px] gap-0 items-center hover:bg-blue-50/30 transition-colors group cursor-pointer"
+                      onClick={() => handleEditOpen(p)}
+                    >
+                      {/* Checkbox placeholder */}
+                      <div className="px-3 py-3 flex items-center" onClick={e => e.stopPropagation()}>
+                        <div className="w-4 h-4 border border-gray-300 rounded-sm flex-shrink-0" />
+                      </div>
+
+                      {/* Thumbnail */}
+                      <div className="px-2 py-2 flex items-center">
+                        <div className="relative w-10 h-12 bg-neutral-100 border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
                           {firstImg ? (
-                            <img src={firstImg} alt={p.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = ''; }} />
+                            <img
+                              src={firstImg}
+                              alt={p.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
+                            />
                           ) : (
-                            <ImageIcon size={20} className="text-neutral-400" />
+                            <ImageIcon size={14} className="text-neutral-300" />
                           )}
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-black text-[#1b2333] uppercase">{p.name}</h3>
-                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-neutral-100 border border-gray-300 text-neutral-800">
-                              Ref: {p.reference}
-                            </span>
-                            {p.category && (
-                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-rose-50 text-[#d88193] border border-rose-200">
-                                {p.category}
-                              </span>
-                            )}
-                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-neutral-800 text-white">
-                              Fit: {p.fit || 'Wide Leg'}
-                            </span>
-                            {isDraft ? (
-                              <span className="text-[9px] font-bold uppercase px-2 py-0.5 bg-red-100 text-red-800 border border-red-200">
-                                🔴 Borrador
-                              </span>
-                            ) : (
-                              <span className="text-[9px] font-bold uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                🟢 Publicado
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-baseline gap-3 mt-1.5">
-                            <span className="text-xs font-black text-neutral-900">Mayorista: {formatCOP(p.price)}</span>
-                            <span className="text-[11px] text-gray-400 line-through">PVP: {formatCOP(p.suggested_price || p.price * 1.5)}</span>
-                          </div>
-
-                          <p className="text-[11px] text-neutral-500 mt-1">
-                            Tallas: <span className="font-bold text-neutral-800">{sizes.join(', ')}</span> · Fotos: <span className="font-bold">{p.images?.length || 0}</span> {p.video_url ? '· 🎥 Video incluido' : ''}
-                          </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      {/* Name + variants info */}
+                      <div className="px-3 py-3 min-w-0">
+                        <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-[#116dff] transition-colors">
+                          {p.name}
+                        </p>
+                        <p className="text-[10px] text-neutral-400 mt-0.5">
+                          {variantCount} tallas · {p.images?.length || 0} foto{(p.images?.length || 0) !== 1 ? 's' : ''}
+                          {p.video_url ? ' · 🎥 video' : ''}
+                          {p.ribbon ? ` · 🏷️ ${p.ribbon}` : ''}
+                        </p>
+                      </div>
+
+                      {/* Type */}
+                      <div className="px-3 py-3">
+                        <span className="text-xs text-neutral-600">Físico</span>
+                      </div>
+
+                      {/* Price */}
+                      <div className="px-3 py-3">
+                        <p className="text-sm font-bold text-neutral-900">{formatCOP(p.price)}</p>
+                        <p className="text-[10px] text-neutral-400">mayorista</p>
+                      </div>
+
+                      {/* Status badge */}
+                      <div className="px-3 py-3">
+                        {isDraft ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Oculto
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Visible
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="px-3 py-3 flex items-center gap-1" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => handleEditOpen(p)}
-                          className="p-2 border border-gray-300 text-neutral-700 hover:border-[#d88193] hover:text-[#d88193] transition-colors text-xs font-bold flex items-center gap-1 bg-white"
+                          className="p-1.5 text-neutral-400 hover:text-[#116dff] hover:bg-blue-50 rounded transition-colors"
+                          title="Editar"
                         >
-                          <Edit3 size={16} /> Editar
+                          <Edit3 size={15} />
                         </button>
-
                         <button
                           onClick={() => handleDelete(p.id)}
-                          className="p-2 border border-red-200 text-red-600 hover:bg-red-50 transition-colors bg-white"
-                          title="Eliminar producto"
+                          className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Eliminar"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </div>
@@ -951,176 +994,121 @@ export default function AdminCatalogPage() {
 
       </div>
 
-      {/* ── EDIT PRODUCT MODAL (with Multimedia Manager Captura 5 style) ── */}
+      {/* ── EDIT PRODUCT DRAWER — Wix Studio Style ── */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center">
-          <div className="bg-white max-w-4xl w-full border border-gray-200 shadow-2xl overflow-hidden my-8">
+        <div className="fixed inset-0 z-50 flex overflow-hidden" style={{background: 'rgba(0,0,0,0.55)'}}>
+          {/* Click outside to close */}
+          <div className="flex-1" onClick={() => setEditingProduct(null)} />
 
-            {/* Modal Header */}
-            <div className="bg-[#1b2333] text-white p-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider">
-                {editingProduct.id ? 'Editar Referencia del Catálogo' : 'Agregar Nueva Referencia al Catálogo'}
-              </h3>
-              <button onClick={() => setEditingProduct(null)} className="p-1 text-gray-300 hover:text-white">
-                <X size={20} />
-              </button>
+          {/* Drawer Panel */}
+          <div className="bg-white w-full max-w-5xl h-full flex flex-col shadow-2xl overflow-hidden">
+
+            {/* Drawer Header — Wix Studio style */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setEditingProduct(null)} className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-gray-100 rounded transition-colors">
+                  <X size={18} />
+                </button>
+                <h3 className="text-base font-bold text-neutral-900">
+                  {editingProduct.id ? editingProduct.name || 'Editar Producto' : '+ Nuevo Producto'}
+                </h3>
+                {editingProduct.id && (
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    editingProduct.hidden ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  }`}>
+                    {editingProduct.hidden ? 'Oculto' : 'Visible'}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  className="px-4 py-1.5 border border-gray-300 text-xs font-semibold text-neutral-600 hover:bg-gray-50 rounded transition-colors"
+                >
+                  Descartar
+                </button>
+                <button
+                  form="product-edit-form"
+                  type="submit"
+                  className="px-5 py-1.5 bg-[#116dff] text-white text-xs font-bold rounded hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
+                >
+                  <Save size={14} /> Guardar
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSave} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto">
+            {/* Two-column layout */}
+            <div className="flex flex-1 overflow-hidden">
+
+              {/* ── LEFT COLUMN: Main Content ── */}
+              <form id="product-edit-form" onSubmit={handleSave} className="flex-1 overflow-y-auto px-6 py-6 space-y-6 border-r border-gray-200">
               
-              {/* Reference Name & Ribbon */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                    Nombre de Referencia *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingProduct.name || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                    placeholder="Ej: REF: 559100"
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193] font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                    Etiqueta / Ribbon
-                  </label>
-                  <select
-                    value={editingProduct.ribbon || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, ribbon: e.target.value })}
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193] bg-white"
-                  >
-                    <option value="">Sin etiqueta</option>
-                    <option value="Nuevo">Nuevo</option>
-                    <option value="Más vendido">Más vendido</option>
-                    <option value="Oferta">Oferta</option>
-                    <option value="Exclusivo">Exclusivo</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Category & Fit Selector */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                    Categoría
-                  </label>
-                  <select
-                    value={editingProduct.category || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193] bg-white"
-                  >
-                    {availableCategories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#d88193] mb-1">
-                    Fit / Corte de la Prenda
-                  </label>
-                  <select
-                    value={editingProduct.fit || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, fit: e.target.value })}
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193] bg-white font-bold"
-                  >
-                    {availableFits.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Pricing Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-neutral-50 border border-gray-200">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                    Precio Sugerido Venta (PVP) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={editingProduct.suggested_price || 0}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, suggested_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#d88193] mb-1">
-                    Precio Mayorista (12+ Uds - 35% a 42% OFF) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={editingProduct.price || 0}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none font-bold"
-                  />
-                </div>
-              </div>
-
-              {/* Available Sizes */}
-              <div className="p-3 bg-rose-50/50 border border-rose-200">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#1b2333] mb-2">
-                  Tallas Disponibles:
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {ALL_SIZES.map((size) => {
-                    const isChecked = selectedSizes.includes(size);
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => {
-                          if (isChecked) {
-                            setSelectedSizes(selectedSizes.filter(s => s !== size));
-                          } else {
-                            setSelectedSizes([...selectedSizes, size].sort((a, b) => parseInt(a) - parseInt(b)));
-                          }
-                        }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border transition-all ${
-                          isChecked
-                            ? 'bg-[#d88193] text-white border-[#d88193]'
-                            : 'bg-white text-neutral-600 border-gray-300'
-                        }`}
-                      >
-                        {isChecked ? <CheckSquare size={14} /> : <Square size={14} />}
-                        <span>Talla {size}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Product Display Name & Tags */}
+              {/* Section: Nombre */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                  Nombre del Producto (Display para el Cliente)
-                </label>
+                <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Nombre de la referencia *</label>
                 <input
                   type="text"
-                  value={editingProduct.description || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                  placeholder="Ej: Jean Wide Leg Tiro Alto Premium"
-                  className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none"
+                  required
+                  value={editingProduct.name || ''}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                  placeholder="Ej: REF: 559100 Jean Wide Leg"
+                  className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20"
                 />
               </div>
 
+              {/* Section: Descripción */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                  Etiquetas / Tags (separadas por coma)
-                </label>
+                <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Descripción corta</label>
+                <textarea
+                  rows={3}
+                  value={editingProduct.description || ''}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                  placeholder="Ej: Jean Wide Leg Tiro Alto Premium — Confección nacional estilizadora..."
+                  className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-700 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20 resize-none"
+                />
+              </div>
+
+              {/* Pricing Section */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-neutral-50 border border-gray-200 rounded">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Precio Sugerido Venta (PVP) *</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-neutral-400">$</span>
+                    <input
+                      type="number"
+                      required
+                      value={editingProduct.suggested_price || 0}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, suggested_price: parseFloat(e.target.value) || 0 })}
+                      className="w-full border border-gray-300 rounded pl-7 pr-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] font-bold"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#116dff] mb-1.5">Precio Mayorista (12+ uds) *</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-neutral-400">$</span>
+                    <input
+                      type="number"
+                      required
+                      value={editingProduct.price || 0}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                      className="w-full border border-gray-300 rounded pl-7 pr-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+
+              {/* Tags */}
+              <div>
+                <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Etiquetas / Tags <span className="text-neutral-400 font-normal text-xs">(separadas por coma)</span></label>
                 <input
                   type="text"
                   value={(editingProduct.tags || []).join(', ')}
                   onChange={(e) => setEditingProduct({ ...editingProduct, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
                   placeholder="Ej: denim, tiro alto, wide leg"
-                  className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none"
+                  className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-700 focus:outline-none focus:border-[#116dff]"
                 />
               </div>
 
@@ -1226,45 +1214,119 @@ export default function AdminCatalogPage() {
                 </div>
               </div>
 
-              {/* Status / Visibility Toggle */}
-              <div className="p-3 bg-amber-50 border border-amber-200 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-amber-900">Visibilidad en el Catálogo</p>
-                  <p className="text-[10px] text-amber-700 mt-0.5">
-                    {editingProduct.hidden ? '🔴 Borrador — Oculto para clientes' : '🟢 Publicado — Visible en el catálogo público'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEditingProduct({ ...editingProduct, hidden: !editingProduct.hidden, status: editingProduct.hidden ? 'published' : 'draft' })}
-                  className={`relative w-14 h-7 rounded-full transition-colors flex-shrink-0 ${
-                    editingProduct.hidden ? 'bg-red-400' : 'bg-emerald-500'
-                  }`}
-                >
-                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                    editingProduct.hidden ? 'left-1 translate-x-0' : 'left-1 translate-x-7'
-                  }`} />
-                </button>
-              </div>
-
-              {/* Modal Controls */}
-              <div className="pt-4 border-t border-gray-200 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingProduct(null)}
-                  className="px-5 py-2.5 border border-gray-300 text-xs font-bold uppercase text-neutral-700 hover:bg-gray-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#d88193] flex items-center gap-2"
-                >
-                  <Save size={16} /> Guardar Referencia
-                </button>
-              </div>
             </form>
-          </div>
+
+              {/* ── RIGHT SIDEBAR: Settings ── */}
+              <div className="w-72 flex-shrink-0 overflow-y-auto px-5 py-6 space-y-6 bg-gray-50">
+
+                {/* Visibility Toggle */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-neutral-800">Mostrar en tienda</h4>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-neutral-500">
+                      {editingProduct.hidden ? 'Oculto para clientes' : 'Visible en el catálogo'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setEditingProduct({ ...editingProduct, hidden: !editingProduct.hidden, status: editingProduct.hidden ? 'published' : 'draft' })}
+                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                        editingProduct.hidden ? 'bg-gray-300' : 'bg-[#116dff]'
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
+                        editingProduct.hidden ? 'left-0.5' : 'left-5'
+                      }`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-neutral-800">Categoría</h4>
+                  <select
+                    value={editingProduct.category || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
+                  >
+                    {availableCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Ribbon / Badge */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-neutral-800">Cinta / Etiqueta</h4>
+                  <select
+                    value={editingProduct.ribbon || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, ribbon: e.target.value })}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
+                  >
+                    <option value="">Sin cinta</option>
+                    <option value="Nuevo">🆕 Nuevo</option>
+                    <option value="Más vendido">🔥 Más vendido</option>
+                    <option value="Oferta">🏷️ Oferta</option>
+                    <option value="Exclusivo">⭐ Exclusivo</option>
+                  </select>
+                  {editingProduct.ribbon && (
+                    <div className="text-[10px] text-neutral-500">
+                      Se muestra como badge en la tarjeta del producto.
+                    </div>
+                  )}
+                </div>
+
+                {/* Más Vendido Toggle */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-2">
+                  <h4 className="text-sm font-bold text-neutral-800">Más Vendido 🔥</h4>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-neutral-500">Destacar en sección principal</p>
+                    <button
+                      type="button"
+                      onClick={() => setEditingProduct({ ...editingProduct, is_best_seller: !editingProduct.is_best_seller })}
+                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                        editingProduct.is_best_seller ? 'bg-amber-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
+                        editingProduct.is_best_seller ? 'left-5' : 'left-0.5'
+                      }`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tallas */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-neutral-800">Tallas disponibles</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {ALL_SIZES.map((size) => {
+                      const isChecked = selectedSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => {
+                            if (isChecked) {
+                              setSelectedSizes(selectedSizes.filter(s => s !== size));
+                            } else {
+                              setSelectedSizes([...selectedSizes, size].sort((a, b) => parseInt(a) - parseInt(b)));
+                            }
+                          }}
+                          className={`w-10 h-10 text-sm font-bold border-2 rounded transition-all ${
+                            isChecked
+                              ? 'bg-[#116dff] text-white border-[#116dff]'
+                              : 'bg-white text-neutral-500 border-gray-300 hover:border-[#116dff]'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            </div>{/* end two-column layout */}
+          </div>{/* end drawer */}
         </div>
       )}
 

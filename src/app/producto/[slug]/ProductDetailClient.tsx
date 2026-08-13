@@ -72,46 +72,64 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           
-          {/* Gallery & Video Section */}
-          <div className="lg:col-span-7 space-y-4">
-            
-            {/* Main Preview Image */}
-            <div className="relative aspect-[3/4] bg-neutral-100 border border-gray-200 overflow-hidden shadow-md">
-              {product.ribbon && (
-                <span className="absolute top-4 left-4 z-10 text-xs font-black uppercase tracking-widest px-3.5 py-1 bg-ush-pink text-white shadow-md">
-                  {product.ribbon}
-                </span>
+          {/* Gallery: Vertical Thumbnails LEFT + Main Image RIGHT */}
+          <div className="lg:col-span-7">
+            <div className="flex gap-3 items-start">
+
+              {/* Left Vertical Thumbnail Column */}
+              {(currentProduct.images.length > 1 || currentProduct.video_url) && (
+                <div className="flex flex-col gap-2 flex-shrink-0 w-[72px]">
+                  {currentProduct.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedImage(img)}
+                      className={`relative w-[72px] h-[90px] border-2 transition-all overflow-hidden bg-neutral-100 flex-shrink-0 ${
+                        selectedImage === img
+                          ? 'border-ush-pink shadow-md'
+                          : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-300'
+                      }`}
+                    >
+                      <Image src={img} alt={`Vista ${idx + 1}`} fill className="object-cover" />
+                    </button>
+                  ))}
+
+                  {/* Video thumbnail at bottom of column */}
+                  {currentProduct.video_url && (
+                    <button
+                      onClick={() => {
+                        // scroll to video section
+                        document.getElementById('product-video')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="relative w-[72px] h-[90px] border-2 border-transparent hover:border-gray-300 overflow-hidden bg-neutral-900 flex items-center justify-center flex-shrink-0 opacity-70 hover:opacity-100 transition-all"
+                    >
+                      <Film size={22} className="text-white" />
+                      <span className="absolute bottom-1 text-[9px] text-white font-bold uppercase tracking-wide">Video</span>
+                    </button>
+                  )}
+                </div>
               )}
 
-              <Image
-                src={selectedImage}
-                alt={currentProduct.name}
-                fill
-                priority
-                className="object-cover object-center"
-              />
-            </div>
+              {/* Main Preview Image */}
+              <div className="relative flex-1 aspect-[3/4] bg-neutral-100 border border-gray-200 overflow-hidden shadow-md min-w-0">
+                {product.ribbon && (
+                  <span className="absolute top-4 left-4 z-10 text-xs font-black uppercase tracking-widest px-3.5 py-1 bg-ush-pink text-white shadow-md">
+                    {product.ribbon}
+                  </span>
+                )}
 
-            {/* Thumbnails */}
-            {currentProduct.images.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                {currentProduct.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImage(img)}
-                    className={`relative w-20 h-24 flex-shrink-0 border-2 transition-all overflow-hidden bg-neutral-100 ${
-                      selectedImage === img ? 'border-ush-pink shadow-md scale-95' : 'border-transparent opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <Image src={img} alt={`Vista ${idx + 1}`} fill className="object-cover" />
-                  </button>
-                ))}
+                <Image
+                  src={selectedImage}
+                  alt={currentProduct.name}
+                  fill
+                  priority
+                  className="object-cover object-center"
+                />
               </div>
-            )}
+            </div>
 
             {/* Promotional Video Player if available */}
             {currentProduct.video_url && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
+              <div id="product-video" className="mt-6 pt-6 border-t border-gray-100">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-ush-navy flex items-center gap-2 mb-3">
                   <Film size={16} className="text-ush-pink" /> Video de la Prenda en Movimiento
                 </h4>
@@ -120,8 +138,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 </div>
               </div>
             )}
-
           </div>
+
 
           {/* Product Details Section */}
           <div className="lg:col-span-5 space-y-6">

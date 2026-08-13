@@ -121,11 +121,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
                 {product.ribbon}
               </span>
             )}
-            {product.fit && (
-              <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-neutral-100 text-[#1b2333] border border-gray-200">
-                FIT: {product.fit}
-              </span>
-            )}
             <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
               <Truck size={10} /> Envío Gratis (12+ Uds)
             </span>

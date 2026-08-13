@@ -46,13 +46,15 @@ export const Header: React.FC = () => {
             </button>
           </div>
 
-          {/* Logo / Brand - Official Ushuaia Style */}
-          <div className="flex-1 lg:flex-none text-center lg:text-left">
-            <Logo variant="dark" size="md" />
-          </div>
+          {/* Logo & Desktop Nav Group */}
+          <div className="flex items-center gap-8 lg:gap-10">
+            {/* Logo / Brand */}
+            <div className="shrink-0">
+              <Logo variant="dark" size="md" />
+            </div>
 
-          {/* Navigation Links - Desktop */}
-          <nav className="hidden lg:flex items-center space-x-7">
+            {/* Navigation Links - Desktop */}
+            <nav className="hidden lg:flex items-center space-x-6">
             <Link
               href="/"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
@@ -180,6 +182,7 @@ export const Header: React.FC = () => {
               </Link>
             )}
           </nav>
+          </div>
 
           {/* Right Action Icons */}
           <div className="flex items-center space-x-3 sm:space-x-5">
