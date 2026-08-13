@@ -7,12 +7,13 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publish
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const PRODUCTS_STORAGE_KEY = 'ush_products_override_v3';
+const PRODUCTS_STORAGE_KEY = 'ush_products_override_v4';
 
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;
   try {
-    // Purge obsolete legacy cache keys that were trapping 63 items
+    // Purge obsolete legacy cache keys that were trapping old empty-image data
+    localStorage.removeItem('ush_products_override_v3');
     localStorage.removeItem('ush_products_override_v2');
     localStorage.removeItem('ush_products_override');
 
@@ -22,7 +23,19 @@ export function getLocalProductsOverride(): Product[] | null {
       if (Array.isArray(parsed) && parsed.length > 0) {
         const existingRefs = new Set(parsed.map((p: Product) => p.reference || p.id));
         const missing = INITIAL_PRODUCTS.filter((p) => !existingRefs.has(p.reference) && !existingRefs.has(p.id));
-        return [...parsed, ...missing];
+        const merged = [...parsed, ...missing];
+
+        // Always fill images from the static catalog (Google Drive) so stale
+        // overrides saved before the Drive connection never hide photos.
+        const byRef = new Map(INITIAL_PRODUCTS.map((p) => [p.reference || p.id, p]));
+        return merged.map((p) => {
+          const base = byRef.get(p.reference || p.id);
+          const hasImage = p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '';
+          if (!hasImage && base && base.images && base.images.length > 0) {
+            return { ...p, images: base.images };
+          }
+          return p;
+        });
       }
     }
   } catch (e) {
