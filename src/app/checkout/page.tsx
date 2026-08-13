@@ -4,16 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { submitOrder } from '@/lib/supabase';
-import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info } from 'lucide-react';
-
-// All Colombian departments
-const COLOMBIA_DEPARTMENTS = [
-  'Amazonas','Antioquia','Arauca','Atlántico','Bolívar','Boyacá','Caldas','Caquetá',
-  'Casanare','Cauca','Cesar','Chocó','Córdoba','Cundinamarca','Guainía','Guaviare',
-  'Huila','La Guajira','Magdalena','Meta','Nariño','Norte de Santander','Putumayo',
-  'Quindío','Risaralda','San Andrés y Providencia','Santander','Sucre','Tolima',
-  'Valle del Cauca','Vaupés','Vichada','Bogotá D.C.'
-];
+import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone } from 'lucide-react';
+import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
 
 function generateOrderId() {
   const ts = Date.now().toString(36).toUpperCase();
@@ -40,6 +32,9 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cityQuery, setCityQuery] = useState('');
+  const [cityOpen, setCityOpen] = useState(false);
+  const [phoneCountry, setPhoneCountry] = useState<string>('+57');
 
   // Pre-fill from CartDrawer mini-modal (sessionStorage)
   useEffect(() => {
@@ -82,7 +77,7 @@ export default function CheckoutPage() {
       customer_name: formData.name + (formData.company ? ` / ${formData.company}` : ''),
       customer_doc: `${formData.doc_type} ${formData.doc_number}`,
       customer_email: formData.email,
-      customer_phone: formData.phone,
+      customer_phone: formData.phone.includes('+') ? formData.phone : `${phoneCountry} ${formData.phone}`,
       shipping_address: formData.address,
       city: formData.city,
       department: formData.department,
@@ -347,14 +342,31 @@ export default function CheckoutPage() {
                       <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                         Celular / WhatsApp *
                       </label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+57 300 000 0000"
-                        className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
-                      />
+                      <div className="flex items-stretch">
+                        <div className="relative">
+                          <select
+                            value={phoneCountry}
+                            onChange={(e) => setPhoneCountry(e.target.value)}
+                            className="h-full border border-gray-300 border-r-0 bg-white px-2 text-xs font-bold text-neutral-800 focus:outline-none focus:border-ush-pink"
+                            title="Código de país"
+                          >
+                            {PHONE_COUNTRIES.map((c) => (
+                              <option key={c.code} value={c.code}>{c.code}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <input
+                          type="tel"
+                          required
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder={PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.placeholder || '300 000 0000'}
+                          className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                        />
+                      </div>
+                      <p className="text-[10px] text-neutral-400 mt-1">
+                        {PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.flag} {PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.country} — se enviará como {phoneCountry} {formData.phone || 'tu número'}
+                      </p>
                     </div>
                   </div>
 
@@ -376,18 +388,71 @@ export default function CheckoutPage() {
 
                   {/* Ciudad y Departamento */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
+                    <div className="relative">
                       <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                         Ciudad / Municipio *
                       </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        placeholder="Ej: Medellín, Bogotá, Bucaramanga"
-                        className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
-                      />
+                      {(() => {
+                        const citiesForDep = formData.department
+                          ? COLOMBIA_MUNICIPALITIES[formData.department] || []
+                          : [];
+                        const filtered = cityQuery.trim()
+                          ? citiesForDep.filter((c) => c.toLowerCase().includes(cityQuery.toLowerCase()))
+                          : citiesForDep;
+                        return (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setCityOpen((o) => !o)}
+                              className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white flex items-center justify-between"
+                            >
+                              <span className={formData.city ? 'text-neutral-900' : 'text-neutral-400'}>
+                                {formData.city || (formData.department ? 'Buscar ciudad...' : 'Primero selecciona el departamento')}
+                              </span>
+                              <ChevronDown size={14} className="text-neutral-400" />
+                            </button>
+
+                            {cityOpen && formData.department && (
+                              <div className="absolute z-30 mt-1 w-full bg-white border border-gray-300 shadow-xl">
+                                <div className="flex items-center gap-2 p-2 border-b border-gray-200">
+                                  <Search size={14} className="text-neutral-400" />
+                                  <input
+                                    type="text"
+                                    value={cityQuery}
+                                    onChange={(e) => setCityQuery(e.target.value)}
+                                    placeholder="Filtrar por nombre..."
+                                    autoFocus
+                                    className="w-full text-xs focus:outline-none text-neutral-900"
+                                  />
+                                </div>
+                                <div className="max-h-44 overflow-y-auto">
+                                  {filtered.length === 0 ? (
+                                    <p className="p-3 text-xs text-neutral-400">No se encontraron ciudades.</p>
+                                  ) : (
+                                    filtered.map((c) => (
+                                      <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData({ ...formData, city: c });
+                                          setCityQuery('');
+                                          setCityOpen(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-xs hover:bg-ush-pinkLight ${formData.city === c ? 'font-bold text-ush-pink bg-ush-pinkLight' : 'text-neutral-700'}`}
+                                      >
+                                        {c}
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                      {cityOpen && !formData.department && (
+                        <p className="text-[10px] text-amber-600 mt-1">Selecciona primero el departamento para ver sus ciudades.</p>
+                      )}
                     </div>
 
                     <div>
@@ -397,7 +462,11 @@ export default function CheckoutPage() {
                       <select
                         required
                         value={formData.department}
-                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, department: e.target.value, city: '' });
+                          setCityQuery('');
+                          setCityOpen(false);
+                        }}
                         className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
                       >
                         <option value="">Seleccionar departamento...</option>
