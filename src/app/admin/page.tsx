@@ -14,7 +14,7 @@ import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
 
 const DEFAULT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
-const DEFAULT_CATEGORIES = ['Jeans', 'Shorts', 'Faldas', 'Cargo', 'Bermuda', 'Nuevo', 'Rebajas'];
+const DEFAULT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargo', 'Bermuda', 'Nuevo', 'Rebajas'];
 const ALL_SIZES = ['6', '8', '10', '12', '14'];
 
 export default function AdminCatalogPage() {

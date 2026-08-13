@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Flame, ChevronRight, Sparkles } from 'lucide-react';
+import { Flame, ChevronRight, ChevronLeft, Sparkles, ChevronDown } from 'lucide-react';
 import { getLocalProductsOverride, getTopSellingProductIds } from '@/lib/supabase';
 
 interface ProductGridProps {
@@ -11,11 +11,38 @@ interface ProductGridProps {
 }
 
 const PAGE_SIZE = 12;
+const CAROUSEL_VISIBLE = 3;
+
+// Animación Ken Burns distinta por producto dentro del carrusel
+const KENBURNS = [
+  'animate-kenburns-zoom',
+  'animate-kenburns-pan-left',
+  'animate-kenburns-pan-right',
+  'animate-kenburns-tilt',
+  'animate-kenburns-float',
+];
+
+// Estructura de colecciones igual a ushuaiajeans.com.co (solo lo que existe en nuestro catálogo)
+const FILTER_CATEGORIES = ['Todos', 'Jeans', 'Pantalones', 'Shorts', 'Faldas'] as const;
+
+const FILTER_FITS: Record<string, string[]> = {
+  Jeans: ['Todos', 'Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny'],
+  Pantalones: ['Todos', 'Wide Leg', 'Straight', 'Bota Flare', 'Skinny'],
+  Shorts: ['Todos'],
+  Faldas: ['Todos'],
+};
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
   const [topSellerIds, setTopSellerIds] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
+
+  // Filtros de prendas (estilo colecciones del sitio)
+  const [activeCategory, setActiveCategory] = useState<string>('Todos');
+  const [activeFit, setActiveFit] = useState<string>('Todos');
+  const [fitMenuOpen, setFitMenuOpen] = useState(false);
 
   useEffect(() => {
     const updateList = () => {
@@ -56,8 +83,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
   // Best sellers highlighted with animation
   const bestSellers = visibleProducts.filter(isTopSeller).slice(0, 8);
-  const regularProducts = visibleProducts.filter((p) => !bestSellers.includes(p));
-  const catalogProducts = visibleProducts;
+
+  // ── Filtro de prendas (aplica al catálogo completo) ──
+  const catalogProducts = visibleProducts.filter((p) => {
+    if (activeCategory !== 'Todos' && (p.category || '') !== activeCategory) return false;
+    if (activeFit !== 'Todos' && (p.fit || '') !== activeFit) return false;
+    return true;
+  });
 
   const paginatedProducts = catalogProducts.slice(0, visibleCount);
   const hasMore = visibleCount < catalogProducts.length;
@@ -66,9 +98,43 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     setVisibleCount((prev) => prev + PAGE_SIZE);
   };
 
+  // ── Carrusel: 3 por vista con flechas ──
+  const totalSlides = Math.max(0, bestSellers.length - CAROUSEL_VISIBLE);
+  const maxCarouselIndex = totalSlides;
+
+  const nextSlide = () => {
+    setCarouselIndex((prev) => (prev >= maxCarouselIndex ? 0 : prev + 1));
+  };
+  const prevSlide = () => {
+    setCarouselIndex((prev) => (prev <= 0 ? maxCarouselIndex : prev - 1));
+  };
+
+  useEffect(() => {
+    if (carouselPaused) return;
+    const id = setInterval(() => {
+      setCarouselIndex((prev) => (prev >= maxCarouselIndex ? 0 : prev + 1));
+    }, 4000);
+    return () => clearInterval(id);
+  }, [carouselPaused, maxCarouselIndex]);
+
+  const visibleSlides = bestSellers.slice(carouselIndex, carouselIndex + CAROUSEL_VISIBLE);
+
+  const handleCategoryChange = (cat: string) => {
+    setActiveCategory(cat);
+    setActiveFit('Todos');
+    setFitMenuOpen(false);
+    setVisibleCount(PAGE_SIZE);
+  };
+
+  const handleFitChange = (fit: string) => {
+    setActiveFit(fit);
+    setFitMenuOpen(false);
+    setVisibleCount(PAGE_SIZE);
+  };
+
   return (
     <>
-      {/* ── SECCIÓN MÁS VENDIDOS ── */}
+      {/* ── SECCIÓN MÁS VENDIDOS (carrusel 3 por vista) ── */}
       {bestSellers.length > 0 && (
         <section id="mas-vendidas" className="scroll-mt-20 bg-[#fdf3f5] border-b border-rose-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -85,17 +151,60 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
               <div className="mt-3 h-0.5 w-24 bg-gradient-to-r from-transparent via-[#d88193] to-transparent animate-pulse-soft" />
             </div>
 
-            {/* Best Sellers Grid — staggered reveal */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {bestSellers.map((product, i) => (
+            {/* Carousel Controls */}
+            <div className="relative" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
+              {/* Left Arrow */}
+              <button
+                onClick={prevSlide}
+                aria-label="Anterior"
+                className="absolute -left-2 sm:left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur border border-rose-100 text-[#1b2333] flex items-center justify-center shadow-lg hover:bg-[#d88193] hover:text-white transition-all group"
+              >
+                <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+
+              {/* Carousel Track — 3 visible per view */}
+              <div className="overflow-hidden">
                 <div
-                  key={product.id}
-                  className={`animate-fadeInUp delay-${Math.min((i % 4) * 100 + 100, 500)}`}
+                  className="flex transition-transform duration-700 ease-out"
+                  style={{ transform: `translateX(-${carouselIndex * (100 / CAROUSEL_VISIBLE)}%)` }}
                 >
-                  <ProductCard key={`${product.id}-top`} product={product} isTopSeller />
+                  {bestSellers.map((product, i) => (
+                    <div key={product.id} className="w-full sm:w-1/2 lg:w-1/3 shrink-0 px-2 sm:px-3">
+                      <ProductCard
+                        product={product}
+                        isTopSeller
+                        imageAnimation={KENBURNS[i % KENBURNS.length]}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Right Arrow */}
+              <button
+                onClick={nextSlide}
+                aria-label="Siguiente"
+                className="absolute -right-2 sm:right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 backdrop-blur border border-rose-100 text-[#1b2333] flex items-center justify-center shadow-lg hover:bg-[#d88193] hover:text-white transition-all group"
+              >
+                <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
             </div>
+
+            {/* Dots */}
+            {maxCarouselIndex > 0 && (
+              <div className="flex items-center justify-center gap-1.5 mt-6">
+                {Array.from({ length: maxCarouselIndex + 1 }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCarouselIndex(i)}
+                    aria-label={`Ir a la diapositiva ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === carouselIndex ? 'w-6 bg-[#d88193]' : 'w-1.5 bg-rose-200 hover:bg-rose-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -106,7 +215,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Result count header */}
-          <div className="flex items-center justify-between mb-8 animate-fadeInUp">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 animate-fadeInUp">
             <div>
               <h2 className="text-xl font-black text-[#1b2333] uppercase tracking-tight">
                 Catálogo Completo
@@ -115,6 +224,65 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 {catalogProducts.length} referencias disponibles
                 {catalogProducts.length > visibleCount && ` · Mostrando ${paginatedProducts.length} de ${catalogProducts.length}`}
               </p>
+            </div>
+          </div>
+
+          {/* ── Filtro de prendas (colecciones del sitio) ── */}
+          <div className="mb-8 animate-fadeInUp">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mr-1">
+                Categoría:
+              </span>
+              {FILTER_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border transition-all ${
+                    activeCategory === cat
+                      ? 'bg-[#1b2333] text-white border-[#1b2333]'
+                      : 'bg-white text-neutral-600 border-gray-200 hover:border-[#d88193] hover:text-[#d88193]'
+                  }`}
+                >
+                  {cat === 'Todos' ? 'Todos' : cat}
+                </button>
+              ))}
+
+              {/* Fit dropdown (solo si la categoría tiene fits) */}
+              {FILTER_FITS[activeCategory] && FILTER_FITS[activeCategory].length > 1 && (
+                <div className="relative ml-2">
+                  <button
+                    onClick={() => setFitMenuOpen((o) => !o)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-gray-200 bg-white text-neutral-600 hover:border-[#d88193] hover:text-[#d88193] transition-all"
+                  >
+                    Fit: <span className="text-[#d88193]">{activeFit}</span>
+                    <ChevronDown size={13} className={`transition-transform ${fitMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {fitMenuOpen && (
+                    <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 shadow-xl min-w-[180px]">
+                      {FILTER_FITS[activeCategory].map((fit) => (
+                        <button
+                          key={fit}
+                          onClick={() => handleFitChange(fit)}
+                          className={`w-full text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider hover:bg-rose-50 ${
+                            activeFit === fit ? 'text-[#d88193] bg-rose-50' : 'text-neutral-600'
+                          }`}
+                        >
+                          {fit}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(activeCategory !== 'Todos' || activeFit !== 'Todos') && (
+                <button
+                  onClick={() => { handleCategoryChange('Todos'); handleFitChange('Todos'); }}
+                  className="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#d88193] hover:underline"
+                >
+                  Limpiar filtros
+                </button>
+              )}
             </div>
           </div>
 
@@ -150,8 +318,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
           ) : (
             <div className="text-center py-20 bg-neutral-50 border border-dashed border-gray-200">
               <Flame size={36} className="mx-auto text-neutral-300 mb-3" />
-              <p className="text-sm font-bold uppercase text-neutral-700">No hay prendas disponibles</p>
-              <p className="text-xs text-neutral-400 mt-1">Pronto subiremos las fotos de esta referencia.</p>
+              <p className="text-sm font-bold uppercase text-neutral-700">No hay prendas en esta categoría</p>
+              <p className="text-xs text-neutral-400 mt-1">Prueba con otra categoría o fit.</p>
             </div>
           )}
         </div>

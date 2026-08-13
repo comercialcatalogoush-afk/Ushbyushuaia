@@ -12,9 +12,10 @@ import { animateFlyToCart } from '@/lib/flyToCart';
 interface ProductCardProps {
   product: Product;
   isTopSeller?: boolean;
+  imageAnimation?: string;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, imageAnimation }) => {
   const { addToCart, formatCOP } = useCart();
   
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
@@ -76,13 +77,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
         onMouseLeave={() => setCurrentImageIndex(0)}
       >
         {hasImages ? (
-          <Image
-            src={mainImage}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-          />
+          <div className="absolute inset-0 overflow-hidden">
+            <Image
+              src={mainImage}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className={`object-cover object-center ${imageAnimation || 'transition-transform duration-700 ease-out group-hover:scale-105'}`}
+            />
+          </div>
         ) : (
           // Placeholder for missing images
           <div className="absolute inset-0 bg-gradient-to-br from-neutral-100 to-rose-50 flex flex-col items-center justify-center text-center p-6">
