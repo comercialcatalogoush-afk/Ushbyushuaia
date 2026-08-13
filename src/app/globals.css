@@ -91,7 +91,6 @@
   0%, 100% { transform: scale(1.04) translateY(0); }
   50%      { transform: scale(1.04) translateY(-1.5%); }
 }
-
 /* ── Nuevas animaciones gratuitas (plus visual) ───── */
 @keyframes marquee {
   0%   { transform: translateX(0); }

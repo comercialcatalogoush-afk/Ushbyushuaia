@@ -110,7 +110,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               )}
 
               {/* Main Preview Image */}
-              <div className="relative flex-1 aspect-[3/4] bg-neutral-100 border border-gray-200 overflow-hidden shadow-md min-w-0">
+              <div className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 overflow-hidden shadow-md min-w-0 mx-auto">
                 {product.ribbon && (
                   <span className="absolute top-4 left-4 z-10 text-xs font-black uppercase tracking-widest px-3.5 py-1 bg-ush-pink text-white shadow-md">
                     {product.ribbon}
@@ -123,7 +123,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   fill
                   priority
                   quality={100}
-                  sizes="(max-width: 1024px) 90vw, 60vw"
+                  sizes="(max-width: 1024px) 90vw, 40vw"
                   className="object-cover object-center"
                 />
               </div>

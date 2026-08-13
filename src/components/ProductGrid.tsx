@@ -4,22 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Flame, Sparkles, ArrowRight, ChevronRight } from 'lucide-react';
+import { Flame, ArrowRight, ChevronRight } from 'lucide-react';
 import { getLocalProductsOverride, getTopSellingProductIds } from '@/lib/supabase';
 import { useVisibleCards } from '@/lib/useVisibleCards';
 
 interface ProductGridProps {
   products: Product[];
 }
-
-// Animación Ken Burns distinta por producto dentro del carrusel
-const KENBURNS = [
-  'animate-kenburns-zoom',
-  'animate-kenburns-pan-left',
-  'animate-kenburns-pan-right',
-  'animate-kenburns-tilt',
-  'animate-kenburns-float',
-];
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
@@ -98,19 +89,16 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
           <div className="pointer-events-none absolute -top-20 -left-20 w-56 h-56 bg-[#d88193]/10 rounded-full blur-3xl animate-pulse-soft" />
           <div className="pointer-events-none absolute -bottom-24 -right-16 w-64 h-64 bg-amber-200/20 rounded-full blur-3xl animate-pulse-soft" />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative">
             {/* Section Title */}
-            <div className="flex flex-col items-center text-center mb-6 animate-fadeInUp">
-              <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.35em] text-[#d88193] mb-2 px-3.5 py-1 border border-[#d88193]/20 bg-white/70 backdrop-blur">
-                <Flame size={12} className="animate-float" /> Los Favoritos de tu Boutique
-              </span>
+            <div className="flex flex-col items-center text-center mb-5 animate-fadeInUp">
               <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#1b2333] flex flex-wrap items-center justify-center gap-2.5">
-                Referencias
+                <Flame size={22} className="text-[#d88193] animate-float" />
+                <span>Más</span>
                 <span className="relative text-gradient-pink animate-pulse-soft">
-                  Más Vendidas
+                  Vendidos
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#d88193] to-transparent" />
                 </span>
-                <Sparkles size={22} className="text-amber-400 animate-float" />
               </h2>
               <div className="mt-3 h-0.5 w-24 bg-gradient-to-r from-transparent via-[#d88193] to-transparent animate-pulse-soft" />
             </div>
@@ -144,18 +132,12 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                       className="w-full shrink-0 px-1.5 sm:px-2.5 animate-fadeInUp"
                       style={{ width: `${slideWidth}%` }}
                     >
-                      <div className="relative group/card">
-                        <ProductCard
-                          product={product}
-                          isTopSeller
-                          imageAnimation={KENBURNS[i % KENBURNS.length]}
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
-                        {/* Number badge */}
-                        <span className="absolute -top-2 -left-2 z-10 w-7 h-7 bg-[#d88193] text-white text-[11px] font-black flex items-center justify-center shadow-lg border-2 border-white">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                      </div>
+                      <ProductCard
+                        product={product}
+                        isTopSeller
+                        compact
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
                     </div>
                   ))}
                 </div>

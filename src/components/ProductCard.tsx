@@ -15,9 +15,10 @@ interface ProductCardProps {
   isTopSeller?: boolean;
   imageAnimation?: string;
   sizes?: string;
+  compact?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, imageAnimation, sizes }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, imageAnimation, sizes, compact }) => {
   const { addToCart, formatCOP } = useCart();
   
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
@@ -54,6 +55,72 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     setTimeout(() => setAddedAnimation(false), 1800);
     setTimeout(() => setShowAddedToast(false), 2800);
   };
+
+  // ── MODO COMPACTO (carrusel Más Vendidos): foto cuadrada completa + nombre + ref + precio ──
+  if (compact) {
+    return (
+      <Link
+        href={`/producto/${product.slug}`}
+        className="group block bg-white border border-gray-200 hover:border-ush-pink hover:shadow-lg transition-all duration-300 relative"
+      >
+        {/* Imagen cuadrada completa (sin recorte), click → detalle para solicitar */}
+        <div className="relative aspect-square overflow-hidden bg-neutral-100">
+          {hasImages ? (
+            <Image
+              src={mainImage}
+              alt={product.name}
+              fill
+              sizes={sizes || "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
+              quality={100}
+              className="object-cover object-center"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-neutral-100 to-rose-50 flex flex-col items-center justify-center text-center p-4">
+              <ImageIcon size={22} className="text-ush-pink opacity-60 mb-2" />
+              <p className="text-[9px] font-black uppercase tracking-widest text-ush-navy">Foto Próximamente</p>
+            </div>
+          )}
+          {isBestSellerBadge && (
+            <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-[#d88193] text-white shadow">
+              Más vendido
+            </span>
+          )}
+          {/* Hint al hacer hover */}
+          <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="bg-white/95 text-ush-navy px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider shadow-lg">
+              Ver para solicitar
+            </span>
+          </div>
+        </div>
+
+        {/* Nombre + referencia + precio */}
+        <div className="p-2.5">
+          {(() => {
+            const { short, color } = abbreviateProductName(product);
+            return (
+              <>
+                <h3 className="text-[13px] font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight">
+                  {short}
+                  {color && (
+                    <span className="block text-[9px] font-extrabold text-[#d88193] mt-0.5 uppercase tracking-[0.12em]">
+                      · {color}
+                    </span>
+                  )}
+                </h3>
+                <span className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mt-0.5">
+                  Ref. #{product.reference}
+                </span>
+              </>
+            );
+          })()}
+          <div className="mt-2 pt-2 border-t border-gray-100 flex items-baseline justify-between gap-1">
+            <span className="text-[9px] font-extrabold text-ush-pink uppercase">P. Mayorista:</span>
+            <span className="text-sm font-black text-neutral-900">{formatCOP(wholesalePrice)}</span>
+          </div>
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <div className="group relative bg-white border border-gray-200 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-ush-pink overflow-hidden rounded-none card-hover-lift card-shine">
