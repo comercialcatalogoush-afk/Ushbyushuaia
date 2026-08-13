@@ -200,6 +200,7 @@ export default function AdminCatalogPage() {
   };
 
   // Compress Image Utility (Client-side Canvas) → Blob for Supabase Storage
+  // High-quality near-lossless: 1920px max dim, JPEG q0.92 (visually identical, fits free tier)
   const compressAndReadImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -209,7 +210,7 @@ export default function AdminCatalogPage() {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const maxDim = 1200;
+          const maxDim = 1920;
 
           if (width > maxDim || height > maxDim) {
             if (width > height) {
@@ -225,6 +226,8 @@ export default function AdminCatalogPage() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
             canvas.toBlob(
               (blob) => {
@@ -235,7 +238,7 @@ export default function AdminCatalogPage() {
                 }
               },
               'image/jpeg',
-              0.82
+              0.92
             );
           } else {
             reject(new Error('Canvas no disponible'));
