@@ -383,7 +383,7 @@ export default function AdminCatalogPage() {
       compare_price: newSuggested,
       ribbon: editingProduct.ribbon || '',
       category: editingProduct.category || 'Jeans',
-      fit: editingProduct.fit || 'Wide Leg',
+      fit: editingProduct.fit || '',
       status: editingProduct.status || 'published',
       stock_by_size: stockBySize,
       is_best_seller: editingProduct.is_best_seller === true,
@@ -1113,6 +1113,30 @@ export default function AdminCatalogPage() {
                 />
               </div>
 
+              {/* Section: Referencia / SKU */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Referencia / SKU</label>
+                  <input
+                    type="text"
+                    value={editingProduct.reference || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, reference: e.target.value })}
+                    placeholder="Ej: 559100"
+                    className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Slug (URL)</label>
+                  <input
+                    type="text"
+                    value={editingProduct.slug || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, slug: e.target.value })}
+                    placeholder="Ej: ref-559100"
+                    className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20"
+                  />
+                </div>
+              </div>
+
               {/* Section: Descripción */}
               <div>
                 <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Descripción corta</label>
@@ -1320,6 +1344,21 @@ export default function AdminCatalogPage() {
                   </select>
                 </div>
 
+                {/* Fit */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
+                  <h4 className="text-sm font-bold text-neutral-800">Fit / Corte</h4>
+                  <select
+                    value={editingProduct.fit || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, fit: e.target.value })}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
+                  >
+                    <option value="">Sin fit</option>
+                    {availableFits.map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Ribbon / Badge */}
                 <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
                   <h4 className="text-sm font-bold text-neutral-800">Cinta / Etiqueta</h4>
@@ -1385,6 +1424,76 @@ export default function AdminCatalogPage() {
                         >
                           {size}
                         </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Inventario por talla */}
+                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-neutral-800">Inventario por talla</h4>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200">
+                      Stock
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    Cantidad disponible de cada talla. Si el total es 0, la prenda se muestra agotada.
+                  </p>
+                  <div className="space-y-2">
+                    {ALL_SIZES.map((size) => {
+                      const isSelected = selectedSizes.includes(size);
+                      const stockValue = stockBySize[size] ?? 0;
+                      return (
+                        <div key={size} className={`flex items-center justify-between gap-3 p-2 border rounded ${
+                          isSelected ? 'border-blue-200 bg-blue-50/40' : 'border-gray-200 bg-gray-50 opacity-50'
+                        }`}>
+                          <label className="text-xs font-bold text-neutral-700 w-10">
+                            Talla {size}
+                          </label>
+                          <div className="flex items-center gap-1.5 flex-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!isSelected) return;
+                                setStockBySize({ ...stockBySize, [size]: Math.max(0, (stockBySize[size] ?? 0) - 1) });
+                              }}
+                              className={`w-7 h-7 border flex items-center justify-center text-sm font-bold ${
+                                isSelected ? 'border-gray-300 text-neutral-700 hover:bg-gray-100' : 'border-gray-200 text-neutral-300'
+                              }`}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              min="0"
+                              value={stockValue}
+                              disabled={!isSelected}
+                              onChange={(e) => {
+                                const v = Math.max(0, parseInt(e.target.value) || 0);
+                                setStockBySize({ ...stockBySize, [size]: v });
+                              }}
+                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-bold text-center text-neutral-900 focus:outline-none focus:border-[#116dff] disabled:bg-gray-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!isSelected) return;
+                                setStockBySize({ ...stockBySize, [size]: (stockBySize[size] ?? 0) + 1 });
+                              }}
+                              className={`w-7 h-7 border flex items-center justify-center text-sm font-bold ${
+                                isSelected ? 'border-gray-300 text-neutral-700 hover:bg-gray-100' : 'border-gray-200 text-neutral-300'
+                              }`}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <span className={`text-[10px] font-black uppercase w-14 text-right ${
+                            stockValue === 0 ? 'text-rose-500' : 'text-emerald-600'
+                          }`}>
+                            {stockValue === 0 ? 'Agotado' : 'OK'}
+                          </span>
+                        </div>
                       );
                     })}
                   </div>
