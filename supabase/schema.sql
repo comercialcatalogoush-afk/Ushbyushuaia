@@ -90,6 +90,23 @@ CREATE TABLE IF NOT EXISTS public.price_history (
     changed_by TEXT
 );
 
+-- 6. STORAGE BUCKET FOR PRODUCT IMAGES (public, so images load on every device)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public product-images read access"
+ON storage.objects FOR SELECT USING (bucket_id = 'product-images');
+
+CREATE POLICY "Public product-images insert access"
+ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'product-images');
+
+CREATE POLICY "Public product-images update access"
+ON storage.objects FOR UPDATE USING (bucket_id = 'product-images');
+
+CREATE POLICY "Public product-images delete access"
+ON storage.objects FOR DELETE USING (bucket_id = 'product-images');
+
 -- Enable RLS for Security
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;

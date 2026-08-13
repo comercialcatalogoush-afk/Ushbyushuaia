@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage } from '@/lib/supabase';
 import { Product, PriceHistoryRecord } from '@/types';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
@@ -199,8 +199,8 @@ export default function AdminCatalogPage() {
     window.dispatchEvent(new Event('ush_fits_updated'));
   };
 
-  // Compress Image Utility (Client-side Canvas)
-  const compressAndReadImage = (file: File): Promise<string> => {
+  // Compress Image Utility (Client-side Canvas) → Blob for Supabase Storage
+  const compressAndReadImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -226,10 +226,19 @@ export default function AdminCatalogPage() {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-            resolve(compressedUrl);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('No se pudo comprimir la imagen'));
+                }
+              },
+              'image/jpeg',
+              0.82
+            );
           } else {
-            resolve(event.target?.result as string);
+            reject(new Error('Canvas no disponible'));
           }
         };
         img.onerror = reject;
@@ -246,19 +255,30 @@ export default function AdminCatalogPage() {
 
     setUploadingImage(true);
     try {
-      const compressedUrls: string[] = [];
+      const uploadedUrls: string[] = [];
+      const refFolder = (editingProduct?.reference || editingProduct?.id || 'producto').replace(/[^a-zA-Z0-9_-]/g, '-');
       for (let i = 0; i < files.length; i++) {
-        const url = await compressAndReadImage(files[i]);
-        compressedUrls.push(url);
+        try {
+          const blob = await compressAndReadImage(files[i]);
+          const path = `${refFolder}/${Date.now()}-${i}.jpg`;
+          const res = await uploadProductImage(blob, path);
+          if (res.success && res.url) {
+            uploadedUrls.push(res.url);
+          } else {
+            console.warn('Supabase storage upload failed:', res.error);
+          }
+        } catch (err) {
+          console.error('Error uploading image:', err);
+        }
       }
-      if (editingProduct) {
+      if (editingProduct && uploadedUrls.length > 0) {
         setEditingProduct({
           ...editingProduct,
-          images: [...(editingProduct.images || []), ...compressedUrls]
+          images: [...(editingProduct.images || []), ...uploadedUrls]
         });
       }
     } catch (err) {
-      console.error('Error compressing image:', err);
+      console.error('Error uploading images:', err);
     }
     setUploadingImage(false);
     setShowMediaModal(false);
@@ -291,8 +311,20 @@ export default function AdminCatalogPage() {
   const handleRemoveImage = (index: number) => {
     if (!editingProduct || !editingProduct.images) return;
     const imgs = [...editingProduct.images];
-    imgs.splice(index, 1);
+    const [removed] = imgs.splice(index, 1);
     setEditingProduct({ ...editingProduct, images: imgs });
+
+    // If the image lives in our Supabase bucket, delete the file too
+    try {
+      const marker = '/object/public/product-images/';
+      const markerIdx = removed.indexOf(marker);
+      if (markerIdx > -1) {
+        const path = removed.substring(markerIdx + marker.length);
+        deleteProductImage(path).then((res) => {
+          if (!res.success) console.warn('Supabase image delete failed:', res.error);
+        });
+      }
+    } catch (e) {}
   };
 
   const handleOpenNew = () => {
