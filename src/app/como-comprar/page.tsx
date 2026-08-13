@@ -81,7 +81,7 @@ export default function ComoComprarPage() {
 
         <div className="mt-12 text-center">
           <Link
-            href="/#catalogo"
+            href="/catalogo"
             className="inline-flex items-center gap-2 bg-[#1b2333] hover:bg-[#d88193] text-white font-bold px-8 py-4 text-xs uppercase tracking-widest transition-colors shadow-md"
           >
             <span>Ver Productos Disponibles</span>

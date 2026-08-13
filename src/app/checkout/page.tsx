@@ -220,7 +220,7 @@ export default function CheckoutPage() {
             <h2 className="text-lg font-bold text-neutral-900 uppercase">Tu carrito está vacío</h2>
             <p className="text-xs text-neutral-500 mt-1 mb-6">Agrega prendas antes de proceder al pago.</p>
             <Link
-              href="/#catalogo"
+              href="/catalogo"
               className="bg-ush-navy text-white text-xs font-bold uppercase tracking-widest px-6 py-3"
             >
               Ir al Catálogo

@@ -53,7 +53,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-xs text-white/90 font-light">
               <li><Link href="/" className="hover:text-white transition-colors hover:font-semibold">Inicio</Link></li>
               <li><Link href="/como-comprar" className="hover:text-white transition-colors hover:font-semibold">Beneficios Mayoristas</Link></li>
-              <li><Link href="/#catalogo" className="hover:text-white transition-colors hover:font-semibold">Catálogo de Productos</Link></li>
+              <li><Link href="/catalogo" className="hover:text-white transition-colors hover:font-semibold">Catálogo de Productos</Link></li>
               <li><Link href="/contacto" className="hover:text-white transition-colors hover:font-semibold">Contacto Directo</Link></li>
             </ul>
 

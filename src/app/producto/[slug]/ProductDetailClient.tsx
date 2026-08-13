@@ -63,7 +63,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         
         {/* Back Link */}
         <Link
-          href="/#catalogo"
+          href="/catalogo"
           className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ush-navy hover:text-ush-pink mb-8 group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />

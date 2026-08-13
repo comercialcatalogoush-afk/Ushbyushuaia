@@ -130,20 +130,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             </span>
           </div>
 
-          {/* Reference Title — abreviado, tipografía serif Cormorant que resalta */}
+          {/* Reference Title — abreviado con la tipografía de la marca */}
           <Link href={`/producto/${product.slug}`}>
-            <h3 className="font-serif-display text-2xl sm:text-[26px] font-semibold text-[#1b2333] leading-[1.1] tracking-tight group-hover:text-[#c49a6c] transition-colors">
+            <h3 className="text-lg font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight">
               {(() => {
                 const { short, color } = abbreviateProductName(product);
                 return (
                   <>
                     {short}
                     {color && (
-                      <span className="block text-[15px] sm:text-base font-sans-ui font-medium text-[#b5586c] mt-1 uppercase tracking-[0.15em]">
+                      <span className="block text-[11px] font-extrabold text-[#d88193] mt-1 uppercase tracking-[0.12em]">
                         · {color}
                       </span>
                     )}
-                    <span className="block text-[10px] font-sans-ui font-bold uppercase tracking-widest text-neutral-400 mt-1.5">
+                    <span className="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mt-1">
                       Ref. #{product.reference}
                     </span>
                   </>

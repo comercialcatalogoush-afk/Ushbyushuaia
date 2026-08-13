@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -27,9 +27,9 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
       
-      {/* ── Top Notice Bar (conforme a políticas oficiales de la tienda) ── */}
+      {/* â”€â”€ Top Notice Bar (conforme a polÃ­ticas oficiales de la tienda) â”€â”€ */}
       <div className="bg-[#d88193] text-white text-[11px] py-1.5 px-4 text-center tracking-widest font-bold uppercase flex items-center justify-center gap-2">
-        <span>45 DÍAS DE GARANTÍA POR DEFECTOS DE FÁBRICA · 15 DÍAS PARA CAMBIOS</span>
+        <span>45 DÃAS DE GARANTÃA POR DEFECTOS DE FÃBRICA Â· 15 DÃAS PARA CAMBIOS</span>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,7 +40,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 text-neutral-800 hover:text-ush-pink focus:outline-none"
-              aria-label="Menú principal"
+              aria-label="MenÃº principal"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -63,10 +63,10 @@ export const Header: React.FC = () => {
             </Link>
 
             <Link
-              href="/#catalogo"
+              href="/catalogo"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
-              CATÁLOGO
+              CATÃLOGO
             </Link>
 
             {/* MUJER Mega Dropdown */}
@@ -86,7 +86,7 @@ export const Header: React.FC = () => {
               {activeDropdown === 'mujer' && (
                 <div className="absolute top-full left-0 bg-white border border-gray-200 shadow-xl w-48 py-2 z-50 animate-fadeIn">
                   <Link
-                    href="/#catalogo"
+                    href="/catalogo"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-rose-50 border-b border-gray-100"
                   >
                     VER TODO
@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
                     onMouseEnter={() => setActiveSubSubmenu(true)}
                   >
                     <Link
-                      href="/#catalogo"
+                      href="/catalogo"
                       className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#d88193] bg-rose-50/50 hover:bg-rose-50"
                     >
                       <span>JEANS</span>
@@ -111,7 +111,7 @@ export const Header: React.FC = () => {
                         {jeansFits.map((fit) => (
                           <Link
                             key={fit}
-                            href="/#catalogo"
+                            href="/catalogo"
                             className="block px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                           >
                             {fit}
@@ -122,28 +122,28 @@ export const Header: React.FC = () => {
                   </div>
 
                   <Link
-                    href="/#catalogo"
+                    href="/catalogo"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     PANTALONES
                   </Link>
 
                   <Link
-                    href="/#catalogo"
+                    href="/catalogo"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     CARGOS
                   </Link>
 
                   <Link
-                    href="/#catalogo"
+                    href="/catalogo"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     SHORTS
                   </Link>
 
                   <Link
-                    href="/#catalogo"
+                    href="/catalogo"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
                     FALDAS
@@ -153,7 +153,7 @@ export const Header: React.FC = () => {
             </div>
 
             <Link
-              href="/#catalogo"
+              href="/catalogo"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
               REBAJAS
@@ -178,7 +178,7 @@ export const Header: React.FC = () => {
                 href="/admin"
                 className="text-xs uppercase tracking-widest font-extrabold text-[#d88193] hover:underline py-2"
               >
-                ADMIN (CATÁLOGO)
+                ADMIN (CATÃLOGO)
               </Link>
             )}
           </nav>
@@ -200,7 +200,7 @@ export const Header: React.FC = () => {
               <Link
                 href="/admin"
                 className="p-2 text-ush-pink hover:text-ush-pinkHover transition-colors hidden sm:block font-bold"
-                title="Editar Catálogo (Admin)"
+                title="Editar CatÃ¡logo (Admin)"
               >
                 <Settings size={20} />
               </Link>
@@ -262,21 +262,21 @@ export const Header: React.FC = () => {
             INICIO
           </Link>
           <Link
-            href="/#catalogo"
+            href="/catalogo"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            CATÁLOGO
+            CATÃLOGO
           </Link>
           <Link
-            href="/#catalogo"
+            href="/catalogo"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            MUJER — JEANS / SHORTS / FALDAS
+            MUJER â€” JEANS / SHORTS / FALDAS
           </Link>
           <Link
-            href="/#catalogo"
+            href="/catalogo"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
@@ -302,7 +302,7 @@ export const Header: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center gap-2 text-ush-navy font-bold uppercase"
             >
-              <User size={18} /> Iniciar Sesión / Mi Cuenta
+              <User size={18} /> Iniciar SesiÃ³n / Mi Cuenta
             </Link>
           </div>
         </div>

@@ -2,19 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.cdnfonts.com/css/avenir');
+
 @layer base {
   body {
     @apply bg-white text-neutral-900 antialiased selection:bg-[#d88193] selection:text-white;
-    font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+    font-family: 'Avenir', 'Avenir Next', system-ui, sans-serif;
   }
-  h1, h2, h3 {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  }
+  /* Utilidades de marca: serif editorial (Playfair) y sans (Avenir) */
   .font-serif-display {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+    font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
   }
   .font-sans-ui {
-    font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+    font-family: 'Avenir', 'Avenir Next', system-ui, sans-serif;
   }
 }
 
