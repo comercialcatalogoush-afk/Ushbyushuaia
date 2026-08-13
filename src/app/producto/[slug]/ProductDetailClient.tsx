@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, MessageCircle, Ruler, Film, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -309,18 +309,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   </>
                 )}
               </button>
-
-              <a
-                href={`https://wa.me/573022028477?text=${encodeURIComponent(
-                  `Hola USH BY USHUAIA, me interesa la referencia ${product.name} en talla ${selectedSize}${selectedColor ? `, color ${selectedColor}` : ''} (Cantidad: ${quantity} uds). ¿Tienen disponibilidad?`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
-              >
-                <MessageCircle size={18} />
-                <span>Pedir Disponibilidad por WhatsApp</span>
-              </a>
             </div>
 
             {/* Guarantee Callouts */}
