@@ -8,6 +8,7 @@ import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from './SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
+import { abbreviateProductName } from '@/lib/productName';
 
 interface ProductCardProps {
   product: Product;
@@ -129,10 +130,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             </span>
           </div>
 
-          {/* Reference Title */}
+          {/* Reference Title — abreviado, tipografía serif Cormorant que resalta */}
           <Link href={`/producto/${product.slug}`}>
-            <h3 className="text-sm font-black text-ush-navy group-hover:text-ush-pink transition-colors uppercase tracking-wide">
-              {product.name}
+            <h3 className="font-serif-display text-2xl sm:text-[26px] font-semibold text-[#1b2333] leading-[1.1] tracking-tight group-hover:text-[#c49a6c] transition-colors">
+              {(() => {
+                const { short, color } = abbreviateProductName(product);
+                return (
+                  <>
+                    {short}
+                    {color && (
+                      <span className="block text-[15px] sm:text-base font-sans-ui font-medium text-[#b5586c] mt-1 uppercase tracking-[0.15em]">
+                        · {color}
+                      </span>
+                    )}
+                    <span className="block text-[10px] font-sans-ui font-bold uppercase tracking-widest text-neutral-400 mt-1.5">
+                      Ref. #{product.reference}
+                    </span>
+                  </>
+                );
+              })()}
             </h3>
           </Link>
 
