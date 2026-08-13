@@ -73,12 +73,6 @@ export const Footer: React.FC = () => {
                   Privacidad y Habeas Data
                 </Link>
               </li>
-              <li>
-                <Link href="/politicas#terminos" className="hover:text-white transition-colors hover:font-semibold flex items-center gap-1.5">
-                  <FileText size={12} className="text-white/60 shrink-0" />
-                  Términos y Condiciones Mayorista
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -148,7 +142,7 @@ export const Footer: React.FC = () => {
           <p>© {new Date().getFullYear()} USH BY USHUAIA. Marca Tu Identidad. Todos los derechos reservados.</p>
           <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
             <Link href="/politicas#habeas-data" className="hover:text-white transition-colors">Habeas Data</Link>
-            <Link href="/politicas#terminos" className="hover:text-white transition-colors">Términos Mayorista</Link>
+            <Link href="/politicas#envios" className="hover:text-white transition-colors">Política de Envíos</Link>
             <span>Itagüí, Antioquia · Colombia</span>
           </div>
         </div>

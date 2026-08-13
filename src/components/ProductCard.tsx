@@ -7,6 +7,7 @@ import { ShoppingBag, Eye, Check, Plus, Minus, Ruler, Truck, Sparkles, Image as 
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from './SizeGuideModal';
+import { animateFlyToCart } from '@/lib/flyToCart';
 
 interface ProductCardProps {
   product: Product;
@@ -42,6 +43,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const imgEl = (e.currentTarget.closest('.group') as HTMLElement)?.querySelector('img');
+    if (imgEl) animateFlyToCart(imgEl as HTMLElement);
     addToCart(product, selectedSize, undefined, quantity);
     setAddedAnimation(true);
     setShowAddedToast(true);
@@ -138,8 +141,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
           {/* Price Display Block */}
           <div className="mt-2.5 bg-neutral-50 p-2.5 border border-gray-100 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-neutral-500 font-semibold uppercase">P. Sugerido:</span>
-              <span className="text-xs text-gray-400 line-through font-bold whitespace-nowrap">
+              <span className="text-[11px] text-neutral-600 font-bold uppercase">Precio Sugerido de Venta:</span>
+              <span className="text-xs text-neutral-800 font-extrabold whitespace-nowrap">
                 {formatCOP(suggestedPrice)}
               </span>
             </div>

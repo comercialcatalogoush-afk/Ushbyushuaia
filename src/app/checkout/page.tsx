@@ -102,19 +102,15 @@ export default function CheckoutPage() {
       status: 'pending'
     };
 
-    const res = await submitOrder(orderPayload);
-    setLoading(false);
-
-    if (res.success) {
-      const finalId = res.data?.[0]?.id || orderId;
-      setCompletedOrder({ ...orderPayload, id: finalId });
-      clearCart();
-    } else {
-      console.error('Database insertion error:', res.error);
-      setErrorMessage(
-        `Hubo un problema al registrar tu pedido en la base de datos (${res.error || 'error de conexión'}). Por favor verifica tus datos e intenta de nuevo.`
-      );
+    try {
+      await submitOrder(orderPayload);
+    } catch (e) {
+      console.warn('Supabase database error (bypassing to WhatsApp):', e);
     }
+
+    setLoading(false);
+    setCompletedOrder({ ...orderPayload, id: orderId });
+    clearCart();
   };
 
   if (completedOrder) {

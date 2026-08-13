@@ -7,6 +7,7 @@ import { ShoppingBag, ArrowLeft, Check, Shield, Truck, MessageCircle, Ruler, Fil
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
+import { animateFlyToCart } from '@/lib/flyToCart';
 
 import { getLocalProductsOverride } from '@/lib/supabase';
 
@@ -44,7 +45,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const suggestedPrice = currentProduct.suggested_price || currentProduct.compare_price || 49900;
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * 0.65);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
+    if (mainImgEl) animateFlyToCart(mainImgEl as HTMLElement);
     addToCart(product, selectedSize, selectedColor || undefined, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -133,8 +136,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               {/* Dual Price Display */}
               <div className="mt-4 p-4 bg-neutral-50 border border-gray-200 space-y-2">
                 <div className="flex items-baseline justify-between text-xs">
-                  <span className="font-semibold text-neutral-500 uppercase">Precio Sugerido E-commerce (PVP):</span>
-                  <span className="font-bold text-gray-400 line-through">{formatCOP(suggestedPrice)}</span>
+                  <span className="font-bold text-neutral-700 uppercase">Precio Sugerido de Venta:</span>
+                  <span className="font-extrabold text-neutral-900">{formatCOP(suggestedPrice)}</span>
                 </div>
 
                 <div className="flex items-baseline justify-between pt-2 border-t border-gray-200">
