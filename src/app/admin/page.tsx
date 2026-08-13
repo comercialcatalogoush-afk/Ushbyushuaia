@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase } from '@/lib/supabase';
 import { Product, PriceHistoryRecord } from '@/types';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
@@ -372,6 +372,12 @@ export default function AdminCatalogPage() {
     setProducts(updatedList);
     saveLocalProductsOverride(updatedList);
 
+    // Persist to Supabase so changes are visible on every device
+    const upsertRes = await upsertProduct(fullProd);
+    if (!upsertRes.success) {
+      console.warn('Supabase upsert failed (falling back to local only):', upsertRes.error);
+    }
+
     if (oldWholesale !== newWholesale || oldSuggested !== newSuggested) {
       await logPriceChange({
         product_id: fullProd.id,
@@ -394,6 +400,11 @@ export default function AdminCatalogPage() {
       const updated = products.filter(p => p.id !== id);
       setProducts(updated);
       saveLocalProductsOverride(updated);
+      deleteProductFromSupabase(id).then(res => {
+        if (!res.success) {
+          console.warn('Supabase delete failed:', res.error);
+        }
+      });
     }
   };
 

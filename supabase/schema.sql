@@ -16,20 +16,29 @@ CREATE TABLE IF NOT EXISTS public.categories (
 );
 
 -- 2. PRODUCTS TABLE
+-- id is TEXT to support both UUIDs and string refs like 'ref-558077' / 'prod-...'
 CREATE TABLE IF NOT EXISTS public.products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     reference TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
-    price NUMERIC(12, 2) NOT NULL,
+    suggested_price NUMERIC(12, 2) DEFAULT 0,
+    price NUMERIC(12, 2) NOT NULL DEFAULT 0,
     compare_price NUMERIC(12, 2) DEFAULT 0,
     ribbon TEXT,
+    fit TEXT,
+    status TEXT DEFAULT 'published',
+    stock_by_size JSONB DEFAULT '{}'::jsonb,
+    is_best_seller BOOLEAN DEFAULT FALSE,
     description TEXT,
     full_description TEXT,
     video_url TEXT,
     in_stock BOOLEAN DEFAULT TRUE,
+    hidden BOOLEAN DEFAULT FALSE,
     options JSONB DEFAULT '[]'::jsonb,
     images TEXT[] DEFAULT '{}',
+    tags TEXT[] DEFAULT '{}',
+    category TEXT,
     category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -50,16 +59,35 @@ CREATE TABLE IF NOT EXISTS public.wholesale_leads (
 
 -- 4. ORDERS TABLE
 CREATE TABLE IF NOT EXISTS public.orders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY,
+    order_date TEXT,
     customer_name TEXT NOT NULL,
-    customer_email TEXT NOT NULL,
+    customer_doc TEXT,
+    customer_email TEXT,
     customer_phone TEXT NOT NULL,
     shipping_address TEXT NOT NULL,
     city TEXT NOT NULL,
+    department TEXT,
+    payment_method TEXT,
     total NUMERIC(12, 2) NOT NULL,
     items JSONB NOT NULL,
+    is_wholesale BOOLEAN DEFAULT FALSE,
+    notes TEXT,
     status TEXT DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 5. PRICE HISTORY AUDIT TABLE
+CREATE TABLE IF NOT EXISTS public.price_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id TEXT,
+    product_name TEXT,
+    old_wholesale_price NUMERIC(12, 2),
+    new_wholesale_price NUMERIC(12, 2),
+    old_suggested_price NUMERIC(12, 2),
+    new_suggested_price NUMERIC(12, 2),
+    changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    changed_by TEXT
 );
 
 -- Enable RLS for Security
@@ -67,14 +95,18 @@ ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wholesale_leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.price_history ENABLE ROW LEVEL SECURITY;
 
--- Public Read / Insert Policies
+-- Public Read / Insert / Update / Delete Policies
 CREATE POLICY "Public categories read access" ON public.categories FOR SELECT USING (true);
 CREATE POLICY "Public products read access" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Public products insert access" ON public.products FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public products update access" ON public.products FOR UPDATE USING (true);
+CREATE POLICY "Public products delete access" ON public.products FOR DELETE USING (true);
 CREATE POLICY "Public wholesale leads insert access" ON public.wholesale_leads FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public orders insert access" ON public.orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public price history read access" ON public.price_history FOR SELECT USING (true);
+CREATE POLICY "Public price history insert access" ON public.price_history FOR INSERT WITH CHECK (true);
 
 -- Insert Default Category
 INSERT INTO public.categories (id, name, slug, description)
@@ -82,19 +114,25 @@ VALUES ('99f75e2f-cdcb-4227-a2c8-71f3b2e72db8', 'Todos los productos', 'todos', 
 ON CONFLICT (slug) DO NOTHING;
 
 -- Insert Products extracted from Wix Catalog with size 6-14
-INSERT INTO public.products (id, name, reference, slug, price, compare_price, ribbon, description, full_description, in_stock, options, images, category_id)
+INSERT INTO public.products (id, name, reference, slug, suggested_price, price, compare_price, ribbon, fit, status, stock_by_size, is_best_seller, description, full_description, in_stock, hidden, options, images, category_id)
 VALUES 
 (
     '6fd569eb-835a-4f76-8ee9-fd8e825f4816',
     'Ref: 556218',
     '556218',
     'ref-556218-short-largo',
+    79900.00,
     49900.00,
-    0.00,
+    79900.00,
     'Nuevo',
+    'Bermuda',
+    'published',
+    '{"6":10,"8":10,"10":10,"12":10,"14":10}'::jsonb,
+    FALSE,
     'Short largo de alta calidad confeccionado con denim flexible de alta resistencia.',
     'Short bermuda largo confeccionado en mezclilla flexible premium con dobladillo reforzado. Excelente rotación en catálogo mayorista para clima cálido y templado.',
     TRUE,
+    FALSE,
     '[{"id":"1fb7b7af-e9d7-4e1f-a2e2-8ba56001405c","key":"Talla","values":["6","8","10","12","14"]}]'::jsonb,
     ARRAY[
         'https://static.wixstatic.com/media/e21be4_d636501aedfd4962b899ed38ffb772c6~mv2.jpg',
@@ -108,11 +146,17 @@ VALUES
     '558077',
     'ref-558077-falda-dama-rigida-color-crudo',
     79900.00,
-    0.00,
-    '',
+    54900.00,
+    79900.00,
+    'Oferta',
+    'Wide Leg',
+    'published',
+    '{"6":10,"8":10,"10":10,"12":10,"14":10}'::jsonb,
+    FALSE,
     'Falda Dama Rígida Color Crudo. Prenda versátil y en tendencia con acabado premium para distribución mayorista.',
     'Falda en denim rígido tono crudo marfil con pretina alta estilizadora y botones metálicos antioxidantes.',
     TRUE,
+    FALSE,
     '[{"id":"1fb7b7af-e9d7-4e1f-a2e2-8ba56001405c","key":"Talla","values":["6","8","10","12","14"]}]'::jsonb,
     ARRAY[
         'https://static.wixstatic.com/media/e21be4_5de40254bc0245f7b63506182d4c27a8~mv2.jpg',
@@ -125,12 +169,18 @@ VALUES
     'REF: 552851',
     '552851',
     'ref-552851-jean-dama-wide-leg-tiro-alto-rigido-color-azul-oscuro',
-    125000.00,
-    0.00,
+    149900.00,
+    94900.00,
+    149900.00,
     'Más vendido',
+    'Wide Leg',
+    'published',
+    '{"6":10,"8":10,"10":10,"12":10,"14":10}'::jsonb,
+    TRUE,
     'Jean Dama Wide Leg Tiro Alto Rígido Color Azul Oscuro. Silueta moderna de tiro alto con horma estilizadora.',
     'Jean Wide Leg rígido tiro alto en índigo azul oscuro con bolsillos estilo cargo y costuras en contraste.',
     TRUE,
+    FALSE,
     '[{"id":"ea9db20d-2e1a-4fe7-825f-b45a82a9d1e7","key":"Color","values":["Azul Oscuro"]},{"id":"1fb7b7af-e9d7-4e1f-a2e2-8ba56001405c","key":"Talla","values":["6","8","10","12","14"]}]'::jsonb,
     ARRAY[
         'https://static.wixstatic.com/media/e21be4_cedba513ba6f46c7888940de510e1a38~mv2.jpg',
@@ -140,5 +190,6 @@ VALUES
 )
 ON CONFLICT (slug) DO UPDATE SET 
     name = EXCLUDED.name,
+    suggested_price = EXCLUDED.suggested_price,
     price = EXCLUDED.price,
     images = EXCLUDED.images;
