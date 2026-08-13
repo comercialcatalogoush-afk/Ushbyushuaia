@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Flame, ChevronRight, ChevronLeft, Sparkles, ChevronDown, ArrowRight } from 'lucide-react';
+import { Flame, ChevronRight, Sparkles, ChevronDown, ArrowRight } from 'lucide-react';
 import { getLocalProductsOverride, getTopSellingProductIds } from '@/lib/supabase';
 
 interface ProductGridProps {
@@ -185,11 +185,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 aria-label="Anterior"
                 className="absolute left-0 top-0 bottom-0 w-[15%] min-w-[48px] z-20 group focus:outline-none cursor-w-resize"
               >
-                <span className={`absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-[#1b2333]/85 backdrop-blur text-white flex items-center justify-center shadow-xl border border-white/10 transition-all duration-300 ${
-                  hoverZone === 'left' ? 'opacity-100 scale-110 translate-x-1' : 'opacity-0'
-                }`}>
-                  <ChevronLeft size={22} />
-                </span>
                 <span className={`absolute left-0 top-0 bottom-0 w-full bg-gradient-to-r from-[#1b2333]/15 to-transparent transition-opacity duration-300 ${hoverZone === 'left' ? 'opacity-100' : 'opacity-0'}`} />
               </button>
 
@@ -225,11 +220,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 aria-label="Siguiente"
                 className="absolute right-0 top-0 bottom-0 w-[15%] min-w-[48px] z-20 group focus:outline-none cursor-e-resize"
               >
-                <span className={`absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-[#1b2333]/85 backdrop-blur text-white flex items-center justify-center shadow-xl border border-white/10 transition-all duration-300 ${
-                  hoverZone === 'right' ? 'opacity-100 scale-110 -translate-x-1' : 'opacity-0'
-                }`}>
-                  <ChevronRight size={22} />
-                </span>
                 <span className={`absolute right-0 top-0 bottom-0 w-full bg-gradient-to-l from-[#1b2333]/15 to-transparent transition-opacity duration-300 ${hoverZone === 'right' ? 'opacity-100' : 'opacity-0'}`} />
               </button>
             </div>
