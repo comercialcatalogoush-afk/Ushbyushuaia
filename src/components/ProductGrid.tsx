@@ -57,9 +57,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   // Best sellers highlighted with animation
   const bestSellers = visibleProducts.filter(isTopSeller).slice(0, 8);
   const regularProducts = visibleProducts.filter((p) => !bestSellers.includes(p));
+  const catalogProducts = visibleProducts;
 
-  const paginatedProducts = regularProducts.slice(0, visibleCount);
-  const hasMore = visibleCount < regularProducts.length;
+  const paginatedProducts = catalogProducts.slice(0, visibleCount);
+  const hasMore = visibleCount < catalogProducts.length;
 
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + PAGE_SIZE);
@@ -111,8 +112,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 Catálogo Completo
               </h2>
               <p className="text-xs text-neutral-500 mt-0.5">
-                {regularProducts.length} referencias disponibles
-                {regularProducts.length > visibleCount && ` · Mostrando ${paginatedProducts.length} de ${regularProducts.length}`}
+                {catalogProducts.length} referencias disponibles
+                {catalogProducts.length > visibleCount && ` · Mostrando ${paginatedProducts.length} de ${catalogProducts.length}`}
               </p>
             </div>
           </div>
@@ -137,11 +138,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                     onClick={handleLoadMore}
                     className="inline-flex items-center gap-2 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-10 py-4 hover:bg-[#d88193] transition-colors shadow-md group"
                   >
-                    <span>Cargar más ({regularProducts.length - visibleCount} referencias restantes)</span>
+                    <span>Cargar más ({catalogProducts.length - visibleCount} referencias restantes)</span>
                     <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                   <p className="text-[11px] text-neutral-400 mt-3">
-                    Mostrando {paginatedProducts.length} de {regularProducts.length} referencias
+                    Mostrando {paginatedProducts.length} de {catalogProducts.length} referencias
                   </p>
                 </div>
               )}

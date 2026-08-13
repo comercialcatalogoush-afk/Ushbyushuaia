@@ -529,7 +529,7 @@ export const INITIAL_PRODUCTS: Product[] = OFFICIAL_90_REFS.map((refNum, index) 
     description: web?.desc || `Prenda USH BY USHUAIA (${category} - ${fit}).`,
     full_description: web?.desc || `Referencia oficial ${refNum} del catálogo USH BY USHUAIA en mezclilla rígida.`,
     in_stock: true,
-    hidden: driveImages.length === 0 || !hasPrice,
+    hidden: driveImages.length === 0,
     status: 'published',
     is_best_seller: BEST_SELLER_REFS.has(refStr),
     options: [{ id: 'talla-opt', key: 'Talla', values: ['6', '8', '10', '12', '14'] }],
