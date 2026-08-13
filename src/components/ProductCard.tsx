@@ -50,7 +50,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
   };
 
   return (
-    <div className="group relative bg-white border border-gray-200 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:border-ush-pink overflow-hidden rounded-none card-hover-lift">
+    <div className="group relative bg-white border border-gray-200 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-ush-pink overflow-hidden rounded-none card-hover-lift">
 
       {/* Added-to-cart floating toast */}
       {showAddedToast && (
@@ -65,41 +65,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
       {/* Size Guide Modal */}
       <SizeGuideModal isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
 
-      {/* Product Image Section */}
+      {/* Product Image Section — 100% CLEAN: NO OVERLAID TEXT BADGES ON MODEL */}
       <Link 
         href={`/producto/${product.slug}`} 
         className="block relative aspect-[3/4] overflow-hidden bg-neutral-100"
         onMouseEnter={() => product.images.length > 1 && setCurrentImageIndex(1)}
         onMouseLeave={() => setCurrentImageIndex(0)}
       >
-        {/* Top Badges Container — Non-overlapping layout */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex flex-wrap items-start justify-between gap-1.5 pointer-events-none">
-          <div className="flex flex-col items-start gap-1">
-            {isBestSellerBadge ? (
-              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-1 bg-[#1b2333] text-white shadow-md flex items-center gap-1">
-                🔥 Más vendido
-              </span>
-            ) : product.ribbon ? (
-              <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 text-white shadow-md ${
-                product.ribbon.toLowerCase().includes('nuevo') ? 'bg-[#d88193]' : 'bg-[#1b2333]'
-              }`}>
-                {product.ribbon}
-              </span>
-            ) : null}
-          </div>
-
-          <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 bg-emerald-600 text-white shadow-md flex items-center gap-1 shrink-0">
-            <Truck size={11} /> Envío Gratis (12+ Uds)
-          </span>
-        </div>
-
-        {/* Fit Badge (Bottom Left) */}
-        {product.fit && (
-          <span className="absolute bottom-2.5 left-2.5 z-10 text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 bg-white/95 text-[#1b2333] shadow-sm border border-gray-200 backdrop-blur-sm">
-            FIT: {product.fit}
-          </span>
-        )}
-
         {hasImages ? (
           <Image
             src={mainImage}
@@ -119,7 +91,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
           </div>
         )}
 
-        {/* Quick View Button */}
+        {/* Hover Quick View Button */}
         {hasImages && (
           <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="bg-white/95 backdrop-blur-md text-ush-navy px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
@@ -129,9 +101,33 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
         )}
       </Link>
 
-      {/* Content Info */}
+      {/* Content Info Section — ALL BADGES PLACED OUTSIDE / BELOW THE IMAGE */}
       <div className="p-4 flex flex-col flex-1 justify-between bg-white">
         <div>
+          {/* Badges Container OUTSIDE Image */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+            {isBestSellerBadge && (
+              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-[#1b2333] text-white">
+                🔥 Más vendido
+              </span>
+            )}
+            {product.ribbon && !isBestSellerBadge && (
+              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 text-white ${
+                product.ribbon.toLowerCase().includes('nuevo') ? 'bg-[#d88193]' : 'bg-[#1b2333]'
+              }`}>
+                {product.ribbon}
+              </span>
+            )}
+            {product.fit && (
+              <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-neutral-100 text-[#1b2333] border border-gray-200">
+                FIT: {product.fit}
+              </span>
+            )}
+            <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+              <Truck size={10} /> Envío Gratis (12+ Uds)
+            </span>
+          </div>
+
           {/* Reference Title */}
           <Link href={`/producto/${product.slug}`}>
             <h3 className="text-sm font-black text-ush-navy group-hover:text-ush-pink transition-colors uppercase tracking-wide">
@@ -156,9 +152,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
                 {formatCOP(wholesalePrice)}
               </span>
             </div>
-            <p className="text-[9px] text-neutral-500 font-medium text-right">
-              (Aplica 35%-42% OFF al llevar 12+ uds)
-            </p>
           </div>
 
           {/* Tallas Selector */}
@@ -175,7 +168,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller }
                 }}
                 className="text-[10px] font-bold text-ush-pink hover:underline flex items-center gap-1 uppercase"
               >
-                <Ruler size={11} /> Guía
+                <Ruler size={11} /> Guía de Tallas
               </button>
             </div>
 

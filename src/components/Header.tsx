@@ -27,9 +27,9 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
       
-      {/* ── Top Notice Bar (estilo ushuaiajeans.com.co) ── */}
+      {/* ── Top Notice Bar (conforme a políticas oficiales de la tienda) ── */}
       <div className="bg-[#d88193] text-white text-[11px] py-1.5 px-4 text-center tracking-widest font-bold uppercase flex items-center justify-center gap-2">
-        <span>60 DÍAS DE GARANTÍA EN TODAS LAS PRENDAS - 30 DÍAS PARA CAMBIOS</span>
+        <span>45 DÍAS DE GARANTÍA POR DEFECTOS DE FÁBRICA · 15 DÍAS PARA CAMBIOS</span>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,13 +51,20 @@ export const Header: React.FC = () => {
             <Logo variant="dark" size="md" />
           </div>
 
-          {/* Navigation Links - Desktop (ushuaiajeans.com.co style) */}
+          {/* Navigation Links - Desktop */}
           <nav className="hidden lg:flex items-center space-x-7">
+            <Link
+              href="/"
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            >
+              INICIO
+            </Link>
+
             <Link
               href="/#catalogo"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
-              NUEVO
+              CATÁLOGO
             </Link>
 
             {/* MUJER Mega Dropdown */}
@@ -222,7 +229,7 @@ export const Header: React.FC = () => {
       {isSearchOpen && (
         <div className="bg-ush-pinkLight border-t border-b border-rose-200 py-3 px-4 transition-all">
           <div className="max-w-3xl mx-auto flex items-center gap-2">
-            <Search size={18} className="text-ush-pink" />
+            <Search size={18} className="text-[#d88193]" />
             <input
               type="text"
               placeholder="Buscar por referencia (Ej: 556218, 558077, Jean, Short)..."
@@ -245,11 +252,18 @@ export const Header: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-6 space-y-3">
           <Link
+            href="/"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            INICIO
+          </Link>
+          <Link
             href="/#catalogo"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            NUEVO
+            CATÁLOGO
           </Link>
           <Link
             href="/#catalogo"
