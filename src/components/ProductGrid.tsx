@@ -66,24 +66,20 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   };
 
   return (
-    <section id="catalogo" className="scroll-mt-20">
-      {/* ── HERO DE MÁS VENDIDOS ── */}
+    <>
+      {/* ── SECCIÓN MÁS VENDIDOS ── */}
       {bestSellers.length > 0 && (
-        <div className="relative overflow-hidden bg-[#1b2333]">
-          {/* Ambient decorative glows */}
-          <div className="absolute -top-24 -left-24 w-72 h-72 bg-[#d88193]/20 rounded-full blur-3xl animate-pulse-soft" />
-          <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-[#d88193]/10 rounded-full blur-3xl animate-pulse-soft delay-300" />
-
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <section id="mas-vendidas" className="scroll-mt-20 bg-[#fdf3f5] border-b border-rose-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             {/* Section Title */}
             <div className="flex flex-col items-center text-center mb-8 animate-fadeInUp">
               <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#d88193] mb-3">
                 <Flame size={14} className="animate-float" /> Los Favoritos de tu Boutique
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white flex flex-wrap items-center justify-center gap-3">
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#1b2333] flex flex-wrap items-center justify-center gap-3">
                 Referencias
                 <span className="text-gradient-pink animate-pulse-soft">Más Vendidas</span>
-                <Sparkles size={24} className="text-amber-300 animate-float" />
+                <Sparkles size={24} className="text-amber-400 animate-float" />
               </h2>
               <div className="mt-3 h-0.5 w-24 bg-gradient-to-r from-transparent via-[#d88193] to-transparent animate-pulse-soft" />
             </div>
@@ -100,12 +96,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
               ))}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Catálogo Completo ── */}
-      <div className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ── CATÁLOGO COMPLETO ── */}
+      <section id="catalogo" className="scroll-mt-20 bg-white">
+        <div className="py-12 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Result count header */}
           <div className="flex items-center justify-between mb-8 animate-fadeInUp">
@@ -158,6 +155,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
           )}
         </div>
       </div>
-    </section>
+      </section>
+    </>
   );
 };

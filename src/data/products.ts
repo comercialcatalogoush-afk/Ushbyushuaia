@@ -1,6 +1,12 @@
 import { Product } from '@/types';
 import { DRIVE_IMAGES } from './drive-map';
 
+// Referencias destacadas como "Más Vendidas" (se muestran con animación en el hero)
+const BEST_SELLER_REFS = new Set<string>([
+  '552851', '552850', '552810', '552739',
+  '552699', '552697', '558079', '552691'
+]);
+
 export const OFFICIAL_90_REFS = [
   558079, 558075, 558070, 558072, 558071, 558066, 558063,
   552699, 552697, 552810, 552739, 552516, 552691,
@@ -70,6 +76,7 @@ const generateAll90Products = (): Product[] => {
         in_stock: true,
         hidden: false,
         status: 'published',
+        is_best_seller: BEST_SELLER_REFS.has(refStr),
         options: [{ id: 'talla-opt', key: 'Talla', values: ['6', '8', '10', '12', '14'] }],
         images: driveImages
       };
@@ -91,6 +98,7 @@ const generateAll90Products = (): Product[] => {
       in_stock: true,
       hidden: false,
       status: 'published',
+      is_best_seller: BEST_SELLER_REFS.has(refStr),
       options: [{ id: 'talla-opt', key: 'Talla', values: ['6', '8', '10', '12', '14'] }],
       images: driveImages
     };
