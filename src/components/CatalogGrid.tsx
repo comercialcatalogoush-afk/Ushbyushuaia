@@ -36,14 +36,17 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   // Filtros de prendas (estilo colecciones del sitio)
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [activeFit, setActiveFit] = useState<string>('Todos');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [fitMenuOpen, setFitMenuOpen] = useState(false);
 
-  // Lee los filtros del menú superior (?categoria=...&fit=...)
+  // Lee los filtros del menú superior (?categoria=...&fit=...) y la búsqueda (?buscar=...)
   useEffect(() => {
     const cat = searchParams.get('categoria');
     const fit = searchParams.get('fit');
+    const buscar = searchParams.get('buscar');
     if (cat) setActiveCategory(cat);
     if (fit) setActiveFit(normalizeFitLabel(fit));
+    if (buscar) setSearchQuery(buscar);
   }, [searchParams]);
 
   useEffect(() => {
@@ -77,19 +80,27 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
 
   // ── Filtro de prendas (aplica al catálogo completo) ──
   const catalogProducts = visibleProducts.filter((p) => {
+    const name = (p.name || '').toLowerCase();
+    const tags = (p.tags || []).join(' ').toLowerCase();
+    const ref = (p.reference || '').toLowerCase();
+    const searchTerm = searchQuery.trim().toLowerCase();
+
+    if (searchTerm) {
+      const haystack = [name, ref, (p.fit || '').toLowerCase(), (p.category || '').toLowerCase(), (p.color || '').toLowerCase(), tags].join(' ');
+      if (!haystack.includes(searchTerm)) return false;
+    }
+
     if (activeCategory !== 'Todos') {
       const cat = (p.category || '').toLowerCase();
       const catActive = activeCategory.toLowerCase();
-      const name = (p.name || '').toLowerCase();
-      const tags = (p.tags || []).join(' ').toLowerCase();
       const matchCat = cat === catActive || name.includes(catActive) || tags.includes(catActive);
       if (!matchCat) return false;
     }
     if (activeFit !== 'Todos') {
       const fit = (p.fit || '').toLowerCase();
       const fitActive = activeFit.toLowerCase();
-      const name = (p.name || '').toLowerCase();
-      const matchFit = fit === fitActive || name.includes(fitActive);
+      // Match por fit exacto O por nombre/tags (ej: "Jean wide leg" aunque la categoría sea Pantalones)
+      const matchFit = fit === fitActive || name.includes(fitActive) || tags.includes(fitActive);
       if (!matchFit) return false;
     }
     return true;

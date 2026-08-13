@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, MessageCircle, Ruler, Film, Sparkles } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, MessageCircle, Ruler, Film, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -41,6 +41,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState<number>(1);
   const [added, setAdded] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const suggestedPrice = currentProduct.suggested_price || currentProduct.compare_price || 49900;
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * 0.65);
@@ -176,14 +177,31 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
             {/* Descriptions & Specs */}
             <div className="border-t border-b border-gray-100 py-4 space-y-3">
-              <p className="text-sm text-neutral-700 font-normal leading-relaxed">
-                {product.full_description || product.description || 'Prenda de alta durabilidad confeccionada en mezclilla rígida de confección nacional.'}
-              </p>
-              <div className="text-xs text-neutral-500 space-y-1 pt-2">
-                <p>• <strong>Material:</strong> Mezclilla Rígida Premium (100% Algodón de alta resistencia).</p>
-                <p>• <strong>Confección:</strong> Nacional estilizadora desde Itagüí, Antioquia.</p>
-                <p>• <strong>Despachos:</strong> Envíos a todo el país con entrega coordinada.</p>
+              <div className={`text-sm text-neutral-700 font-normal leading-relaxed whitespace-pre-line ${descExpanded ? '' : 'line-clamp-4'}`}>
+                {currentProduct.description || currentProduct.full_description || 'Prenda de alta durabilidad confeccionada en mezclilla rígida de confección nacional.'}
               </div>
+
+              {descExpanded && (
+                <div className="text-xs text-neutral-500 space-y-1 pt-2">
+                  <p>• <strong>Material:</strong> Mezclilla Rígida Premium (100% Algodón de alta resistencia).</p>
+                  <p>• <strong>Confección:</strong> Nacional estilizadora desde Itagüí, Antioquia.</p>
+                  <p>• <strong>Despachos:</strong> Envíos a todo el país con entrega coordinada.</p>
+                </div>
+              )}
+
+              {(currentProduct.description || currentProduct.full_description) && (
+                <button
+                  type="button"
+                  onClick={() => setDescExpanded((prev) => !prev)}
+                  className="text-xs font-bold uppercase tracking-wider text-ush-pink hover:text-ush-navy flex items-center gap-1 pt-1"
+                >
+                  {descExpanded ? (
+                    <><ChevronUp size={14} /> Ver menos</>
+                  ) : (
+                    <><ChevronDown size={14} /> Ver más</>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Size Selection (6 to 14) + Guide Button */}

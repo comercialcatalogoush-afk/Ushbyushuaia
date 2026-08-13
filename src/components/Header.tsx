@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ShoppingBag, Search, User, Menu, X, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from './Logo';
@@ -15,6 +15,7 @@ export const Header: React.FC = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeSubSubmenu, setActiveSubSubmenu] = useState<boolean>(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { totalItemsCount, setIsCartOpen } = useCart();
 
   useEffect(() => {
@@ -23,6 +24,15 @@ export const Header: React.FC = () => {
   }, [pathname]);
 
   const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY'];
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    router.push(`/catalogo?buscar=${encodeURIComponent(q)}`);
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
@@ -238,7 +248,7 @@ export const Header: React.FC = () => {
       {/* Expandable Search Input */}
       {isSearchOpen && (
         <div className="bg-ush-pinkLight border-t border-b border-rose-200 py-3 px-4 transition-all">
-          <div className="max-w-3xl mx-auto flex items-center gap-2">
+          <form onSubmit={handleSearch} className="max-w-3xl mx-auto flex items-center gap-2">
             <Search size={18} className="text-[#d88193]" />
             <input
               type="text"
@@ -249,12 +259,19 @@ export const Header: React.FC = () => {
               autoFocus
             />
             <button
+              type="submit"
+              className="text-xs bg-[#1b2333] text-white font-bold uppercase tracking-wider px-3 py-1.5 hover:bg-ush-pink transition-colors"
+            >
+              Buscar
+            </button>
+            <button
+              type="button"
               onClick={() => setIsSearchOpen(false)}
               className="text-xs text-gray-500 hover:text-black font-bold uppercase tracking-wider px-2"
             >
               Cerrar
             </button>
-          </div>
+          </form>
         </div>
       )}
 
