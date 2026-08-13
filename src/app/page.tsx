@@ -3,6 +3,7 @@ import { Hero } from '@/components/Hero';
 import { Benefits } from '@/components/Benefits';
 import { ProductGrid } from '@/components/ProductGrid';
 import { WholesaleInquiryForm } from '@/components/WholesaleInquiryForm';
+import { OutletSection } from '@/components/OutletSection';
 import { Truck, Award, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 
@@ -102,6 +103,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Nuestro Outlet — dirección, horarios y mapa */}
+      <OutletSection />
     </div>
   );
 }

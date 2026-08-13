@@ -107,9 +107,8 @@ export const Footer: React.FC = () => {
             {/* Business hours */}
             <div className="bg-white/10 border border-white/20 p-3 text-xs">
               <p className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 Horario de Atención</p>
-              <p className="text-white/90 font-light">Lun – Jue: <span className="font-bold">7:00 AM – 4:00 PM</span></p>
-              <p className="text-white/90 font-light">Viernes: <span className="font-bold">7:00 AM – 3:30 PM</span></p>
-              <p className="text-white/60 text-[10px] mt-1">Sábados y domingos no hay atención.</p>
+              <p className="text-white/90 font-light">Lun – Vie: <span className="font-bold">8:00 AM – 5:30 PM</span></p>
+              <p className="text-white/60 text-[10px] mt-1">Sábados, domingos y festivos no hay atención.</p>
             </div>
           </div>
 

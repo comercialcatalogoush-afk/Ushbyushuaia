@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
+import { Montserrat, Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 import { Header } from '@/components/Header';
@@ -8,8 +8,8 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { ToastContainer } from '@/components/ToastContainer';
 import Script from 'next/script';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
+const montserrat = Montserrat({ subsets: ['latin'], variable: '--font-montserrat' });
+const cormorant = Cormorant_Garamond({ subsets: ['latin'], variable: '--font-cormorant', weight: ['300', '400', '500', '600'] });
 
 export const metadata: Metadata = {
   title: 'Inicio | Ush By Ushuaia',
@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${inter.variable} ${playfair.variable} scroll-smooth`}>
+    <html lang="es" className={`${montserrat.variable} ${cormorant.variable} scroll-smooth`}>
       <body className="flex flex-col min-h-screen">
         <CartProvider>
           <Header />
