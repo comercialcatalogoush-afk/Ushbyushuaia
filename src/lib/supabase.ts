@@ -237,6 +237,41 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
       .limit(1)
       .single();
 
+    // Busca directa sin interpolación dentro del filtro (evita inyección PostgREST)
+    if (error) {
+      const safeSlug = slug.replace(/[^a-zA-Z0-9-]/g, '');
+      const fallback = await supabase
+        .from('products')
+        .select('*')
+        .or(`slug.eq.${safeSlug},id.eq.${safeSlug}`)
+        .limit(1)
+        .maybeSingle();
+      if (!fallback.error && fallback.data) {
+        return {
+          id: fallback.data.id,
+          name: fallback.data.name,
+          reference: fallback.data.reference || fallback.data.name.replace(/ref:?/i, '').trim(),
+          slug: fallback.data.slug,
+          suggested_price: fallback.data.suggested_price ? Number(fallback.data.suggested_price) : Number(fallback.data.compare_price || fallback.data.price || 49900),
+          price: Number(fallback.data.price),
+          compare_price: fallback.data.compare_price ? Number(fallback.data.compare_price) : 0,
+          ribbon: fallback.data.ribbon || '',
+          fit: fallback.data.fit || 'Wide Leg',
+          status: fallback.data.status || (fallback.data.hidden ? 'draft' : 'published'),
+          stock_by_size: typeof fallback.data.stock_by_size === 'string' ? JSON.parse(fallback.data.stock_by_size) : (fallback.data.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 }),
+          is_best_seller: fallback.data.is_best_seller === true,
+          description: fallback.data.description || '',
+          full_description: fallback.data.full_description || '',
+          video_url: fallback.data.video_url || '',
+          in_stock: fallback.data.in_stock !== false,
+          hidden: fallback.data.hidden === true || fallback.data.status === 'draft',
+          options: typeof fallback.data.options === 'string' ? JSON.parse(fallback.data.options) : (fallback.data.options || []),
+          images: Array.isArray(fallback.data.images) ? fallback.data.images : (fallback.data.images ? [fallback.data.images] : []),
+          category_id: fallback.data.category_id,
+        };
+      }
+    }
+
     if (!error && data) {
       return {
         id: data.id,

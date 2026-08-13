@@ -6,12 +6,11 @@ import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { Flame, Sparkles, ArrowRight, ChevronRight } from 'lucide-react';
 import { getLocalProductsOverride, getTopSellingProductIds } from '@/lib/supabase';
+import { useVisibleCards } from '@/lib/useVisibleCards';
 
 interface ProductGridProps {
   products: Product[];
 }
-
-const CAROUSEL_VISIBLE = 3;
 
 // Animación Ken Burns distinta por producto dentro del carrusel
 const KENBURNS = [
@@ -28,6 +27,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [hoverZone, setHoverZone] = useState<'left' | 'right' | null>(null);
+  const visibleCards = useVisibleCards();
 
   useEffect(() => {
     const updateList = () => {
@@ -64,8 +64,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   // Best sellers highlighted with animation
   const bestSellers = visibleProducts.filter(isTopSeller).slice(0, 8);
 
-  // ── Carrusel: 3 por vista, navegación por hover en los extremos ──
-  const maxCarouselIndex = Math.max(0, bestSellers.length - CAROUSEL_VISIBLE);
+  // ── Carrusel responsivo: tarjetas por vista según dispositivo ──
+  const maxCarouselIndex = Math.max(0, bestSellers.length - visibleCards);
+
+  // Ajusta el índice si quedó fuera de rango al cambiar de dispositivo
+  useEffect(() => {
+    setCarouselIndex((prev) => Math.min(prev, Math.max(0, bestSellers.length - visibleCards)));
+  }, [visibleCards, bestSellers.length]);
 
   const nextSlide = () => {
     setCarouselIndex((prev) => (prev >= maxCarouselIndex ? 0 : prev + 1));
@@ -82,30 +87,32 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     return () => clearInterval(id);
   }, [carouselPaused, maxCarouselIndex]);
 
+  const slideWidth = 100 / visibleCards;
+
   return (
     <>
-      {/* ── SECCIÓN MÁS VENDIDOS (carrusel con hover zones) ── */}
+      {/* ── SECCIÓN MÁS VENDIDOS (carrusel compacto y responsivo) ── */}
       {bestSellers.length > 0 && (
-        <section id="mas-vendidas" className="scroll-mt-20 bg-gradient-to-b from-[#fdf3f5] via-[#fff8fa] to-white border-b border-rose-100 relative overflow-hidden">
+        <section id="mas-vendidas" className="reveal scroll-mt-20 bg-gradient-to-b from-[#fdf3f5] via-[#fff8fa] to-white border-b border-rose-100 relative overflow-hidden">
           {/* Decorative blobs */}
-          <div className="pointer-events-none absolute -top-20 -left-20 w-72 h-72 bg-[#d88193]/10 rounded-full blur-3xl animate-pulse-soft" />
-          <div className="pointer-events-none absolute -bottom-24 -right-16 w-80 h-80 bg-amber-200/20 rounded-full blur-3xl animate-pulse-soft" />
+          <div className="pointer-events-none absolute -top-20 -left-20 w-56 h-56 bg-[#d88193]/10 rounded-full blur-3xl animate-pulse-soft" />
+          <div className="pointer-events-none absolute -bottom-24 -right-16 w-64 h-64 bg-amber-200/20 rounded-full blur-3xl animate-pulse-soft" />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 relative">
             {/* Section Title */}
-            <div className="flex flex-col items-center text-center mb-10 animate-fadeInUp">
-              <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.35em] text-[#d88193] mb-3 px-4 py-1.5 border border-[#d88193]/20 bg-white/70 backdrop-blur">
-                <Flame size={13} className="animate-float" /> Los Favoritos de tu Boutique
+            <div className="flex flex-col items-center text-center mb-6 animate-fadeInUp">
+              <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.35em] text-[#d88193] mb-2 px-3.5 py-1 border border-[#d88193]/20 bg-white/70 backdrop-blur">
+                <Flame size={12} className="animate-float" /> Los Favoritos de tu Boutique
               </span>
-              <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[#1b2333] flex flex-wrap items-center justify-center gap-3">
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#1b2333] flex flex-wrap items-center justify-center gap-2.5">
                 Referencias
                 <span className="relative text-gradient-pink animate-pulse-soft">
                   Más Vendidas
-                  <span className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#d88193] to-transparent" />
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#d88193] to-transparent" />
                 </span>
-                <Sparkles size={26} className="text-amber-400 animate-float" />
+                <Sparkles size={22} className="text-amber-400 animate-float" />
               </h2>
-              <div className="mt-4 h-0.5 w-28 bg-gradient-to-r from-transparent via-[#d88193] to-transparent animate-pulse-soft" />
+              <div className="mt-3 h-0.5 w-24 bg-gradient-to-r from-transparent via-[#d88193] to-transparent animate-pulse-soft" />
             </div>
 
             {/* Carousel con zonas hover */}
@@ -120,19 +127,23 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 onMouseLeave={() => setHoverZone(null)}
                 onClick={prevSlide}
                 aria-label="Anterior"
-                className="absolute left-0 top-0 bottom-0 w-[15%] min-w-[48px] z-20 group focus:outline-none cursor-w-resize"
+                className="absolute left-0 top-0 bottom-0 w-[10%] min-w-[36px] z-20 group focus:outline-none cursor-w-resize"
               >
                 <span className={`absolute left-0 top-0 bottom-0 w-full bg-gradient-to-r from-[#1b2333]/15 to-transparent transition-opacity duration-300 ${hoverZone === 'left' ? 'opacity-100' : 'opacity-0'}`} />
               </button>
 
-              {/* Carousel Track — 3 visible per view */}
-              <div className="overflow-hidden px-1">
+              {/* Carousel Track — tarjetas por vista según dispositivo */}
+              <div className="overflow-hidden px-0.5 sm:px-1">
                 <div
                   className="flex transition-transform duration-700 ease-out"
-                  style={{ transform: `translateX(-${carouselIndex * (100 / CAROUSEL_VISIBLE)}%)` }}
+                  style={{ transform: `translateX(-${carouselIndex * slideWidth}%)` }}
                 >
                   {bestSellers.map((product, i) => (
-                    <div key={product.id} className="w-full sm:w-1/2 lg:w-1/3 shrink-0 px-2 sm:px-3 animate-fadeInUp">
+                    <div
+                      key={product.id}
+                      className="w-full shrink-0 px-1.5 sm:px-2.5 animate-fadeInUp"
+                      style={{ width: `${slideWidth}%` }}
+                    >
                       <div className="relative group/card">
                         <ProductCard
                           product={product}
@@ -140,7 +151,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                           imageAnimation={KENBURNS[i % KENBURNS.length]}
                         />
                         {/* Number badge */}
-                        <span className="absolute -top-2 -left-2 z-10 w-8 h-8 bg-[#d88193] text-white text-xs font-black flex items-center justify-center shadow-lg border-2 border-white">
+                        <span className="absolute -top-2 -left-2 z-10 w-7 h-7 bg-[#d88193] text-white text-[11px] font-black flex items-center justify-center shadow-lg border-2 border-white">
                           {String(i + 1).padStart(2, '0')}
                         </span>
                       </div>
@@ -155,7 +166,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
                 onMouseLeave={() => setHoverZone(null)}
                 onClick={nextSlide}
                 aria-label="Siguiente"
-                className="absolute right-0 top-0 bottom-0 w-[15%] min-w-[48px] z-20 group focus:outline-none cursor-e-resize"
+                className="absolute right-0 top-0 bottom-0 w-[10%] min-w-[36px] z-20 group focus:outline-none cursor-e-resize"
               >
                 <span className={`absolute right-0 top-0 bottom-0 w-full bg-gradient-to-l from-[#1b2333]/15 to-transparent transition-opacity duration-300 ${hoverZone === 'right' ? 'opacity-100' : 'opacity-0'}`} />
               </button>
@@ -163,9 +174,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
             {/* Dots + swipe hint */}
             {maxCarouselIndex > 0 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
+              <div className="flex items-center justify-center gap-2 mt-6">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mr-1 hidden sm:inline">
-                  <ArrowRight size={12} className="inline mr-1 -rotate-180" /> Pasa el cursor a los bordes
+                  <ArrowRight size={12} className="inline mr-1 -rotate-180" /> Desliza a los bordes
                 </span>
                 {Array.from({ length: maxCarouselIndex + 1 }).map((_, i) => (
                   <button
@@ -181,13 +192,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
             )}
 
             {/* CTA to full catalog */}
-            <div className="mt-12 text-center">
+            <div className="mt-8 text-center">
               <Link
                 href="/catalogo"
-                className="inline-flex items-center gap-2 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-10 py-4 hover:bg-[#d88193] transition-colors shadow-md group"
+                className="inline-flex items-center gap-2 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-8 py-3.5 hover:bg-[#d88193] transition-colors shadow-md group"
               >
                 <span>Ver Catálogo Completo ({visibleProducts.length} refs)</span>
-                <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <ChevronRight size={15} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </div>

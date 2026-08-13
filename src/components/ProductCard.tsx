@@ -55,7 +55,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   };
 
   return (
-    <div className="group relative bg-white border border-gray-200 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-ush-pink overflow-hidden rounded-none card-hover-lift">
+    <div className="group relative bg-white border border-gray-200 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-ush-pink overflow-hidden rounded-none card-hover-lift card-shine">
 
       {/* Added-to-cart floating toast */}
       {showAddedToast && (

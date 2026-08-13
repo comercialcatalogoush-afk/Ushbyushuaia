@@ -92,6 +92,29 @@
   50%      { transform: scale(1.08) translateY(-2%); }
 }
 
+/* ── Nuevas animaciones gratuitas (plus visual) ───── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes shine {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+@keyframes shimmer-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(216, 129, 147, 0); }
+  50%      { box-shadow: 0 0 24px 4px rgba(216, 129, 147, 0.35); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+
 /* ── Animation Utilities ─────────────────────────── */
 .animate-fadeIn       { animation: fadeIn 0.5s ease both; }
 .animate-fadeInUp     { animation: fadeInUp 0.6s ease both; }
@@ -102,7 +125,55 @@
 .animate-spin-slow    { animation: spin-slow 12s linear infinite; }
 .animate-pulse-soft   { animation: pulse-soft 2.5s ease-in-out infinite; }
 
-/* Ken Burns image animations (distinta por producto) */
+/* Marquee infinito para barras de anuncios */
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Brillo que atraviesa tarjetas/imágenes al hover */
+.card-shine {
+  position: relative;
+  overflow: hidden;
+}
+.card-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+  pointer-events: none;
+}
+.card-shine:hover::after {
+  animation: shine 0.9s ease;
+}
+
+/* Resplandor pulsante sutil (botones destacados) */
+.animate-glow-border {
+  animation: shimmer-border 2.6s ease-in-out infinite;
+}
+
+/* Degradado animado en textos destacados */
+.text-gradient-animated {
+  background: linear-gradient(120deg, #d88193, #f0a6b5, #c06579, #d88193);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* Icono/badge que se balancea suavemente */
+.animate-wiggle {
+  animation: wiggle 1.2s ease-in-out infinite;
+}
+
+/* ── Ken Burns image animations (distinta por producto) ── */
 .animate-kenburns-zoom       { animation: kenburns-zoom 9s ease-in-out infinite; }
 .animate-kenburns-pan-left   { animation: kenburns-pan-left 10s ease-in-out infinite alternate; }
 .animate-kenburns-pan-right  { animation: kenburns-pan-right 10s ease-in-out infinite alternate; }
@@ -152,33 +223,11 @@
   background-clip: text;
 }
 
-
-@layer base {
-  body {
-    @apply bg-white text-neutral-900 font-sans antialiased selection:bg-neutral-900 selection:text-white;
+/* ── Respetar preferencia de movimiento reducido ──── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #999;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

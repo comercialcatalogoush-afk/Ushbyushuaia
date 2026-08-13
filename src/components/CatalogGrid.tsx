@@ -104,7 +104,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   };
 
   return (
-    <section id="catalogo" className="scroll-mt-20 bg-white">
+    <section id="catalogo" className="reveal scroll-mt-20 bg-white">
       <div className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 

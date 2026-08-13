@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check } from 'lucide-react';

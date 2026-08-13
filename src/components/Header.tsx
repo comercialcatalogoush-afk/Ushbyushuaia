@@ -27,9 +27,16 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
       
-      {/* â”€â”€ Top Notice Bar (conforme a polÃ­ticas oficiales de la tienda) â”€â”€ */}
-      <div className="bg-[#d88193] text-white text-[11px] py-1.5 px-4 text-center tracking-widest font-bold uppercase flex items-center justify-center gap-2">
-        <span>45 DÃAS DE GARANTÃA POR DEFECTOS DE FÃBRICA Â· 15 DÃAS PARA CAMBIOS</span>
+      {/* ── Top Notice Bar (marquee) ── */}
+      <div className="bg-[#d88193] text-white text-[11px] py-1.5 overflow-hidden">
+        <div className="flex whitespace-nowrap animate-marquee">
+          <span className="px-8 tracking-widest font-bold uppercase">
+            45 DÍAS DE GARANTÍA POR DEFECTOS DE FÁBRICA · 15 DÍAS PARA CAMBIOS · ENVÍO GRATIS DESDE 12 UNIDADES · CONFECCIÓN NACIONAL — ITAGÜÍ, ANTIOQUIA ✦
+          </span>
+          <span className="px-8 tracking-widest font-bold uppercase" aria-hidden="true">
+            45 DÍAS DE GARANTÍA POR DEFECTOS DE FÁBRICA · 15 DÍAS PARA CAMBIOS · ENVÍO GRATIS DESDE 12 UNIDADES · CONFECCIÓN NACIONAL — ITAGÜÍ, ANTIOQUIA ✦
+          </span>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,7 +73,7 @@ export const Header: React.FC = () => {
               href="/catalogo"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
-              CATÃLOGO
+              CATÁLOGO
             </Link>
 
             {/* MUJER Mega Dropdown */}
@@ -178,7 +185,7 @@ export const Header: React.FC = () => {
                 href="/admin"
                 className="text-xs uppercase tracking-widest font-extrabold text-[#d88193] hover:underline py-2"
               >
-                ADMIN (CATÃLOGO)
+                ADMIN (CATÁLOGO)
               </Link>
             )}
           </nav>
@@ -266,7 +273,7 @@ export const Header: React.FC = () => {
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            CATÃLOGO
+            CATÁLOGO
           </Link>
           <Link
             href="/catalogo"

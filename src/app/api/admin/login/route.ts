@@ -5,8 +5,36 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'comercialmayoristas@ushuaiajeans
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Colombia2025*';
 const SESSION_TOKEN = 'ush_admin_session_v2';
 
+// Rate limiting en memoria (gratis, sin dependencias): máx. 5 intentos por IP cada 10 min
+const attempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 10 * 60 * 1000;
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = attempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > MAX_ATTEMPTS;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const ip =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      'unknown';
+
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { success: false, error: 'Demasiados intentos. Intenta de nuevo en unos minutos.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { email, password } = body;
 

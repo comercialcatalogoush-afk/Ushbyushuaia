@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CartDrawer } from '@/components/CartDrawer';
 import { ToastContainer } from '@/components/ToastContainer';
+import { ScrollReveal } from '@/components/ScrollReveal';
 import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -37,6 +38,7 @@ export default function RootLayout({
           <Header />
           <CartDrawer />
           <ToastContainer />
+          <ScrollReveal />
           <main className="flex-grow">{children}</main>
           <Footer />
         </CartProvider>
