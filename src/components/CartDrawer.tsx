@@ -263,7 +263,12 @@ export const CartDrawer: React.FC = () => {
               {/* Single direct action: goes straight to /checkout */}
               <button
                 onClick={handleProceedToCheckout}
-                className="w-full bg-ush-navy text-white font-bold py-4 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-ush-pink transition-all shadow-md active:scale-[0.99]"
+                disabled={totalItemsCount < MIN_ORDER_UNITS}
+                className={`w-full font-bold py-4 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] ${
+                  totalItemsCount < MIN_ORDER_UNITS
+                    ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                    : 'bg-ush-navy text-white hover:bg-ush-pink'
+                }`}
               >
                 <span>Tramitar Pedido</span>
                 <ArrowRight size={16} />

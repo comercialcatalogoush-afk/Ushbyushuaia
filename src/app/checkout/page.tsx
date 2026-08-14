@@ -630,8 +630,8 @@ export default function CheckoutPage() {
                 <button
                   type="submit"
                   form="checkout-form"
-                  disabled={loading}
-                  className="w-full bg-ush-navy text-white font-bold py-4 px-6 text-xs uppercase tracking-widest hover:bg-ush-pink transition-colors shadow-md disabled:opacity-50 mt-4"
+                  disabled={loading || totalUnits < MIN_ORDER_UNITS}
+                  className="w-full font-bold py-4 px-6 text-xs uppercase tracking-widest transition-colors shadow-md disabled:opacity-50 mt-4 disabled:cursor-not-allowed bg-ush-navy text-white hover:bg-ush-pink"
                 >
                   {loading ? 'Registrando Pedido...' : 'Confirmar & Tramitar Pedido →'}
                 </button>

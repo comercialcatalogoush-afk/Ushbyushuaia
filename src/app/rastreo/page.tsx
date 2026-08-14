@@ -399,7 +399,7 @@ export default function RastreoPage() {
           <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
             <Clock size={20} className="mx-auto text-[#d88193] mb-2" />
             <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">Tiempos de entrega</p>
-            <p className="text-[11px] text-neutral-500 mt-1">Normalmente 2–4 días hábiles según la ciudad de destino.</p>
+            <p className="text-[11px] text-neutral-500 mt-1">Entrega estimada de 5 a 8 días hábiles en ciudades principales e intermedias, y de 8 a 15 días hábiles en municipios. Puede llegar antes, pero el cumplimiento se estima según nuestras políticas.</p>
           </div>
           <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
             <AlertTriangle size={20} className="mx-auto text-[#d88193] mb-2" />
