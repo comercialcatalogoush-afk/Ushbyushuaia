@@ -368,35 +368,35 @@ export const Header: React.FC = () => {
           onClick={() => setComingSoonSection(null)}
         >
           <div
-            className="relative bg-white max-w-md w-full p-8 sm:p-10 text-center shadow-2xl animate-fadeIn border-t-4 border-[#d88193]"
+            className="relative bg-white max-w-md w-full max-h-[90dvh] overflow-y-auto p-6 sm:p-8 text-center shadow-2xl animate-fadeIn border-t-4 border-[#d88193]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setComingSoonSection(null)}
-              className="absolute top-3 right-3 p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
+              className="fixed top-0 right-0 m-3 p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
               aria-label="Cerrar"
             >
               <X size={18} />
             </button>
 
-            <div className="mx-auto w-16 h-16 rounded-full bg-rose-50 text-[#d88193] flex items-center justify-center animate-float">
-              <CalendarClock size={30} />
+            <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-rose-50 text-[#d88193] flex items-center justify-center animate-float">
+              <CalendarClock size={28} className="sm:w-[30px] sm:h-[30px]" />
             </div>
 
-            <p className="mt-5 text-[10px] font-black uppercase tracking-[0.3em] text-[#d88193]">
+            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-[#d88193]">
               Próximamente
             </p>
 
-            <h3 className="mt-2 text-3xl font-black uppercase tracking-tight text-[#1b2333]">
+            <h3 className="mt-1.5 text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#1b2333]">
               Colección <span className="text-gradient-pink">{comingSoonSection}</span>
             </h3>
 
-            <p className="mt-4 text-sm text-neutral-500 font-light leading-relaxed">
+            <p className="mt-3 text-sm text-neutral-500 font-light leading-relaxed">
               Estamos confeccionando con mucho amor y mezclilla rígida de alta calidad una colección exclusiva para <strong className="text-neutral-800">{comingSoonSection.toLowerCase()}</strong>.
               ¡Muy pronto estará disponible con precios mayoristas y envíos a todo Colombia!
             </p>
 
-            <div className="mt-6 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest text-neutral-400">
+            <div className="mt-5 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest text-neutral-400">
               <Sparkles size={13} className="text-[#d88193]" />
               <span>USH BY USHUAIA · Hecho en Itagüí, Antioquia</span>
               <Sparkles size={13} className="text-[#d88193]" />
@@ -405,7 +405,7 @@ export const Header: React.FC = () => {
             <Link
               href="/catalogo"
               onClick={() => setComingSoonSection(null)}
-              className="mt-8 inline-block w-full bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-8 py-4 hover:bg-[#d88193] transition-colors shadow-md"
+              className="mt-6 inline-block w-full bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-8 py-4 hover:bg-[#d88193] transition-colors shadow-md"
             >
               Explorar colección Mujer →
             </Link>

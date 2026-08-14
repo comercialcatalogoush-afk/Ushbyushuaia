@@ -150,7 +150,7 @@ export default async function PoliticasPage() {
           <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900">
             Políticas de Cambios, Garantías, Envíos y Habeas Data
           </h1>
-          <p className="mt-2.5 text-xs sm:text-sm text-neutral-500 max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="mt-2.5 text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto font-light leading-relaxed">
             En <strong>USH BY USHUAIA</strong> garantizamos tus derechos como consumidor conforme a la Ley 1480 de 2011, Decreto 587 de 2016 y Ley 1581 de 2012 de la República de Colombia.
           </p>
         </div>
@@ -192,17 +192,17 @@ export default async function PoliticasPage() {
               <div className="space-y-6">
                 {section.content.map((block, bIdx) => (
                   <div key={bIdx} className="space-y-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-800">
+                    <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-neutral-900">
                       {block.subtitle}
                     </h3>
                     {block.text && (
-                      <p className="text-xs text-neutral-600 leading-relaxed font-light">{block.text}</p>
+                      <p className="text-sm sm:text-base text-neutral-700 leading-relaxed font-light">{block.text}</p>
                     )}
                     {block.list && (
-                      <ul className="space-y-2 pt-1">
+                      <ul className="space-y-2.5 pt-1">
                         {block.list.map((item, iIdx) => (
-                          <li key={iIdx} className="flex items-start gap-2.5 text-xs text-neutral-600 font-light">
-                            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 flex-shrink-0 mt-1.5" />
+                          <li key={iIdx} className="flex items-start gap-2.5 text-sm sm:text-base text-neutral-700 font-light">
+                            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 flex-shrink-0 mt-2" />
                             <span className="leading-relaxed">{item}</span>
                           </li>
                         ))}
@@ -231,7 +231,7 @@ export default async function PoliticasPage() {
             </span>
           </div>
 
-          <div className="space-y-4 text-xs text-neutral-600 font-light leading-relaxed">
+          <div className="space-y-5 text-sm sm:text-base text-neutral-700 font-light leading-relaxed">
             <p>
               En <strong>USH BY USHUAIA</strong>, nuestro compromiso es cumplir con los tiempos de entrega, por lo tanto, si el día que llegue tu pedido no estás presente para recibirlo, la transportadora estará autorizada para dejarlo en el lugar indicado informado por el medio de atención donde se tomó el pedido.
             </p>
@@ -242,17 +242,17 @@ export default async function PoliticasPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="bg-neutral-50 border border-neutral-200 p-4 text-center space-y-1">
                 <p className="text-2xl font-black text-[#d88193]">5 a 8</p>
-                <p className="text-xs font-bold uppercase text-neutral-800">Días Hábiles</p>
-                <p className="text-[11px] text-neutral-500">Ciudades principales e intermedias</p>
+                <p className="text-sm font-bold uppercase text-neutral-800">Días Hábiles</p>
+                <p className="text-sm text-neutral-600">Ciudades principales e intermedias</p>
               </div>
               <div className="bg-neutral-50 border border-neutral-200 p-4 text-center space-y-1">
                 <p className="text-2xl font-black text-[#d88193]">8 a 15</p>
-                <p className="text-xs font-bold uppercase text-neutral-800">Días Hábiles</p>
-                <p className="text-[11px] text-neutral-500">Municipios y demás poblaciones</p>
+                <p className="text-sm font-bold uppercase text-neutral-800">Días Hábiles</p>
+                <p className="text-sm text-neutral-600">Municipios y demás poblaciones</p>
               </div>
             </div>
 
-            <p className="text-[11px] text-neutral-400 italic pt-2">
+            <p className="text-sm text-neutral-500 italic pt-2">
               * Contados a partir del momento en que el consumidor reciba la confirmación de su pedido.
             </p>
           </div>
@@ -274,31 +274,31 @@ export default async function PoliticasPage() {
             </span>
           </div>
 
-          <div className="space-y-4 text-xs text-neutral-600 font-light leading-relaxed">
+          <div className="space-y-5 text-sm sm:text-base text-neutral-700 font-light leading-relaxed">
             <p>
               De conformidad con la Ley 1581 de 2012 y el Decreto 1377 de 2013 de la República de Colombia, <strong>USH BY USHUAIA / USHUAIA JEANS</strong> informa que los datos personales suministrados por nuestros clientes en los formularios web, registros de compras y canal de atención comercial son recolectados, almacenados y tratados bajo estrictos parámetros de seguridad y confidencialidad.
             </p>
 
             <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">Finalidad del Tratamiento de Datos:</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-xs text-neutral-600 font-light">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0 mt-1.5" />
+              <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-neutral-900">Finalidad del Tratamiento de Datos:</h3>
+              <ul className="space-y-2.5">
+                <li className="flex items-start gap-2 text-sm sm:text-base text-neutral-700 font-light">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0 mt-2" />
                   <span>Procesar, confirmar y enviar pedidos solicitados por el cliente a nivel nacional.</span>
                 </li>
-                <li className="flex items-start gap-2 text-xs text-neutral-600 font-light">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0 mt-1.5" />
+                <li className="flex items-start gap-2 text-sm sm:text-base text-neutral-700 font-light">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0 mt-2" />
                   <span>Brindar atención comercial directa, soporte en garantías y seguimiento logístico a través de WhatsApp o correo electrónico.</span>
                 </li>
-                <li className="flex items-start gap-2 text-xs text-neutral-600 font-light">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0 mt-1.5" />
+                <li className="flex items-start gap-2 text-sm sm:text-base text-neutral-700 font-light">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0 mt-2" />
                   <span>Enviar promociones, catálogos actualizados y ofertas exclusivas previa autorización explícita del titular.</span>
                 </li>
               </ul>
             </div>
 
             <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">Derechos del Titular de la Información:</h3>
+              <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-neutral-900">Derechos del Titular de la Información:</h3>
               <p>
                 Como titular de sus datos personales, usted tiene derecho a conocer, actualizar, rectificar o solicitar la supresión de sus datos de nuestras bases de datos en cualquier momento. Para ejercer estos derechos, puede escribir directamente a nuestro correo oficial <strong>comercialmayoristas@ushuauajeans.com.co</strong> indicando el asunto "Habeas Data".
               </p>
@@ -313,23 +313,23 @@ export default async function PoliticasPage() {
             <h3 className="text-lg font-black uppercase tracking-tight text-neutral-900 mt-0.5">Canales de Atención</h3>
           </div>
 
-          <div className="space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#c06579]">WhatsApp</p>
-            <p className="text-sm font-black text-neutral-900">{whatsappDisplay}</p>
-            <p className="text-[11px] text-neutral-500 font-light pt-1">
+          <div className="space-y-1.5">
+            <p className="text-sm font-bold uppercase tracking-wider text-[#c06579]">WhatsApp</p>
+            <p className="text-lg font-black text-neutral-900">{whatsappDisplay}</p>
+            <p className="text-sm text-neutral-600 font-light pt-1">
               Lunes a jueves: 7:00 a. m. a 4:00 p. m.<br />
               Viernes: 7:00 a. m. a 3:30 p. m.
             </p>
           </div>
 
-          <div className="space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#c06579]">Correo Electrónico</p>
-            <p className="text-xs font-bold text-neutral-900 break-all">comercialmayoristas@ushuauajeans.com.co</p>
+          <div className="space-y-1.5">
+            <p className="text-sm font-bold uppercase tracking-wider text-[#c06579]">Correo Electrónico</p>
+            <p className="text-sm font-bold text-neutral-900 break-all">comercialmayoristas@ushuauajeans.com.co</p>
           </div>
 
-          <div className="space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#c06579]">Punto de Despacho</p>
-            <p className="text-xs font-bold text-neutral-900">Cll. 85 Sur #50-72, Itagüí, Antioquia — Colombia</p>
+          <div className="space-y-1.5">
+            <p className="text-sm font-bold uppercase tracking-wider text-[#c06579]">Punto de Despacho</p>
+            <p className="text-sm font-bold text-neutral-900">Cll. 85 Sur #50-72, Itagüí, Antioquia — Colombia</p>
           </div>
         </div>
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, Share2, MessageCircle, ZoomIn, X } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, Share2, MessageCircle, ZoomIn, X, ChevronLeft, ChevronRight, ZoomOut } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -47,11 +47,35 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePrice, setSharePrice] = useState<number>(suggestedPrice);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [zoomPan, setZoomPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [zoomIndex, setZoomIndex] = useState(0);
   const [whatsappNumber, setWhatsappNumber] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
 
   React.useEffect(() => {
     getWhatsAppNumber().then(setWhatsappNumber);
   }, []);
+
+  React.useEffect(() => {
+    if (!zoomOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setZoomOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        setZoomIndex((i) => (i + 1) % currentProduct.images.length);
+        setZoomScale(1);
+        setZoomPan({ x: 0, y: 0 });
+      } else if (e.key === 'ArrowLeft') {
+        setZoomIndex((i) => (i - 1 + currentProduct.images.length) % currentProduct.images.length);
+        setZoomScale(1);
+        setZoomPan({ x: 0, y: 0 });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [zoomOpen, currentProduct.images.length]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
@@ -137,7 +161,13 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 />
                 <button
                   type="button"
-                  onClick={() => setZoomOpen(true)}
+                  onClick={() => {
+                    const idx = Math.max(0, currentProduct.images.findIndex((i) => i === selectedImage));
+                    setZoomIndex(idx);
+                    setZoomScale(1);
+                    setZoomPan({ x: 0, y: 0 });
+                    setZoomOpen(true);
+                  }}
                   aria-label="Ampliar imagen"
                   className="absolute bottom-3 right-3 z-10 w-10 h-10 bg-white/90 hover:bg-white text-ush-navy shadow-md border border-gray-200 flex items-center justify-center transition-all"
                 >
@@ -437,32 +467,126 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
       </div>
     </div>
 
-    {/* ── Modal Zoom de Imagen ── */}
+    {/* ── Modal Zoom de Imagen (estilo PhotoSwipe) ── */}
     {zoomOpen && (
       <div
-        className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[60] bg-black/95 flex flex-col"
         onClick={() => setZoomOpen(false)}
       >
-        <button
-          type="button"
-          onClick={() => setZoomOpen(false)}
-          aria-label="Cerrar zoom"
-          className="absolute top-4 right-4 z-10 text-white hover:text-ush-pink p-2 transition-colors"
-        >
-          <X size={28} />
-        </button>
+        {/* Top bar */}
+        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4">
+          <span className="text-white/70 text-sm font-medium">
+            {(zoomIndex + 1)} / {currentProduct.images.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, Math.min(6, s + 0.5))); }}
+              aria-label="Acercar"
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+            >
+              <ZoomIn size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, Math.min(6, s - 0.5))); }}
+              aria-label="Alejar"
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+            >
+              <ZoomOut size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoomOpen(false)}
+              aria-label="Cerrar zoom"
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+            >
+              <X size={22} />
+            </button>
+          </div>
+        </div>
+
+        {/* Prev / Next */}
+        {currentProduct.images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const next = (zoomIndex - 1 + currentProduct.images.length) % currentProduct.images.length;
+                setZoomIndex(next);
+                setZoomScale(1);
+                setZoomPan({ x: 0, y: 0 });
+              }}
+              aria-label="Imagen anterior"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+            >
+              <ChevronLeft size={26} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const next = (zoomIndex + 1) % currentProduct.images.length;
+                setZoomIndex(next);
+                setZoomScale(1);
+                setZoomPan({ x: 0, y: 0 });
+              }}
+              aria-label="Imagen siguiente"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+            >
+              <ChevronRight size={26} />
+            </button>
+          </>
+        )}
+
+        {/* Pan / Zoom area */}
         <div
-          className="relative w-full max-w-3xl aspect-[3/4]"
-          onClick={(e) => e.stopPropagation()}
+          className="flex-1 flex items-center justify-center p-16 overflow-hidden cursor-grab active:cursor-grabbing select-none"
+          onWheel={(e) => {
+            e.stopPropagation();
+            const delta = e.deltaY < 0 ? 0.15 : -0.15;
+            setZoomScale((s) => Math.max(1, Math.min(6, s + delta)));
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            setIsDragging(true);
+            setDragStart({ x: e.clientX - zoomPan.x, y: e.clientY - zoomPan.y });
+          }}
+          onMouseMove={(e) => {
+            if (isDragging) {
+              setZoomPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+            }
+          }}
+          onMouseUp={() => setIsDragging(false)}
+          onMouseLeave={() => setIsDragging(false)}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setZoomScale((s) => (s > 1 ? 1 : 2.5));
+            setZoomPan({ x: 0, y: 0 });
+          }}
         >
-          <Image
-            src={selectedImage}
-            alt={currentProduct.name}
-            fill
-            quality={100}
-            sizes="(max-width: 1024px) 90vw, 60vw"
-            className="object-contain"
-          />
+          <div
+            className="relative max-w-full max-h-full transition-transform duration-150"
+            style={{ transform: `scale(${zoomScale}) translate(${zoomPan.x}px, ${zoomPan.y}px)` }}
+          >
+            <Image
+              src={currentProduct.images[zoomIndex] || currentProduct.images[0]}
+              alt={currentProduct.name}
+              width={1000}
+              height={1333}
+              quality={100}
+              sizes="90vw"
+              className="object-contain max-w-[90vw] max-h-[85vh] w-auto h-auto"
+            />
+          </div>
+        </div>
+
+        {/* Hint */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs flex items-center gap-4 z-20">
+          <span>Rueda del mouse: zoom</span>
+          <span>Arrastra: mover</span>
+          <span>Doble clic: restaurar</span>
         </div>
       </div>
     )}
