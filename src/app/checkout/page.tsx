@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { submitOrder, publishOrderChange } from '@/lib/supabase';
-import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone, ArrowUpRight } from 'lucide-react';
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
@@ -13,6 +13,10 @@ function generateOrderId() {
   const rand = Math.floor(1000 + Math.random() * 9000);
   return `FE${rand}-${ts}`;
 }
+
+// Mínimo mayorista por pedido. Debajo de esto se redirige a la tienda retail.
+const MIN_ORDER_UNITS = 8;
+const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
 
 export default function CheckoutPage() {
   const { items, subtotalCOP, formatCOP, clearCart, isWholesaleTier, calculateItemUnitPrice, totalUnits } = useCart();
@@ -73,6 +77,13 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
+
+    // Mínimo mayorista: 8 unidades. Debajo de eso se sugiere la tienda retail.
+    if (totalUnits < MIN_ORDER_UNITS) {
+      setErrorMessage(`El pedido mínimo mayorista es de ${MIN_ORDER_UNITS} unidades (actualmente llevas ${totalUnits}). Si deseas un pedido menor, haz tu compra en nuestra tienda retail www.ushuaiajeans.com.co`);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setErrorMessage(null);
@@ -671,10 +682,21 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               ) : (
-                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
-                  <p className="font-bold">🏷️ Sin descuento mayorista (menos de 8 uds).</p>
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
+                  <p className="font-bold">⛔ Pedido mínimo: {MIN_ORDER_UNITS} unidades.</p>
                   <p className="text-[11px] text-red-700 font-semibold flex items-center gap-1">
-                    <AlertTriangle size={12} /> La compra mínima para el 20% OFF es de 8 a 11 uds; desde 12 uds precio mayorista + envío gratis.
+                    <AlertTriangle size={12} /> Faltan {MIN_ORDER_UNITS - totalUnits} unidad(es) para poder tomar tu pedido mayorista.
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    ¿Buscas comprar menos de {MIN_ORDER_UNITS} unidades? Compra en nuestra tienda retail:
+                    <a
+                      href={RETAIL_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-bold text-ush-pink hover:underline ml-1"
+                    >
+                      www.ushuaiajeans.com.co <ArrowUpRight size={12} />
+                    </a>
                   </p>
                 </div>
               )}

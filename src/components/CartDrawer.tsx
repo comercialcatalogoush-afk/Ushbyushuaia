@@ -3,10 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check, AlertTriangle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { INITIAL_PRODUCTS } from '@/data/products';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
+
+const MIN_ORDER_UNITS = 8;
+const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -233,6 +236,29 @@ export const CartDrawer: React.FC = () => {
                   <span className="text-xl font-black text-neutral-900">{formatCOP(subtotalCOP)}</span>
                 </div>
               </div>
+
+              {/* Minimum order notice */}
+              {totalItemsCount < MIN_ORDER_UNITS && (
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <AlertTriangle size={13} className="text-amber-600" /> Pedido mínimo: {MIN_ORDER_UNITS} unidades
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    Faltan {MIN_ORDER_UNITS - totalItemsCount} unidad(es) para poder tomar tu pedido mayorista.
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    ¿Menos de {MIN_ORDER_UNITS}? Compra en nuestra tienda retail:
+                    <a
+                      href={RETAIL_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-ush-pink hover:underline ml-1"
+                    >
+                      www.ushuaiajeans.com.co
+                    </a>
+                  </p>
+                </div>
+              )}
 
               {/* Single direct action: goes straight to /checkout */}
               <button
