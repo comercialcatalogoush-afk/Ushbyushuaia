@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Search, Package, MapPin, Truck, Calendar, CheckCircle2, ArrowLeft, Loader2, AlertTriangle, Clock, FileText, RefreshCw, Navigation } from 'lucide-react';
+import { Search, Package, MapPin, Truck, CheckCircle2, ArrowLeft, Loader2, AlertTriangle, Clock, FileText, RefreshCw, Navigation, Box } from 'lucide-react';
 
 // Formato real del API de Coordinadora (guía existente)
 interface CoordEvent {
@@ -44,18 +44,21 @@ interface NormalizedTracking {
   noExiste: boolean;
 }
 
-const COORDINADORA_STATES: Record<number, { label: string; color: string; badge: string }> = {
-  15: { label: 'En posesión del Remitente', color: 'bg-neutral-100 text-neutral-600 border-neutral-300', badge: 'bg-neutral-500' },
-  1:  { label: 'Recogida', color: 'bg-amber-50 text-amber-800 border-amber-200', badge: 'bg-amber-500' },
-  2:  { label: 'En Terminal origen', color: 'bg-blue-50 text-blue-800 border-blue-200', badge: 'bg-blue-500' },
-  3:  { label: 'En transporte', color: 'bg-blue-50 text-blue-800 border-blue-200', badge: 'bg-blue-500' },
-  5:  { label: 'En Terminal destino', color: 'bg-indigo-50 text-indigo-800 border-indigo-200', badge: 'bg-indigo-500' },
-  6:  { label: 'En Distribución', color: 'bg-indigo-50 text-indigo-800 border-indigo-200', badge: 'bg-indigo-500' },
-  8:  { label: 'Entregada', color: 'bg-emerald-50 text-emerald-800 border-emerald-200', badge: 'bg-emerald-500' },
+// Colores de marca según estado
+const STATE_COLORS: Record<number, { badge: string; dot: string }> = {
+  15: { badge: 'bg-ush-pinkSoft text-[#c06579] border border-[#d88193]/40', dot: 'bg-[#c06579]' },
+  1:  { badge: 'bg-ush-pinkLight text-[#b5586c] border border-[#d88193]/40', dot: 'bg-[#d88193]' },
+  2:  { badge: 'bg-ush-pinkLight text-[#b5586c] border border-[#d88193]/40', dot: 'bg-[#d88193]' },
+  3:  { badge: 'bg-ush-pinkLight text-[#b5586c] border border-[#d88193]/40', dot: 'bg-[#d88193]' },
+  5:  { badge: 'bg-[#fdf3f5] text-[#c06579] border border-[#d88193]/40', dot: 'bg-[#c06579]' },
+  6:  { badge: 'bg-[#fdf3f5] text-[#c06579] border border-[#d88193]/40', dot: 'bg-[#c06579]' },
+  8:  { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-300', dot: 'bg-emerald-500' },
 };
 
+// Orden cronológico canónico de Coordinadora (de más antiguo a más reciente)
+const STATE_ORDER = [15, 1, 2, 3, 5, 6, 8];
+
 function normalize(data: CoordTrackingResponse): NormalizedTracking {
-  // Formato nuevo (guía real): estado_actual + estado[]
   if (data.guia && data.estado_actual) {
     const events = (Array.isArray(data.estado) ? data.estado : []).map((ev) => ({
       id: ev.id_estado,
@@ -77,7 +80,6 @@ function normalize(data: CoordTrackingResponse): NormalizedTracking {
     };
   }
 
-  // Formato antiguo (guía inexistente)
   const noExiste = !!(data.current_state_text && data.current_state_text.toLowerCase().includes('no existe'));
   const events = (Array.isArray(data.states) ? data.states : []).map((ev) => {
     const [fecha, hora] = (ev.date || '').split(' ');
@@ -144,7 +146,7 @@ export default function RastreoPage() {
     consultar(guia, false);
   };
 
-  // Auto-refresh en tiempo real (cada 30s) mientras haya una guía consultada
+  // Auto-refresh en tiempo real (cada 30s)
   useEffect(() => {
     if (!result || result.noExiste) {
       if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
@@ -158,208 +160,241 @@ export default function RastreoPage() {
     };
   }, [result, consultar]);
 
-  const stateInfo = result ? COORDINADORA_STATES[result.id_estado] : undefined;
+  // Línea de tiempo en orden cronológico (antiguo → actual)
+  const timeline = buildTimeline(result);
+  const currentIdx = result ? timeline.findIndex((ev) => ev.id === result.id_estado) : -1;
 
   return (
-    <div className="py-14 bg-neutral-50 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="py-12 bg-ush-pinkLight min-h-screen">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ush-navy hover:text-ush-pink mb-8 group"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ush-navy hover:text-ush-pink mb-6 group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           <span>Volver al Inicio</span>
         </Link>
 
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 rounded-full bg-ush-navy text-white flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Truck size={28} className="text-ush-pink" />
+        {/* Header de marca */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-full bg-ush-navy text-white flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-[#d88193]">
+            <Box size={28} className="text-ush-pink" />
           </div>
           <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-            Rastrear mi Pedido
+            Rastrear <span className="text-[#d88193]">mi Pedido</span>
           </h1>
-          <p className="text-sm text-neutral-500 font-medium mt-2 max-w-xl mx-auto">
-            Ingresa el número de guía que te envió tu asesor al confirmar el despacho. Podrás seguir el estado de tu pedido en tiempo real con actualización automática.
+          <p className="text-sm text-[#c06579] font-medium mt-2 max-w-lg mx-auto">
+            Ingresa tu número de guía y sigue el recorrido de tu pedido en tiempo real con actualización automática.
           </p>
         </div>
 
-        {/* Search Box */}
-        <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 border border-gray-200 shadow-sm">
-          <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-2">
+        {/* Search Box de marca */}
+        <form onSubmit={handleSubmit} className="bg-white p-6 border-t-4 border-[#d88193] shadow-lg">
+          <label className="block text-xs font-black uppercase tracking-wider text-ush-navy mb-2">
             Número de Guía *
           </label>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
-              <FileText size={16} className="absolute left-3 top-3.5 text-neutral-400" />
+              <FileText size={16} className="absolute left-3 top-3.5 text-[#d88193]" />
               <input
                 type="text"
                 required
                 value={guia}
                 onChange={(e) => setGuia(e.target.value)}
                 placeholder={CARRIERS[0].placeholder}
-                className="w-full border border-gray-300 pl-9 pr-3 py-3 text-sm text-neutral-900 focus:outline-none focus:border-ush-pink"
+                className="w-full border border-gray-300 pl-9 pr-3 py-3 text-sm text-neutral-900 focus:outline-none focus:border-[#d88193] focus:ring-1 focus:ring-[#d88193]/20"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-ush-navy text-white font-bold py-3 px-6 text-xs uppercase tracking-widest hover:bg-ush-pink transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="bg-ush-navy text-white font-bold py-3 px-6 text-xs uppercase tracking-widest hover:bg-[#d88193] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
             >
               {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
               {loading ? 'Consultando...' : 'Rastrear'}
             </button>
           </div>
-          <p className="text-[10px] text-neutral-400 mt-2">
-            El estado se consulta directamente en la transportadora y se actualiza automáticamente cada 30 segundos.
+          <p className="text-[10px] text-neutral-400 mt-2 flex items-center gap-1">
+            <RefreshCw size={10} /> El estado se actualiza automáticamente cada 30 segundos.
           </p>
         </form>
 
         {/* Error Message */}
         {error && (
-          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2">
+          <div className="mt-5 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2">
             <AlertTriangle size={14} className="shrink-0 text-amber-600" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Result */}
+        {/* Resultado — compacto, sin scroll */}
         {result && !loading && (
-          <div className="mt-6 bg-white border border-gray-200 shadow-sm overflow-hidden">
-            {/* Summary Header — réplica de Coordinadora */}
-            <div className="p-6 sm:p-8 bg-ush-navy text-white">
-              <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="mt-6 bg-white border border-gray-200 shadow-lg overflow-hidden">
+            {/* Cabecera navy con estado */}
+            <div className="p-6 bg-ush-navy text-white">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
                       Estado Actual
                     </p>
-                    {refreshing && (
-                      <RefreshCw size={11} className="text-ush-pink animate-spin" />
-                    )}
+                    {refreshing && <RefreshCw size={11} className="text-[#d88193] animate-spin" />}
                   </div>
-                  <h2
-                    className={`text-2xl sm:text-3xl font-black uppercase mt-1 inline-block px-3 py-1 ${
-                      stateInfo ? stateInfo.color : 'bg-ush-pink text-white'
-                    }`}
-                  >
+                  <h2 className="text-2xl font-black uppercase tracking-tight">
                     {result.estado_actual}
                   </h2>
-                  <p className="text-xs text-white/70 mt-2 font-medium">
-                    Guía No. <span className="font-black text-white">{result.guia}</span>
-                    {result.dias_promesa ? ` · Promesa de entrega: ${result.dias_promesa} días` : ''}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-3 mt-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest bg-[#d88193] px-2.5 py-1 text-white">
+                      Guía {result.guia}
+                    </span>
+                    {result.dias_promesa ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/60">
+                        Entrega estimada: {result.dias_promesa} días
+                      </span>
+                    ) : null}
+                  </div>
                   {lastUpdated && (
-                    <p className="text-[10px] text-white/50 mt-1 flex items-center gap-1">
-                      <Clock size={10} /> Actualizado: {lastUpdated.toLocaleTimeString('es-CO')}
+                    <p className="text-[10px] text-white/40 mt-2 flex items-center gap-1">
+                      <Clock size={10} /> Última actualización: {lastUpdated.toLocaleTimeString('es-CO')}
                     </p>
                   )}
                 </div>
+              </div>
 
-                {/* Origen → Destino */}
-                <div className="flex items-center gap-3 sm:gap-4 text-xs">
-                  <div className="text-right">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">Origen</p>
-                    <p className="font-black text-white mt-0.5">{result.origen}</p>
-                  </div>
-                  <div className="flex flex-col items-center text-ush-pink">
-                    <Navigation size={16} />
-                    <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5">→</span>
+              {/* Origen → Destino */}
+              <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                    <MapPin size={15} className="text-[#d88193]" />
                   </div>
                   <div>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">Destino</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Origen</p>
+                    <p className="font-black text-white mt-0.5">{result.origen}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#d88193]">
+                  <Navigation size={14} />
+                  <span className="tracking-[0.3em] font-black text-sm">────</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                    <Truck size={15} className="text-[#d88193]" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Destino</p>
                     <p className="font-black text-white mt-0.5">{result.destino}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Guía digital (etiqueta) */}
-            {result.guia_digital && (
-              <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-neutral-50">
-                <Package size={16} className="text-ush-pink shrink-0" />
-                <p className="text-xs text-neutral-600 font-medium">Guía digital disponible:</p>
-                <a
-                  href={result.guia_digital}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-ush-pink hover:underline ml-auto"
-                >
-                  Ver etiqueta de la guía →
-                </a>
-              </div>
-            )}
-
-            {/* Timeline — réplica de Coordinadora */}
+            {/* Línea de tiempo horizontal (stepper) — sin scroll vertical */}
             <div className="p-6 sm:p-8">
-              {result.events.length > 0 ? (
-                <div className="relative">
-                  <div className="absolute left-4 top-2 bottom-2 w-px bg-gray-200" />
-                  <div className="space-y-6">
-                    {result.events.map((ev, idx) => {
-                      const isLast = idx === 0;
-                      const st = COORDINADORA_STATES[ev.id];
-                      const isDone = isLast || ev.id === 8 || (ev.id && st && ['6', '5', '8'].includes(String(ev.id)));
-                      return (
-                        <div key={idx} className="relative flex gap-4 pl-12">
+              {timeline.length > 0 ? (
+                <div className="flex items-start justify-between gap-1 overflow-x-auto pb-1">
+                  {timeline.map((ev, idx) => {
+                    const st = STATE_COLORS[ev.id];
+                    const isPast = idx <= currentIdx;
+                    const isCurrent = idx === currentIdx;
+                    const isDone = isPast && idx !== currentIdx;
+                    return (
+                      <div key={idx} className="flex flex-col items-center flex-1 min-w-[76px]">
+                        <div className="relative w-full flex items-center justify-center">
+                          {/* Línea conectora */}
                           <div
-                            className={`absolute left-0 w-8 h-8 rounded-full border-2 flex items-center justify-center z-10 ${
-                              isDone
-                                ? 'bg-white border-emerald-500 text-emerald-600'
-                                : 'bg-white border-gray-300 text-gray-400'
+                            className={`absolute top-1/2 -translate-y-1/2 h-[3px] w-full ${
+                              idx === 0 ? 'left-1/2' : idx === timeline.length - 1 ? 'right-1/2' : ''
+                            } ${isPast ? 'bg-[#d88193]' : 'bg-gray-200'}`}
+                          />
+                          <div
+                            className={`relative w-9 h-9 rounded-full border-2 flex items-center justify-center z-10 shadow-sm transition-all ${
+                              isCurrent
+                                ? 'bg-[#d88193] border-[#d88193] text-white scale-110 shadow-md shadow-[#d88193]/40'
+                                : isDone
+                                ? 'bg-ush-navy border-ush-navy text-white'
+                                : 'bg-white border-gray-300 text-gray-300'
                             }`}
                           >
-                            {isDone ? <CheckCircle2 size={14} /> : <Clock size={14} />}
-                          </div>
-                          <div className="pt-0.5">
-                            <span
-                              className={`inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 ${st ? st.color : 'bg-neutral-100 text-neutral-600 border border-neutral-300'}`}
-                            >
-                              {ev.nombre}
-                            </span>
-                            <p className="text-[11px] text-neutral-400 font-medium mt-1 flex items-center gap-1">
-                              <Calendar size={11} /> {ev.fecha} · {ev.hora}
-                            </p>
-                            {ev.descripcion && (
-                              <p className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1">
-                                <MapPin size={11} /> {ev.descripcion}
-                              </p>
-                            )}
+                            {isDone ? <CheckCircle2 size={15} /> : <Clock size={15} />}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="mt-2 text-center">
+                          <span
+                            className={`inline-block text-[9px] font-black uppercase tracking-wider leading-tight ${
+                              isCurrent ? 'text-[#d88193]' : isPast ? 'text-ush-navy' : 'text-neutral-400'
+                            }`}
+                          >
+                            {ev.nombre}
+                          </span>
+                          <p className="text-[9px] text-neutral-400 font-semibold mt-0.5">
+                            {ev.fecha} · {ev.hora}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-6 text-xs text-neutral-400">
+                <div className="text-center py-4 text-xs text-neutral-400">
                   <Package size={24} className="mx-auto mb-2 text-neutral-300" />
                   Sin eventos de seguimiento todavía.
+                </div>
+              )}
+
+              {/* Guía digital */}
+              {result.guia_digital && (
+                <div className="mt-6 p-3 bg-ush-pinkLight border border-[#d88193]/30 flex items-center gap-3 rounded-none">
+                  <Package size={16} className="text-[#d88193] shrink-0" />
+                  <p className="text-xs text-ush-navy font-bold">Guía digital disponible.</p>
+                  <a
+                    href={result.guia_digital}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-black text-[#d88193] hover:text-ush-navy ml-auto uppercase tracking-wider"
+                  >
+                    Ver etiqueta →
+                  </a>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Help Section */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-          <div className="bg-white p-4 border border-gray-200">
-            <Package size={20} className="mx-auto text-ush-pink mb-2" />
-            <p className="text-xs font-bold text-ush-navy uppercase tracking-wide">¿Dónde está mi guía?</p>
-            <p className="text-[11px] text-neutral-500 mt-1">Te la envía tu asesor por WhatsApp al confirmar el despacho.</p>
+        {/* Ayuda */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+          <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
+            <Package size={20} className="mx-auto text-[#d88193] mb-2" />
+            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">¿Dónde está mi guía?</p>
+            <p className="text-[11px] text-neutral-500 mt-1">Tu asesor te la envía por WhatsApp al confirmar el despacho.</p>
           </div>
-          <div className="bg-white p-4 border border-gray-200">
-            <Calendar size={20} className="mx-auto text-ush-pink mb-2" />
-            <p className="text-xs font-bold text-ush-navy uppercase tracking-wide">Tiempos de entrega</p>
+          <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
+            <Clock size={20} className="mx-auto text-[#d88193] mb-2" />
+            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">Tiempos de entrega</p>
             <p className="text-[11px] text-neutral-500 mt-1">Normalmente 2–4 días hábiles según la ciudad de destino.</p>
           </div>
-          <div className="bg-white p-4 border border-gray-200">
-            <AlertTriangle size={20} className="mx-auto text-ush-pink mb-2" />
-            <p className="text-xs font-bold text-ush-navy uppercase tracking-wide">¿Problemas con tu pedido?</p>
-            <p className="text-[11px] text-neutral-500 mt-1">Escríbenos por WhatsApp y te ayudamos a resolverlo de inmediato.</p>
+          <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
+            <AlertTriangle size={20} className="mx-auto text-[#d88193] mb-2" />
+            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">¿Problemas?</p>
+            <p className="text-[11px] text-neutral-500 mt-1">Escríbenos por WhatsApp y te ayudamos de inmediato.</p>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+// Helper: ordena eventos cronológicamente usando el orden canónico
+function buildTimeline(result: NormalizedTracking | null) {
+  if (!result || result.events.length === 0) return [] as { id: number; nombre: string; fecha: string; hora: string }[];
+  const byId = new Map(result.events.map((ev) => [ev.id, ev]));
+  const ordered: { id: number; nombre: string; fecha: string; hora: string }[] = [];
+  // Orden canónico para los estados conocidos
+  for (const sid of STATE_ORDER) {
+    const ev = byId.get(sid);
+    if (ev) { ordered.push(ev); byId.delete(sid); }
+  }
+  // Estados desconocidos, al final (ya vienen más recientes primero, así que los invertimos)
+  const rest = Array.from(byId.values()).reverse();
+  ordered.push(...rest);
+  return ordered;
 }
