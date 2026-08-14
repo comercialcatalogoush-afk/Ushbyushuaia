@@ -1259,12 +1259,12 @@ export default function AdminCatalogPage() {
                     required
                     value={whatsappInput}
                     onChange={(e) => setWhatsappInput(e.target.value.replace(/[^\d]/g, ''))}
-                    placeholder="573022028477"
+                    placeholder="573011393902"
                     className="w-full border border-gray-300 px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#d88193]"
                   />
                 </div>
                 <p className="text-[10px] text-neutral-400 mt-1">
-                  Ej: 573022028477 (código país + número). Se aplica en el footer, botón WhatsApp, contacto y políticas.
+                  Ej: 573011393902 (código país + número). Se aplica en el footer, botón WhatsApp, contacto y políticas.
                 </p>
               </div>
 

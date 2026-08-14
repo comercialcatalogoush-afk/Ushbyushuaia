@@ -10,7 +10,7 @@ const OUTLET = {
   address: 'Cll. 85 Sur #50-72, Itagüí, Antioquia',
   schedule: 'Lunes a Viernes: 8:00 AM – 5:30 PM',
   mapUrl: 'https://maps.google.com/?q=Cll+85+Sur+%2350-72,+Itagui',
-  phone: '+57 302 202 8477',
+  phone: '+57 301 139 3902',
   videoUrl: '',
   poster: '',
 };

@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 const WHATSAPP_STORAGE_KEY = 'ush_whatsapp_override';
-export const DEFAULT_WHATSAPP_NUMBER = '573022028477';
+export const DEFAULT_WHATSAPP_NUMBER = '573011393902';
 
 export function getLocalWhatsAppOverride(): string | null {
   if (typeof window === 'undefined') return null;
