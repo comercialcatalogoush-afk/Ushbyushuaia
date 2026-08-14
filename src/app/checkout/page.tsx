@@ -15,7 +15,7 @@ function generateOrderId() {
 }
 
 export default function CheckoutPage() {
-  const { items, subtotalCOP, formatCOP, clearCart, isWholesaleTier, calculateItemUnitPrice } = useCart();
+  const { items, subtotalCOP, formatCOP, clearCart, isWholesaleTier, calculateItemUnitPrice, totalUnits } = useCart();
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     doc_type: 'CC',
@@ -139,7 +139,7 @@ export default function CheckoutPage() {
       `───────────────────────\n` +
       `💰 *TOTAL:* ${formatCOP(completedOrder.total)}\n` +
       `🚚 *Envío:* ${completedOrder.is_wholesale ? '✅ GRATIS (12+ unidades)' : '⚠️ Asume el cliente (<12 unidades)'}\n` +
-      `💳 *Tarifa:* ${completedOrder.is_wholesale ? 'Mayorista (35–42% OFF)' : 'Detal (20% OFF)'}\n` +
+      `💳 *Tarifa:* ${completedOrder.is_wholesale ? 'Mayorista (precio mayorista)' : 'Detal (sin descuento mayorista)'}\n` +
       (completedOrder.payment_method === 'addi' ? `\n⚠️ *Nota Addi:* El costo de transacción por Addi es asumido por el cliente.\n` : '') +
       `───────────────────────\n` +
       `¿Pueden confirmar el pedido y acordar el pago y despacho? Gracias 🙏`
@@ -170,7 +170,7 @@ export default function CheckoutPage() {
             <p><span className="font-bold">Método de pago:</span> {paymentLabels[completedOrder.payment_method] || completedOrder.payment_method}</p>
             <p><span className="font-bold">Total a pagar:</span> {formatCOP(completedOrder.total)}</p>
             <p className="pt-1 text-ush-pink font-bold border-t border-gray-200">
-              {completedOrder.is_wholesale ? '🎉 Tarifa Mayorista (35%-42% OFF) + ENVÍO GRATIS' : '⚠️ Tarifa Detal (20% OFF) - El cliente asume el costo de envío.'}
+              {completedOrder.is_wholesale ? '🎉 Tarifa Mayorista (precio mayorista 12+ uds) + ENVÍO GRATIS' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}
             </p>
             {completedOrder.payment_method === 'addi' && (
               <p className="text-amber-700 text-[11px] font-semibold flex items-center gap-1 pt-1">
@@ -654,17 +654,26 @@ export default function CheckoutPage() {
               {isWholesaleTier ? (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold space-y-1">
                   <p className="flex items-center gap-1 font-bold">
-                    <Sparkles size={14} /> Tarifa Mayorista Aplicada (35%-42% OFF)
+                    <Sparkles size={14} /> Precio Mayorista Aplicado (12+ uds)
                   </p>
                   <p className="flex items-center gap-1 text-[11px] text-emerald-700">
                     <Truck size={14} /> <strong>¡Envío Gratis Incluido!</strong>
                   </p>
                 </div>
+              ) : totalUnits >= 8 ? (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold space-y-1">
+                  <p className="flex items-center gap-1 font-bold">
+                    <Sparkles size={14} /> 20% de Descuento Aplicado (compra mínima de 8 a 11 uds)
+                  </p>
+                  <p className="text-[11px] text-emerald-700">
+                    Súmale {12 - totalUnits} unidad(es) para activar el precio mayorista + envío gratis.
+                  </p>
+                </div>
               ) : (
                 <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
-                  <p className="font-bold">🏷️ Tarifa Detal (20% OFF Aplicado).</p>
+                  <p className="font-bold">🏷️ Sin descuento mayorista (menos de 8 uds).</p>
                   <p className="text-[11px] text-red-700 font-semibold flex items-center gap-1">
-                    <AlertTriangle size={12} /> Para compras menores a 12 uds, el cliente asume el costo de envío.
+                    <AlertTriangle size={12} /> La compra mínima para el 20% OFF es de 8 a 11 uds; desde 12 uds precio mayorista + envío gratis.
                   </p>
                 </div>
               )}

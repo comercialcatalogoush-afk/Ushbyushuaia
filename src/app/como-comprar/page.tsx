@@ -5,7 +5,7 @@ import { CheckCircle2, HelpCircle, ArrowRight, ShieldCheck } from 'lucide-react'
 
 export const metadata = {
   title: 'Beneficios Mayoristas | Ush By Ushuaia',
-  description: 'Conoce los beneficios exclusivos para comerciantes y distribuidores. Precios especiales por volumen desde 12 unidades.',
+  description: 'Conoce los beneficios exclusivos para comerciantes y distribuidores. Precios especiales por volumen: 20% de 8 a 11 unidades y precio mayorista desde 12 unidades.',
 };
 
 export default function ComoComprarPage() {
@@ -18,7 +18,7 @@ export default function ComoComprarPage() {
     {
       num: '02',
       title: 'Elige Tallas y Cantidades',
-      desc: 'Puedes combinar diferentes referencias y desglosar las tallas necesarias para tu negocio. Aplica escala mayorista a partir de 12 unidades.'
+      desc: 'Puedes combinar diferentes referencias y desglosar las tallas necesarias para tu negocio. Compra mínima mayorista: 8 a 11 unidades con 20% de descuento; desde 12 unidades aplica el precio mayorista.'
     },
     {
       num: '03',

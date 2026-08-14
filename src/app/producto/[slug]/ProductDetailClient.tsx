@@ -200,9 +200,22 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     {formatCOP(wholesalePrice)}
                   </span>
                 </div>
-                <p className="text-[10px] text-neutral-500 font-medium text-right">
-                  Descuento del 35% al 42% aplicado a partir de 12 unidades combinadas + ENVÍO GRATIS.
-                </p>
+
+                <div className="pt-2 border-t border-gray-100 text-[11px] text-neutral-600 space-y-1">
+                  <p className="font-bold uppercase text-neutral-700 tracking-wide">Escala de precios por compra:</p>
+                  <div className="flex items-center justify-between">
+                    <span>1 a 7 unidades</span>
+                    <span className="font-extrabold">{formatCOP(Math.round(suggestedPrice * 1))}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>8 a 11 unidades (compra mínima) — 20%</span>
+                    <span className="font-extrabold">{formatCOP(Math.round(suggestedPrice * 0.8))}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-ush-pink font-bold">
+                    <span>12+ unidades — precio mayorista + ENVÍO GRATIS</span>
+                    <span className="font-extrabold">{formatCOP(wholesalePrice)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
