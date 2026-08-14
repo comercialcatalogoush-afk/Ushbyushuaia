@@ -427,7 +427,8 @@ const SYNC_CHANNEL = 'ush-catalog-sync';
 function sendBroadcast(event: string) {
   if (typeof window === 'undefined') return;
   try {
-    const ch = supabase.channel(`ush-send-${event}-${Date.now()}`);
+    // Emisor y receptor deben usar el MISMO canal para que el broadcast se propague
+    const ch = supabase.channel(SYNC_CHANNEL);
     ch.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         ch.send({ type: 'broadcast', event, payload: { ts: Date.now() } });
