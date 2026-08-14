@@ -171,7 +171,7 @@ export default async function PoliticasPage() {
           const Icon = section.icon;
           return (
             <div key={section.id} id={section.id}
-              className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-40 scroll-snap-align-start">
+              className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-[168px] scroll-snap-align-start">
 
               {/* Title Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
@@ -216,7 +216,7 @@ export default async function PoliticasPage() {
         })}
 
         {/* 5. POLÍTICA DE ENVÍO */}
-        <div id="envios" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-40 scroll-snap-align-start">
+        <div id="envios" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-[168px] scroll-snap-align-start">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0 text-[#d88193]">
@@ -259,7 +259,7 @@ export default async function PoliticasPage() {
         </div>
 
         {/* 6. POLÍTICA DE PRIVACIDAD Y HABEAS DATA (Ley 1581 de 2012) */}
-        <div id="habeas-data" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-40 scroll-snap-align-start">
+        <div id="habeas-data" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-[168px] scroll-snap-align-start">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 text-indigo-700">
