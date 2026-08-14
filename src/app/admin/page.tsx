@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, subscribeCatalogChanges, publishOrderChange } from '@/lib/supabase';
 import { getWhatsAppNumber, saveWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { exportBackup, downloadBackup, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
   CheckSquare, Square, Lock, LogOut, ShieldCheck, Key, Search, Filter, History, 
-  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, Settings, MessageCircle
+  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, Settings, MessageCircle, ShoppingBag
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
@@ -32,7 +32,7 @@ export default function AdminCatalogPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'config' | 'backup'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'config' | 'backup' | 'orders'>('products');
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +66,12 @@ export default function AdminCatalogPage() {
   // Price History Audit Log
   const [priceHistory, setPriceHistory] = useState<PriceHistoryRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // ── Pedidos (confirmación de pago → descontar stock) ──
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+  const [orderMsg, setOrderMsg] = useState<string | null>(null);
 
   // ── Respaldos / Limpieza mensual ──
   const [backupReminder, setBackupReminder] = useState<Date>(() => getNextBackupReminder());
@@ -149,6 +155,40 @@ export default function AdminCatalogPage() {
     const history = await fetchPriceHistory();
     setPriceHistory(history);
     setLoadingHistory(false);
+  };
+
+  const loadOrders = async () => {
+    setLoadingOrders(true);
+    const data = await fetchOrdersAdmin();
+    setOrders(data);
+    setLoadingOrders(false);
+  };
+
+  // Realtime: cuando el cliente registra un pedido o se edita un producto,
+  // refrescamos automáticamente para mantener el panel sincronizado.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    loadOrders();
+    const unsubscribe = subscribeCatalogChanges(() => {
+      loadOrders();
+      loadProducts();
+    });
+    return unsubscribe;
+  }, [isAuthenticated]);
+
+  const handleConfirmOrder = async (order: any) => {
+    setConfirmingOrderId(order.id);
+    setOrderMsg(null);
+    const res = await confirmOrderAndDeductStock(order, products);
+    if (res.success) {
+      setOrderMsg(`Pedido ${order.id} confirmado: se descontó el stock y el pago quedó registrado.`);
+      await loadOrders();
+      await loadProducts();
+      publishOrderChange();
+    } else {
+      setOrderMsg(`Error al confirmar: ${res.error}`);
+    }
+    setConfirmingOrderId(null);
   };
 
   // ── Respaldos: exportar JSON y vaciar tablas transaccionales ──
@@ -757,6 +797,15 @@ export default function AdminCatalogPage() {
           >
             <Save size={14} /> Respaldos
           </button>
+
+          <button
+            onClick={() => { setActiveTab('orders'); loadOrders(); }}
+            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'orders' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
+            }`}
+          >
+            <ShoppingBag size={14} className="text-[#d88193]" /> Pedidos
+          </button>
         </div>
 
         {saveSuccess && (
@@ -1348,6 +1397,119 @@ export default function AdminCatalogPage() {
               Consejo: el recordatorio también se muestra aquí cada vez que entres al panel. Para asegurarte de no olvidarlo,
               usa el botón <strong>“Agregar recordatorio a mi calendario (.ics)”</strong>, que lo guarda en tu Google Calendar u Outlook.
             </p>
+          </div>
+        )}
+
+        {/* ── TAB: PEDIDOS (confirmar pago → descontar stock) ── */}
+        {activeTab === 'orders' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 border shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-black uppercase text-[#1b2333] tracking-wide flex items-center gap-2">
+                    <ShoppingBag size={16} className="text-[#d88193]" />
+                    Pedidos Recibidos
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-1 max-w-xl">
+                    Cuando el cliente confirme el pago, haz clic en <strong>“Confirmar pago y descontar stock”</strong>:
+                    se reducen las unidades de cada talla en Supabase y la página pública se actualiza al instante en todos los dispositivos.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => loadOrders()}
+                  className="text-xs font-bold uppercase tracking-wider text-ush-pink hover:text-ush-navy border border-[#d88193]/40 px-3 py-2 flex items-center gap-1.5"
+                >
+                  <RefreshCw size={14} /> Actualizar
+                </button>
+              </div>
+
+              {orderMsg && (
+                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                  <CheckCircle size={16} className="text-emerald-600" /> {orderMsg}
+                </div>
+              )}
+
+              {loadingOrders ? (
+                <div className="py-16 text-center text-sm text-neutral-400 font-bold uppercase tracking-wider">
+                  Cargando pedidos…
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="py-16 text-center">
+                  <ShoppingBag size={36} className="mx-auto text-neutral-300 mb-3" />
+                  <p className="text-sm font-bold uppercase text-neutral-600">Aún no hay pedidos registrados</p>
+                  <p className="text-xs text-neutral-400 mt-1">Los pedidos aparecen aquí en tiempo real cuando el cliente los registra en el checkout.</p>
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {orders.map((order) => {
+                    const items = Array.isArray(order.items) ? order.items : [];
+                    const isPending = order.status !== 'confirmed';
+                    return (
+                      <div key={order.id} className={`border ${isPending ? 'border-amber-200 bg-amber-50/40' : 'border-emerald-200 bg-emerald-50/40'} p-4`}>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-black text-[#1b2333]">Pedido {order.id}</span>
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 ${
+                                isPending ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {isPending ? 'Pendiente de pago' : 'Confirmado'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {order.order_date || new Date(order.created_at || Date.now()).toLocaleDateString('es-CO')} · {order.customer_name} · {order.city} · {formatCOP(order.total)}
+                            </p>
+                            <p className="text-[11px] text-neutral-500 mt-0.5">
+                              {order.payment_method} · {order.customer_phone}
+                            </p>
+                          </div>
+
+                          {isPending && (
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmOrder(order)}
+                              disabled={confirmingOrderId === order.id}
+                              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 transition-colors"
+                            >
+                              <CheckCircle size={14} />
+                              {confirmingOrderId === order.id ? 'Confirmando…' : 'Confirmar pago y descontar stock'}
+                            </button>
+                          )}
+                        </div>
+
+                        {items.length > 0 && (
+                          <div className="mt-3 border border-gray-200 bg-white overflow-hidden">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-neutral-50 text-neutral-500 uppercase tracking-wider text-[10px]">
+                                <tr>
+                                  <th className="px-3 py-2">Ref</th>
+                                  <th className="px-3 py-2">Prenda</th>
+                                  <th className="px-3 py-2">Talla</th>
+                                  <th className="px-3 py-2">Color</th>
+                                  <th className="px-3 py-2 text-right">Cant</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.map((it: any, idx: number) => (
+                                  <tr key={idx} className="border-t border-gray-100">
+                                    <td className="px-3 py-2 font-bold text-[#1b2333]">{it.reference}</td>
+                                    <td className="px-3 py-2 text-neutral-600">{it.name}</td>
+                                    <td className="px-3 py-2">{it.size || 'Única'}</td>
+                                    <td className="px-3 py-2">{it.color || '—'}</td>
+                                    <td className="px-3 py-2 text-right font-bold">{it.quantity}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

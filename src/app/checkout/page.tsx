@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
-import { submitOrder } from '@/lib/supabase';
+import { submitOrder, publishOrderChange } from '@/lib/supabase';
 import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone } from 'lucide-react';
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
@@ -106,7 +106,8 @@ export default function CheckoutPage() {
     };
 
     try {
-      await submitOrder(orderPayload);
+      const res = await submitOrder(orderPayload);
+      if (res.success) publishOrderChange();
     } catch (e) {
       console.warn('Supabase database error (bypassing to WhatsApp):', e);
     }

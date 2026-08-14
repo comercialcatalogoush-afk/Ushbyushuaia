@@ -6,6 +6,7 @@ import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { Flame, ArrowRight, ChevronRight } from 'lucide-react';
 import { getTopSellingProductIds, isCompleteProduct } from '@/lib/supabase';
+import { useCatalogSync } from '@/lib/useCatalogSync';
 import { useVisibleCards } from '@/lib/useVisibleCards';
 
 interface ProductGridProps {
@@ -13,18 +14,19 @@ interface ProductGridProps {
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
-  const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
+  const syncedProducts = useCatalogSync(products);
+  const [displayProducts, setDisplayProducts] = useState<Product[]>(syncedProducts);
   const [topSellerIds, setTopSellerIds] = useState<string[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
   const [hoverZone, setHoverZone] = useState<'left' | 'right' | null>(null);
   const visibleCards = useVisibleCards();
 
-  // Supabase es la fuente de verdad: usamos los productos que trae el servidor.
-  // El evento 'ush_products_updated' solo refresca los datos servidos.
+  // Supabase es la fuente de verdad: usamos los productos que trae el servidor
+  // (o los que refresca la sincronización realtime).
   useEffect(() => {
     const updateList = () => {
-      setDisplayProducts(products.filter((p) => !p.hidden && p.status !== 'draft'));
+      setDisplayProducts(syncedProducts.filter((p) => !p.hidden && p.status !== 'draft'));
     };
     updateList();
 
@@ -37,7 +39,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     return () => {
       window.removeEventListener('ush_products_updated', onProductsUpdated);
     };
-  }, [products]);
+  }, [syncedProducts]);
 
   const isTopSeller = (p: Product): boolean =>
     topSellerIds.includes(p.id) ||

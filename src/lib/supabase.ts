@@ -340,13 +340,127 @@ export async function submitWholesaleLead(lead: WholesaleLead) {
 
 export async function submitOrder(orderData: any): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    const { data, error } = await supabase.from('orders').insert([orderData]).select();
+    // IMPORTANTE: NO usar .select() aquí. PostgREST convierte .select() en
+    // "Prefer: return=representation", que la política RLS de orders rechaza
+    // con 42501. Sin ese header el INSERT funciona (201).
+    const { data, error } = await supabase.from('orders').insert([orderData]);
     if (error) {
       return { success: false, error: error.message };
     }
     return { success: true, data };
   } catch (err: any) {
     return { success: false, error: err.message };
+  }
+}
+
+// ── ÓRDENES: listado y confirmación de pago (admin) ─────────────────
+export async function fetchOrdersAdmin(): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (error || !data) return [];
+    return data;
+  } catch (e) {
+    console.error('fetchOrdersAdmin error:', e);
+    return [];
+  }
+}
+
+export async function updateOrderStatus(orderId: string, status: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// Confirma una orden: descuenta stock de cada ítem en products y marca la
+// orden como 'confirmed'. Devuelve true y publica evento de sincronización.
+export async function confirmOrderAndDeductStock(
+  order: any,
+  productsRef: Product[]
+): Promise<{ success: boolean; error?: string; changed?: boolean }> {
+  try {
+    const items: Array<{ product_id?: string; reference?: string; size?: string; quantity?: number }> =
+      Array.isArray(order.items) ? order.items : [];
+    let changed = false;
+
+    for (const item of items) {
+      const qty = Number(item.quantity) || 0;
+      const size = String(item.size || '').trim();
+      const pid = item.product_id;
+      if (qty <= 0 || !size || !pid) continue;
+
+      const current = productsRef.find((p) => p.id === pid) || productsRef.find((p) => p.reference === pid);
+      if (!current) continue;
+
+      const stock = { ...(current.stock_by_size || {}) };
+      const currentStock = Number(stock[size] ?? 0);
+      if (currentStock <= 0) continue;
+
+      const newStock = Math.max(0, currentStock - qty);
+      stock[size] = newStock;
+      changed = true;
+
+      const { error } = await supabase.from('products').update({ stock_by_size: stock }).eq('id', current.id);
+      if (error) return { success: false, error: `stock ${current.reference}: ${error.message}` };
+    }
+
+    const { error: statusErr } = await supabase.from('orders').update({ status: 'confirmed' }).eq('id', order.id);
+    if (statusErr) return { success: false, error: `estado: ${statusErr.message}` };
+
+    if (changed) publishCatalogChange();
+    return { success: true, changed };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+// ── REALTIME: broadcast de cambios (gratis, sin SQL) ────────────────
+const SYNC_CHANNEL = 'ush-catalog-sync';
+
+function sendBroadcast(event: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const ch = supabase.channel(`ush-send-${event}-${Date.now()}`);
+    ch.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        ch.send({ type: 'broadcast', event, payload: { ts: Date.now() } });
+        setTimeout(() => supabase.removeChannel(ch), 2000);
+      }
+    });
+  } catch (e) {
+    console.error('broadcast error:', e);
+  }
+}
+
+export function publishCatalogChange() {
+  sendBroadcast('catalog-changed');
+}
+
+export function publishOrderChange() {
+  sendBroadcast('order-changed');
+}
+
+export function subscribeCatalogChanges(cb: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const ch = supabase.channel(SYNC_CHANNEL);
+    ch
+      .on('broadcast', { event: 'catalog-changed' }, () => cb())
+      .on('broadcast', { event: 'order-changed' }, () => cb())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  } catch (e) {
+    console.error('subscribe error:', e);
+    return () => {};
   }
 }
 

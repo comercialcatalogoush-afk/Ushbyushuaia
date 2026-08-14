@@ -9,6 +9,7 @@ import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
+import { subscribeCatalogChanges, fetchProductBySlug } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
 
 interface ProductDetailClientProps {
@@ -57,6 +58,19 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   React.useEffect(() => {
     getWhatsAppNumber().then(setWhatsappNumber);
   }, []);
+
+  // Realtime: si el admin confirma un pago (o edita el producto), el stock y
+  // los datos se actualizan al instante desde Supabase.
+  React.useEffect(() => {
+    const unsubscribe = subscribeCatalogChanges(() => {
+      fetchProductBySlug(currentProduct.slug).then((fresh) => {
+        if (fresh) {
+          setCurrentProduct(fresh);
+        }
+      });
+    });
+    return unsubscribe;
+  }, [currentProduct.slug]);
 
   React.useEffect(() => {
     if (!zoomOpen) return;

@@ -6,6 +6,7 @@ import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { Flame, ChevronDown, ChevronRight } from 'lucide-react';
 import { isCompleteProduct } from '@/lib/supabase';
+import { useCatalogSync } from '@/lib/useCatalogSync';
 
 interface CatalogGridProps {
   products: Product[];
@@ -30,7 +31,8 @@ function normalizeFitLabel(label: string): string {
 
 export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader = true }) => {
   const searchParams = useSearchParams();
-  const [displayProducts, setDisplayProducts] = useState<Product[]>(products);
+  const syncedProducts = useCatalogSync(products);
+  const [displayProducts, setDisplayProducts] = useState<Product[]>(syncedProducts);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Filtros de prendas (estilo colecciones del sitio)
@@ -49,11 +51,11 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     if (buscar) setSearchQuery(buscar);
   }, [searchParams]);
 
-  // Supabase es la fuente de verdad: usamos los productos que trae el servidor.
-  // El evento 'ush_products_updated' solo refresca los datos servidos.
+  // Supabase es la fuente de verdad: usamos los productos que trae el servidor
+  // (o los que refresca la sincronización realtime).
   useEffect(() => {
     const updateList = () => {
-      setDisplayProducts(products.filter((p) => !p.hidden && p.status !== 'draft'));
+      setDisplayProducts(syncedProducts.filter((p) => !p.hidden && p.status !== 'draft'));
     };
     updateList();
 
@@ -63,7 +65,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return () => {
       window.removeEventListener('ush_products_updated', onProductsUpdated);
     };
-  }, [products]);
+  }, [syncedProducts]);
 
   // Reset pagination when data changes
   useEffect(() => {
