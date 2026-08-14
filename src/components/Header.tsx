@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ShoppingBag, Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles, CalendarClock } from 'lucide-react';
@@ -362,18 +363,20 @@ export const Header: React.FC = () => {
       )}
 
       {/* ── Modal "Próximamente" (TEENS / HOMBRES) ── */}
-      {comingSoonSection && (
+      {comingSoonSection && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1b2333]/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#1b2333]/60 backdrop-blur-sm p-4"
           onClick={() => setComingSoonSection(null)}
+          role="dialog"
+          aria-modal="true"
         >
           <div
-            className="relative bg-white max-w-md w-full max-h-[90dvh] overflow-y-auto p-6 sm:p-8 text-center shadow-2xl animate-fadeIn border-t-4 border-[#d88193]"
+            className="relative bg-white max-w-md w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 text-center shadow-2xl animate-fadeIn border-t-4 border-[#d88193]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setComingSoonSection(null)}
-              className="fixed top-0 right-0 m-3 p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
+              className="absolute top-3 right-3 p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
               aria-label="Cerrar"
             >
               <X size={18} />
@@ -410,7 +413,8 @@ export const Header: React.FC = () => {
               Explorar colección Mujer →
             </Link>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );

@@ -143,24 +143,8 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               )}
 
               {/* Main Preview Image */}
-              <div className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 overflow-hidden shadow-md min-w-0 mx-auto">
-                {product.ribbon && (
-                  <span className="absolute top-4 left-4 z-10 text-xs font-black uppercase tracking-widest px-3.5 py-1 bg-ush-pink text-white shadow-md">
-                    {product.ribbon}
-                  </span>
-                )}
-
-                <Image
-                  src={selectedImage}
-                  alt={currentProduct.name}
-                  fill
-                  priority
-                  quality={100}
-                  sizes="(max-width: 1024px) 90vw, 40vw"
-                  className="object-cover object-center"
-                />
-                <button
-                  type="button"
+              <div
+                  className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 overflow-hidden shadow-md min-w-0 mx-auto cursor-zoom-in group"
                   onClick={() => {
                     const idx = Math.max(0, currentProduct.images.findIndex((i) => i === selectedImage));
                     setZoomIndex(idx);
@@ -168,12 +152,26 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     setZoomPan({ x: 0, y: 0 });
                     setZoomOpen(true);
                   }}
-                  aria-label="Ampliar imagen"
-                  className="absolute bottom-3 right-3 z-10 w-10 h-10 bg-white/90 hover:bg-white text-ush-navy shadow-md border border-gray-200 flex items-center justify-center transition-all"
                 >
-                  <ZoomIn size={18} />
-                </button>
-              </div>
+                  {product.ribbon && (
+                    <span className="absolute top-4 left-4 z-10 text-xs font-black uppercase tracking-widest px-3.5 py-1 bg-ush-pink text-white shadow-md pointer-events-none">
+                      {product.ribbon}
+                    </span>
+                  )}
+
+                  <Image
+                    src={selectedImage}
+                    alt={currentProduct.name}
+                    fill
+                    priority
+                    quality={100}
+                    sizes="(max-width: 1024px) 90vw, 40vw"
+                    className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <span className="absolute bottom-3 right-3 z-10 w-10 h-10 bg-white/90 hover:bg-white text-ush-navy shadow-md border border-gray-200 flex items-center justify-center pointer-events-none">
+                    <ZoomIn size={18} />
+                  </span>
+                </div>
             </div>
 
             {/* Promotional Video Player if available */}
@@ -467,15 +465,17 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
       </div>
     </div>
 
-    {/* ── Modal Zoom de Imagen (estilo PhotoSwipe) ── */}
+    {/* ── Modal Zoom de Imagen (fondo blanco, estilo ushuaiajeans.com.co) ── */}
     {zoomOpen && (
       <div
-        className="fixed inset-0 z-[60] bg-black/95 flex flex-col"
+        className="fixed inset-0 z-[60] bg-white flex flex-col"
         onClick={() => setZoomOpen(false)}
+        role="dialog"
+        aria-modal="true"
       >
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4">
-          <span className="text-white/70 text-sm font-medium">
+          <span className="text-neutral-600 text-sm font-medium">
             {(zoomIndex + 1)} / {currentProduct.images.length}
           </span>
           <div className="flex items-center gap-2">
@@ -483,7 +483,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               type="button"
               onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, Math.min(6, s + 0.5))); }}
               aria-label="Acercar"
-              className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+              className="w-10 h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center rounded-full transition-colors"
             >
               <ZoomIn size={20} />
             </button>
@@ -491,7 +491,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               type="button"
               onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, Math.min(6, s - 0.5))); }}
               aria-label="Alejar"
-              className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+              className="w-10 h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center rounded-full transition-colors"
             >
               <ZoomOut size={20} />
             </button>
@@ -499,7 +499,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               type="button"
               onClick={() => setZoomOpen(false)}
               aria-label="Cerrar zoom"
-              className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+              className="w-10 h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center rounded-full transition-colors"
             >
               <X size={22} />
             </button>
@@ -519,7 +519,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 setZoomPan({ x: 0, y: 0 });
               }}
               aria-label="Imagen anterior"
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white hover:bg-neutral-100 text-neutral-700 border border-gray-200 flex items-center justify-center rounded-full shadow-md transition-colors"
             >
               <ChevronLeft size={26} />
             </button>
@@ -533,7 +533,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 setZoomPan({ x: 0, y: 0 });
               }}
               aria-label="Imagen siguiente"
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/10 hover:bg-white/20 text-white flex items-center justify-center rounded-full transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white hover:bg-neutral-100 text-neutral-700 border border-gray-200 flex items-center justify-center rounded-full shadow-md transition-colors"
             >
               <ChevronRight size={26} />
             </button>
@@ -542,7 +542,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
         {/* Pan / Zoom area */}
         <div
-          className="flex-1 flex items-center justify-center p-16 overflow-hidden cursor-grab active:cursor-grabbing select-none"
+          className={`flex-1 flex items-center justify-center p-16 overflow-hidden select-none ${zoomScale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'}`}
           onWheel={(e) => {
             e.stopPropagation();
             const delta = e.deltaY < 0 ? 0.15 : -0.15;
@@ -577,13 +577,13 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               height={1333}
               quality={100}
               sizes="90vw"
-              className="object-contain max-w-[90vw] max-h-[85vh] w-auto h-auto"
+              className="object-contain max-w-[90vw] max-h-[85vh] w-auto h-auto shadow-lg"
             />
           </div>
         </div>
 
         {/* Hint */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs flex items-center gap-4 z-20">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-neutral-500 text-xs flex items-center gap-4 z-20 bg-white/90 px-4 py-2 border border-gray-200 rounded-full">
           <span>Rueda del mouse: zoom</span>
           <span>Arrastra: mover</span>
           <span>Doble clic: restaurar</span>
