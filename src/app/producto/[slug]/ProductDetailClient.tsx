@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, Share2, MessageCircle, ZoomIn, X } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
+import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
 import { getLocalProductsOverride } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
@@ -52,6 +53,21 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const suggestedPrice = currentProduct.suggested_price || currentProduct.compare_price || 49900;
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * 0.65);
 
+  // Stock por talla
+  const stock = currentProduct.stock_by_size || {};
+  const stockForSize = (size: string) => stock[size] ?? 10;
+  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
+
+  // Compartir por WhatsApp (precio editable por el cliente)
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharePrice, setSharePrice] = useState<number>(suggestedPrice);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+
+  React.useEffect(() => {
+    getWhatsAppNumber().then(setWhatsappNumber);
+  }, []);
+
   const handleAddToCart = (e: React.MouseEvent) => {
     const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
     if (mainImgEl) animateFlyToCart(mainImgEl as HTMLElement);
@@ -61,6 +77,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   };
 
   return (
+    <>
     <div className="py-12 bg-white min-h-screen">
       
       {/* Size Guide Modal */}
@@ -133,6 +150,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   sizes="(max-width: 1024px) 90vw, 40vw"
                   className="object-cover object-center"
                 />
+                <button
+                  type="button"
+                  onClick={() => setZoomOpen(true)}
+                  aria-label="Ampliar imagen"
+                  className="absolute bottom-3 right-3 z-10 w-10 h-10 bg-white/90 hover:bg-white text-ush-navy shadow-md border border-gray-200 flex items-center justify-center transition-all"
+                >
+                  <ZoomIn size={18} />
+                </button>
               </div>
             </div>
 
@@ -227,20 +252,49 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {availableSizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
-                      selectedSize === size
-                        ? 'border-ush-pink bg-ush-pink text-white shadow-md'
-                        : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+                {availableSizes.map((size) => {
+                  const available = isSizeAvailable(size);
+                  const low = available && stockForSize(size) <= 5;
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => available && setSelectedSize(size)}
+                      disabled={!available}
+                      title={!available ? 'Agotada' : low ? `Últimas ${stockForSize(size)} unidades` : `Stock: ${stockForSize(size)}`}
+                      className={`relative w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
+                        !available
+                          ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed line-through'
+                          : selectedSize === size
+                          ? 'border-ush-pink bg-ush-pink text-white shadow-md'
+                          : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
+                      }`}
+                    >
+                      {size}
+                      {low && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full" title="Pocas unidades" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+              {(() => {
+                const low = availableSizes.filter((s) => isSizeAvailable(s) && stockForSize(s) <= 5);
+                const out = availableSizes.filter((s) => !isSizeAvailable(s));
+                return (
+                  <>
+                    {low.length > 0 && (
+                      <p className="mt-2 text-[11px] font-bold text-amber-600 uppercase tracking-wide">
+                        ⚠️ Pocas unidades: {low.join(', ')}
+                      </p>
+                    )}
+                    {out.length > 0 && (
+                      <p className="mt-1 text-[11px] font-bold text-neutral-400 uppercase tracking-wide">
+                        Tallas agotadas: {out.join(', ')}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Color Selection (si la prenda tiene color) */}
@@ -315,6 +369,31 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   </>
                 )}
               </button>
+
+              {/* Compartir por WhatsApp + Solicitar muestra */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setSharePrice(suggestedPrice); setShareOpen(true); }}
+                  className="py-3 px-4 font-bold uppercase tracking-widest text-xs border border-[#d88193]/40 text-ush-pink hover:bg-ush-pinkLight flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Share2 size={15} /> Compartir
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const msg = encodeURIComponent(
+                      `👗 Hola, me interesa *solicitar una muestra* de la referencia *${currentProduct.reference}* (${currentProduct.name}).\n` +
+                      `Talla: ${selectedSize}${selectedColor ? ` · Color: ${selectedColor}` : ''}\n` +
+                      `¿Me confirman disponibilidad y condiciones? Gracias.`
+                    );
+                    window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, '_blank');
+                  }}
+                  className="py-3 px-4 font-bold uppercase tracking-widest text-xs border border-gray-300 text-neutral-700 hover:border-ush-navy hover:bg-neutral-50 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <MessageCircle size={15} /> Pedir Muestra
+                </button>
+              </div>
             </div>
 
             {/* Guarantee Callouts */}
@@ -359,5 +438,118 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
         )}
       </div>
     </div>
+
+    {/* ── Modal Zoom de Imagen ── */}
+    {zoomOpen && (
+      <div
+        className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+        onClick={() => setZoomOpen(false)}
+      >
+        <button
+          type="button"
+          onClick={() => setZoomOpen(false)}
+          aria-label="Cerrar zoom"
+          className="absolute top-4 right-4 z-10 text-white hover:text-ush-pink p-2 transition-colors"
+        >
+          <X size={28} />
+        </button>
+        <div
+          className="relative w-full max-w-3xl aspect-[3/4]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Image
+            src={selectedImage}
+            alt={currentProduct.name}
+            fill
+            quality={100}
+            sizes="(max-width: 1024px) 90vw, 60vw"
+            className="object-contain"
+          />
+        </div>
+      </div>
+    )}
+
+    {/* ── Modal Compartir por WhatsApp (precio editable) ── */}
+    {shareOpen && (
+      <div
+        className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4"
+        onClick={() => setShareOpen(false)}
+      >
+        <div
+          className="bg-white w-full max-w-md shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase text-ush-navy tracking-wide flex items-center gap-2">
+              <Share2 size={16} className="text-ush-pink" /> Compartir por WhatsApp
+            </h3>
+            <button
+              type="button"
+              onClick={() => setShareOpen(false)}
+              aria-label="Cerrar"
+              className="text-neutral-400 hover:text-neutral-700 p-1"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div className="flex gap-3 items-start">
+              <div className="w-16 h-20 relative bg-neutral-100 flex-shrink-0">
+                <Image
+                  src={currentProduct.images[0]}
+                  alt={currentProduct.name}
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase text-ush-navy">
+                  Ref. #{currentProduct.reference}
+                </p>
+                <p className="text-xs text-neutral-600 mt-0.5">{currentProduct.name}</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                Precio de venta (el cliente puede ajustarlo)
+              </label>
+              <div className="flex items-center border border-gray-300 focus-within:border-ush-pink">
+                <span className="px-3 text-sm font-bold text-neutral-500">$</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={sharePrice}
+                  onChange={(e) => setSharePrice(Number(e.target.value) || 0)}
+                  className="w-full py-2.5 pr-3 text-lg font-black text-ush-navy focus:outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-neutral-400 mt-1">
+                Se sugiere {formatCOP(suggestedPrice)}. Modifícalo antes de enviar si lo deseas.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const msg = encodeURIComponent(
+                  `👗 Hola, te comparto la referencia *${currentProduct.reference}* (${currentProduct.name}) del catálogo USH BY USHUAIA.\n` +
+                  `💲 Precio: *${formatCOP(sharePrice)}*${selectedColor ? `\n🎨 Color: ${selectedColor}` : ''}${selectedSize ? `\n📏 Talla: ${selectedSize}` : ''}\n` +
+                  `¿Te interesa? Escríbeme y te asesoro con gusto.`
+                );
+                window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, '_blank');
+                setShareOpen(false);
+              }}
+              className="w-full py-3.5 bg-[#25D366] hover:bg-[#1fb959] text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-colors"
+            >
+              <MessageCircle size={16} /> Enviar por WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

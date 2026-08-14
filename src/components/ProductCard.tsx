@@ -39,6 +39,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const hasImages = product.images && product.images.length > 0 && product.images[0] !== '';
   const mainImage = hasImages ? (product.images[currentImageIndex] || product.images[0]) : '';
 
+  // Stock por talla
+  const stock = product.stock_by_size || {};
+  const stockForSize = (size: string) => stock[size] ?? 10;
+  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
+  const lowStockSizes = availableSizes.filter((s) => isSizeAvailable(s) && stockForSize(s) <= 5);
+  const outOfStockSizes = availableSizes.filter((s) => !isSizeAvailable(s));
+
   const suggestedPrice = product.suggested_price || product.compare_price || 49900;
   const wholesalePrice = product.price || Math.round(suggestedPrice * 0.65);
 
@@ -262,21 +269,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             </div>
 
             <div className="flex flex-wrap gap-1">
-              {availableSizes.map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => handleSizeChange(size)}
-                  className={`text-[11px] w-7 h-7 font-bold border transition-all flex items-center justify-center ${
-                    selectedSize === size
-                      ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
-                      : 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
+              {availableSizes.map((size) => {
+                const available = isSizeAvailable(size);
+                const low = available && stockForSize(size) <= 5;
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => available && handleSizeChange(size)}
+                    disabled={!available}
+                    title={!available ? 'Agotada' : low ? `Últimas ${stockForSize(size)} unidades` : `Stock: ${stockForSize(size)}`}
+                    className={`relative text-[11px] w-7 h-7 font-bold border transition-all flex items-center justify-center ${
+                      selectedSize === size && available
+                        ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
+                        : available
+                        ? 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
+                        : 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed line-through'
+                    }`}
+                  >
+                    {size}
+                    {low && (
+                      <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-amber-500 rounded-full" title="Pocas unidades" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
+
+            {lowStockSizes.length > 0 && (
+              <p className="mt-1.5 text-[9px] font-bold text-amber-600 uppercase tracking-wide">
+                ⚠️ Pocas unidades: {lowStockSizes.join(', ')}
+              </p>
+            )}
+            {outOfStockSizes.length > 0 && (
+              <p className="mt-1 text-[9px] font-bold text-neutral-400 uppercase tracking-wide">
+                Tallas agotadas: {outOfStockSizes.join(', ')}
+              </p>
+            )}
           </div>
 
           {/* Quantity Selector */}

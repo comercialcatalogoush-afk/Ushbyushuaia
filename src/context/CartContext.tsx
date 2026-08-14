@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { CartItem, Product } from '@/types';
+import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon } from '@/lib/pricing';
 
 export interface ToastNotification {
   id: string;
@@ -21,7 +22,16 @@ interface CartContextType {
   subtotalCOP: number;
   formatCOP: (amount: number) => string;
   isWholesaleTier: boolean; // True if >= 12 units
+  totalUnits: number;
+  activeTierKey: string;
+  activeTierLabel: string;
+  tierDiscount: number;
+  priceTiers: typeof PRICE_TIERS;
   calculateItemUnitPrice: (item: CartItem) => number;
+  coupon: Coupon | null;
+  applyCoupon: (code: string) => { valid: boolean; message?: string };
+  removeCoupon: () => void;
+  discountCOP: number;
   toasts: ToastNotification[];
   dismissToast: (id: string) => void;
 }
@@ -32,6 +42,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [items, setItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
+  const [coupon, setCoupon] = useState<Coupon | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedCoupon = localStorage.getItem('ush_coupon_active');
+      if (savedCoupon) setCoupon(JSON.parse(savedCoupon));
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     try {
@@ -112,25 +130,44 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = () => setItems([]);
 
   const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalUnits = totalItemsCount;
 
   // Check if wholesale threshold (12+ units) is reached
-  const isWholesaleTier = totalItemsCount >= 12;
+  const isWholesaleTier = isWholesale(totalUnits);
 
-  // Calculate unit price for an item depending on wholesale tier (12+ vs <12)
+  // Escala de precio activa según unidades totales
+  const activeTier = getTierForUnits(totalUnits);
+  const activeTierKey = activeTier.key;
+  const activeTierLabel = activeTier.label;
+  const tierDiscount = activeTier.discount;
+
+  // Calculate unit price for an item depending on total units (escala)
   const calculateItemUnitPrice = (item: CartItem) => {
     const suggested = item.product.suggested_price || item.product.price || 49900;
-    const wholesale = item.product.price || suggested * 0.65;
-
-    if (isWholesaleTier) {
-      // Wholesale price (35% to 42% discount)
-      return wholesale;
-    } else {
-      // 20% discount on suggested e-commerce price for retail orders (<12 units)
-      return Math.round(suggested * 0.8);
-    }
+    const wholesale = item.product.price || Math.round(suggested * 0.58);
+    return getUnitPrice(suggested, wholesale, totalUnits);
   };
 
-  const subtotalCOP = items.reduce((sum, item) => sum + calculateItemUnitPrice(item) * item.quantity, 0);
+  const subtotalBeforeDiscount = items.reduce((sum, item) => sum + calculateItemUnitPrice(item) * item.quantity, 0);
+
+  // Descuento por código (aplica sobre el subtotal ya escalado)
+  const discountCOP = coupon ? Math.round(subtotalBeforeDiscount * coupon.discount) : 0;
+  const subtotalCOP = subtotalBeforeDiscount - discountCOP;
+
+  const applyCoupon = (code: string) => {
+    const result = validateCoupon(code, totalUnits);
+    if (result.valid && result.coupon) {
+      setCoupon(result.coupon);
+      try { localStorage.setItem('ush_coupon_active', JSON.stringify(result.coupon)); } catch (_) {}
+      return { valid: true };
+    }
+    return { valid: false, message: result.message };
+  };
+
+  const removeCoupon = () => {
+    setCoupon(null);
+    try { localStorage.removeItem('ush_coupon_active'); } catch (_) {}
+  };
 
   // Clean COP formatting without trailing single zero
   const formatCOP = (amount: number) => {
@@ -154,7 +191,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         subtotalCOP,
         formatCOP,
         isWholesaleTier,
+        totalUnits,
+        activeTierKey,
+        activeTierLabel,
+        tierDiscount,
+        priceTiers: PRICE_TIERS,
         calculateItemUnitPrice,
+        coupon,
+        applyCoupon,
+        removeCoupon,
+        discountCOP,
         toasts,
         dismissToast,
       }}

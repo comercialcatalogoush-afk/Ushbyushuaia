@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage } from '@/lib/supabase';
 import { getWhatsAppNumber, saveWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
+import { exportBackup, downloadBackup, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
@@ -31,7 +32,7 @@ export default function AdminCatalogPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'config'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'config' | 'backup'>('products');
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +66,13 @@ export default function AdminCatalogPage() {
   // Price History Audit Log
   const [priceHistory, setPriceHistory] = useState<PriceHistoryRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // ── Respaldos / Limpieza mensual ──
+  const [backupReminder, setBackupReminder] = useState<Date>(() => getNextBackupReminder());
+  const [backupCountdown, setBackupCountdown] = useState(getReminderCountdown(getNextBackupReminder()));
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [backupError, setBackupError] = useState<string | null>(null);
 
   const { formatCOP } = useCart();
 
@@ -141,6 +149,53 @@ export default function AdminCatalogPage() {
     const history = await fetchPriceHistory();
     setPriceHistory(history);
     setLoadingHistory(false);
+  };
+
+  // ── Respaldos: exportar JSON y vaciar tablas transaccionales ──
+  useEffect(() => {
+    setBackupReminder(getNextBackupReminder());
+    const tick = () => setBackupCountdown(getReminderCountdown(getNextBackupReminder()));
+    tick();
+    const interval = setInterval(tick, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleExportBackup = async () => {
+    setBackupLoading(true);
+    setBackupMsg(null);
+    setBackupError(null);
+    try {
+      const data = await exportBackup();
+      downloadBackup(data);
+      setBackupMsg(
+        `Respaldo exportado (${data.products.length} productos, ${data.orders.length} pedidos, ` +
+        `${data.wholesale_leads.length} leads, ${data.price_history.length} registros de precios). ` +
+        'Guárdalo en un lugar seguro.'
+      );
+    } catch (e: any) {
+      setBackupError('No se pudo generar el respaldo: ' + (e?.message || 'error'));
+    }
+    setBackupLoading(false);
+  };
+
+  const handlePurge = async () => {
+    if (!window.confirm(
+      '⚠️ VACÍO MASIVO de datos transaccionales.\n\n' +
+      'Esto ELIMINA de Supabase todos los pedidos, formularios de contacto y el historial de precios.\n' +
+      'El catálogo (productos y fotos) NO se toca.\n\n' +
+      '¿Ya exportaste el respaldo? ¡Esta acción NO se puede deshacer!'
+    )) return;
+    setBackupLoading(true);
+    setBackupMsg(null);
+    setBackupError(null);
+    const res = await purgeTransactionalData();
+    if (res.success) {
+      setBackupMsg('✅ Tablas transaccionales vaciadas. El plan gratuito queda despejado hasta el próximo mes.');
+      setBackupReminder(getNextBackupReminder());
+    } else {
+      setBackupError('No se pudieron vaciar los datos: ' + (res.error || 'error'));
+    }
+    setBackupLoading(false);
   };
 
   // ── Categories Management CRUD ──
@@ -693,6 +748,15 @@ export default function AdminCatalogPage() {
           >
             <Settings size={14} /> Configuración
           </button>
+
+          <button
+            onClick={() => setActiveTab('backup')}
+            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'backup' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
+            }`}
+          >
+            <Save size={14} /> Respaldos
+          </button>
         </div>
 
         {saveSuccess && (
@@ -1175,6 +1239,115 @@ export default function AdminCatalogPage() {
                 <p className="text-xs font-semibold text-amber-600">{configError}</p>
               )}
             </form>
+          </div>
+        )}
+
+        {/* ── TAB 6: RESPALDOS Y LIMPIEZA MENSUAL ── */}
+        {activeTab === 'backup' && (
+          <div className="space-y-6">
+            {/* Recordatorio mensual */}
+            <div className={`bg-white p-6 border shadow-sm ${backupCountdown.overdue ? 'border-red-300' : 'border-[#d88193]/40 border-l-4 border-l-[#d88193]'}`}>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-black uppercase text-[#1b2333] tracking-wide flex items-center gap-2">
+                    <History size={16} className="text-[#d88193]" />
+                    Respaldo Mensual Automático
+                  </h2>
+                  <p className="text-xs text-neutral-500 mt-1 max-w-xl">
+                    Para no saturar el plan gratuito de Supabase, cada <strong>último viernes del mes a las 3:30 PM</strong> debes
+                    exportar el respaldo y vaciar las tablas de datos transaccionales.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => downloadReminderIcs(getNextBackupReminder())}
+                  className="text-xs font-bold uppercase tracking-wider text-ush-pink hover:text-ush-navy border border-[#d88193]/40 px-3 py-2 flex items-center gap-1.5"
+                >
+                  <CheckCircle size={14} /> Agregar recordatorio a mi calendario (.ics)
+                </button>
+              </div>
+
+              <div className="mt-4 p-4 bg-neutral-50 border border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Próximo respaldo</p>
+                  <p className="text-sm font-black text-ush-navy mt-1 capitalize">{formatReminder(backupReminder)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Días</p>
+                  <p className="text-2xl font-black text-[#d88193] mt-1">{backupCountdown.days}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Horas</p>
+                  <p className="text-2xl font-black text-[#d88193] mt-1">{backupCountdown.hours}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Minutos</p>
+                  <p className="text-2xl font-black text-[#d88193] mt-1">{backupCountdown.minutes}</p>
+                </div>
+              </div>
+              {backupCountdown.overdue && (
+                <p className="mt-2 text-xs font-bold text-red-600">
+                  ⚠️ ¡Ya pasó la fecha! Exporta el respaldo y vacía los datos lo antes posible.
+                </p>
+              )}
+            </div>
+
+            {/* Acciones */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 border border-gray-200 shadow-sm">
+                <h3 className="text-sm font-black uppercase text-[#1b2333] tracking-wide mb-1">
+                  <Save size={14} className="inline-block mr-1 text-[#d88193]" /> 1. Exportar respaldo (JSON)
+                </h3>
+                <p className="text-xs text-neutral-500 mb-4">
+                  Descarga todos los datos (productos, pedidos, formularios y historial de precios) en un solo archivo JSON.
+                  Guárdalo en tu computadora o nube antes de vaciar.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleExportBackup}
+                  disabled={backupLoading}
+                  className="bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-[#d88193] transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {backupLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                  {backupLoading ? 'Exportando...' : 'Exportar Respaldo (JSON)'}
+                </button>
+              </div>
+
+              <div className="bg-white p-6 border border-red-200 shadow-sm">
+                <h3 className="text-sm font-black uppercase text-red-700 tracking-wide mb-1">
+                  <Trash2 size={14} className="inline-block mr-1" /> 2. Vaciar datos transaccionales
+                </h3>
+                <p className="text-xs text-neutral-500 mb-4">
+                  Elimina de Supabase los <strong>pedidos, formularios de contacto y el historial de precios</strong>.
+                  El catálogo (productos, precios y fotos) NO se elimina. Esto libera espacio del plan gratuito.
+                </p>
+                <button
+                  type="button"
+                  onClick={handlePurge}
+                  disabled={backupLoading}
+                  className="bg-red-600 text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-red-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Trash2 size={14} />
+                  Vaciar Tablas Transaccionales
+                </button>
+              </div>
+            </div>
+
+            {backupMsg && (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                <CheckCircle size={16} className="text-emerald-600" /> {backupMsg}
+              </div>
+            )}
+            {backupError && (
+              <div className="p-4 bg-red-50 border border-red-200 text-red-800 text-xs font-bold flex items-center gap-2">
+                <X size={16} className="text-red-600" /> {backupError}
+              </div>
+            )}
+
+            <p className="text-[10px] text-neutral-400 leading-relaxed">
+              Consejo: el recordatorio también se muestra aquí cada vez que entres al panel. Para asegurarte de no olvidarlo,
+              usa el botón <strong>“Agregar recordatorio a mi calendario (.ics)”</strong>, que lo guarda en tu Google Calendar u Outlook.
+            </p>
           </div>
         )}
 
