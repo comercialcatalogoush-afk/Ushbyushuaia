@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { RefreshCw, ShieldCheck, RotateCcw, CreditCard, Phone, Mail, MapPin, Truck, ArrowLeft, ChevronRight, Lock, FileText } from 'lucide-react';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
+import { PoliticasNav } from '@/components/PoliticasNav';
 
 export const metadata = {
   title: 'Políticas de Cambios, Garantías, Envíos y Habeas Data | USH BY USHUAIA',
@@ -155,34 +156,14 @@ export default async function PoliticasPage() {
         </div>
       </section>
 
-      {/* ── Sticky Sub-navigation Bar ── */}
-      <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 overflow-x-auto py-2.5 scrollbar-none">
-            {sections.map((s) => (
-              <a
-                key={s.id}
-                href={`#${s.id}`}
-                className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 whitespace-nowrap transition-colors"
-              >
-                {s.title}
-              </a>
-            ))}
-            <a
-              href="#envios"
-              className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider bg-rose-50 hover:bg-rose-100 border border-rose-200 text-[#c06579] whitespace-nowrap transition-colors"
-            >
-              5. Envíos
-            </a>
-            <a
-              href="#habeas-data"
-              className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 whitespace-nowrap transition-colors"
-            >
-              6. Habeas Data
-            </a>
-          </div>
-        </div>
-      </div>
+      {/* ── Sticky Sub-navigation Bar con scroll-spy ── */}
+      <PoliticasNav
+        items={[
+          ...sections.map((s) => ({ id: s.id, label: s.title })),
+          { id: 'envios', label: '5. Envíos', accent: 'rose' },
+          { id: 'habeas-data', label: '6. Habeas Data', accent: 'indigo' },
+        ]}
+      />
 
       {/* Main Content Container */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
