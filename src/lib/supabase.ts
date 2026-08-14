@@ -7,7 +7,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publish
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const PRODUCTS_STORAGE_KEY = 'ush_products_override_v5';
+const PRODUCTS_STORAGE_KEY = 'ush_products_override_v6';
 
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;
@@ -27,13 +27,13 @@ export function getLocalProductsOverride(): Product[] | null {
         const merged = [...parsed, ...missing];
 
         // The admin override is authoritative for edits (name, prices, category,
-        // fit, description, tags, stock, hidden, ribbon). Only complete images
-        // from the static catalog when the override has none (stale Drive data).
+        // fit, description, tags, stock, hidden, ribbon). Images always come from
+        // the Drive bridge (INITIAL_PRODUCTS) so updates to the bridge propagate
+        // even when the local override was saved with stale Drive data.
         const byRef = new Map(INITIAL_PRODUCTS.map((p) => [p.reference || p.id, p]));
         return merged.map((p) => {
           const base = byRef.get(p.reference || p.id);
-          const hasImage = p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '';
-          if (base && !hasImage && base.images && base.images.length > 0) {
+          if (base && base.images && base.images.length > 0) {
             return { ...p, images: base.images };
           }
           return p;
