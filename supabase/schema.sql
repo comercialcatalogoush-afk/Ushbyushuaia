@@ -122,7 +122,13 @@ CREATE POLICY "Public products insert access" ON public.products FOR INSERT WITH
 CREATE POLICY "Public products update access" ON public.products FOR UPDATE USING (true);
 CREATE POLICY "Public products delete access" ON public.products FOR DELETE USING (true);
 CREATE POLICY "Public wholesale leads insert access" ON public.wholesale_leads FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public wholesale leads read access" ON public.wholesale_leads FOR SELECT USING (true);
+CREATE POLICY "Public wholesale leads update access" ON public.wholesale_leads FOR UPDATE USING (true);
+CREATE POLICY "Public wholesale leads delete access" ON public.wholesale_leads FOR DELETE USING (true);
 CREATE POLICY "Public orders insert access" ON public.orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public orders read access" ON public.orders FOR SELECT USING (true);
+CREATE POLICY "Public orders update access" ON public.orders FOR UPDATE USING (true);
+CREATE POLICY "Public orders delete access" ON public.orders FOR DELETE USING (true);
 CREATE POLICY "Public price history read access" ON public.price_history FOR SELECT USING (true);
 CREATE POLICY "Public price history insert access" ON public.price_history FOR INSERT WITH CHECK (true);
 
