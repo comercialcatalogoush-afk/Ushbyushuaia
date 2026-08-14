@@ -54,7 +54,7 @@ export default function AdminCatalogPage() {
   // Editing Product state
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<string[]>(ALL_SIZES);
-  const [stockBySize, setStockBySize] = useState<Record<string, number>>({ '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 });
+  const [stockBySize, setStockBySize] = useState<Record<string, number>>({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Multimedia modal state
@@ -393,7 +393,7 @@ export default function AdminCatalogPage() {
 
   const handleOpenNew = () => {
     setSelectedSizes(ALL_SIZES);
-    setStockBySize({ '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 });
+    setStockBySize({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
     setEditingProduct({
       id: '',
       name: 'REF: ',
@@ -417,7 +417,7 @@ export default function AdminCatalogPage() {
   const handleEditOpen = (product: Product) => {
     const sizeOpt = product.options?.find(o => o.key.toLowerCase() === 'talla');
     setSelectedSizes(sizeOpt?.values || ALL_SIZES);
-    setStockBySize(product.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 });
+    setStockBySize(product.stock_by_size || { '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
     setEditingProduct(product);
   };
 

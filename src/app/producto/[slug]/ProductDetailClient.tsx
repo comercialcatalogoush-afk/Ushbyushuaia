@@ -40,7 +40,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   // Stock por talla
   const stock = currentProduct.stock_by_size || {};
-  const stockForSize = (size: string) => stock[size] ?? 10;
+  const stockForSize = (size: string) => stock[size] ?? 20;
   const isSizeAvailable = (size: string) => stockForSize(size) > 0;
 
   // Compartir por WhatsApp (precio editable por el cliente)
@@ -396,30 +396,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 )}
               </button>
 
-              {/* Compartir por WhatsApp + Solicitar muestra */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setSharePrice(suggestedPrice); setShareOpen(true); }}
-                  className="py-3 px-4 font-bold uppercase tracking-widest text-xs border border-[#d88193]/40 text-ush-pink hover:bg-ush-pinkLight flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Share2 size={15} /> Compartir
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const msg = encodeURIComponent(
-                      `👗 Hola, me interesa *solicitar una muestra* de la referencia *${currentProduct.reference}* (${currentProduct.name}).\n` +
-                      `Talla: ${selectedSize}${selectedColor ? ` · Color: ${selectedColor}` : ''}\n` +
-                      `¿Me confirman disponibilidad y condiciones? Gracias.`
-                    );
-                    window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, '_blank');
-                  }}
-                  className="py-3 px-4 font-bold uppercase tracking-widest text-xs border border-gray-300 text-neutral-700 hover:border-ush-navy hover:bg-neutral-50 flex items-center justify-center gap-2 transition-colors"
-                >
-                  <MessageCircle size={15} /> Pedir Muestra
-                </button>
-              </div>
+              {/* Compartir por WhatsApp */}
+              <button
+                type="button"
+                onClick={() => { setSharePrice(suggestedPrice); setShareOpen(true); }}
+                className="w-full py-3 px-4 font-bold uppercase tracking-widest text-xs border border-[#d88193]/40 text-ush-pink hover:bg-ush-pinkLight flex items-center justify-center gap-2 transition-colors"
+              >
+                <Share2 size={15} /> Compartir
+              </button>
             </div>
 
             {/* Guarantee Callouts */}
