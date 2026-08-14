@@ -25,7 +25,7 @@ export const Header: React.FC = () => {
     setIsAdminLoggedIn(authStatus === 'true');
   }, [pathname]);
 
-  const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY'];
+  const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY', 'MOM'];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

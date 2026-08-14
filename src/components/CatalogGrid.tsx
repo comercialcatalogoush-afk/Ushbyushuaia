@@ -16,7 +16,7 @@ interface CatalogGridProps {
 const PAGE_SIZE = 12;
 
 // Orden preferido de fits (estilo colecciones de la tienda)
-const FIT_ORDER = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Straight'];
+const FIT_ORDER = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Straight'];
 
 // Normaliza la etiqueta del menú (ej: "VAQUERO", "WIDE LEG") al fit real del producto
 function normalizeFitLabel(label: string): string {
