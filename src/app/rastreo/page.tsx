@@ -160,6 +160,33 @@ export default function RastreoPage() {
     };
   }, [result, consultar]);
 
+  const [labelLoading, setLabelLoading] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
+
+  // Abre la etiqueta: el endpoint devuelve un PDF en base64 envuelto en JSON
+  const abrirEtiqueta = async () => {
+    if (!result?.guia_digital) return;
+    setLabelLoading(true);
+    setLabelError(null);
+    try {
+      const res = await fetch(result.guia_digital);
+      const json = await res.json();
+      // Estructura: { response: { data: { data: "<base64 pdf>" } } }
+      const b64 = json?.response?.data?.data || json?.data?.data || json?.data || null;
+      if (!b64) throw new Error('formato inesperado');
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (_) {
+      setLabelError('No pudimos cargar la etiqueta. Inténtalo de nuevo.');
+    }
+    setLabelLoading(false);
+  };
+
   // Línea de tiempo en orden cronológico (antiguo → actual)
   const timeline = buildTimeline(result);
   const currentIdx = result ? timeline.findIndex((ev) => ev.id === result.id_estado) : -1;
@@ -346,14 +373,16 @@ export default function RastreoPage() {
                 <div className="mt-6 p-3 bg-ush-pinkLight border border-[#d88193]/30 flex items-center gap-3 rounded-none">
                   <Package size={16} className="text-[#d88193] shrink-0" />
                   <p className="text-xs text-ush-navy font-bold">Guía digital disponible.</p>
-                  <a
-                    href={result.guia_digital}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-black text-[#d88193] hover:text-ush-navy ml-auto uppercase tracking-wider"
+                  {labelError && <p className="text-[10px] text-red-600 font-semibold">{labelError}</p>}
+                  <button
+                    type="button"
+                    onClick={abrirEtiqueta}
+                    disabled={labelLoading}
+                    className="text-xs font-black text-[#d88193] hover:text-ush-navy ml-auto uppercase tracking-wider disabled:opacity-50 flex items-center gap-1.5"
                   >
-                    Ver etiqueta →
-                  </a>
+                    {labelLoading ? <Loader2 size={13} className="animate-spin" /> : null}
+                    {labelLoading ? 'Abriendo...' : 'Ver etiqueta PDF →'}
+                  </button>
                 </div>
               )}
             </div>

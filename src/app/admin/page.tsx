@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage } from '@/lib/supabase';
+import { getWhatsAppNumber, saveWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { Product, PriceHistoryRecord } from '@/types';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
   CheckSquare, Square, Lock, LogOut, ShieldCheck, Key, Search, Filter, History, 
-  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film
+  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, Settings, MessageCircle
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
@@ -30,7 +31,7 @@ export default function AdminCatalogPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'config'>('products');
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -451,6 +452,29 @@ export default function AdminCatalogPage() {
 
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [whatsappInput, setWhatsappInput] = useState<string>('');
+  const [configSaving, setConfigSaving] = useState(false);
+  const [configSaved, setConfigSaved] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getWhatsAppNumber().then((n) => setWhatsappInput(n));
+  }, []);
+
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setConfigSaving(true);
+    setConfigSaved(false);
+    setConfigError(null);
+    const res = await saveWhatsAppNumber(whatsappInput);
+    setConfigSaving(false);
+    if (res.success) {
+      setConfigSaved(true);
+      setTimeout(() => setConfigSaved(false), 4000);
+    } else {
+      setConfigError(res.error || 'No se pudo guardar en la nube, pero se guardó en el navegador.');
+    }
+  };
 
   const handleSyncAll = async () => {
     setSyncing(true);
@@ -659,6 +683,15 @@ export default function AdminCatalogPage() {
             }`}
           >
             <History size={14} /> Historial Audit de Precios
+          </button>
+
+          <button
+            onClick={() => setActiveTab('config')}
+            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'config' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
+            }`}
+          >
+            <Settings size={14} /> Configuración
           </button>
         </div>
 
@@ -1084,6 +1117,64 @@ export default function AdminCatalogPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* ── TAB 5: CONFIGURACIÓN ── */}
+        {activeTab === 'config' && (
+          <div className="bg-white p-6 border border-gray-200 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-base font-black uppercase text-[#1b2333] tracking-wide">
+                Configuración del Sitio
+              </h2>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Personaliza los datos de contacto que se muestran en todo el catálogo (footer, WhatsApp, políticas).
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveConfig} className="space-y-4 max-w-xl">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Número de WhatsApp (solo dígitos, con código de país)
+                </label>
+                <div className="flex items-stretch">
+                  <span className="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-neutral-50 text-xs font-black text-neutral-700">
+                    wa.me/
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    value={whatsappInput}
+                    onChange={(e) => setWhatsappInput(e.target.value.replace(/[^\d]/g, ''))}
+                    placeholder="573022028477"
+                    className="w-full border border-gray-300 px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#d88193]"
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-400 mt-1">
+                  Ej: 573022028477 (código país + número). Se aplica en el footer, botón WhatsApp, contacto y políticas.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={configSaving}
+                  className="bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-[#d88193] transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {configSaving ? <RefreshCw size={14} className="animate-spin" /> : <MessageCircle size={14} />}
+                  {configSaving ? 'Guardando...' : 'Guardar WhatsApp'}
+                </button>
+                {configSaved && (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle size={14} /> ¡Guardado!
+                  </span>
+                )}
+              </div>
+
+              {configError && (
+                <p className="text-xs font-semibold text-amber-600">{configError}</p>
+              )}
+            </form>
           </div>
         )}
 

@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Logo } from './Logo';
 import { Mail, MapPin, Phone, Instagram, Facebook, Shield, FileText, MessageCircle, Truck } from 'lucide-react';
+import { getWhatsAppNumber, subscribeWhatsApp, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
 // TikTok icon (not in lucide)
 const TikTokIcon = () => (
@@ -13,6 +14,12 @@ const TikTokIcon = () => (
 );
 
 export const Footer: React.FC = () => {
+  const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    getWhatsAppNumber().then(setWhatsapp);
+    return subscribeWhatsApp(setWhatsapp);
+  }, []);
   return (
     <footer className="bg-[#d88193] text-white border-t border-[#c06579]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -38,7 +45,7 @@ export const Footer: React.FC = () => {
                 className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center transition-colors" title="TikTok">
                 <TikTokIcon />
               </a>
-              <a href="https://wa.me/573022028477" target="_blank" rel="noopener noreferrer"
+              <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center transition-colors" title="WhatsApp">
                 <MessageCircle size={16} />
               </a>
@@ -94,11 +101,11 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone size={15} className="text-white/70 flex-shrink-0" />
-                <a href="tel:+573022028477" className="hover:underline">+57 302 202 8477</a>
+                <a href={`tel:+${whatsapp}`} className="hover:underline">{whatsapp}</a>
               </li>
               <li className="flex items-center gap-2.5">
                 <MessageCircle size={15} className="text-white/70 flex-shrink-0" />
-                <a href="https://wa.me/573022028477" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
                   WhatsApp Comercial
                 </a>
               </li>

@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { submitOrder } from '@/lib/supabase';
 import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone } from 'lucide-react';
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
+import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
 function generateOrderId() {
   const ts = Date.now().toString(36).toUpperCase();
@@ -37,6 +38,11 @@ export default function CheckoutPage() {
   const [phoneCountry, setPhoneCountry] = useState<string>('+57');
   const [phoneCountryOpen, setPhoneCountryOpen] = useState(false);
   const [phoneQuery, setPhoneQuery] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    getWhatsAppNumber().then(setWhatsappNumber);
+  }, []);
 
   // Pre-fill from CartDrawer mini-modal (sessionStorage)
   useEffect(() => {
@@ -175,7 +181,7 @@ export default function CheckoutPage() {
 
           <div className="pt-2 space-y-3">
             <a
-              href={`https://wa.me/573022028477?text=${whatsappMsg}`}
+              href={`https://wa.me/${whatsappNumber}?text=${whatsappMsg}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md transition-colors"

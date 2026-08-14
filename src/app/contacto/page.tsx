@@ -1,13 +1,17 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { WholesaleInquiryForm } from '@/components/WholesaleInquiryForm';
 import { Mail, MapPin, Phone, Clock, MessageSquare } from 'lucide-react';
-
-export const metadata = {
-  title: 'Contacto | Ush By Ushuaia',
-  description: 'Comunícate con nuestro equipo de atención mayorista. Correo: info@ushbyushuaia.com.co. Ubicación: Itagüí, Antioquia.',
-};
+import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
 export default function ContactoPage() {
+  const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    getWhatsAppNumber().then(setWhatsapp);
+  }, []);
+
   return (
     <div className="py-12 bg-neutral-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,7 +76,7 @@ export default function ContactoPage() {
                 Respuesta inmediata para pedidos urgentes y confirmación de stock.
               </p>
               <a
-                href="https://wa.me/573022028477?text=Hola%20USH%20BY%20USHUAIA,%20quisiera%20solicitar%20informaci%C3%B3n%20mayorista"
+                href={`https://wa.me/${whatsapp}?text=${encodeURIComponent('Hola USH BY USHUAIA, quisiera solicitar información mayorista')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block w-full text-center bg-white text-emerald-950 text-xs font-extrabold uppercase py-3 tracking-widest hover:bg-emerald-100 transition-colors"

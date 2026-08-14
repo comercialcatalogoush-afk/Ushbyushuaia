@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { RefreshCw, ShieldCheck, RotateCcw, CreditCard, Phone, Mail, MapPin, Truck, ArrowLeft, ChevronRight, Lock, FileText } from 'lucide-react';
+import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
 export const metadata = {
   title: 'Políticas de Cambios, Garantías, Envíos y Habeas Data | USH BY USHUAIA',
@@ -18,7 +19,7 @@ const sections = [
     content: [
       {
         subtitle: '¿Cuándo aplica?',
-        text: 'Aplica cuando el cliente no queda conforme con la prenda por un motivo distinto a la garantía. El cambio debe solicitarse dentro de los 15 días calendario siguientes a la fecha de compra.',
+        text: 'Aplica cuando el cliente por un motivo distinto a la garantía. El cambio debe solicitarse dentro de los 15 días calendario siguientes a la fecha de compra.',
       },
       {
         subtitle: 'Requisitos de la prenda:',
@@ -36,7 +37,7 @@ const sections = [
         list: [
           'Las compras hechas desde fuera de Colombia por el canal virtual no son objeto de cambio.',
           'No se realizan devoluciones de dinero por concepto de cambio de prenda.',
-          'Si el producto elegido para el cambio tiene un valor superior, el cliente paga la diferencia mediante el enlace enviado por WhatsApp; si el valor es inferior, USHUAIA reintegra la diferencia en un plazo máximo de 30 días.',
+          'Si el producto elegido para el cambio tiene un valor superior, el cliente paga la diferencia mediante el enlace enviado por WhatsApp.',
           'Si el paquete llega abierto, dañado o maltratado, el cliente no debe recibirlo y debe reportarlo de inmediato por WhatsApp.',
         ],
       },
@@ -129,9 +130,12 @@ const sections = [
   },
 ];
 
-export default function PoliticasPage() {
+export default async function PoliticasPage() {
+  const whatsapp = await getWhatsAppNumber();
+  const whatsappDisplay = whatsapp.replace(/^(\d{2})(\d{3})(\d{3})(\d{2})(\d{2})$/, '+$1 $2 $3 $4 $5');
+
   return (
-    <div className="bg-neutral-50 min-h-screen">
+    <div className="bg-neutral-50 min-h-screen scroll-smooth">
 
       {/* Header Clean Banner */}
       <section className="bg-white border-b border-gray-200 py-10">
@@ -186,7 +190,7 @@ export default function PoliticasPage() {
           const Icon = section.icon;
           return (
             <div key={section.id} id={section.id}
-              className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-36">
+              className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-40 scroll-snap-align-start">
 
               {/* Title Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
@@ -231,7 +235,7 @@ export default function PoliticasPage() {
         })}
 
         {/* 5. POLÍTICA DE ENVÍO */}
-        <div id="envios" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-36">
+        <div id="envios" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-40 scroll-snap-align-start">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0 text-[#d88193]">
@@ -248,7 +252,7 @@ export default function PoliticasPage() {
 
           <div className="space-y-4 text-xs text-neutral-600 font-light leading-relaxed">
             <p>
-              En <strong>www.ushuaiajeans.com.co</strong>, nuestro compromiso es cumplir con los tiempos de entrega, por lo tanto, si el día que llegue tu pedido no estás presente para recibirlo, la transportadora estará autorizada para dejarlo en el lugar indicado informado por el medio de atención donde se tomó el pedido.
+              En <strong>USH BY USHUAIA</strong>, nuestro compromiso es cumplir con los tiempos de entrega, por lo tanto, si el día que llegue tu pedido no estás presente para recibirlo, la transportadora estará autorizada para dejarlo en el lugar indicado informado por el medio de atención donde se tomó el pedido.
             </p>
             <p>
               En Ush By Ushuaia queremos entregar tu pedido en el menor tiempo posible, por eso nuestra promesa de entrega es de:
@@ -274,7 +278,7 @@ export default function PoliticasPage() {
         </div>
 
         {/* 6. POLÍTICA DE PRIVACIDAD Y HABEAS DATA (Ley 1581 de 2012) */}
-        <div id="habeas-data" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-36">
+        <div id="habeas-data" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-40 scroll-snap-align-start">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 text-indigo-700">
@@ -330,7 +334,7 @@ export default function PoliticasPage() {
 
           <div className="space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-[#c06579]">WhatsApp</p>
-            <p className="text-sm font-black text-neutral-900">+57 302 202 8477</p>
+            <p className="text-sm font-black text-neutral-900">{whatsappDisplay}</p>
             <p className="text-[11px] text-neutral-500 font-light pt-1">
               Lunes a jueves: 7:00 a. m. a 4:00 p. m.<br />
               Viernes: 7:00 a. m. a 3:30 p. m.

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Store, ArrowUpRight, Video } from 'lucide-react';
+import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
 const OUTLET = {
   name: 'Outlet USH BY USHUAIA',
@@ -10,12 +11,18 @@ const OUTLET = {
   schedule: 'Lunes a Viernes: 8:00 AM – 5:30 PM',
   mapUrl: 'https://maps.google.com/?q=Cll+85+Sur+%2350-72,+Itagui',
   phone: '+57 302 202 8477',
-  whatsapp: 'https://wa.me/573022028477',
   videoUrl: '',
   poster: '',
 };
 
 export const OutletSection: React.FC = () => {
+  const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    getWhatsAppNumber().then(setWhatsapp);
+  }, []);
+
+  const OUTLET_FINAL = { ...OUTLET, whatsapp: `https://wa.me/${whatsapp}` };
   return (
     <section id="outlet" className="scroll-mt-20 bg-[#FDF8F4] border-y border-[#e8d9c8] overflow-hidden relative">
       {/* Decorative */}
@@ -98,7 +105,7 @@ export const OutletSection: React.FC = () => {
                   Ver en Mapa <ArrowUpRight size={14} />
                 </a>
                 <a
-                  href={OUTLET.whatsapp}
+                  href={OUTLET_FINAL.whatsapp}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-transparent border border-[#1b2333] text-[#1b2333] font-sans-ui text-[11px] font-bold uppercase tracking-widest px-5 py-3 hover:border-[#c49a6c] hover:text-[#c49a6c] transition-colors"
