@@ -1,5 +1,5 @@
 import React from 'react';
-import { fetchProductBySlug, fetchProductsFromSupabase } from '@/lib/supabase';
+import { fetchProductBySlug, fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import ProductDetailClient from './ProductDetailClient';
 
@@ -11,7 +11,7 @@ export const revalidate = 60;
 
 export async function generateStaticParams() {
   const products = await fetchProductsFromSupabase();
-  return products.map((p) => ({
+  return products.filter((p) => isCompleteProduct(p)).map((p) => ({
     slug: p.slug,
   }));
 }
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
   const product = await fetchProductBySlug(params.slug);
 
-  if (!product) {
+  if (!product || !isCompleteProduct(product)) {
     notFound();
   }
 
@@ -37,7 +37,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   let related: Awaited<ReturnType<typeof fetchProductsFromSupabase>> = [];
   try {
     const all = await fetchProductsFromSupabase();
-    const others = all.filter((p) => p.id !== product.id && p.slug !== product.slug && p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '' && !p.hidden && p.status !== 'draft');
+    const others = all.filter((p) => p.id !== product.id && p.slug !== product.slug && !p.hidden && p.status !== 'draft' && isCompleteProduct(p));
 
     const score = (p: (typeof all)[number]) => {
       let s = 0;

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 import { Flame, ArrowRight, ChevronRight } from 'lucide-react';
-import { getLocalProductsOverride, getTopSellingProductIds } from '@/lib/supabase';
+import { getTopSellingProductIds, isCompleteProduct } from '@/lib/supabase';
 import { useVisibleCards } from '@/lib/useVisibleCards';
 
 interface ProductGridProps {
@@ -20,14 +20,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const [hoverZone, setHoverZone] = useState<'left' | 'right' | null>(null);
   const visibleCards = useVisibleCards();
 
+  // Supabase es la fuente de verdad: usamos los productos que trae el servidor.
+  // El evento 'ush_products_updated' solo refresca los datos servidos.
   useEffect(() => {
     const updateList = () => {
-      const local = getLocalProductsOverride();
-      if (local && local.length > 0) {
-        setDisplayProducts(local.filter((p) => !p.hidden && p.status !== 'draft'));
-      } else {
-        setDisplayProducts(products.filter((p) => !p.hidden && p.status !== 'draft'));
-      }
+      setDisplayProducts(products.filter((p) => !p.hidden && p.status !== 'draft'));
     };
     updateList();
 
@@ -49,10 +46,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     (p.ribbon || '').toLowerCase().includes('más vendido') ||
     (p.ribbon || '').toLowerCase().includes('mas vendido');
 
-  // Public grid: only products with at least one valid image
-  const visibleProducts = displayProducts.filter(
-    (p) => p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== ''
-  );
+  // Public grid: only complete products (photo + title + detailed description)
+  const visibleProducts = displayProducts.filter((p) => isCompleteProduct(p));
 
   // Best sellers highlighted with animation
   const bestSellers = visibleProducts.filter(isTopSeller).slice(0, 8);

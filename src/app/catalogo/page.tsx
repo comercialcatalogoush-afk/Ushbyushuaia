@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { fetchProductsFromSupabase } from '@/lib/supabase';
+import { fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { ArrowLeft } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function CatalogoPage() {
   const allProducts = await fetchProductsFromSupabase();
-  const publicProducts = allProducts.filter(p => !p.hidden);
+  const publicProducts = allProducts.filter(p => !p.hidden && isCompleteProduct(p));
 
   return (
     <div className="bg-white min-h-screen">

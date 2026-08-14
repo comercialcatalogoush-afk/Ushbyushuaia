@@ -9,8 +9,6 @@ import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
-
-import { getLocalProductsOverride } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
 
 interface ProductDetailClientProps {
@@ -20,19 +18,6 @@ interface ProductDetailClientProps {
 
 export default function ProductDetailClient({ product, related = [] }: ProductDetailClientProps) {
   const [currentProduct, setCurrentProduct] = useState<Product>(product);
-
-  React.useEffect(() => {
-    const syncLocal = () => {
-      const local = getLocalProductsOverride();
-      if (local) {
-        const match = local.find(p => p.id === product.id || p.slug === product.slug);
-        if (match) setCurrentProduct(match);
-      }
-    };
-    syncLocal();
-    window.addEventListener('ush_products_updated', syncLocal);
-    return () => window.removeEventListener('ush_products_updated', syncLocal);
-  }, [product]);
 
   const { addToCart, formatCOP } = useCart();
   const [selectedImage, setSelectedImage] = useState<string>(currentProduct.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600');

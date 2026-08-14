@@ -92,14 +92,22 @@ function mergeWithInitial(supabaseProducts: Product[]): Product[] {
   return [...supabaseProducts, ...localOnly];
 }
 
-export async function fetchProductsFromSupabase(): Promise<Product[]> {
-  // 1. Check local storage override first (for immediate admin edits reflection)
-  const localOverride = getLocalProductsOverride();
-  if (localOverride && localOverride.length > 0) {
-    return localOverride;
-  }
+// Un producto es "completo" (visible al público) si tiene foto, título y
+// descripción detallada. Los incompletos (ej. "REF: 552631") se ocultan del
+// público para que el admin los complete desde el panel.
+export function isCompleteProduct(p: Product): boolean {
+  const hasImage = Array.isArray(p.images) && p.images.length > 0 && !!p.images[0] && p.images[0].trim() !== '';
+  const title = (p.name || '').trim();
+  const hasTitle = title.length > 0 && !/^REF:?\s*\d+$/i.test(title);
+  const desc = (p.description || '').trim();
+  const hasDetail = desc.length >= 30 && !/^REF:?\s*\d+$/i.test(desc);
+  return hasImage && hasTitle && hasDetail;
+}
 
-  // 2. Fallback to Supabase fetch
+export async function fetchProductsFromSupabase(): Promise<Product[]> {
+  // Supabase es la única fuente de verdad: cualquier cambio del admin
+  // (agregar / editar / ocultar / eliminar) se refleja en cualquier
+  // dispositivo, URL o IP. Solo si Supabase falla se usa el catálogo estático.
   try {
     const { data, error } = await supabase
       .from('products')
@@ -110,7 +118,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       return INITIAL_PRODUCTS;
     }
 
-    return mergeWithInitial(data.map(mapProductRow));
+    return data.map(mapProductRow);
   } catch (err) {
     return INITIAL_PRODUCTS;
   }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingBag, Search, User, Menu, X, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles, CalendarClock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from './Logo';
 
@@ -14,6 +14,7 @@ export const Header: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeSubSubmenu, setActiveSubSubmenu] = useState<boolean>(false);
+  const [comingSoonSection, setComingSoonSection] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { totalItemsCount, setIsCartOpen } = useCart();
@@ -169,12 +170,21 @@ export const Header: React.FC = () => {
               )}
             </div>
 
-            <Link
-              href="/rebajas"
-              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            <button
+              onClick={() => { setComingSoonSection('TEENS'); setActiveDropdown(null); }}
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2 flex items-center gap-1.5"
             >
-              REBAJAS
-            </Link>
+              TEENS
+              <Sparkles size={12} className="text-[#d88193]" />
+            </button>
+
+            <button
+              onClick={() => { setComingSoonSection('HOMBRES'); setActiveDropdown(null); }}
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2 flex items-center gap-1.5"
+            >
+              HOMBRES
+              <Sparkles size={12} className="text-[#d88193]" />
+            </button>
 
             <Link
               href="/como-comprar"
@@ -306,13 +316,18 @@ export const Header: React.FC = () => {
           >
             MUJER â€” JEANS / SHORTS / FALDAS
           </Link>
-          <Link
-            href="/rebajas"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          <button
+            onClick={() => { setIsMobileMenuOpen(false); setComingSoonSection('TEENS'); }}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"
           >
-            REBAJAS
-          </Link>
+            TEENS <Sparkles size={13} className="text-[#d88193]" />
+          </button>
+          <button
+            onClick={() => { setIsMobileMenuOpen(false); setComingSoonSection('HOMBRES'); }}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"
+          >
+            HOMBRES <Sparkles size={13} className="text-[#d88193]" />
+          </button>
           <Link
             href="/como-comprar"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -341,6 +356,58 @@ export const Header: React.FC = () => {
               className="flex items-center gap-2 text-ush-navy font-bold uppercase"
             >
               <User size={18} /> Iniciar SesiÃ³n / Mi Cuenta
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal "Próximamente" (TEENS / HOMBRES) ── */}
+      {comingSoonSection && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1b2333]/60 backdrop-blur-sm p-4"
+          onClick={() => setComingSoonSection(null)}
+        >
+          <div
+            className="relative bg-white max-w-md w-full p-8 sm:p-10 text-center shadow-2xl animate-fadeIn border-t-4 border-[#d88193]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setComingSoonSection(null)}
+              className="absolute top-3 right-3 p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
+              aria-label="Cerrar"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mx-auto w-16 h-16 rounded-full bg-rose-50 text-[#d88193] flex items-center justify-center animate-float">
+              <CalendarClock size={30} />
+            </div>
+
+            <p className="mt-5 text-[10px] font-black uppercase tracking-[0.3em] text-[#d88193]">
+              Próximamente
+            </p>
+
+            <h3 className="mt-2 text-3xl font-black uppercase tracking-tight text-[#1b2333]">
+              Colección <span className="text-gradient-pink">{comingSoonSection}</span>
+            </h3>
+
+            <p className="mt-4 text-sm text-neutral-500 font-light leading-relaxed">
+              Estamos confeccionando con mucho amor y mezclilla rígida de alta calidad una colección exclusiva para <strong className="text-neutral-800">{comingSoonSection.toLowerCase()}</strong>.
+              ¡Muy pronto estará disponible con precios mayoristas y envíos a todo Colombia!
+            </p>
+
+            <div className="mt-6 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest text-neutral-400">
+              <Sparkles size={13} className="text-[#d88193]" />
+              <span>USH BY USHUAIA · Hecho en Itagüí, Antioquia</span>
+              <Sparkles size={13} className="text-[#d88193]" />
+            </div>
+
+            <Link
+              href="/catalogo"
+              onClick={() => setComingSoonSection(null)}
+              className="mt-8 inline-block w-full bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-8 py-4 hover:bg-[#d88193] transition-colors shadow-md"
+            >
+              Explorar colección Mujer →
             </Link>
           </div>
         </div>

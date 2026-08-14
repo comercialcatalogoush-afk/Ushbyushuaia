@@ -1,4 +1,4 @@
-import { fetchProductsFromSupabase } from '@/lib/supabase';
+import { fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
 import { Hero } from '@/components/Hero';
 import { Benefits } from '@/components/Benefits';
 import { ProductGrid } from '@/components/ProductGrid';
@@ -12,8 +12,8 @@ export const revalidate = 0;
 
 export default async function HomePage() {
   const allProducts = await fetchProductsFromSupabase();
-  // Public view: only show non-hidden products
-  const publicProducts = allProducts.filter(p => !p.hidden);
+  // Public view: only complete products (photo + title + detailed description)
+  const publicProducts = allProducts.filter(p => !p.hidden && isCompleteProduct(p));
 
   return (
     <div className="space-y-0">
