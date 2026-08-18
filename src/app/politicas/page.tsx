@@ -144,7 +144,7 @@ export default async function PoliticasPage() {
     <div className="bg-neutral-50 min-h-screen scroll-smooth">
 
       {/* Header Clean Banner */}
-      <section className="bg-white border-b border-gray-200 py-10">
+      <section data-editor-section="pl-header" className="bg-white border-b border-gray-200 py-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-900 font-bold uppercase tracking-wider mb-4 transition-colors">
             <ArrowLeft size={14} /> Volver al Inicio
@@ -221,7 +221,7 @@ export default async function PoliticasPage() {
         })}
 
         {/* 5. POLÍTICA DE ENVÍO */}
-        <div id="envios" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-[168px] scroll-snap-align-start">
+        <div id="envios" data-editor-section="pl-ship" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-[168px] scroll-snap-align-start">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0 text-[#d88193]">
@@ -264,7 +264,7 @@ export default async function PoliticasPage() {
         </div>
 
         {/* 6. POLÍTICA DE PRIVACIDAD Y HABEAS DATA (Ley 1581 de 2012) */}
-        <div id="habeas-data" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-[168px] scroll-snap-align-start">
+        <div id="habeas-data" data-editor-section="pl-data" className="bg-white border border-gray-200 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-[168px] scroll-snap-align-start">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 text-indigo-700">
@@ -312,7 +312,7 @@ export default async function PoliticasPage() {
         </div>
 
         {/* CANALES DE ATENCIÓN */}
-        <div className="bg-white border border-gray-200 p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 shadow-sm">
+        <div data-editor-section="pl-channels" className="bg-white border border-gray-200 p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 shadow-sm">
           <div className="sm:col-span-3 border-b border-gray-100 pb-3">
             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193]">Contacto Directo</span>
             <h3 className="text-lg font-black uppercase tracking-tight text-neutral-900 mt-0.5">{c.plChannelsTitle}</h3>

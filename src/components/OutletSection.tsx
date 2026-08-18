@@ -34,14 +34,14 @@ export const OutletSection: React.FC = () => {
 
   const OUTLET_FINAL = { ...OUTLET, whatsapp: `https://wa.me/${whatsapp}` };
   return (
-    <section id="outlet" className="scroll-mt-20 bg-[#FDF8F4] border-y border-[#e8d9c8] overflow-hidden relative">
+    <section id="outlet" data-editor-section="outlet-card" className="scroll-mt-20 bg-[#FDF8F4] border-y border-[#e8d9c8] overflow-hidden relative">
       {/* Decorative */}
       <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-[#c49a6c]/10 rounded-full blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-16 w-72 h-72 bg-[#d88193]/10 rounded-full blur-3xl" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 relative">
         {/* Section Header — estilo Talitha */}
-        <div className="text-center mb-10">
+        <div data-editor-section="outlet-header" className="text-center mb-10">
           <span className="text-[11px] font-sans-ui font-semibold uppercase tracking-[0.35em] text-[#c49a6c]">
             {OUTLET.eyebrow}
           </span>
@@ -105,7 +105,7 @@ export const OutletSection: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div data-editor-section="outlet-buttons" className="mt-6 flex flex-wrap gap-3">
                 <a
                   href={OUTLET.mapUrl}
                   target="_blank"
@@ -136,7 +136,7 @@ export const OutletSection: React.FC = () => {
                 Lunes a <em className="text-[#c49a6c]">Viernes</em>
               </h3>
 
-              <div className="mt-6 bg-[#FDF8F4] border border-[#e8d9c8] p-6">
+              <div data-editor-section="outlet-hours" className="mt-6 bg-[#FDF8F4] border border-[#e8d9c8] p-6">
                 <div className="flex items-center justify-between font-sans-ui">
                   <span className="text-sm font-semibold text-neutral-800 uppercase tracking-wider">Apertura</span>
                   <span className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.open}</span>

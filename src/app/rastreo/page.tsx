@@ -205,7 +205,7 @@ export default function RastreoPage() {
         </Link>
 
         {/* Header de marca */}
-        <div className="text-center mb-8">
+        <div data-editor-section="tr-header" className="text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-ush-navy text-white flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-[#d88193]">
             <Box size={28} className="text-ush-pink" />
           </div>
@@ -218,7 +218,7 @@ export default function RastreoPage() {
         </div>
 
         {/* Search Box de marca */}
-        <form onSubmit={handleSubmit} className="bg-white p-6 border-t-4 border-[#d88193] shadow-lg">
+        <form data-editor-section="tr-form" onSubmit={handleSubmit} className="bg-white p-6 border-t-4 border-[#d88193] shadow-lg">
           <label className="block text-xs font-black uppercase tracking-wider text-ush-navy mb-2">
             {c.trLabel} *
           </label>
@@ -392,7 +392,7 @@ export default function RastreoPage() {
         )}
 
         {/* Ayuda */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+        <div data-editor-section="tr-help" className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
           <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
             <Package size={20} className="mx-auto text-[#d88193] mb-2" />
             <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">{c.trHelp1Title}</p>

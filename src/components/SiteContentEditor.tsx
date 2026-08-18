@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
-  LayoutTemplate, Palette, FileText, Loader2, ExternalLink, ImagePlus, Upload, RotateCcw,
+  LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -30,6 +30,33 @@ const PAGE_ROUTES: Record<string, string> = {
   'tarjeta-de-regalo': '/tarjeta-de-regalo',
   'catalogo': '/catalogo',
   'politicas': '/politicas',
+};
+
+// Mapeo: sección del sitio (atributo data-editor-section) → página + grupo a editar
+const SECTION_MAP: Record<string, { pageId: string; group: string }> = {
+  'home-hero': { pageId: 'home', group: 'Hero' },
+  'home-benefits': { pageId: 'home', group: 'Beneficios' },
+  'home-trust': { pageId: 'home', group: 'Barra de confianza' },
+  'home-policies': { pageId: 'home', group: 'Banner políticas' },
+  'home-distribuidores': { pageId: 'home', group: 'Distribuidores' },
+  'outlet-header': { pageId: 'outlet', group: 'Encabezado' },
+  'outlet-card': { pageId: 'outlet', group: 'Tarjeta principal' },
+  'outlet-buttons': { pageId: 'outlet', group: 'Botones' },
+  'outlet-hours': { pageId: 'outlet', group: 'Horario destacado' },
+  'cc-header': { pageId: 'como-comprar', group: 'Encabezado' },
+  'cc-process': { pageId: 'como-comprar', group: 'Proceso' },
+  'ct-header': { pageId: 'contacto', group: 'Encabezado' },
+  'ct-info': { pageId: 'contacto', group: 'Datos oficiales' },
+  'ct-whatsapp': { pageId: 'contacto', group: 'WhatsApp' },
+  'tr-header': { pageId: 'rastreo', group: 'Encabezado' },
+  'tr-form': { pageId: 'rastreo', group: 'Formulario' },
+  'tr-help': { pageId: 'rastreo', group: 'Ayuda' },
+  'gif-card': { pageId: 'tarjeta-de-regalo', group: 'Encabezado' },
+  'cat-header': { pageId: 'catalogo', group: 'Encabezado' },
+  'pl-header': { pageId: 'politicas', group: 'Encabezado' },
+  'pl-ship': { pageId: 'politicas', group: 'Envíos' },
+  'pl-data': { pageId: 'politicas', group: 'Habeas Data' },
+  'pl-channels': { pageId: 'politicas', group: 'Canales de atención' },
 };
 
 const THEME_FIELDS: { key: keyof SiteTheme; label: string; type: 'color' | 'text' }[] = [
@@ -196,7 +223,7 @@ function groupFields(fields: FieldDef[]): FieldGroup[] {
 }
 
 // ── EDITOR PRINCIPAL (estilo Wix Studio) ────────────────────
-export function SiteContentEditor() {
+export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [pageId, setPageId] = useState('home');
   const [groupId, setGroupId] = useState<string | null>(null);
   const [mode, setMode] = useState<'content' | 'theme'>('content');
@@ -207,6 +234,9 @@ export function SiteContentEditor() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [nonce, setNonce] = useState(1);
+
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const wiredRef = useRef<{ doc: Document; onDbl: (e: Event) => void } | null>(null);
 
   const schema = PAGE_SCHEMAS.find((s) => s.id === pageId);
   const groups = schema ? groupFields(schema.fields) : [];
@@ -319,17 +349,65 @@ export function SiteContentEditor() {
     setMode('content');
   };
 
+  // Doble clic en una sección del preview → navega a su panel de propiedades
+  const selectSection = (sectionId: string) => {
+    const m = SECTION_MAP[sectionId];
+    if (!m) return;
+    setMode('content');
+    setPageId(m.pageId);
+    setGroupId(m.group);
+  };
+
+  // Conecta el iframe del preview: estilos de edición + doble clic
+  const wireFrame = () => {
+    const frame = iframeRef.current;
+    const doc = frame?.contentDocument;
+    if (!doc || !frame) return;
+    if (wiredRef.current?.doc === doc) return;
+
+    let style = doc.getElementById('ush-editor-style') as HTMLStyleElement | null;
+    if (!style) {
+      style = doc.createElement('style');
+      style.id = 'ush-editor-style';
+      style.textContent = `
+        [data-editor-section] { cursor: crosshair; }
+        [data-editor-section]:hover { outline: 2px dashed #d88193; outline-offset: 2px; }
+      `;
+      doc.head.appendChild(style);
+    }
+
+    const onDbl = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const el = target?.closest?.('[data-editor-section]') as HTMLElement | null;
+      if (!el) return;
+      e.preventDefault();
+      const id = el.getAttribute('data-editor-section') || '';
+      el.style.outline = '2px solid #116dff';
+      el.style.outlineOffset = '2px';
+      setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1400);
+      selectSection(id);
+    };
+    doc.addEventListener('dblclick', onDbl, true);
+    wiredRef.current = { doc, onDbl };
+  };
+
   const previewRoute = PAGE_ROUTES[pageId] || '/';
   const iframeSrc = `${previewRoute}${previewRoute.includes('?') ? '&' : '?'}editor=${nonce}`;
 
   return (
-    <div
-      className="-mx-4 sm:-mx-6 lg:-mx-8 flex flex-col overflow-hidden border border-neutral-200 bg-[#f3f4f6] shadow-xl"
-      style={{ height: 'calc(100vh - 225px)' }}
-    >
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#f3f4f6] overflow-hidden">
       {/* ── Top Toolbar ── */}
       <div className="h-14 bg-[#1b2333] text-white flex items-center justify-between px-4 flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0">
+          {onExit && (
+            <button
+              onClick={onExit}
+              title="Salir del editor"
+              className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-md"
+            >
+              <X size={16} />
+            </button>
+          )}
           <div className="w-8 h-8 bg-[#d88193] rounded flex items-center justify-center">
             <LayoutTemplate size={16} />
           </div>
@@ -344,6 +422,10 @@ export function SiteContentEditor() {
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="hidden xl:flex items-center gap-1.5 text-[10px] text-neutral-400 mr-1">
+            <Pointer size={11} className="text-[#d88193]" /> Doble clic en una sección para editarla
+          </span>
+
           {/* Device toggle */}
           <div className="flex items-center bg-white/10 rounded-md overflow-hidden">
             {(['desktop', 'tablet', 'mobile'] as const).map((d) => (
@@ -394,10 +476,17 @@ export function SiteContentEditor() {
         </div>
       </div>
 
+      {/* ── Draft banner: preview local hasta publicar ── */}
+      {dirty && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 flex-shrink-0">
+          Modo borrador: los cambios solo se ven en esta vista previa. Pulsa Publicar para aplicarlos en todo el sitio, otras URLs y dispositivos.
+        </div>
+      )}
+
       {/* ── Body: left / canvas / right ── */}
       <div className="flex flex-1 min-h-0">
         {/* Left: Pages + layers */}
-        <aside className="w-60 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
+        <aside className="w-52 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
           <div className="px-4 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 border-b border-white/5">
             Páginas
           </div>
@@ -414,7 +503,7 @@ export function SiteContentEditor() {
                     }`}
                   >
                     <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
-                    <span className="flex-1">{s.label}</span>
+                    <span className="flex-1 truncate">{s.label}</span>
                     {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
                   </button>
 
@@ -452,14 +541,16 @@ export function SiteContentEditor() {
         </aside>
 
         {/* Center: live preview canvas */}
-        <div className="flex-1 min-w-0 bg-[#e5e7eb] p-5 overflow-auto flex justify-center">
+        <div className="flex-1 min-w-0 bg-[#e5e7eb] p-4 overflow-auto flex justify-center">
           <div
             className="bg-white shadow-2xl ring-1 ring-black/10 transition-all duration-300"
             style={{ width: DEVICE_WIDTH[device], height: '100%', minHeight: '100%' }}
           >
             <iframe
               key={pageId + nonce}
+              ref={iframeRef}
               src={iframeSrc}
+              onLoad={wireFrame}
               className="w-full h-full"
               style={{ border: 'none' }}
               title="Preview del sitio"
@@ -468,7 +559,7 @@ export function SiteContentEditor() {
         </div>
 
         {/* Right: properties */}
-        <aside className="w-80 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
+        <aside className="w-72 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
           <div className="px-5 py-4 border-b border-neutral-100 flex-shrink-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">
               {mode === 'theme' ? <Palette size={12} /> : <LayoutTemplate size={12} />}

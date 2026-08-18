@@ -21,7 +21,7 @@ export default function ContactoPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
+        <div data-editor-section="ct-header" className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-xs font-bold uppercase tracking-[0.25em] text-neutral-500 block mb-1">
             {c.ctEyebrow}
           </span>
@@ -36,7 +36,7 @@ export default function ContactoPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
           {/* Contact Details Column */}
-          <div className="space-y-6 lg:col-span-1">
+          <div data-editor-section="ct-info" className="space-y-6 lg:col-span-1">
             <div className="bg-white p-6 border border-gray-200 shadow-sm space-y-4">
               <h3 className="text-base font-bold uppercase tracking-wider text-neutral-900 border-b border-gray-100 pb-3">
                 {c.ctInfoTitle}
@@ -71,7 +71,7 @@ export default function ContactoPage() {
             </div>
 
             {/* Direct WhatsApp Callout */}
-            <div className="bg-emerald-900 text-white p-6 shadow-md space-y-3">
+            <div data-editor-section="ct-whatsapp" className="bg-emerald-900 text-white p-6 shadow-md space-y-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="text-emerald-400" size={20} />
                 <h4 className="text-sm font-bold uppercase tracking-wider">{c.ctWhatsappTitle}</h4>

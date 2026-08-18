@@ -1457,7 +1457,7 @@ export default function AdminCatalogPage() {
 
         {/* ── TAB 7: EDITOR DEL SITIO WEB (tipo Wix) ── */}
         {activeTab === 'site' && (
-          <SiteContentEditor />
+          <SiteContentEditor onExit={() => setActiveTab('products')} />
         )}
 
       </div>

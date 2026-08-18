@@ -25,7 +25,7 @@ export const Hero: React.FC = () => {
   const cta2Link = c.heroCta2Link || '/contacto';
 
   return (
-    <section className="relative bg-[#d88193] text-white overflow-hidden min-h-[580px] flex items-center">
+    <section data-editor-section="home-hero" className="relative bg-[#d88193] text-white overflow-hidden min-h-[580px] flex items-center">
 
       {/* Official Cover Image Background */}
       <div className="absolute inset-0 z-0">

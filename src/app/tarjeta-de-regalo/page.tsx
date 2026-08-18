@@ -16,7 +16,7 @@ export default async function TarjetaRegaloPage() {
 
   return (
     <div className="py-20 bg-neutral-50 min-h-screen flex items-center justify-center">
-      <div className="max-w-md mx-auto bg-white p-8 border border-gray-200 shadow-lg text-center space-y-6">
+      <div data-editor-section="gif-card" className="max-w-md mx-auto bg-white p-8 border border-gray-200 shadow-lg text-center space-y-6">
         <div className="w-16 h-16 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto">
           <Gift size={32} />
         </div>

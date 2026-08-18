@@ -36,7 +36,7 @@ export default async function HomePage() {
       <ProductGrid products={publicProducts} />
 
       {/* Trust Bar */}
-      <section className="reveal bg-white border-y border-gray-100 py-10">
+      <section data-editor-section="home-trust" className="reveal bg-white border-y border-gray-100 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {trustBar.map(({ icon: Icon, label, sub }, i) => (
@@ -53,7 +53,7 @@ export default async function HomePage() {
       </section>
 
       {/* Policies CTA Banner */}
-      <section className="reveal bg-ush-pinkLight border-y border-rose-100 py-10">
+      <section data-editor-section="home-policies" className="reveal bg-ush-pinkLight border-y border-rose-100 py-10">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-ush-pink">{c.policiesEyebrow}</p>
           <h3 className="text-xl font-black uppercase text-ush-navy">{c.policiesTitle}</h3>
@@ -68,7 +68,7 @@ export default async function HomePage() {
       </section>
 
       {/* Wholesale Lead Form & Guarantee Banner */}
-      <section className="reveal py-20 bg-neutral-50 text-neutral-900 border-t border-gray-200">
+      <section data-editor-section="home-distribuidores" className="reveal py-20 bg-neutral-50 text-neutral-900 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
