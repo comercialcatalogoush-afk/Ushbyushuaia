@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Ush By Ushuaia | Catálogo Mayorista',
     description: 'Catálogo oficial mayorista de prendas de mezclilla rígida. Descuentos por volumen.',
-    url: 'https://ushbyushuaia.vercel.app',
+    url: 'https://ushbyushuaia-catalogo-mayorista.vercel.app',
     siteName: 'USH BY USHUAIA',
     locale: 'es_CO',
     type: 'website',
