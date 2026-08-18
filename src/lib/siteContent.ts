@@ -184,19 +184,6 @@ export const PAGE_SCHEMAS: PageSchema[] = [
     ],
   },
   {
-    id: 'tarjeta-de-regalo',
-    label: 'Tarjeta de Regalo',
-    description: 'Página de bonos y tarjetas de regalo.',
-    fields: [
-      { key: 'gifEyebrow', label: 'Etiqueta superior', type: 'text', group: 'Encabezado', default: 'Regala Moda & Calidad' },
-      { key: 'gifTitle', label: 'Título principal', type: 'text', group: 'Encabezado', default: 'Tarjetas de Regalo USH BY USHUAIA' },
-      { key: 'gifIntro', label: 'Descripción', type: 'textarea', group: 'Encabezado', default: 'Sorprende a tus clientes o aliados comerciales con bonos digitales redimibles en cualquier referencia de nuestro catálogo de mezclilla.' },
-      { key: 'gifBanner', label: 'Texto del banner', type: 'text', group: 'Encabezado', default: 'Bonos Disponibles desde $100.000 COP' },
-      { key: 'gifButtonText', label: 'Botón — texto', type: 'text', group: 'Encabezado', default: 'Adquirir Tarjeta por WhatsApp' },
-      { key: 'gifButtonLink', label: 'Botón — enlace', type: 'url', group: 'Encabezado', default: '/contacto' },
-    ],
-  },
-  {
     id: 'catalogo',
     label: 'Catálogo',
     description: 'Encabezado de la página del catálogo completo.',
