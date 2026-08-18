@@ -65,7 +65,7 @@ const mapProductRow = (item: any): Product => ({
   price: Number(item.price),
   compare_price: item.compare_price ? Number(item.compare_price) : 0,
   ribbon: item.ribbon || '',
-  fit: item.fit || 'Wide Leg',
+  fit: item.fit ?? '',
   status: item.status || (item.hidden ? 'draft' : 'published'),
   stock_by_size: typeof item.stock_by_size === 'string' ? JSON.parse(item.stock_by_size) : (item.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 }),
   is_best_seller: item.is_best_seller === true,

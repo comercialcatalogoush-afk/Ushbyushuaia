@@ -288,6 +288,14 @@ export async function fetchContentFromRemote(pageId: string): Promise<ContentVal
 }
 
 export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
+  // En el editor del admin se prioriza el borrador local para preview en vivo.
+  const editorLive = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ush_editor_live') === '1';
+  if (editorLive && typeof localStorage !== 'undefined') {
+    try {
+      const cached = localStorage.getItem(THEME_CACHE_KEY);
+      if (cached) return { ...DEFAULT_THEME, ...JSON.parse(cached) };
+    } catch (e) {}
+  }
   try {
     const { data, error } = await supabase
       .from('site_config')
@@ -341,11 +349,16 @@ export async function getPageContentClient(pageId: string): Promise<ContentValue
       if (cached) stored = JSON.parse(cached);
     } catch (e) {}
   }
-  const remote = await fetchContentFromRemote(pageId);
-  if (remote) {
-    stored = remote;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem(CONTENT_CACHE_PREFIX + pageId, JSON.stringify(remote)); } catch (e) {}
+  // En el editor del admin (sesión "live") se prioriza el borrador local para
+  // que el preview refleje los cambios sin publicar.
+  const editorLive = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ush_editor_live') === '1';
+  if (!editorLive) {
+    const remote = await fetchContentFromRemote(pageId);
+    if (remote) {
+      stored = remote;
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem(CONTENT_CACHE_PREFIX + pageId, JSON.stringify(remote)); } catch (e) {}
+      }
     }
   }
   return mergeContent(pageId, stored);

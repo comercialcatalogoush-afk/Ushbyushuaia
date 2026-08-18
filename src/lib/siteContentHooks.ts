@@ -24,15 +24,20 @@ export function usePageContent(pageId: string): ContentValues {
     load();
 
     const handler = () => { load(); };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'ush_content_' + pageId || e.key === null) load();
+    };
     window.addEventListener(CONTENT_EVENT, handler);
     window.addEventListener('ush_catalog_updated', handler);
     window.addEventListener('ush_products_updated', handler);
+    window.addEventListener('storage', onStorage);
 
     return () => {
       cancelled = true;
       window.removeEventListener(CONTENT_EVENT, handler);
       window.removeEventListener('ush_catalog_updated', handler);
       window.removeEventListener('ush_products_updated', handler);
+      window.removeEventListener('storage', onStorage);
     };
   }, [pageId]);
 
@@ -64,10 +69,15 @@ export function useSiteTheme(): SiteTheme {
     load();
 
     const handler = () => { load(); };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'ush_theme_cache' || e.key === null) load();
+    };
     window.addEventListener(THEME_EVENT, handler);
+    window.addEventListener('storage', onStorage);
     return () => {
       cancelled = true;
       window.removeEventListener(THEME_EVENT, handler);
+      window.removeEventListener('storage', onStorage);
     };
   }, []);
 

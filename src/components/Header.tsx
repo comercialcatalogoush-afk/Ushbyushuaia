@@ -159,13 +159,6 @@ export const Header: React.FC = () => {
                   </Link>
 
                   <Link
-                    href="/catalogo?categoria=Cargo"
-                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
-                  >
-                    CARGOS
-                  </Link>
-
-                  <Link
                     href="/catalogo?categoria=Shorts"
                     className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >

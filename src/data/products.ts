@@ -41,7 +41,7 @@ const STORE_DATA: Record<string, { name?: string; category?: string; fit?: strin
  "552637": {
   "name": "Jean straight boot licrado tiro medio en denim azul claro",
   "category": "Jeans",
-  "fit": "Skinny",
+  "fit": "Straight Boot",
   "section": "Mujer"
  },
  "552638": {
@@ -174,7 +174,7 @@ const STORE_DATA: Record<string, { name?: string; category?: string; fit?: strin
  "552808": {
   "name": "Jean dama vaquero tiro medio licrado, color Gris oscuro",
   "category": "Pantalones",
-  "fit": "Wide Leg",
+  "fit": "Vaquero",
   "section": "Mujer"
  },
  "552809": {
@@ -241,7 +241,7 @@ const STORE_DATA: Record<string, { name?: string; category?: string; fit?: strin
  "552850": {
   "name": "Jean dama straight tiro alto rígido con destellos metalizados, color Gris oscuro",
   "category": "Pantalones",
-  "fit": "Wide Leg",
+  "fit": "Straight Boot",
   "section": "Mujer"
  },
  "552851": {
@@ -289,13 +289,13 @@ const STORE_DATA: Record<string, { name?: string; category?: string; fit?: strin
  "552865": {
   "name": "Jean dama mom fit tiro alto rígido con estampado frutal, color Crudo",
   "category": "Jeans",
-  "fit": "Barrel",
+  "fit": "Mom",
   "section": "Mujer"
  },
  "552866": {
   "name": "Jean dama mom fit tiro alto rígido con estampado floral, color Crudo",
   "category": "Jeans",
-  "fit": "Barrel",
+  "fit": "Mom",
   "section": "Mujer"
  },
  "552868": {

@@ -1,23 +1,57 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Save, CheckCircle, ImagePlus, Upload, LayoutTemplate, Palette } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
+  LayoutTemplate, Palette, FileText, Loader2, ExternalLink, ImagePlus, Upload, RotateCcw,
+} from 'lucide-react';
 import {
   PAGE_SCHEMAS,
   DEFAULT_THEME,
+  CONTENT_EVENT,
+  THEME_EVENT,
   SiteTheme,
   ContentValues,
   FieldDef,
   getPageContentClient,
   savePageContent,
-  fetchThemeFromRemote,
   saveTheme,
-  applyTheme,
+  fetchThemeFromRemote,
 } from '@/lib/siteContent';
-import { usePageContent, useSiteTheme } from '@/lib/siteContentHooks';
-import { uploadProductImage } from '@/lib/supabase';
-import { publishCatalogChange } from '@/lib/supabase';
+import { uploadProductImage, publishCatalogChange } from '@/lib/supabase';
 
+// Ruta pública de cada página del CMS (para el preview)
+const PAGE_ROUTES: Record<string, string> = {
+  'home': '/',
+  'outlet': '/',
+  'como-comprar': '/como-comprar',
+  'contacto': '/contacto',
+  'rastreo': '/rastreo',
+  'tarjeta-de-regalo': '/tarjeta-de-regalo',
+  'catalogo': '/catalogo',
+  'politicas': '/politicas',
+};
+
+const THEME_FIELDS: { key: keyof SiteTheme; label: string; type: 'color' | 'text' }[] = [
+  { key: 'pink', label: 'Rosa principal', type: 'color' },
+  { key: 'pinkDark', label: 'Rosa oscuro', type: 'color' },
+  { key: 'pinkHover', label: 'Rosa hover', type: 'color' },
+  { key: 'pinkLight', label: 'Rosa claro', type: 'color' },
+  { key: 'pinkSoft', label: 'Rosa suave', type: 'color' },
+  { key: 'navy', label: 'Azul marino', type: 'color' },
+  { key: 'navyDark', label: 'Azul marino oscuro', type: 'color' },
+  { key: 'accent', label: 'Color acento', type: 'color' },
+  { key: 'bodyBg', label: 'Fondo del sitio', type: 'color' },
+  { key: 'topNoticeText', label: 'Franja superior (texto)', type: 'text' },
+];
+
+const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = {
+  desktop: '100%',
+  tablet: '768px',
+  mobile: '390px',
+};
+
+// ── Utilidades ──────────────────────────────────────────────
 const compressImage = (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -27,32 +61,26 @@ const compressImage = (file: File): Promise<Blob> => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = 1920;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
+        const MAX = 1600;
+        if (width > MAX || height > MAX) {
+          const ratio = Math.min(MAX / width, MAX / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
         }
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Sin blob'))), 'image/jpeg', 0.92);
-        } else {
-          reject(new Error('Canvas no disponible'));
-        }
+        if (!ctx) { reject(new Error('canvas')); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('toBlob'));
+        }, 'image/jpeg', 0.88);
       };
-      img.onerror = reject;
-      img.src = event.target?.result as string;
+      img.onerror = () => reject(new Error('img'));
+      img.src = String(event.target?.result);
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('read'));
     reader.readAsDataURL(file);
   });
 };
@@ -84,20 +112,21 @@ function FieldInput({ field, value, onChange, uploadPath }: FieldInputProps) {
   };
 
   if (field.type === 'color') {
+    const valid = /^#[0-9a-fA-F]{6}$/.test(value);
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         <input
           type="color"
-          value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : '#d88193'}
+          value={valid ? value : '#d88193'}
           onChange={(e) => onChange(e.target.value)}
-          className="w-12 h-10 border border-gray-300 cursor-pointer bg-white p-1"
+          className="w-11 h-10 border border-neutral-200 cursor-pointer bg-white p-1 rounded"
         />
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="#d88193"
-          className="flex-1 border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-[#d88193]"
+          className="flex-1 border border-neutral-200 px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
         />
       </div>
     );
@@ -109,8 +138,7 @@ function FieldInput({ field, value, onChange, uploadPath }: FieldInputProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
-        placeholder={field.placeholder || ''}
-        className="w-full border border-gray-300 p-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193]"
+        className="w-full border border-neutral-200 px-3 py-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
       />
     );
   }
@@ -118,24 +146,28 @@ function FieldInput({ field, value, onChange, uploadPath }: FieldInputProps) {
   if (field.type === 'image') {
     return (
       <div className="space-y-2">
-        <div className="flex items-start gap-3">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="URL de la imagen (https://…)"
-            className="flex-1 border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-[#d88193]"
-          />
-          <label className="inline-flex items-center gap-2 bg-[#1b2333] text-white text-xs font-bold px-4 py-2.5 cursor-pointer hover:bg-[#d88193] transition-colors flex-shrink-0">
-            <Upload size={14} /> {uploading ? 'Subiendo…' : 'Subir'}
-            <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
-          </label>
-        </div>
         {value && (
-          <div className="relative h-36 bg-neutral-100 border border-gray-200 overflow-hidden">
-            <img src={value} alt={field.label} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.2'; }} />
+          <div className="relative h-32 overflow-hidden rounded border border-neutral-200 bg-neutral-50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt="" className="w-full h-full object-cover" />
+            {uploading && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <Loader2 size={20} className="text-white animate-spin" />
+              </div>
+            )}
           </div>
         )}
+        <label className="flex items-center justify-center gap-2 border border-dashed border-neutral-300 px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 hover:border-[#d88193] hover:text-[#d88193] cursor-pointer rounded">
+          <Upload size={13} /> {value ? 'Reemplazar imagen' : 'Subir imagen'}
+          <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+        </label>
+        <input
+          type="url"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://... o /images/..."
+          className="w-full border border-neutral-200 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-[#d88193] rounded"
+        />
       </div>
     );
   }
@@ -145,259 +177,369 @@ function FieldInput({ field, value, onChange, uploadPath }: FieldInputProps) {
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={field.placeholder || ''}
-      className="w-full border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-[#d88193]"
+      placeholder={field.placeholder}
+      className="w-full border border-neutral-200 px-3 py-2 text-xs focus:outline-none focus:border-[#d88193] rounded"
     />
   );
 }
 
-function groupFields(fields: FieldDef[]): { group: string; fields: FieldDef[] }[] {
-  const groups: { group: string; fields: FieldDef[] }[] = [];
+interface FieldGroup { group: string; fields: FieldDef[]; }
+
+function groupFields(fields: FieldDef[]): FieldGroup[] {
+  const groups: FieldGroup[] = [];
   for (const f of fields) {
     let g = groups.find((x) => x.group === f.group);
-    if (!g) {
-      g = { group: f.group, fields: [] };
-      groups.push(g);
-    }
+    if (!g) { g = { group: f.group, fields: [] }; groups.push(g); }
     g.fields.push(f);
   }
   return groups;
 }
 
-export function PageContentEditor({ pageId }: { pageId: string }) {
-  const schema = PAGE_SCHEMAS.find((s) => s.id === pageId);
-  const current = usePageContent(pageId);
+// ── EDITOR PRINCIPAL (estilo Wix Studio) ────────────────────
+export function SiteContentEditor() {
+  const [pageId, setPageId] = useState('home');
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const [mode, setMode] = useState<'content' | 'theme'>('content');
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [values, setValues] = useState<ContentValues>({});
+  const [theme, setTheme] = useState<SiteTheme>(DEFAULT_THEME);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [nonce, setNonce] = useState(1);
+
+  const schema = PAGE_SCHEMAS.find((s) => s.id === pageId);
+  const groups = schema ? groupFields(schema.fields) : [];
+  const activeGroup = groups.find((g) => g.group === groupId) || groups[0];
+
+  // Modo editor: el preview prioriza la caché local (borrador en vivo)
+  useEffect(() => {
+    try { sessionStorage.setItem('ush_editor_live', '1'); } catch (e) {}
+    return () => {
+      try { sessionStorage.removeItem('ush_editor_live'); } catch (e) {}
+    };
+  }, []);
+
+  // Cargar contenido de la página seleccionada
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const v = await getPageContentClient(pageId);
+      if (!cancelled) setValues(v);
+    };
+    load();
+    const first = groups[0];
+    setGroupId(first ? first.group : null);
+    setDirty(false);
+    setSaved(false);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId]);
+
+  // Cargar tema global
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const t = await fetchThemeFromRemote();
+      if (!cancelled && t) setTheme(t);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Live preview: escribe el borrador en la caché (el iframe escucha el evento storage)
+  useEffect(() => {
+    if (!dirty) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('ush_content_' + pageId, JSON.stringify(values));
+      } catch (e) {}
+      window.dispatchEvent(new Event(CONTENT_EVENT));
+    }, 250);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, dirty]);
 
   useEffect(() => {
-    if (schema) {
-      setValues(current);
-    }
-  }, [schema, pageId, current]);
+    if (!dirty || mode !== 'theme') return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('ush_theme_cache', JSON.stringify(theme));
+      } catch (e) {}
+      window.dispatchEvent(new Event(THEME_EVENT));
+    }, 200);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme, dirty, mode]);
 
-  if (!schema) return null;
+  const handleChange = (key: string, val: string) => {
+    setValues((prev) => ({ ...prev, [key]: val }));
+    setDirty(true);
+    setSaved(false);
+  };
 
-  const groups = groupFields(schema.fields);
+  const handleThemeChange = (key: keyof SiteTheme, val: string) => {
+    setTheme((prev) => ({ ...prev, [key]: val }));
+    setDirty(true);
+    setSaved(false);
+  };
 
-  const handleSave = async () => {
-    setSaving(true);
-    const res = await savePageContent(pageId, values);
-    setSaving(false);
-    if (res.success) {
-      setSaved(true);
-      publishCatalogChange();
-      setTimeout(() => setSaved(false), 4000);
+  const handleReset = () => {
+    if (mode === 'theme') {
+      setTheme(DEFAULT_THEME);
+      setDirty(true);
     } else {
-      alert('No se pudo guardar: ' + (res.error || 'error'));
+      setValues({});
+      setDirty(true);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="bg-white border border-gray-200 shadow-sm p-5">
-        <h2 className="text-sm font-black uppercase text-[#1b2333]">{schema.label}</h2>
-        <p className="text-[11px] text-neutral-500 mt-1">{schema.description}</p>
-      </div>
+  const handlePublish = async () => {
+    setSaving(true);
+    let res: { success: boolean; error?: string };
+    if (mode === 'theme') {
+      res = await saveTheme(theme);
+    } else {
+      res = await savePageContent(pageId, values);
+    }
+    setSaving(false);
+    if (res.success) {
+      setSaved(true);
+      setDirty(false);
+      publishCatalogChange();
+      setNonce((n) => n + 1);
+      setTimeout(() => setSaved(false), 4000);
+    } else {
+      alert('No se pudo publicar: ' + (res.error || 'error'));
+    }
+  };
 
-      {groups.map((g) => (
-        <div key={g.group} className="bg-white border border-gray-200 shadow-sm overflow-hidden">
-          <div className="bg-neutral-50 border-b border-gray-200 px-5 py-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700">{g.group}</h3>
+  const selectPage = (id: string) => {
+    setPageId(id);
+    setMode('content');
+  };
+
+  const previewRoute = PAGE_ROUTES[pageId] || '/';
+  const iframeSrc = `${previewRoute}${previewRoute.includes('?') ? '&' : '?'}editor=${nonce}`;
+
+  return (
+    <div
+      className="-mx-4 sm:-mx-6 lg:-mx-8 flex flex-col overflow-hidden border border-neutral-200 bg-[#f3f4f6] shadow-xl"
+      style={{ height: 'calc(100vh - 225px)' }}
+    >
+      {/* ── Top Toolbar ── */}
+      <div className="h-14 bg-[#1b2333] text-white flex items-center justify-between px-4 flex-shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 bg-[#d88193] rounded flex items-center justify-center">
+            <LayoutTemplate size={16} />
           </div>
-          <div className="p-5 space-y-4">
-            {g.fields.map((f) => (
-              <div key={f.key}>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
-                  {f.label}
-                </label>
-                <FieldInput
-                  field={f}
-                  value={values[f.key] ?? f.default}
-                  uploadPath={`site/${pageId}-${f.key}.jpg`}
-                  onChange={(v) => {
-                    setValues((prev) => ({ ...prev, [f.key]: v }));
-                    setDirty(true);
-                  }}
-                />
-              </div>
+          <div className="min-w-0">
+            <div className="text-xs font-black uppercase tracking-widest truncate">
+              {mode === 'theme' ? 'Diseño Global' : (schema?.label || 'Página')}
+            </div>
+            <div className="text-[10px] text-neutral-400 truncate">
+              Editor del sitio · USH BY USHUAIA
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Device toggle */}
+          <div className="flex items-center bg-white/10 rounded-md overflow-hidden">
+            {(['desktop', 'tablet', 'mobile'] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDevice(d)}
+                title={d}
+                className={`p-2 ${device === d ? 'bg-[#d88193] text-white' : 'text-neutral-300 hover:text-white'}`}
+              >
+                {d === 'desktop' ? <Monitor size={14} /> : d === 'tablet' ? <Tablet size={14} /> : <Smartphone size={14} />}
+              </button>
             ))}
           </div>
-        </div>
-      ))}
 
-      <div className="sticky bottom-4 flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 bg-[#116dff] text-white text-xs font-bold uppercase tracking-widest px-6 py-3.5 shadow-lg hover:bg-[#0d5cd6] transition-colors disabled:opacity-50"
-        >
-          <Save size={16} /> {saving ? 'Guardando…' : 'Guardar cambios'}
-        </button>
-        {dirty && <span className="text-[11px] text-amber-600 font-bold uppercase">Cambios sin guardar</span>}
-        {saved && (
-          <span className="inline-flex items-center gap-2 text-[11px] text-emerald-700 font-bold uppercase">
-            <CheckCircle size={16} className="text-emerald-600" /> ¡Publicado!
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function ThemeEditor() {
-  const liveTheme = useSiteTheme();
-  const [values, setValues] = useState<SiteTheme>(DEFAULT_THEME);
-  const [dirty, setDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    setValues(liveTheme);
-  }, [liveTheme]);
-
-  const set = (key: keyof SiteTheme) => (v: string) => {
-    const next = { ...values, [key]: v };
-    setValues(next);
-    setDirty(true);
-    applyTheme(next); // preview instantáneo en todo el sitio
-  };
-
-  const colorFields: { key: keyof SiteTheme; label: string }[] = [
-    { key: 'pink', label: 'Color principal (rosa)' },
-    { key: 'pinkDark', label: 'Rosa oscuro' },
-    { key: 'pinkHover', label: 'Rosa hover' },
-    { key: 'pinkLight', label: 'Rosa claro (fondos)' },
-    { key: 'pinkSoft', label: 'Rosa suave' },
-    { key: 'navy', label: 'Color oscuro (navy)' },
-    { key: 'navyDark', label: 'Navy oscuro' },
-    { key: 'accent', label: 'Color de acento' },
-    { key: 'bodyBg', label: 'Color de fondo de página' },
-  ];
-
-  const handleSave = async () => {
-    setSaving(true);
-    const res = await saveTheme(values);
-    setSaving(false);
-    if (res.success) {
-      setSaved(true);
-      publishCatalogChange();
-      setTimeout(() => setSaved(false), 4000);
-    } else {
-      alert('No se pudo guardar el tema: ' + (res.error || 'error'));
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white border border-gray-200 shadow-sm p-5">
-        <h2 className="flex items-center gap-2 text-sm font-black uppercase text-[#1b2333]">
-          <Palette size={16} className="text-[#d88193]" /> Colores de marca
-        </h2>
-        <p className="text-[11px] text-neutral-500 mt-1">
-          Se aplican en todo el sitio al instante (botones, fondos, encabezados). El catálogo usa estos colores automáticamente.
-        </p>
-      </div>
-
-      <div className="bg-white border border-gray-200 shadow-sm overflow-hidden">
-        <div className="bg-neutral-50 border-b border-gray-200 px-5 py-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700">Colores</h3>
-        </div>
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {colorFields.map(({ key, label }) => (
-            <div key={key as string}>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">{label}</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={/^#[0-9a-fA-F]{6}$/.test(values[key]) ? values[key] : '#d88193'}
-                  onChange={(e) => set(key)(e.target.value)}
-                  className="w-12 h-10 border border-gray-300 cursor-pointer bg-white p-1"
-                />
-                <input
-                  type="text"
-                  value={values[key]}
-                  onChange={(e) => set(key)(e.target.value)}
-                  className="flex-1 border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-[#d88193]"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 shadow-sm overflow-hidden">
-        <div className="bg-neutral-50 border-b border-gray-200 px-5 py-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700">Barra superior (marquee)</h3>
-        </div>
-        <div className="p-5">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Texto del anuncio</label>
-          <textarea
-            value={values.topNoticeText}
-            onChange={(e) => set('topNoticeText')(e.target.value)}
-            rows={2}
-            className="w-full border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-[#d88193]"
-          />
-        </div>
-      </div>
-
-      <div className="sticky bottom-4 flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 bg-[#116dff] text-white text-xs font-bold uppercase tracking-widest px-6 py-3.5 shadow-lg hover:bg-[#0d5cd6] transition-colors disabled:opacity-50"
-        >
-          <Save size={16} /> {saving ? 'Guardando…' : 'Guardar tema'}
-        </button>
-        {dirty && <span className="text-[11px] text-amber-600 font-bold uppercase">Cambios sin guardar</span>}
-        {saved && (
-          <span className="inline-flex items-center gap-2 text-[11px] text-emerald-700 font-bold uppercase">
-            <CheckCircle size={16} className="text-emerald-600" /> ¡Tema publicado!
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function SiteContentEditor() {
-  const [activePage, setActivePage] = useState<string>('theme');
-
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-6">
-        <div className="bg-[#1b2333] text-white p-2 flex items-center gap-2">
-          <LayoutTemplate size={16} className="text-[#d88193]" />
-          <span className="text-xs font-bold uppercase tracking-widest">Editor del Sitio Web</span>
-        </div>
-        <p className="text-[11px] text-neutral-500">Cambia textos, imágenes, botones y colores de cada página. Se publica al instante.</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-gray-200 pb-3">
-        <button
-          onClick={() => setActivePage('theme')}
-          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-            activePage === 'theme' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
-          }`}
-        >
-          <Palette size={14} /> Colores globales
-        </button>
-        {PAGE_SCHEMAS.map((s) => (
           <button
-            key={s.id}
-            onClick={() => setActivePage(s.id)}
-            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-              activePage === s.id ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
-            }`}
+            onClick={handleReset}
+            title="Restaurar valores por defecto"
+            className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md"
           >
-            <ImagePlus size={14} /> {s.label}
+            <RotateCcw size={14} />
           </button>
-        ))}
+
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-300 hover:text-white hover:bg-white/10 rounded-md"
+          >
+            <ExternalLink size={12} /> Ver sitio
+          </a>
+
+          <div className="flex items-center gap-2 pl-2 border-l border-white/15">
+            {dirty && <span className="hidden md:block text-[10px] font-bold uppercase tracking-wider text-amber-300">Sin publicar</span>}
+            {saved && (
+              <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                <CheckCircle size={12} /> Publicado
+              </span>
+            )}
+            <button
+              onClick={handlePublish}
+              disabled={saving}
+              className="flex items-center gap-2 bg-[#116dff] hover:bg-[#0d5cd6] text-white text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded shadow-lg disabled:opacity-50"
+            >
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+              Publicar
+            </button>
+          </div>
+        </div>
       </div>
 
-      {activePage === 'theme' ? <ThemeEditor /> : <PageContentEditor key={activePage} pageId={activePage} />}
+      {/* ── Body: left / canvas / right ── */}
+      <div className="flex flex-1 min-h-0">
+        {/* Left: Pages + layers */}
+        <aside className="w-60 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
+          <div className="px-4 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 border-b border-white/5">
+            Páginas
+          </div>
+          <div className="flex-1 overflow-y-auto py-2">
+            {PAGE_SCHEMAS.map((s) => {
+              const isActive = mode === 'content' && pageId === s.id;
+              const sGroups = groupFields(s.fields);
+              return (
+                <div key={s.id}>
+                  <button
+                    onClick={() => selectPage(s.id)}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
+                      isActive ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
+                    <span className="flex-1">{s.label}</span>
+                    {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
+                  </button>
+
+                  {isActive && (
+                    <div className="ml-3 pl-3 border-l border-white/10 pb-2">
+                      {sGroups.map((g) => (
+                        <button
+                          key={g.group}
+                          onClick={() => setGroupId(g.group)}
+                          className={`w-full text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
+                            activeGroup?.group === g.group ? 'bg-[#d88193]/20 text-[#f9c9d2]' : 'text-neutral-500 hover:text-white'
+                          }`}
+                        >
+                          {g.group}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="border-t border-white/5 py-2">
+            <button
+              onClick={() => { setMode('theme'); setDirty(false); setSaved(false); }}
+              className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
+                mode === 'theme' ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Palette size={13} className={mode === 'theme' ? 'text-[#d88193]' : 'text-neutral-500'} />
+              Diseño · Colores
+            </button>
+          </div>
+        </aside>
+
+        {/* Center: live preview canvas */}
+        <div className="flex-1 min-w-0 bg-[#e5e7eb] p-5 overflow-auto flex justify-center">
+          <div
+            className="bg-white shadow-2xl ring-1 ring-black/10 transition-all duration-300"
+            style={{ width: DEVICE_WIDTH[device], height: '100%', minHeight: '100%' }}
+          >
+            <iframe
+              key={pageId + nonce}
+              src={iframeSrc}
+              className="w-full h-full"
+              style={{ border: 'none' }}
+              title="Preview del sitio"
+            />
+          </div>
+        </div>
+
+        {/* Right: properties */}
+        <aside className="w-80 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
+          <div className="px-5 py-4 border-b border-neutral-100 flex-shrink-0">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">
+              {mode === 'theme' ? <Palette size={12} /> : <LayoutTemplate size={12} />}
+              {mode === 'theme' ? 'Propiedades globales' : 'Propiedades de sección'}
+            </div>
+            <h3 className="text-sm font-black uppercase tracking-tight text-[#1b2333] mt-1">
+              {mode === 'theme' ? 'Diseño del sitio' : (activeGroup?.group || 'General')}
+            </h3>
+            <p className="text-[11px] text-neutral-500 mt-0.5">
+              {mode === 'theme'
+                ? 'Colores de marca y texto de la franja superior. Cambia y publica.'
+                : (schema?.description || '')}
+            </p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {mode === 'theme' ? (
+              <div className="space-y-4">
+                {THEME_FIELDS.map((f) => (
+                  <div key={f.key}>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
+                      {f.label}
+                    </label>
+                    {f.type === 'color' ? (
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="color"
+                          value={/^#[0-9a-fA-F]{6}$/.test(theme[f.key] as string) ? (theme[f.key] as string) : '#d88193'}
+                          onChange={(e) => handleThemeChange(f.key, e.target.value)}
+                          className="w-11 h-10 border border-neutral-200 cursor-pointer bg-white p-1 rounded"
+                        />
+                        <input
+                          type="text"
+                          value={theme[f.key] as string}
+                          onChange={(e) => handleThemeChange(f.key, e.target.value)}
+                          className="flex-1 border border-neutral-200 px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
+                        />
+                      </div>
+                    ) : (
+                      <textarea
+                        value={theme.topNoticeText}
+                        onChange={(e) => handleThemeChange('topNoticeText', e.target.value)}
+                        rows={3}
+                        className="w-full border border-neutral-200 px-3 py-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              activeGroup && (
+                <div className="space-y-5">
+                  {activeGroup.fields.map((f) => (
+                    <div key={f.key}>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
+                        {f.label}
+                      </label>
+                      <FieldInput
+                        field={f}
+                        value={values[f.key] ?? f.default}
+                        uploadPath={`site/${pageId}-${f.key}.jpg`}
+                        onChange={(v) => handleChange(f.key, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

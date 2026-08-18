@@ -661,7 +661,7 @@ export default function AdminCatalogPage() {
       if (!matchName && !matchRef) return false;
     }
     if (filterFit !== 'all') {
-      if ((p.fit || 'wide leg').toLowerCase() !== filterFit.toLowerCase()) return false;
+      if ((p.fit || '').toLowerCase() !== filterFit.toLowerCase()) return false;
     }
     if (filterStatus !== 'all') {
       const isDraft = p.status === 'draft' || p.hidden;
