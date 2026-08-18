@@ -17,6 +17,10 @@ export const PRICE_TIERS: PriceTier[] = [
   { key: 'mayorista12', label: 'Mayorista 12+ uds', min: 12, discount: 0.42, usesWholesalePrice: true },
 ];
 
+// Fallback de precio mayorista cuando el producto no tiene `price` cargado
+// (35% de descuento sobre el precio sugerido — límite inferior del rango 35-42%).
+export const WHOLESALE_FALLBACK = 0.65;
+
 export function getTierForUnits(units: number): PriceTier {
   return PRICE_TIERS.find((t) => units >= t.min && (t.max === undefined || units <= t.max)) || PRICE_TIERS[0];
 }

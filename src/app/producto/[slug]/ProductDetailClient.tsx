@@ -11,6 +11,7 @@ import { animateFlyToCart } from '@/lib/flyToCart';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { subscribeCatalogChanges, fetchProductBySlug } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
+import { WHOLESALE_FALLBACK } from '@/lib/pricing';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -37,7 +38,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const [descExpanded, setDescExpanded] = useState(false);
 
   const suggestedPrice = currentProduct.suggested_price || currentProduct.compare_price || 49900;
-  const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * 0.65);
+  const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
 
   // Stock por talla
   const stock = currentProduct.stock_by_size || {};

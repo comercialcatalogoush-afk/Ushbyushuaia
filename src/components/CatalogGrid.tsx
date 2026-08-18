@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Flame, ChevronDown, ChevronRight } from 'lucide-react';
+import { Flame, ChevronDown, ChevronRight, Percent, ArrowUpRight } from 'lucide-react';
 import { isCompleteProduct } from '@/lib/supabase';
 import { useCatalogSync } from '@/lib/useCatalogSync';
 
@@ -14,6 +14,8 @@ interface CatalogGridProps {
 }
 
 const PAGE_SIZE = 12;
+
+const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
 
 // Orden preferido de fits (estilo colecciones de la tienda)
 const FIT_ORDER = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Straight'];
@@ -43,6 +45,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const [activeFit, setActiveFit] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [fitMenuOpen, setFitMenuOpen] = useState(false);
+  const [tierInfoOpen, setTierInfoOpen] = useState(true);
 
   // Lee los filtros del menú superior (?categoria=...&fit=...) y la búsqueda (?buscar=...)
   useEffect(() => {
@@ -170,6 +173,63 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
                 {catalogProducts.length} referencias disponibles
                 {catalogProducts.length > visibleCount && ` · Mostrando ${paginatedProducts.length} de ${catalogProducts.length}`}
               </p>
+            </div>
+          </div>
+
+          {/* ── Escala de precios mayorista (desde 8 unidades) ── */}
+          <div className="mb-6 animate-fadeInUp">
+            <div className="border border-gray-200 bg-neutral-50 overflow-hidden">
+              <button
+                onClick={() => setTierInfoOpen((o) => !o)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+              >
+                <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-ush-navy">
+                  <Percent size={14} className="text-ush-pink" />
+                  Escala de precios mayorista
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="hidden md:inline text-[10px] text-neutral-500">
+                    8–11 uds: 20% OFF · 12+ uds: 35% a 42% OFF + envío gratis
+                  </span>
+                  <ChevronDown size={14} className={`text-neutral-400 transition-transform duration-300 ${tierInfoOpen ? 'rotate-180' : ''}`} />
+                </span>
+              </button>
+
+              {tierInfoOpen && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gray-200 border-t border-gray-200 animate-fadeInUp">
+                    <div className="bg-white p-4">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">1 a 7 unidades</p>
+                      <p className="mt-1 text-xs font-bold text-neutral-600">Precio de venta sugerido</p>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">Detal, sin descuento mayorista.</p>
+                    </div>
+                    <div className="bg-white p-4 border-t sm:border-t-0 border-gray-200 sm:border-l">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">8 a 11 unidades</p>
+                      <p className="mt-1 text-xs font-bold text-neutral-900">20% de descuento</p>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">Compra mínima mayorista. Aplica solo este 20%.</p>
+                    </div>
+                    <div className="bg-white p-4 border-t sm:border-t-0 border-gray-200 sm:border-l">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">12+ unidades</p>
+                      <p className="mt-1 text-xs font-bold text-neutral-900">35% a 42% de descuento</p>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                        Precio mayorista + <strong className="text-emerald-700">ENVÍO GRATIS</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-2.5 text-[11px] text-neutral-500 border-t border-gray-200 bg-white animate-fadeIn">
+                    ¿Compras menos de 8 unidades? Visita nuestra tienda retail{' '}
+                    <a
+                      href={RETAIL_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 font-bold text-ush-pink hover:underline"
+                    >
+                      www.ushuaiajeans.com.co <ArrowUpRight size={11} />
+                    </a>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

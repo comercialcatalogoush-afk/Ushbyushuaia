@@ -19,7 +19,7 @@ const MIN_ORDER_UNITS = 8;
 const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
 
 export default function CheckoutPage() {
-  const { items, subtotalCOP, formatCOP, clearCart, isWholesaleTier, calculateItemUnitPrice, totalUnits } = useCart();
+  const { items, subtotalCOP, formatCOP, clearCart, isWholesaleTier, calculateItemUnitPrice, totalUnits, coupon, discountCOP } = useCart();
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     doc_type: 'CC',
@@ -677,7 +677,7 @@ export default function CheckoutPage() {
                     <div key={index} className="py-3 flex justify-between items-center text-xs">
                       <div>
                         <p className="font-black text-ush-navy uppercase">{item.product.name}</p>
-                        <p className="text-neutral-500">Talla: {item.selectedSize || '6'}{item.selectedColor ? ` | Color: ${item.selectedColor}` : ''} | Cant: {item.quantity}</p>
+                        <p className="text-neutral-500">Talla: {item.selectedSize || 'Única'}{item.selectedColor ? ` | Color: ${item.selectedColor}` : ''} | Cant: {item.quantity}</p>
                         <p className="text-neutral-400">REF: {item.product.reference}</p>
                       </div>
                       <span className="font-extrabold text-neutral-900">
@@ -730,8 +730,14 @@ export default function CheckoutPage() {
               <div className="border-t border-gray-200 pt-4 space-y-2">
                 <div className="flex justify-between text-xs text-neutral-600">
                   <span>Subtotal prendas</span>
-                  <span>{formatCOP(subtotalCOP)}</span>
+                  <span>{formatCOP(subtotalCOP + discountCOP)}</span>
                 </div>
+                {coupon && discountCOP > 0 && (
+                  <div className="flex justify-between text-xs text-emerald-700 font-semibold">
+                    <span>Cupón {coupon.code} (−{Math.round(coupon.discount * 100)}%)</span>
+                    <span>−{formatCOP(discountCOP)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-xs text-neutral-600">
                   <span>Costo de envío</span>
                   <span className="font-semibold">

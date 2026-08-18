@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check, AlertTriangle } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check, Sparkles, Truck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { INITIAL_PRODUCTS } from '@/data/products';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
@@ -23,6 +23,8 @@ export const CartDrawer: React.FC = () => {
     totalItemsCount,
     isWholesaleTier,
     calculateItemUnitPrice,
+    coupon,
+    discountCOP,
   } = useCart();
 
   const router = useRouter();
@@ -237,28 +239,69 @@ export const CartDrawer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Minimum order notice */}
-              {totalItemsCount < MIN_ORDER_UNITS && (
-                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
-                  <p className="font-bold flex items-center gap-1.5">
-                    <AlertTriangle size={13} className="text-amber-600" /> Pedido mínimo: {MIN_ORDER_UNITS} unidades
-                  </p>
-                  <p className="text-[11px] text-amber-800">
-                    Faltan {MIN_ORDER_UNITS - totalItemsCount} unidad(es) para poder tomar tu pedido mayorista.
-                  </p>
-                  <p className="text-[11px] text-amber-800">
-                    ¿Menos de {MIN_ORDER_UNITS}? Compra en nuestra tienda retail:
-                    <a
-                      href={RETAIL_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-ush-pink hover:underline ml-1"
-                    >
-                      www.ushuaiajeans.com.co
-                    </a>
-                  </p>
-                </div>
-              )}
+              {/* Tier progress bar */}
+              <div className="space-y-2">
+                {totalItemsCount >= 12 ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1.5 animate-fadeIn">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <Sparkles size={13} className="text-emerald-600" /> ¡Precio mayorista + ENVÍO GRATIS activados!
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold">
+                      <Truck size={12} /> 12+ unidades · descuento mayorista de 35% a 42%
+                    </div>
+                  </div>
+                ) : totalItemsCount >= 8 ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1.5 animate-fadeIn">
+                    <div className="flex justify-between items-center text-[11px] font-bold">
+                      <span>✓ 20% de descuento activado</span>
+                      <span className="text-emerald-700">{totalItemsCount} / 12</span>
+                    </div>
+                    <div className="h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${Math.min(100, (totalItemsCount / 12) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-emerald-700">
+                      Faltan {12 - totalItemsCount} unidad(es) para el precio mayorista (35%–42% OFF) + <strong>envío gratis</strong>.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5 animate-fadeIn">
+                    <div className="flex justify-between items-center text-[11px] font-bold">
+                      <span>Descuento por cantidad</span>
+                      <span>{totalItemsCount} / 8</span>
+                    </div>
+                    <div className="h-1.5 bg-amber-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${Math.min(100, (totalItemsCount / 8) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-amber-800">
+                      Faltan {8 - totalItemsCount} unidad(es) para activar el <strong>20% de descuento</strong> (compra mínima de 8 unidades).
+                    </p>
+                    <p className="text-[11px] text-amber-800">
+                      ¿Compras menos de 8 unidades? Visita nuestra tienda retail:
+                      <a
+                        href={RETAIL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-ush-pink hover:underline ml-1"
+                      >
+                        www.ushuaiajeans.com.co
+                      </a>
+                    </p>
+                  </div>
+                )}
+
+                {coupon && discountCOP > 0 && (
+                  <div className="flex justify-between items-center text-[11px] text-emerald-700 font-semibold px-1">
+                    <span>Cupón {coupon.code} (−{Math.round(coupon.discount * 100)}%)</span>
+                    <span>−{formatCOP(discountCOP)}</span>
+                  </div>
+                )}
+              </div>
 
               {/* Single direct action: goes straight to /checkout */}
               <button

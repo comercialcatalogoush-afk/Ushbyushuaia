@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { CartItem, Product } from '@/types';
-import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon } from '@/lib/pricing';
+import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon, WHOLESALE_FALLBACK } from '@/lib/pricing';
+import { subscribeCatalogChanges, fetchProductsFromSupabase } from '@/lib/supabase';
 
 export interface ToastNotification {
   id: string;
@@ -144,7 +145,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Calculate unit price for an item depending on total units (escala)
   const calculateItemUnitPrice = (item: CartItem) => {
     const suggested = item.product.suggested_price || item.product.price || 49900;
-    const wholesale = item.product.price || Math.round(suggested * 0.58);
+    const wholesale = item.product.price || Math.round(suggested * WHOLESALE_FALLBACK);
     return getUnitPrice(suggested, wholesale, totalUnits);
   };
 
@@ -168,6 +169,38 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCoupon(null);
     try { localStorage.removeItem('ush_coupon_active'); } catch (_) {}
   };
+
+  // Revalida el cupón activo cuando cambia el total de unidades: si el carrito
+  // baja del mínimo requerido, el cupón se retira automáticamente.
+  useEffect(() => {
+    if (coupon && coupon.minUnits && totalUnits < coupon.minUnits) {
+      removeCoupon();
+    }
+  }, [totalUnits, coupon]);
+
+  // Precios en vivo: si el admin edita precios o confirma pedidos, los ítems
+  // del carrito se actualizan con los precios vigentes (sin perder talla/color/cant).
+  useEffect(() => {
+    if (typeof window === 'undefined') return () => {};
+    const refreshPrices = () => {
+      fetchProductsFromSupabase().then((fresh) => {
+        setItems((prev) => {
+          if (prev.length === 0) return prev;
+          let changed = false;
+          const updated = prev.map((item) => {
+            const freshP = fresh.find((p) => p.id === item.product.id);
+            if (!freshP) return item;
+            if (freshP.suggested_price === item.product.suggested_price && freshP.price === item.product.price) return item;
+            changed = true;
+            return { ...item, product: freshP };
+          });
+          return changed ? updated : prev;
+        });
+      });
+    };
+    const unsub = subscribeCatalogChanges(refreshPrices);
+    return unsub;
+  }, []);
 
   // Clean COP formatting without trailing single zero
   const formatCOP = (amount: number) => {
