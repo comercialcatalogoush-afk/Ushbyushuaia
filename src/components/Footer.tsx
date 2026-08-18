@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Logo } from './Logo';
 import { Mail, MapPin, Phone, Instagram, Facebook, Shield, FileText, MessageCircle, Truck } from 'lucide-react';
 import { getWhatsAppNumber, subscribeWhatsApp, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
+import { usePageContent } from '@/lib/siteContentHooks';
 
 // TikTok icon (not in lucide)
 const TikTokIcon = () => (
@@ -15,6 +16,7 @@ const TikTokIcon = () => (
 
 export const Footer: React.FC = () => {
   const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+  const c = usePageContent('footer');
 
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsapp);
@@ -26,10 +28,10 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
 
           {/* Brand Col - Official Logo */}
-          <div className="space-y-3">
+          <div data-editor-section="footer-brand" className="space-y-3">
             <Logo variant="light" size="md" />
             <p className="text-xs text-white/80 leading-relaxed font-light">
-              Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.
+              {c.footerDescription || 'Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.'}
             </p>
             {/* Social Icons */}
             <div className="flex items-center gap-3 text-white pt-2">
@@ -116,21 +118,21 @@ export const Footer: React.FC = () => {
             </ul>
 
             {/* Business hours */}
-            <div className="bg-white/10 border border-white/20 p-3 text-xs">
-              <p className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 Horario de Atención</p>
-              <p className="text-white/90 font-light">Lun – Vie: <span className="font-bold">8:00 AM – 5:30 PM</span></p>
-              <p className="text-white/60 text-[10px] mt-1">Sábados, domingos y festivos no hay atención.</p>
+            <div data-editor-section="footer-hours" className="bg-white/10 border border-white/20 p-3 text-xs">
+              <p className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 {c.footerHoursTitle || 'Horario de Atención'}</p>
+              <p className="text-white/90 font-light">Lun – Vie: <span className="font-bold">{c.footerHoursWeek || '8:00 AM – 5:30 PM'}</span></p>
+              <p className="text-white/60 text-[10px] mt-1">{c.footerHoursNote || 'Sábados, domingos y festivos no hay atención.'}</p>
             </div>
           </div>
 
           {/* Wholesale Notice */}
-          <div className="bg-white/10 p-6 border border-white/20 backdrop-blur-sm flex flex-col justify-between">
+          <div data-editor-section="footer-notice" className="bg-white/10 p-6 border border-white/20 backdrop-blur-sm flex flex-col justify-between">
             <div>
               <h5 className="text-xs font-bold uppercase tracking-wider text-white mb-2">
-                Atención a Mayoristas
+                {c.footerNoticeTitle || 'Atención a Mayoristas'}
               </h5>
               <p className="text-[11px] text-white/80 leading-normal font-light mb-3">
-                Escala de precios especiales aplicables a partir de 12 unidades combinadas por pedido. Envío gratis incluido.
+                {c.footerNoticeText || 'Escala de precios especiales aplicable a partir de 12 unidades combinadas por pedido. Envío gratis incluido.'}
               </p>
               <ul className="space-y-1.5 text-[11px] text-white/80 font-light">
                 <li>✓ Garantía 45 días por defectos de fábrica</li>
@@ -142,14 +144,14 @@ export const Footer: React.FC = () => {
               href="/contacto"
               className="mt-5 bg-white text-[#c06579] hover:bg-white/90 text-[10px] font-black uppercase tracking-widest py-2.5 px-4 text-center transition-colors"
             >
-              Pedir Asesoría
+              {c.footerCtaText || 'Pedir Asesoría'}
             </Link>
           </div>
         </div>
 
         {/* Bottom copyright */}
         <div className="mt-12 pt-8 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between text-xs text-white/60 font-light gap-2">
-          <p>© {new Date().getFullYear()} USH BY USHUAIA. Marca Tu Identidad. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} {c.footerCopyright || 'USH BY USHUAIA. Marca Tu Identidad. Todos los derechos reservados.'}</p>
           <div className="flex items-center gap-4 text-[11px] flex-wrap justify-center">
             <Link href="/politicas#habeas-data" className="hover:text-white transition-colors">Habeas Data</Link>
             <Link href="/politicas#envios" className="hover:text-white transition-colors">Política de Envíos</Link>

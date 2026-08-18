@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
+  Undo2, Redo2, FileClock,
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -30,6 +31,7 @@ const PAGE_ROUTES: Record<string, string> = {
   'tarjeta-de-regalo': '/tarjeta-de-regalo',
   'catalogo': '/catalogo',
   'politicas': '/politicas',
+  'footer': '/',
 };
 
 // Mapeo: sección del sitio (atributo data-editor-section) → página + grupo a editar
@@ -57,6 +59,9 @@ const SECTION_MAP: Record<string, { pageId: string; group: string }> = {
   'pl-ship': { pageId: 'politicas', group: 'Envíos' },
   'pl-data': { pageId: 'politicas', group: 'Habeas Data' },
   'pl-channels': { pageId: 'politicas', group: 'Canales de atención' },
+  'footer-brand': { pageId: 'footer', group: 'Marca' },
+  'footer-hours': { pageId: 'footer', group: 'Contacto' },
+  'footer-notice': { pageId: 'footer', group: 'Mayoristas' },
 };
 
 const THEME_FIELDS: { key: keyof SiteTheme; label: string; type: 'color' | 'text' }[] = [
@@ -234,9 +239,16 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [nonce, setNonce] = useState(1);
+  const [past, setPast] = useState<{ values: ContentValues; theme: SiteTheme }[]>([]);
+  const [future, setFuture] = useState<{ values: ContentValues; theme: SiteTheme }[]>([]);
+  const [draftSaved, setDraftSaved] = useState(false);
+
+  const undoRef = useRef<() => void>(() => {});
+  const redoRef = useRef<() => void>(() => {});
+  const flushRef = useRef<() => void>(() => {});
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const wiredRef = useRef<{ doc: Document; onDbl: (e: Event) => void } | null>(null);
+  const wiredRef = useRef<{ doc: Document; onDbl: (e: Event) => void; onKey: (e: Event) => void } | null>(null);
 
   const schema = PAGE_SCHEMAS.find((s) => s.id === pageId);
   const groups = schema ? groupFields(schema.fields) : [];
@@ -262,6 +274,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setGroupId(first ? first.group : null);
     setDirty(false);
     setSaved(false);
+    setPast([]);
+    setFuture([]);
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageId]);
@@ -303,25 +317,85 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   }, [theme, dirty, mode]);
 
   const handleChange = (key: string, val: string) => {
+    setPast((p) => [...p.slice(-49), { values, theme }]);
+    setFuture([]);
     setValues((prev) => ({ ...prev, [key]: val }));
     setDirty(true);
     setSaved(false);
   };
 
   const handleThemeChange = (key: keyof SiteTheme, val: string) => {
+    setPast((p) => [...p.slice(-49), { values, theme }]);
+    setFuture([]);
     setTheme((prev) => ({ ...prev, [key]: val }));
     setDirty(true);
     setSaved(false);
   };
 
+  const handleUndo = () => {
+    if (past.length === 0) return;
+    const prev = past[past.length - 1];
+    setPast((p) => p.slice(0, -1));
+    setFuture((f) => [...f, { values, theme }]);
+    setValues(prev.values);
+    setTheme(prev.theme);
+    setDirty(true);
+    setSaved(false);
+  };
+
+  const handleRedo = () => {
+    if (future.length === 0) return;
+    const next = future[future.length - 1];
+    setFuture((f) => f.slice(0, -1));
+    setPast((p) => [...p, { values, theme }]);
+    setValues(next.values);
+    setTheme(next.theme);
+    setDirty(true);
+    setSaved(false);
+  };
+
+  undoRef.current = handleUndo;
+  redoRef.current = handleRedo;
+
+  // Guarda el borrador local al instante (sin publicar en el sitio)
+  const flushDraft = () => {
+    try { localStorage.setItem('ush_content_' + pageId, JSON.stringify(values)); } catch (e) {}
+    try { localStorage.setItem('ush_theme_cache', JSON.stringify(theme)); } catch (e) {}
+    window.dispatchEvent(new Event(CONTENT_EVENT));
+    window.dispatchEvent(new Event(THEME_EVENT));
+    setDraftSaved(true);
+    setTimeout(() => setDraftSaved(false), 2500);
+  };
+  flushRef.current = flushDraft;
+
+  // Atajos de teclado en el editor
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redoRef.current(); else undoRef.current();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redoRef.current();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        flushRef.current();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleReset = () => {
+    setPast((p) => [...p.slice(-49), { values, theme }]);
+    setFuture([]);
     if (mode === 'theme') {
       setTheme(DEFAULT_THEME);
-      setDirty(true);
     } else {
       setValues({});
-      setDirty(true);
     }
+    setDirty(true);
   };
 
   const handlePublish = async () => {
@@ -387,8 +461,19 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1400);
       selectSection(id);
     };
+    const onKey = (e: Event) => {
+      const ke = e as KeyboardEvent;
+      if ((ke.ctrlKey || ke.metaKey) && ke.key.toLowerCase() === 'z') {
+        ke.preventDefault();
+        if (ke.shiftKey) redoRef.current(); else undoRef.current();
+      } else if ((ke.ctrlKey || ke.metaKey) && ke.key.toLowerCase() === 'y') {
+        ke.preventDefault();
+        redoRef.current();
+      }
+    };
     doc.addEventListener('dblclick', onDbl, true);
-    wiredRef.current = { doc, onDbl };
+    doc.addEventListener('keydown', onKey, true);
+    wiredRef.current = { doc, onDbl, onKey };
   };
 
   const previewRoute = PAGE_ROUTES[pageId] || '/';
@@ -441,6 +526,23 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </div>
 
           <button
+            onClick={handleUndo}
+            disabled={past.length === 0}
+            title="Deshacer (Ctrl+Z)"
+            className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-300"
+          >
+            <Undo2 size={14} />
+          </button>
+          <button
+            onClick={handleRedo}
+            disabled={future.length === 0}
+            title="Rehacer (Ctrl+Shift+Z)"
+            className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-300"
+          >
+            <Redo2 size={14} />
+          </button>
+
+          <button
             onClick={handleReset}
             title="Restaurar valores por defecto"
             className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md"
@@ -458,12 +560,25 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </a>
 
           <div className="flex items-center gap-2 pl-2 border-l border-white/15">
+            {draftSaved && (
+              <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                <CheckCircle size={12} /> Borrador guardado
+              </span>
+            )}
             {dirty && <span className="hidden md:block text-[10px] font-bold uppercase tracking-wider text-amber-300">Sin publicar</span>}
             {saved && (
               <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
                 <CheckCircle size={12} /> Publicado
               </span>
             )}
+            <button
+              onClick={flushDraft}
+              title="Guardar borrador local (Ctrl+S)"
+              className="hidden sm:flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded shadow disabled:opacity-50"
+            >
+              <FileClock size={13} />
+              Guardar
+            </button>
             <button
               onClick={handlePublish}
               disabled={saving}

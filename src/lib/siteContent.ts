@@ -237,6 +237,23 @@ export const PAGE_SCHEMAS: PageSchema[] = [
       { key: 'plChannelsAddress', label: 'Punto de despacho', type: 'text', group: 'Canales de atención', default: 'Cll. 85 Sur #50-72, Itagüí, Antioquia — Colombia' },
     ],
   },
+  {
+    id: 'footer',
+    label: 'Pie de Página',
+    description: 'Contenido global del pie de página que aparece en todo el sitio.',
+    fields: [
+      { key: 'footerDescription', label: 'Descripción de la marca', type: 'textarea', group: 'Marca', default: 'Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.' },
+      { key: 'footerCopyright', label: 'Texto de copyright', type: 'text', group: 'Marca', default: 'USH BY USHUAIA. Marca Tu Identidad. Todos los derechos reservados.' },
+
+      { key: 'footerNoticeTitle', label: 'Aviso mayorista — título', type: 'text', group: 'Mayoristas', default: 'Atención a Mayoristas' },
+      { key: 'footerNoticeText', label: 'Aviso mayorista — texto', type: 'textarea', group: 'Mayoristas', default: 'Escala de precios especiales aplicable a partir de 12 unidades combinadas por pedido. Envío gratis incluido.' },
+      { key: 'footerCtaText', label: 'Botón — texto', type: 'text', group: 'Mayoristas', default: 'Pedir Asesoría' },
+
+      { key: 'footerHoursTitle', label: 'Horario — título', type: 'text', group: 'Contacto', default: 'Horario de Atención' },
+      { key: 'footerHoursWeek', label: 'Horario — semana', type: 'text', group: 'Contacto', default: '8:00 AM – 5:30 PM' },
+      { key: 'footerHoursNote', label: 'Horario — nota', type: 'text', group: 'Contacto', default: 'Sábados, domingos y festivos no hay atención.' },
+    ],
+  },
 ];
 
 // ── TEMA GLOBAL (colores de marca) ──────────────────────────
