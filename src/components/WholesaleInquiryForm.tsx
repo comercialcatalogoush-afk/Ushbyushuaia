@@ -269,8 +269,29 @@ export const WholesaleInquiryForm: React.FC = () => {
             <p className="text-[10px] text-neutral-400 mt-1">Formato: Calle / Carrera # Número-Número, Barrio, Apto/Local</p>
           </div>
 
-          {/* Ciudad y Departamento */}
+          {/* Departamento y Ciudad */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                Departamento *
+              </label>
+              <select
+                required
+                value={formData.department}
+                onChange={(e) => {
+                  setFormData({ ...formData, department: e.target.value, city: '' });
+                  setCityQuery('');
+                  setCityOpen(false);
+                }}
+                className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
+              >
+                <option value="">Seleccionar departamento...</option>
+                {COLOMBIA_DEPARTMENTS.map((dep) => (
+                  <option key={dep} value={dep}>{dep}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="relative">
               <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                 Ciudad / Municipio *
@@ -336,27 +357,6 @@ export const WholesaleInquiryForm: React.FC = () => {
               {cityOpen && !formData.department && (
                 <p className="text-[10px] text-amber-600 mt-1">Selecciona primero el departamento para ver sus ciudades.</p>
               )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                Departamento *
-              </label>
-              <select
-                required
-                value={formData.department}
-                onChange={(e) => {
-                  setFormData({ ...formData, department: e.target.value, city: '' });
-                  setCityQuery('');
-                  setCityOpen(false);
-                }}
-                className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
-              >
-                <option value="">Seleccionar departamento...</option>
-                {COLOMBIA_DEPARTMENTS.map((dep) => (
-                  <option key={dep} value={dep}>{dep}</option>
-                ))}
-              </select>
             </div>
           </div>
 

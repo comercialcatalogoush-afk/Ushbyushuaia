@@ -7,11 +7,27 @@ import { submitOrder, publishOrderChange } from '@/lib/supabase';
 import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone, ArrowUpRight } from 'lucide-react';
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
+import { getGoogleDriveImageUrl } from '@/lib/drive';
+import { INITIAL_PRODUCTS } from '@/data/products';
 
 function generateOrderId() {
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.floor(1000 + Math.random() * 9000);
   return `FE${rand}-${ts}`;
+}
+
+// Helper para obtener la imagen del ítem con fallback al catálogo estático
+function getItemImage(product: any): string {
+  if (product.images && Array.isArray(product.images) && product.images.length > 0 && product.images[0]) {
+    return getGoogleDriveImageUrl(product.images[0]);
+  }
+  const match = INITIAL_PRODUCTS.find(
+    (p) => p.id === product.id || p.reference === product.reference || p.slug === product.slug
+  );
+  if (match && match.images && match.images.length > 0 && match.images[0]) {
+    return getGoogleDriveImageUrl(match.images[0]);
+  }
+  return '';
 }
 
 // Mínimo mayorista por pedido. Debajo de esto se redirige a la tienda retail.
@@ -468,8 +484,29 @@ export default function CheckoutPage() {
                     <p className="text-[10px] text-neutral-400 mt-1">Formato: Calle / Carrera # Número-Número, Barrio, Apto/Local</p>
                   </div>
 
-                  {/* Ciudad y Departamento */}
+                  {/* Departamento y Ciudad */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
+                        Departamento *
+                      </label>
+                      <select
+                        required
+                        value={formData.department}
+                        onChange={(e) => {
+                          setFormData({ ...formData, department: e.target.value, city: '' });
+                          setCityQuery('');
+                          setCityOpen(false);
+                        }}
+                        className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
+                      >
+                        <option value="">Seleccionar departamento...</option>
+                        {COLOMBIA_DEPARTMENTS.map((dep) => (
+                          <option key={dep} value={dep}>{dep}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="relative">
                       <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                         Ciudad / Municipio *
@@ -535,27 +572,6 @@ export default function CheckoutPage() {
                       {cityOpen && !formData.department && (
                         <p className="text-[10px] text-amber-600 mt-1">Selecciona primero el departamento para ver sus ciudades.</p>
                       )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                        Departamento *
-                      </label>
-                      <select
-                        required
-                        value={formData.department}
-                        onChange={(e) => {
-                          setFormData({ ...formData, department: e.target.value, city: '' });
-                          setCityQuery('');
-                          setCityOpen(false);
-                        }}
-                        className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
-                      >
-                        <option value="">Seleccionar departamento...</option>
-                        {COLOMBIA_DEPARTMENTS.map((dep) => (
-                          <option key={dep} value={dep}>{dep}</option>
-                        ))}
-                      </select>
                     </div>
                   </div>
 
@@ -673,14 +689,33 @@ export default function CheckoutPage() {
               <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto pr-2">
                 {items.map((item, index) => {
                   const unitPrice = calculateItemUnitPrice(item);
+                  const imgUrl = getItemImage(item.product);
                   return (
-                    <div key={index} className="py-3 flex justify-between items-center text-xs">
-                      <div>
-                        <p className="font-black text-ush-navy uppercase">{item.product.name}</p>
+                    <div key={index} className="py-3 flex items-center gap-3 text-xs">
+                      <div className="relative w-14 h-16 bg-neutral-100 flex-shrink-0 overflow-hidden border border-gray-200 flex items-center justify-center">
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            alt={item.product.name}
+                            className="w-full h-full object-cover object-center"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              const fallbackEl = (e.target as HTMLElement).nextElementSibling;
+                              if (fallbackEl) fallbackEl.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`${imgUrl ? 'hidden' : ''} flex flex-col items-center justify-center text-neutral-400 text-center`}>
+                          <ShoppingBag size={16} />
+                          <span className="text-[8px] font-bold uppercase mt-0.5">Prenda</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-ush-navy uppercase truncate">{item.product.name}</p>
                         <p className="text-neutral-500">Talla: {item.selectedSize || 'Única'}{item.selectedColor ? ` | Color: ${item.selectedColor}` : ''} | Cant: {item.quantity}</p>
                         <p className="text-neutral-400">REF: {item.product.reference}</p>
                       </div>
-                      <span className="font-extrabold text-neutral-900">
+                      <span className="font-extrabold text-neutral-900 whitespace-nowrap">
                         {formatCOP(unitPrice * item.quantity)}
                       </span>
                     </div>
