@@ -15,8 +15,6 @@ export const Header: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [activeSubSubmenu, setActiveSubSubmenu] = useState<boolean>(false);
   const [comingSoonSection, setComingSoonSection] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -37,6 +35,7 @@ export const Header: React.FC = () => {
   }, [pathname]);
 
   const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY', 'MOM'];
+  const pantalonesFits = ['WIDE LEG', 'STRAIGHT', 'BOTA FLARE', 'SKINNY'];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,83 +99,96 @@ export const Header: React.FC = () => {
             </Link>
 
             {/* MUJER Mega Dropdown */}
-            <div
-              className="relative group py-2"
-              onMouseEnter={() => setActiveDropdown('mujer')}
-              onMouseLeave={() => { setActiveDropdown(null); setActiveSubSubmenu(false); }}
-            >
+            <div className="relative group/mujer py-2">
               <button
                 className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors flex items-center gap-1 py-1"
               >
                 <span>MUJER</span>
-                <ChevronDown size={14} className="group-hover:rotate-180 transition-transform" />
+                <ChevronDown size={14} className="group-hover/mujer:rotate-180 transition-transform" />
               </button>
 
               {/* Submenu Level 1 */}
-              {activeDropdown === 'mujer' && (
-                <div className="absolute top-full left-0 bg-white border border-gray-200 shadow-xl w-48 py-2 z-50 animate-fadeIn">
+              <div className="absolute top-full left-0 bg-white border border-gray-200 shadow-xl w-48 py-2 z-50 invisible opacity-0 translate-y-1 group-hover/mujer:visible group-hover/mujer:opacity-100 group-hover/mujer:translate-y-0 transition-all duration-150">
+                <Link
+                  href="/catalogo"
+                  className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-rose-50 border-b border-gray-100"
+                >
+                  VER TODO
+                </Link>
+
+                {/* JEANS item with nested fits submenu */}
+                <div className="relative group/jeans">
                   <Link
-                    href="/catalogo"
-                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-rose-50 border-b border-gray-100"
+                    href="/catalogo?categoria=Jeans"
+                    className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#d88193] bg-rose-50/50 hover:bg-rose-50"
                   >
-                    VER TODO
+                    <span>JEANS</span>
+                    <ChevronRight size={14} />
                   </Link>
 
-                  {/* JEANS item with nested sub-submenu */}
-                  <div
-                    className="relative group/jeans"
-                    onMouseEnter={() => setActiveSubSubmenu(true)}
-                  >
-                    <Link
-                      href="/catalogo?categoria=Jeans"
-                      className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#d88193] bg-rose-50/50 hover:bg-rose-50"
-                    >
-                      <span>JEANS</span>
-                      <ChevronRight size={14} />
-                    </Link>
-
-                    {/* Submenu Level 2 (Fits) */}
-                    {activeSubSubmenu && (
-                      <div className="absolute top-0 left-full bg-white border border-gray-200 shadow-xl w-44 py-2 z-50 animate-fadeIn">
-                        {jeansFits.map((fit) => (
-                          <Link
-                            key={fit}
-                            href={`/catalogo?categoria=Jeans&fit=${encodeURIComponent(fit)}`}
-                            className="block px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
-                          >
-                            {fit}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                  {/* Submenu Level 2 (Fits) */}
+                  <div className="absolute top-0 left-full bg-white border border-gray-200 shadow-xl w-44 py-2 z-50 invisible opacity-0 group-hover/jeans:visible group-hover/jeans:opacity-100 transition-all duration-150">
+                    {jeansFits.map((fit) => (
+                      <Link
+                        key={fit}
+                        href={`/catalogo?categoria=Jeans&fit=${encodeURIComponent(fit)}`}
+                        className="block px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                      >
+                        {fit}
+                      </Link>
+                    ))}
                   </div>
+                </div>
 
+                {/* PANTALONES item with nested fits submenu */}
+                <div className="relative group/pantalones">
                   <Link
                     href="/catalogo?categoria=Pantalones"
-                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                    className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                   >
-                    PANTALONES
+                    <span>PANTALONES</span>
+                    <ChevronRight size={14} />
                   </Link>
 
-                  <Link
-                    href="/catalogo?categoria=Shorts"
-                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
-                  >
-                    SHORTS
-                  </Link>
-
-                  <Link
-                    href="/catalogo?categoria=Faldas"
-                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
-                  >
-                    FALDAS
-                  </Link>
+                  {/* Submenu Level 2 (Fits) */}
+                  <div className="absolute top-0 left-full bg-white border border-gray-200 shadow-xl w-44 py-2 z-50 invisible opacity-0 group-hover/pantalones:visible group-hover/pantalones:opacity-100 transition-all duration-150">
+                    {pantalonesFits.map((fit) => (
+                      <Link
+                        key={fit}
+                        href={`/catalogo?categoria=Pantalones&fit=${encodeURIComponent(fit)}`}
+                        className="block px-4 py-2 text-[10px] font-extrabold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                      >
+                        {fit}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              )}
+
+                <Link
+                  href="/catalogo?categoria=Cargos"
+                  className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                >
+                  CARGOS
+                </Link>
+
+                <Link
+                  href="/catalogo?categoria=Shorts"
+                  className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                >
+                  SHORTS
+                </Link>
+
+                <Link
+                  href="/catalogo?categoria=Faldas"
+                  className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                >
+                  FALDAS
+                </Link>
+              </div>
             </div>
 
             <button
-              onClick={() => { setComingSoonSection('TEENS'); setActiveDropdown(null); }}
+              onClick={() => { setComingSoonSection('TEENS'); }}
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2 flex items-center gap-1.5"
             >
               TEENS
@@ -184,7 +196,7 @@ export const Header: React.FC = () => {
             </button>
 
             <button
-              onClick={() => { setComingSoonSection('HOMBRES'); setActiveDropdown(null); }}
+              onClick={() => { setComingSoonSection('HOMBRES'); }}
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2 flex items-center gap-1.5"
             >
               HOMBRES
@@ -319,7 +331,7 @@ export const Header: React.FC = () => {
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            MUJER — JEANS / SHORTS / FALDAS
+            MUJER — JEANS / PANTALONES / CARGOS / SHORTS / FALDAS
           </Link>
           <button
             onClick={() => { setIsMobileMenuOpen(false); setComingSoonSection('TEENS'); }}

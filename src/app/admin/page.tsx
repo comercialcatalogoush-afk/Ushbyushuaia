@@ -17,7 +17,7 @@ import { Logo } from '@/components/Logo';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 const DEFAULT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
-const DEFAULT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargo', 'Bermuda', 'Nuevo'];
+const DEFAULT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
 const ALL_SIZES = ['6', '8', '10', '12', '14'];
 const DEFAULT_COLORS = [
   'Azul Claro', 'Azul Oscuro', 'Azul Medio', 'Azul Dirty', 'Gris Oscuro', 'Gris Humo',
@@ -1013,7 +1013,7 @@ export default function AdminCatalogPage() {
                 Gestión de Categorías del Catálogo
               </h2>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Crea, edita o elimina las categorías principales que se muestran en la barra superior del catálogo público (ej. Jeans, Shorts, Faldas, Cargo, Bermuda).
+                Crea, edita o elimina las categorías principales que se muestran en la barra superior del catálogo público (ej. Jeans, Shorts, Faldas, Cargos, Bermuda).
               </p>
             </div>
 

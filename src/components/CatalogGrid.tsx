@@ -18,6 +18,9 @@ const PAGE_SIZE = 12;
 // Orden preferido de fits (estilo colecciones de la tienda)
 const FIT_ORDER = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Straight'];
 
+// Categorías del sitio oficial (aparecen siempre, aunque aún no tengan productos)
+const OFFICIAL_CATEGORY_ORDER = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas'];
+
 // Normaliza la etiqueta del menú (ej: "VAQUERO", "WIDE LEG") al fit real del producto
 function normalizeFitLabel(label: string): string {
   const map: Record<string, string> = {
@@ -105,11 +108,14 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return true;
   });
 
-  // Categorías reales presentes en el catálogo
+  // Categorías reales presentes en el catálogo + las oficiales del sitio
   const availableCategories = useMemo(() => {
-    const set = new Set<string>();
-    visibleProducts.forEach((p) => { if (p.category) set.add(p.category); });
-    return ['Todos', ...Array.from(set)];
+    const present = new Set<string>();
+    visibleProducts.forEach((p) => { if (p.category) present.add(p.category); });
+    // Cargos siempre visible (como en el sitio oficial), aunque aún no tenga productos
+    const official = OFFICIAL_CATEGORY_ORDER.filter((c) => present.has(c) || c === 'Cargos');
+    const extra = Array.from(present).filter((c) => !OFFICIAL_CATEGORY_ORDER.includes(c));
+    return ['Todos', ...official, ...extra];
   }, [visibleProducts]);
 
   // Fits reales presentes en la categoría activa (no hardcodeados)
@@ -259,7 +265,11 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
             <div className="text-center py-20 bg-neutral-50 border border-dashed border-gray-200">
               <Flame size={36} className="mx-auto text-neutral-300 mb-3" />
               <p className="text-sm font-bold uppercase text-neutral-700">No hay prendas en esta categoría</p>
-              <p className="text-xs text-neutral-400 mt-1">Prueba con otra categoría o fit.</p>
+              <p className="text-xs text-neutral-400 mt-1">
+                {activeCategory === 'Cargos'
+                  ? 'Estamos añadiendo cargos a la colección. Pronto habrá novedades.'
+                  : 'Prueba con otra categoría o fit.'}
+              </p>
             </div>
           )}
         </div>
