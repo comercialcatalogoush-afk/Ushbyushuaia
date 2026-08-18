@@ -421,6 +421,48 @@ export async function confirmOrderAndDeductStock(
   }
 }
 
+// Cancela una orden (carrito abandonado / cliente no tomó el pedido):
+// si estaba confirmada, restaura el stock descontado; marca la orden como
+// 'canceled' y publica el cambio para que el inventario se refleje en la página.
+export async function cancelOrderAndRestoreStock(
+  order: any,
+  productsRef: Product[]
+): Promise<{ success: boolean; error?: string; changed?: boolean }> {
+  try {
+    const items: Array<{ product_id?: string; reference?: string; size?: string; quantity?: number }> =
+      Array.isArray(order.items) ? order.items : [];
+    let changed = false;
+
+    // Solo restaura stock si la orden estaba confirmada (ya había descontado inventario)
+    if (order.status === 'confirmed') {
+      for (const item of items) {
+        const qty = Number(item.quantity) || 0;
+        const size = String(item.size || '').trim();
+        const pid = item.product_id;
+        if (qty <= 0 || !size || !pid) continue;
+
+        const current = productsRef.find((p) => p.id === pid) || productsRef.find((p) => p.reference === pid);
+        if (!current) continue;
+
+        const stock = { ...(current.stock_by_size || {}) };
+        stock[size] = (Number(stock[size] ?? 0) || 0) + qty;
+        changed = true;
+
+        const { error } = await supabase.from('products').update({ stock_by_size: stock }).eq('id', current.id);
+        if (error) return { success: false, error: `stock ${current.reference}: ${error.message}` };
+      }
+    }
+
+    const { error: statusErr } = await supabase.from('orders').update({ status: 'canceled' }).eq('id', order.id);
+    if (statusErr) return { success: false, error: `estado: ${statusErr.message}` };
+
+    if (changed) publishCatalogChange();
+    return { success: true, changed };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 // ── REALTIME: broadcast de cambios (gratis, sin SQL) ────────────────
 const SYNC_CHANNEL = 'ush-catalog-sync';
 

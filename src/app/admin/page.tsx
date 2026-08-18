@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange } from '@/lib/supabase';
 import { exportBackup, downloadBackup, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
   CheckSquare, Square, Lock, LogOut, ShieldCheck, Key, Search, Filter, History, 
-  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate
+  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate, XCircle
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
@@ -72,6 +72,8 @@ export default function AdminCatalogPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+  const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'todos' | 'pending' | 'confirmed' | 'canceled'>('todos');
   const [orderMsg, setOrderMsg] = useState<string | null>(null);
 
   // ── Respaldos / Limpieza mensual ──
@@ -205,6 +207,28 @@ export default function AdminCatalogPage() {
       setOrderMsg(`Error al confirmar: ${res.error}`);
     }
     setConfirmingOrderId(null);
+  };
+
+  const handleCancelOrder = async (order: any) => {
+    if (!window.confirm(
+      `¿Cancelar el pedido ${order.id}?\n\n` +
+      (order.status === 'confirmed'
+        ? 'Se restaurará el stock descontado al inventario de la página.\n'
+        : '') +
+      'El pedido pasará a "Cancelado / Carrito abandonado".'
+    )) return;
+    setCancelingOrderId(order.id);
+    setOrderMsg(null);
+    const res = await cancelOrderAndRestoreStock(order, products);
+    if (res.success) {
+      setOrderMsg(`Pedido ${order.id} cancelado${res.changed ? ': se restauró el stock al inventario.' : '. Carrito abandonado registrado.'}`);
+      await loadOrders();
+      await loadProducts();
+      publishOrderChange();
+    } else {
+      setOrderMsg(`Error al cancelar: ${res.error}`);
+    }
+    setCancelingOrderId(null);
   };
 
   // ── Respaldos: exportar JSON y vaciar tablas transaccionales ──
@@ -1355,6 +1379,8 @@ export default function AdminCatalogPage() {
                   <p className="text-xs text-neutral-500 mt-1 max-w-xl">
                     Cuando el cliente confirme el pago, haz clic en <strong>“Confirmar pago y descontar stock”</strong>:
                     se reducen las unidades de cada talla en Supabase y la página pública se actualiza al instante en todos los dispositivos.
+                    Si el cliente <strong>no toma el pedido</strong>, usa <strong>“Cancelar pedido”</strong>: quedará marcado como
+                    <strong> carrito abandonado</strong> y, si ya había confirmado, el stock se restaura automáticamente.
                   </p>
                 </div>
                 <button
@@ -1372,6 +1398,29 @@ export default function AdminCatalogPage() {
                 </div>
               )}
 
+              {/* Filtro de estados de pedido */}
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                {([
+                  ['todos', `Todos (${orders.length})`],
+                  ['pending', 'Pendientes'],
+                  ['confirmed', 'Confirmados'],
+                  ['canceled', 'Cancelados · Carritos abandonados'],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setOrderStatusFilter(key)}
+                    className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border transition-all ${
+                      orderStatusFilter === key
+                        ? 'bg-[#1b2333] text-white border-[#1b2333]'
+                        : 'bg-white text-neutral-600 border-gray-200 hover:border-[#d88193] hover:text-[#d88193]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               {loadingOrders ? (
                 <div className="py-16 text-center text-sm text-neutral-400 font-bold uppercase tracking-wider">
                   Cargando pedidos…
@@ -1384,19 +1433,28 @@ export default function AdminCatalogPage() {
                 </div>
               ) : (
                 <div className="mt-6 space-y-4">
-                  {orders.map((order) => {
+                  {orders
+                    .filter((order) => {
+                      if (orderStatusFilter === 'todos') return true;
+                      const key = order.status === 'confirmed' ? 'confirmed' : order.status === 'canceled' ? 'canceled' : 'pending';
+                      return key === orderStatusFilter;
+                    })
+                    .map((order) => {
                     const items = Array.isArray(order.items) ? order.items : [];
-                    const isPending = order.status !== 'confirmed';
+                    const statusKey = order.status === 'confirmed' ? 'confirmed' : order.status === 'canceled' ? 'canceled' : 'pending';
+                    const statusMeta = {
+                      pending: { card: 'border-amber-200 bg-amber-50/40', badge: 'bg-amber-100 text-amber-800', label: 'Pendiente de pago' },
+                      confirmed: { card: 'border-emerald-200 bg-emerald-50/40', badge: 'bg-emerald-100 text-emerald-800', label: 'Confirmado' },
+                      canceled: { card: 'border-red-200 bg-red-50/40', badge: 'bg-red-100 text-red-700', label: 'Cancelado · Carrito abandonado' },
+                    }[statusKey];
                     return (
-                      <div key={order.id} className={`border ${isPending ? 'border-amber-200 bg-amber-50/40' : 'border-emerald-200 bg-emerald-50/40'} p-4`}>
+                      <div key={order.id} className={`border ${statusMeta.card} p-4`}>
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-black text-[#1b2333]">Pedido {order.id}</span>
-                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 ${
-                                isPending ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                              }`}>
-                                {isPending ? 'Pendiente de pago' : 'Confirmado'}
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 ${statusMeta.badge}`}>
+                                {statusMeta.label}
                               </span>
                             </div>
                             <p className="text-xs text-neutral-500 mt-1">
@@ -1407,16 +1465,29 @@ export default function AdminCatalogPage() {
                             </p>
                           </div>
 
-                          {isPending && (
-                            <button
-                              type="button"
-                              onClick={() => handleConfirmOrder(order)}
-                              disabled={confirmingOrderId === order.id}
-                              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 transition-colors"
-                            >
-                              <CheckCircle size={14} />
-                              {confirmingOrderId === order.id ? 'Confirmando…' : 'Confirmar pago y descontar stock'}
-                            </button>
+                          {statusKey !== 'canceled' && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              {statusKey === 'pending' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleConfirmOrder(order)}
+                                  disabled={confirmingOrderId === order.id || cancelingOrderId === order.id}
+                                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 transition-colors"
+                                >
+                                  <CheckCircle size={14} />
+                                  {confirmingOrderId === order.id ? 'Confirmando…' : 'Confirmar pago y descontar stock'}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleCancelOrder(order)}
+                                disabled={cancelingOrderId === order.id || confirmingOrderId === order.id}
+                                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 transition-colors"
+                              >
+                                <XCircle size={14} />
+                                {cancelingOrderId === order.id ? 'Cancelando…' : 'Cancelar pedido'}
+                              </button>
+                            </div>
                           )}
                         </div>
 
