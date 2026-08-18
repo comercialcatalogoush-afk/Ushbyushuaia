@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, subscribeCatalogChanges, publishOrderChange } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange } from '@/lib/supabase';
 import { exportBackup, downloadBackup, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { 
@@ -473,6 +473,7 @@ export default function AdminCatalogPage() {
     const slug = editingProduct.slug || editingProduct.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'ref-' + Date.now();
     const reference = editingProduct.reference || editingProduct.name?.replace(/ref:?/i, '').trim() || 'REF';
 
+    const otherOptions = (editingProduct.options || []).filter(o => o.key.toLowerCase() !== 'talla');
     const fullProd: Product = {
       id: editingProduct.id || 'prod-' + Date.now(),
       name: editingProduct.name || 'NUEVA REFERENCIA',
@@ -494,7 +495,7 @@ export default function AdminCatalogPage() {
       tags: editingProduct.tags || [],
       in_stock: editingProduct.in_stock !== false,
       hidden: editingProduct.hidden === true || editingProduct.status === 'draft',
-      options: [{ id: 'talla-opt', key: 'Talla', values: selectedSizes }],
+      options: [...otherOptions, { id: 'talla-opt', key: 'Talla', values: selectedSizes }],
       images: editingProduct.images || []
     };
 
@@ -512,6 +513,8 @@ export default function AdminCatalogPage() {
     const upsertRes = await upsertProduct(fullProd);
     if (!upsertRes.success) {
       console.warn('Supabase upsert failed (falling back to local only):', upsertRes.error);
+    } else {
+      publishCatalogChange();
     }
 
     if (oldWholesale !== newWholesale || oldSuggested !== newSuggested) {
@@ -539,6 +542,8 @@ export default function AdminCatalogPage() {
       deleteProductFromSupabase(id).then(res => {
         if (!res.success) {
           console.warn('Supabase delete failed:', res.error);
+        } else {
+          publishCatalogChange();
         }
       });
     }
@@ -557,6 +562,7 @@ export default function AdminCatalogPage() {
       if (res.success) ok++; else fail++;
     }
     setSyncing(false);
+    if (ok > 0) publishCatalogChange();
     setSyncResult(`Sincronización completada: ${ok} referencias en la nube${fail ? `, ${fail} con error` : ''}.`);
     setTimeout(() => setSyncResult(null), 5000);
   };

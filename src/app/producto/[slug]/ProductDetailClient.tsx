@@ -94,7 +94,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const handleAddToCart = (e: React.MouseEvent) => {
     const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
     if (mainImgEl) animateFlyToCart(mainImgEl as HTMLElement);
-    addToCart(product, selectedSize, selectedColor || undefined, quantity);
+    addToCart(currentProduct, selectedSize, selectedColor || undefined, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

@@ -90,13 +90,23 @@ export default function CheckoutPage() {
 
     const orderId = generateOrderId();
 
+    // Normaliza el teléfono evitando duplicar el prefijo de país:
+    // "3001234567" → "+57 3001234567" · "573001234567" → "+57 3001234567"
+    // "+573001234567" o "+57 300..." se conservan tal cual.
+    const rawPhone = (formData.phone || '').trim();
+    const countryDigits = (phoneCountry || '').replace(/\D/g, '');
+    const phoneDigits = rawPhone.replace(/\D/g, '');
+    const hasLocalCode = countryDigits && phoneDigits.startsWith(countryDigits) && phoneDigits.length > countryDigits.length;
+    const localNumber = hasLocalCode ? phoneDigits.slice(countryDigits.length) : phoneDigits;
+    const customerPhone = rawPhone.startsWith('+') ? rawPhone : (localNumber ? `${phoneCountry} ${localNumber}` : rawPhone);
+
     const orderPayload = {
       id: orderId,
       order_date: formData.date,
       customer_name: formData.name + (formData.company ? ` / ${formData.company}` : ''),
       customer_doc: `${formData.doc_type} ${formData.doc_number}`,
       customer_email: formData.email,
-      customer_phone: formData.phone.includes('+') ? formData.phone : `${phoneCountry} ${formData.phone}`,
+      customer_phone: customerPhone,
       shipping_address: formData.address,
       city: formData.city,
       department: formData.department,
@@ -116,14 +126,26 @@ export default function CheckoutPage() {
       status: 'pending'
     };
 
+    let orderSaved = false;
     try {
       const res = await submitOrder(orderPayload);
-      if (res.success) publishOrderChange();
+      if (res.success) {
+        orderSaved = true;
+        publishOrderChange();
+      } else {
+        console.warn('No se pudo registrar el pedido en la base de datos:', res.error);
+      }
     } catch (e) {
       console.warn('Supabase database error (bypassing to WhatsApp):', e);
     }
 
     setLoading(false);
+
+    if (!orderSaved) {
+      setErrorMessage('No se pudo registrar tu pedido en la base de datos. Tu carrito se mantiene intacto. Vuelve a intentarlo o contáctanos por WhatsApp para tramitarlo.');
+      return;
+    }
+
     setCompletedOrder({ ...orderPayload, id: orderId });
     clearCart();
   };
@@ -133,6 +155,10 @@ export default function CheckoutPage() {
       const colorPart = it.color ? ` | Color: ${it.color}` : '';
       return `• REF ${it.reference} | Talla: ${it.size || 'Única'}${colorPart} | ${it.quantity} und × ${formatCOP(it.unit_price)} = ${formatCOP(it.unit_price * it.quantity)}`;
     }).join('\n');
+
+    const completedUnits = (completedOrder.items || []).reduce((s: number, it: any) => s + (it.quantity || 0), 0);
+    const isWholesale = completedUnits >= 12;
+    const isEscala8 = completedUnits >= 8 && completedUnits <= 11;
 
     const whatsappMsg = encodeURIComponent(
       `🛍️ *PEDIDO USH BY USHUAIA*\n` +
@@ -150,8 +176,8 @@ export default function CheckoutPage() {
       `📦 *DETALLE DEL PEDIDO:*\n${itemLines}\n` +
       `───────────────────────\n` +
       `💰 *TOTAL:* ${formatCOP(completedOrder.total)}\n` +
-      `🚚 *Envío:* ${completedOrder.is_wholesale ? '✅ GRATIS (12+ unidades)' : '⚠️ Asume el cliente (<12 unidades)'}\n` +
-      `💳 *Tarifa:* ${completedOrder.is_wholesale ? 'Mayorista (precio mayorista)' : 'Detal (sin descuento mayorista)'}\n` +
+      `🚚 *Envío:* ${isWholesale ? '✅ GRATIS (12+ unidades)' : '⚠️ Asume el cliente'}\n` +
+      `💳 *Tarifa:* ${isWholesale ? 'Mayorista (precio mayorista)' : isEscala8 ? 'Mayorista 8–11 uds (20% de descuento)' : 'Detal (sin descuento mayorista)'}\n` +
       (completedOrder.payment_method === 'addi' ? `\n⚠️ *Nota Addi:* El costo de transacción por Addi es asumido por el cliente.\n` : '') +
       `───────────────────────\n` +
       `¿Pueden confirmar el pedido y acordar el pago y despacho? Gracias 🙏`
@@ -182,7 +208,7 @@ export default function CheckoutPage() {
             <p><span className="font-bold">Método de pago:</span> {paymentLabels[completedOrder.payment_method] || completedOrder.payment_method}</p>
             <p><span className="font-bold">Total a pagar:</span> {formatCOP(completedOrder.total)}</p>
             <p className="pt-1 text-ush-pink font-bold border-t border-gray-200">
-              {completedOrder.is_wholesale ? '🎉 Tarifa Mayorista (precio mayorista 12+ uds) + ENVÍO GRATIS' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}
+              {isWholesale ? '🎉 Tarifa Mayorista (precio mayorista 12+ uds) + ENVÍO GRATIS' : isEscala8 ? '✓ Tarifa Mayorista 8–11 uds: 20% de descuento aplicado (el cliente asume el envío).' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}
             </p>
             {completedOrder.payment_method === 'addi' && (
               <p className="text-amber-700 text-[11px] font-semibold flex items-center gap-1 pt-1">

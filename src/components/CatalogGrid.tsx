@@ -96,8 +96,10 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     if (activeFit !== 'Todos') {
       const fit = (p.fit || '').toLowerCase();
       const fitActive = activeFit.toLowerCase();
-      // Match por fit exacto O por nombre/tags (ej: "Jean wide leg" aunque la categoría sea Pantalones)
-      const matchFit = fit === fitActive || name.includes(fitActive) || tags.includes(fitActive);
+      // Coincidencia exacta de fit, o bien la palabra completa del fit en
+      // nombre/tags (evita que "Straight" arrastre "Straight Boot").
+      const word = new RegExp(`(^|[^a-z0-9])${fitActive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i');
+      const matchFit = fit === fitActive || word.test(name) || word.test(tags);
       if (!matchFit) return false;
     }
     return true;

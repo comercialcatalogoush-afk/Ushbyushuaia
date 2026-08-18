@@ -95,8 +95,8 @@ export const Footer: React.FC = () => {
             <ul className="space-y-3 text-xs text-white/90 font-light mb-5">
               <li className="flex items-center gap-2.5">
                 <Mail size={15} className="text-white/70 flex-shrink-0" />
-                <a href="mailto:comercialmayoristas@ushuauajeans.com.co" className="hover:underline break-all">
-                  comercialmayoristas@ushuauajeans.com.co
+                <a href="mailto:comercialmayoristas@ushuaiajeans.com.co" className="hover:underline break-all">
+                  comercialmayoristas@ushuaiajeans.com.co
                 </a>
               </li>
               <li className="flex items-center gap-2.5">

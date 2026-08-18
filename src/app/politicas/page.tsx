@@ -300,7 +300,7 @@ export default async function PoliticasPage() {
             <div className="space-y-3 pt-2">
               <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-neutral-900">Derechos del Titular de la Información:</h3>
               <p>
-                Como titular de sus datos personales, usted tiene derecho a conocer, actualizar, rectificar o solicitar la supresión de sus datos de nuestras bases de datos en cualquier momento. Para ejercer estos derechos, puede escribir directamente a nuestro correo oficial <strong>comercialmayoristas@ushuauajeans.com.co</strong> indicando el asunto "Habeas Data".
+                Como titular de sus datos personales, usted tiene derecho a conocer, actualizar, rectificar o solicitar la supresión de sus datos de nuestras bases de datos en cualquier momento. Para ejercer estos derechos, puede escribir directamente a nuestro correo oficial <strong>comercialmayoristas@ushuaiajeans.com.co</strong> indicando el asunto "Habeas Data".
               </p>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default async function PoliticasPage() {
 
           <div className="space-y-1.5">
             <p className="text-sm font-bold uppercase tracking-wider text-[#c06579]">Correo Electrónico</p>
-            <p className="text-sm font-bold text-neutral-900 break-all">comercialmayoristas@ushuauajeans.com.co</p>
+            <p className="text-sm font-bold text-neutral-900 break-all">comercialmayoristas@ushuaiajeans.com.co</p>
           </div>
 
           <div className="space-y-1.5">

@@ -59,7 +59,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 text-neutral-800 hover:text-ush-pink focus:outline-none"
-              aria-label="MenÃº principal"
+              aria-label="Menú principal"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -235,7 +235,7 @@ export const Header: React.FC = () => {
               <Link
                 href="/admin"
                 className="p-2 text-ush-pink hover:text-ush-pinkHover transition-colors hidden sm:block font-bold"
-                title="Editar CatÃ¡logo (Admin)"
+                title="Editar Catálogo (Admin)"
               >
                 <Settings size={20} />
               </Link>
@@ -315,7 +315,7 @@ export const Header: React.FC = () => {
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            MUJER â€” JEANS / SHORTS / FALDAS
+            MUJER — JEANS / SHORTS / FALDAS
           </Link>
           <button
             onClick={() => { setIsMobileMenuOpen(false); setComingSoonSection('TEENS'); }}
@@ -356,7 +356,7 @@ export const Header: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center gap-2 text-ush-navy font-bold uppercase"
             >
-              <User size={18} /> Iniciar SesiÃ³n / Mi Cuenta
+              <User size={18} /> Iniciar Sesión / Mi Cuenta
             </Link>
           </div>
         </div>
