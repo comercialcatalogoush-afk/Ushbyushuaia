@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Search, Package, MapPin, Truck, CheckCircle2, ArrowLeft, Loader2, AlertTriangle, Clock, FileText, RefreshCw, Navigation, Box } from 'lucide-react';
+import { usePageContent } from '@/lib/siteContentHooks';
 
 // Formato real del API de Coordinadora (guía existente)
 interface CoordEvent {
@@ -108,6 +109,7 @@ const CARRIERS = [
 ];
 
 export default function RastreoPage() {
+  const c = usePageContent('rastreo');
   const [guia, setGuia] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NormalizedTracking | null>(null);
@@ -208,17 +210,17 @@ export default function RastreoPage() {
             <Box size={28} className="text-ush-pink" />
           </div>
           <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-            Rastrear <span className="text-[#d88193]">mi Pedido</span>
+            {c.trTitle} <span className="text-ush-pink">{c.trTitleEm}</span>
           </h1>
-          <p className="text-sm text-[#c06579] font-medium mt-2 max-w-lg mx-auto">
-            Ingresa tu número de guía y sigue el recorrido de tu pedido en tiempo real con actualización automática.
+          <p className="text-sm text-ush-pinkDark font-medium mt-2 max-w-lg mx-auto">
+            {c.trIntro}
           </p>
         </div>
 
         {/* Search Box de marca */}
         <form onSubmit={handleSubmit} className="bg-white p-6 border-t-4 border-[#d88193] shadow-lg">
           <label className="block text-xs font-black uppercase tracking-wider text-ush-navy mb-2">
-            Número de Guía *
+            {c.trLabel} *
           </label>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
@@ -228,7 +230,7 @@ export default function RastreoPage() {
                 required
                 value={guia}
                 onChange={(e) => setGuia(e.target.value)}
-                placeholder={CARRIERS[0].placeholder}
+                placeholder={c.trPlaceholder || CARRIERS[0].placeholder}
                 className="w-full border border-gray-300 pl-9 pr-3 py-3 text-sm text-neutral-900 focus:outline-none focus:border-[#d88193] focus:ring-1 focus:ring-[#d88193]/20"
               />
             </div>
@@ -238,11 +240,11 @@ export default function RastreoPage() {
               className="bg-ush-navy text-white font-bold py-3 px-6 text-xs uppercase tracking-widest hover:bg-[#d88193] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
             >
               {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
-              {loading ? 'Consultando...' : 'Rastrear'}
+              {loading ? 'Consultando...' : c.trButton}
             </button>
           </div>
           <p className="text-[10px] text-neutral-400 mt-2 flex items-center gap-1">
-            <RefreshCw size={10} /> El estado se actualiza automáticamente cada 30 segundos.
+            <RefreshCw size={10} /> {c.trAutoNote}
           </p>
         </form>
 
@@ -393,18 +395,18 @@ export default function RastreoPage() {
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
           <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
             <Package size={20} className="mx-auto text-[#d88193] mb-2" />
-            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">¿Dónde está mi guía?</p>
-            <p className="text-[11px] text-neutral-500 mt-1">Tu asesor te la envía por WhatsApp al confirmar el despacho.</p>
+            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">{c.trHelp1Title}</p>
+            <p className="text-[11px] text-neutral-500 mt-1">{c.trHelp1Text}</p>
           </div>
           <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
             <Clock size={20} className="mx-auto text-[#d88193] mb-2" />
-            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">Tiempos de entrega</p>
-            <p className="text-[11px] text-neutral-500 mt-1">Entrega estimada de 5 a 8 días hábiles en ciudades principales e intermedias, y de 8 a 15 días hábiles en municipios. Puede llegar antes, pero el cumplimiento se estima según nuestras políticas.</p>
+            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">{c.trHelp2Title}</p>
+            <p className="text-[11px] text-neutral-500 mt-1">{c.trHelp2Text}</p>
           </div>
           <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
             <AlertTriangle size={20} className="mx-auto text-[#d88193] mb-2" />
-            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">¿Problemas?</p>
-            <p className="text-[11px] text-neutral-500 mt-1">Escríbenos por WhatsApp y te ayudamos de inmediato.</p>
+            <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">{c.trHelp3Title}</p>
+            <p className="text-[11px] text-neutral-500 mt-1">{c.trHelp3Text}</p>
           </div>
         </div>
       </div>

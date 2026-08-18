@@ -2,7 +2,11 @@ import React from 'react';
 import Link from 'next/link';
 import { RefreshCw, ShieldCheck, RotateCcw, CreditCard, Phone, Mail, MapPin, Truck, ArrowLeft, ChevronRight, Lock, FileText } from 'lucide-react';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
+import { getPageContentServer } from '@/lib/siteContent';
 import { PoliticasNav } from '@/components/PoliticasNav';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata = {
   title: 'Políticas de Cambios, Garantías, Envíos y Habeas Data | USH BY USHUAIA',
@@ -134,6 +138,7 @@ const sections = [
 export default async function PoliticasPage() {
   const whatsapp = await getWhatsAppNumber();
   const whatsappDisplay = whatsapp.replace(/^(\d{2})(\d{3})(\d{3})(\d{2})(\d{2})$/, '+$1 $2 $3 $4 $5');
+  const c = await getPageContentServer('politicas');
 
   return (
     <div className="bg-neutral-50 min-h-screen scroll-smooth">
@@ -145,13 +150,13 @@ export default async function PoliticasPage() {
             <ArrowLeft size={14} /> Volver al Inicio
           </Link>
           <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193] mb-1.5">
-            Términos y Políticas Oficiales
+            {c.plEyebrow}
           </span>
           <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900">
-            Políticas de Cambios, Garantías, Envíos y Habeas Data
+            {c.plTitle}
           </h1>
           <p className="mt-2.5 text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto font-light leading-relaxed">
-            En <strong>USH BY USHUAIA</strong> garantizamos tus derechos como consumidor conforme a la Ley 1480 de 2011, Decreto 587 de 2016 y Ley 1581 de 2012 de la República de Colombia.
+            {c.plIntro}
           </p>
         </div>
       </section>
@@ -223,11 +228,11 @@ export default async function PoliticasPage() {
                 <Truck size={20} />
               </div>
               <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[#c06579]">
-                5. POLÍTICA DE ENVÍO
+                {c.plShipTitle}
               </h2>
             </div>
             <span className="border border-rose-200 bg-rose-50 text-[#c06579] px-3 py-1 text-[11px] font-bold uppercase tracking-wider">
-              Envíos Nacionales
+              {c.plShipBadge}
             </span>
           </div>
 
@@ -236,24 +241,24 @@ export default async function PoliticasPage() {
               En <strong>USH BY USHUAIA</strong>, nuestro compromiso es cumplir con los tiempos de entrega, por lo tanto, si el día que llegue tu pedido no estás presente para recibirlo, la transportadora estará autorizada para dejarlo en el lugar indicado informado por el medio de atención donde se tomó el pedido.
             </p>
             <p>
-              En Ush By Ushuaia queremos entregar tu pedido en el menor tiempo posible, por eso nuestra promesa de entrega es de:
+              {c.plShipText}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="bg-neutral-50 border border-neutral-200 p-4 text-center space-y-1">
-                <p className="text-2xl font-black text-[#d88193]">5 a 8</p>
-                <p className="text-sm font-bold uppercase text-neutral-800">Días Hábiles</p>
-                <p className="text-sm text-neutral-600">Ciudades principales e intermedias</p>
+                <p className="text-2xl font-black text-[#d88193]">{c.plShipDaysMain}</p>
+                <p className="text-sm font-bold uppercase text-neutral-800">{c.plShipMainLabel}</p>
+                <p className="text-sm text-neutral-600">{c.plShipMainScope}</p>
               </div>
               <div className="bg-neutral-50 border border-neutral-200 p-4 text-center space-y-1">
-                <p className="text-2xl font-black text-[#d88193]">8 a 15</p>
-                <p className="text-sm font-bold uppercase text-neutral-800">Días Hábiles</p>
-                <p className="text-sm text-neutral-600">Municipios y demás poblaciones</p>
+                <p className="text-2xl font-black text-[#d88193]">{c.plShipDaysOther}</p>
+                <p className="text-sm font-bold uppercase text-neutral-800">{c.plShipOtherLabel}</p>
+                <p className="text-sm text-neutral-600">{c.plShipOtherScope}</p>
               </div>
             </div>
 
             <p className="text-sm text-neutral-500 italic pt-2">
-              * Contados a partir del momento en que el consumidor reciba la confirmación de su pedido.
+              {c.plShipNote}
             </p>
           </div>
         </div>
@@ -266,17 +271,17 @@ export default async function PoliticasPage() {
                 <Lock size={20} />
               </div>
               <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-indigo-900">
-                6. PRIVACIDAD Y TRATAMIENTO DE DATOS (HABEAS DATA)
+                {c.plDataTitle}
               </h2>
             </div>
             <span className="border border-indigo-200 bg-indigo-50 text-indigo-800 px-3 py-1 text-[11px] font-bold uppercase tracking-wider">
-              Ley 1581 de 2012
+              {c.plDataBadge}
             </span>
           </div>
 
           <div className="space-y-5 text-sm sm:text-base text-neutral-700 font-light leading-relaxed">
             <p>
-              De conformidad con la Ley 1581 de 2012 y el Decreto 1377 de 2013 de la República de Colombia, <strong>USH BY USHUAIA / USHUAIA JEANS</strong> informa que los datos personales suministrados por nuestros clientes en los formularios web, registros de compras y canal de atención comercial son recolectados, almacenados y tratados bajo estrictos parámetros de seguridad y confidencialidad.
+              {c.plDataText}
             </p>
 
             <div className="space-y-3 pt-2">
@@ -310,26 +315,26 @@ export default async function PoliticasPage() {
         <div className="bg-white border border-gray-200 p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 shadow-sm">
           <div className="sm:col-span-3 border-b border-gray-100 pb-3">
             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193]">Contacto Directo</span>
-            <h3 className="text-lg font-black uppercase tracking-tight text-neutral-900 mt-0.5">Canales de Atención</h3>
+            <h3 className="text-lg font-black uppercase tracking-tight text-neutral-900 mt-0.5">{c.plChannelsTitle}</h3>
           </div>
 
           <div className="space-y-1.5">
             <p className="text-sm font-bold uppercase tracking-wider text-[#c06579]">WhatsApp</p>
             <p className="text-lg font-black text-neutral-900">{whatsappDisplay}</p>
             <p className="text-sm text-neutral-600 font-light pt-1">
-              Lunes a jueves: 7:00 a. m. a 4:00 p. m.<br />
-              Viernes: 7:00 a. m. a 3:30 p. m.
+              {c.plChannelsWaSchedule1}<br />
+              {c.plChannelsWaSchedule2}
             </p>
           </div>
 
           <div className="space-y-1.5">
             <p className="text-sm font-bold uppercase tracking-wider text-[#c06579]">Correo Electrónico</p>
-            <p className="text-sm font-bold text-neutral-900 break-all">comercialmayoristas@ushuaiajeans.com.co</p>
+            <p className="text-sm font-bold text-neutral-900 break-all">{c.plChannelsEmail}</p>
           </div>
 
           <div className="space-y-1.5">
             <p className="text-sm font-bold uppercase tracking-wider text-[#c06579]">Punto de Despacho</p>
-            <p className="text-sm font-bold text-neutral-900">Cll. 85 Sur #50-72, Itagüí, Antioquia — Colombia</p>
+            <p className="text-sm font-bold text-neutral-900">{c.plChannelsAddress}</p>
           </div>
         </div>
 

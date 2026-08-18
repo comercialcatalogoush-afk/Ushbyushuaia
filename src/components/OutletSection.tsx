@@ -3,24 +3,34 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Store, ArrowUpRight, Video } from 'lucide-react';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
-
-const OUTLET = {
-  name: 'Outlet USH BY USHUAIA',
-  tag: 'Principal · Atención Mayorista',
-  address: 'Cll. 85 Sur #50-72, Itagüí, Antioquia',
-  schedule: 'Lunes a Viernes: 8:00 AM – 5:30 PM',
-  mapUrl: 'https://maps.google.com/?q=Cll+85+Sur+%2350-72,+Itagui',
-  phone: '+57 301 139 3902',
-  videoUrl: '',
-  poster: '',
-};
+import { usePageContent } from '@/lib/siteContentHooks';
 
 export const OutletSection: React.FC = () => {
   const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+  const c = usePageContent('outlet');
 
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsapp);
   }, []);
+
+  const OUTLET = {
+    name: c.outletName || 'Outlet USH BY USHUAIA',
+    tag: c.outletTag || 'Principal · Atención Mayorista',
+    address: c.outletAddress || 'Cll. 85 Sur #50-72, Itagüí, Antioquia',
+    schedule: c.outletSchedule || 'Lunes a Viernes: 8:00 AM – 5:30 PM',
+    mapUrl: c.outletMapUrl || 'https://maps.google.com/?q=Cll+85+Sur+%2350-72,+Itagui',
+    phone: c.outletPhone || '+57 301 139 3902',
+    videoUrl: c.outletVideoUrl || '',
+    poster: c.outletPoster || '',
+    eyebrow: c.outletEyebrow || 'Visítanos',
+    title: c.outletTitle || 'Nuestro Outlet',
+    em: c.outletEm || 'Outlet',
+    buttonMap: c.outletButtonMap || 'Ver en Mapa',
+    buttonVisit: c.outletButtonVisit || 'Agendar Visita',
+    open: c.outletOpen || '8:00 AM',
+    close: c.outletClose || '5:30 PM',
+    scheduleNote: c.outletScheduleNote || 'Sábados, domingos y festivos no hay atención presencial.',
+  };
 
   const OUTLET_FINAL = { ...OUTLET, whatsapp: `https://wa.me/${whatsapp}` };
   return (
@@ -33,10 +43,10 @@ export const OutletSection: React.FC = () => {
         {/* Section Header — estilo Talitha */}
         <div className="text-center mb-10">
           <span className="text-[11px] font-sans-ui font-semibold uppercase tracking-[0.35em] text-[#c49a6c]">
-            Visítanos
+            {OUTLET.eyebrow}
           </span>
           <h2 className="font-serif-display text-4xl sm:text-5xl font-normal text-[#1b2333] tracking-tight mt-2">
-            Nuestro <em className="text-[#c49a6c]">Outlet</em>
+            {OUTLET.title} <em className="text-[#c49a6c]">{OUTLET.em}</em>
           </h2>
           <div className="flex items-center justify-center gap-3 mt-4">
             <span className="h-px w-16 bg-[#c49a6c]/40" />
@@ -102,7 +112,7 @@ export const OutletSection: React.FC = () => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-[#1b2333] text-white font-sans-ui text-[11px] font-bold uppercase tracking-widest px-5 py-3 hover:bg-[#c49a6c] transition-colors"
                 >
-                  Ver en Mapa <ArrowUpRight size={14} />
+                  {OUTLET.buttonMap} <ArrowUpRight size={14} />
                 </a>
                 <a
                   href={OUTLET_FINAL.whatsapp}
@@ -110,7 +120,7 @@ export const OutletSection: React.FC = () => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-transparent border border-[#1b2333] text-[#1b2333] font-sans-ui text-[11px] font-bold uppercase tracking-widest px-5 py-3 hover:border-[#c49a6c] hover:text-[#c49a6c] transition-colors"
                 >
-                  Agendar Visita
+                  {OUTLET.buttonVisit}
                 </a>
               </div>
             </div>
@@ -129,15 +139,15 @@ export const OutletSection: React.FC = () => {
               <div className="mt-6 bg-[#FDF8F4] border border-[#e8d9c8] p-6">
                 <div className="flex items-center justify-between font-sans-ui">
                   <span className="text-sm font-semibold text-neutral-800 uppercase tracking-wider">Apertura</span>
-                  <span className="font-serif-display text-3xl text-[#1b2333]">8:00 AM</span>
+                  <span className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.open}</span>
                 </div>
                 <div className="my-4 border-t border-dashed border-[#c49a6c]/40" />
                 <div className="flex items-center justify-between font-sans-ui">
                   <span className="text-sm font-semibold text-neutral-800 uppercase tracking-wider">Cierre</span>
-                  <span className="font-serif-display text-3xl text-[#1b2333]">5:30 PM</span>
+                  <span className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.close}</span>
                 </div>
                 <p className="font-sans-ui text-[11px] text-neutral-500 mt-4">
-                  Sábados, domingos y festivos no hay atención presencial.
+                  {OUTLET.scheduleNote}
                 </p>
               </div>
 

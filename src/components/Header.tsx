@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ShoppingBag, Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles, CalendarClock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { supabase } from '@/lib/supabase';
+import { useSiteTheme } from '@/lib/siteContentHooks';
 import { Logo } from './Logo';
 
 export const Header: React.FC = () => {
@@ -19,10 +21,19 @@ export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { totalItemsCount, setIsCartOpen } = useCart();
+  const theme = useSiteTheme();
 
   useEffect(() => {
-    const authStatus = sessionStorage.getItem('ush_admin_auth');
-    setIsAdminLoggedIn(authStatus === 'true');
+    const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
+    const sync = (session: any) => {
+      const user = session?.user;
+      setIsAdminLoggedIn(!!user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+    };
+    supabase.auth.getSession().then(({ data }) => sync(data.session));
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => sync(session));
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, [pathname]);
 
   const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY', 'MOM'];
@@ -43,10 +54,10 @@ export const Header: React.FC = () => {
       <div className="bg-[#d88193] text-white text-[11px] py-1.5 overflow-hidden">
         <div className="flex whitespace-nowrap animate-marquee">
           <span className="px-8 tracking-widest font-bold uppercase">
-            45 DÍAS DE GARANTÍA POR DEFECTOS DE FÁBRICA · 15 DÍAS PARA CAMBIOS · ENVÍO GRATIS DESDE 12 UNIDADES · CONFECCIÓN NACIONAL — ITAGÜÍ, ANTIOQUIA ✦
+            {theme.topNoticeText}
           </span>
           <span className="px-8 tracking-widest font-bold uppercase" aria-hidden="true">
-            45 DÍAS DE GARANTÍA POR DEFECTOS DE FÁBRICA · 15 DÍAS PARA CAMBIOS · ENVÍO GRATIS DESDE 12 UNIDADES · CONFECCIÓN NACIONAL — ITAGÜÍ, ANTIOQUIA ✦
+            {theme.topNoticeText}
           </span>
         </div>
       </div>

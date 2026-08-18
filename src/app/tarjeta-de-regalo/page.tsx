@@ -1,13 +1,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { Gift, ArrowRight } from 'lucide-react';
+import { getPageContentServer } from '@/lib/siteContent';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata = {
   title: 'Tarjeta de Regalo | Ush By Ushuaia',
   description: 'Adquiere tarjetas de regalo para redimir en productos mayoristas y al detal.',
 };
 
-export default function TarjetaRegaloPage() {
+export default async function TarjetaRegaloPage() {
+  const c = await getPageContentServer('tarjeta-de-regalo');
+
   return (
     <div className="py-20 bg-neutral-50 min-h-screen flex items-center justify-center">
       <div className="max-w-md mx-auto bg-white p-8 border border-gray-200 shadow-lg text-center space-y-6">
@@ -17,25 +23,25 @@ export default function TarjetaRegaloPage() {
 
         <div>
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400">
-            Regala Moda & Calidad
+            {c.gifEyebrow}
           </span>
           <h1 className="text-2xl font-black uppercase text-neutral-900 mt-1">
-            Tarjetas de Regalo USH BY USHUAIA
+            {c.gifTitle}
           </h1>
           <p className="text-xs text-neutral-600 mt-2 leading-relaxed">
-            Sorprende a tus clientes o aliados comerciales con bonos digitales redimibles en cualquier referencia de nuestro catálogo de mezclilla.
+            {c.gifIntro}
           </p>
         </div>
 
         <div className="p-4 bg-neutral-900 text-white text-xs font-bold uppercase tracking-wider">
-          Bonos Disponibles desde $100.000 COP
+          {c.gifBanner}
         </div>
 
         <Link
-          href="/contacto"
+          href={c.gifButtonLink}
           className="block w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3.5 px-4 text-xs uppercase tracking-widest transition-colors shadow-md"
         >
-          Adquirir Tarjeta por WhatsApp
+          {c.gifButtonText}
         </Link>
       </div>
     </div>

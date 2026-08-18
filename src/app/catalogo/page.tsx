@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
+import { getPageContentServer } from '@/lib/siteContent';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { ArrowLeft } from 'lucide-react';
 
@@ -15,10 +16,11 @@ export const metadata: Metadata = {
 export default async function CatalogoPage() {
   const allProducts = await fetchProductsFromSupabase();
   const publicProducts = allProducts.filter(p => !p.hidden && isCompleteProduct(p));
+  const c = await getPageContentServer('catalogo');
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="bg-[#fdf3f5] border-b border-rose-100">
+      <div className="bg-ush-pinkLight border-b border-rose-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <Link
             href="/"
@@ -27,12 +29,11 @@ export default async function CatalogoPage() {
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
             Volver al Inicio
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[#1b2333]">
-            Catálogo <span className="text-[#d88193]">Completo</span>
+          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-ush-navy">
+            {c.catTitle} <span className="text-ush-pink">{c.catTitleEm}</span>
           </h1>
           <p className="text-sm text-neutral-600 font-light mt-2 max-w-2xl">
-            Explora todas las referencias mayoristas de USH BY USHUAIA. Filtra por categoría y fit para encontrar
-            las prendas ideales para tu boutique.
+            {c.catIntro}
           </p>
         </div>
       </div>

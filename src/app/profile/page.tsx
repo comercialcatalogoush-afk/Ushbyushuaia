@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, ShieldAlert, KeyRound } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
-const ADMIN_PASSWORD = 'Colombia2025*';
 const MAX_ADMIN_ATTEMPTS = 3;
 const BLOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -48,7 +48,13 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (sessionStorage.getItem('ush_admin_auth') === 'true') setIsAdminSession(true);
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const sessionUser = data.session?.user;
+      if (sessionUser && sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        setIsAdminSession(true);
+      }
+    })();
 
     // Restore lockout state
     const blocked = localStorage.getItem('ush_admin_blocked');
@@ -73,15 +79,6 @@ export default function ProfilePage() {
     setLoading(true);
 
     const emailVal = email.trim().toLowerCase();
-
-    // Check if it's admin credentials entered in normal login
-    if (emailVal === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
-      sessionStorage.setItem('ush_admin_auth', 'true');
-      setSuccess('✅ Acceso de administrador autorizado. Redirigiendo...');
-      setLoading(false);
-      setTimeout(() => { window.location.href = '/admin'; }, 1000);
-      return;
-    }
 
     // Regular user login
     if (!email || !password) {
@@ -129,7 +126,7 @@ export default function ProfilePage() {
     }, 800);
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess('');
 
@@ -139,16 +136,27 @@ export default function ProfilePage() {
     }
 
     const emailOk = adminEmail.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
-    const passOk = adminPass === ADMIN_PASSWORD;
 
-    if (emailOk && passOk) {
+    if (emailOk) {
       // Success
       localStorage.removeItem('ush_admin_attempts');
       localStorage.removeItem('ush_admin_blocked');
       localStorage.removeItem('ush_admin_block_until');
-      sessionStorage.setItem('ush_admin_auth', 'true');
       setSuccess('✅ Acceso de administrador concedido. Redirigiendo al panel...');
-      setTimeout(() => { window.location.href = '/admin'; }, 1000);
+      setLoading(true);
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: adminEmail.trim(),
+        password: adminPass,
+      });
+
+      if (!error) {
+        setTimeout(() => { window.location.href = '/admin'; }, 1000);
+      } else {
+        setLoading(false);
+        setSuccess('');
+        setError('❌ Credenciales incorrectas. Verifica la contraseña de tu cuenta admin.');
+      }
     } else {
       const newAttempts = adminAttempts + 1;
       setAdminAttempts(newAttempts);
@@ -185,7 +193,7 @@ export default function ProfilePage() {
             <a href="/admin" className="block w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest text-center transition-colors">
               Ir al Panel de Edición →
             </a>
-            <button onClick={() => { sessionStorage.removeItem('ush_admin_auth'); setIsAdminSession(false); }}
+            <button onClick={async () => { await supabase.auth.signOut(); setIsAdminSession(false); }}
               className="block w-full border border-gray-300 text-neutral-600 font-bold py-3 text-xs uppercase tracking-wider hover:bg-gray-50 transition-colors">
               Cerrar Sesión de Admin
             </button>

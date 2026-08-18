@@ -6,14 +6,16 @@ import Link from 'next/link';
 import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange } from '@/lib/supabase';
 import { exportBackup, downloadBackup, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
+import { SiteContentEditor } from '@/components/SiteContentEditor';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
   CheckSquare, Square, Lock, LogOut, ShieldCheck, Key, Search, Filter, History, 
-  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag
+  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
 
+const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 const DEFAULT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
 const DEFAULT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargo', 'Bermuda', 'Nuevo'];
 const ALL_SIZES = ['6', '8', '10', '12', '14'];
@@ -25,13 +27,13 @@ const DEFAULT_COLORS = [
 
 export default function AdminCatalogPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginEmail, setLoginEmail] = useState(ADMIN_EMAIL);
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'backup' | 'orders'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'backup' | 'orders' | 'site'>('products');
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,9 +86,9 @@ export default function AdminCatalogPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/admin/check');
-        const data = await res.json();
-        if (data.authenticated) {
+        const { data } = await supabase.auth.getSession();
+        const sessionUser = data.session?.user;
+        if (sessionUser && sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
           setIsAuthenticated(true);
           loadProducts();
           loadHistory();
@@ -101,6 +103,19 @@ export default function AdminCatalogPage() {
     };
     checkAuth();
 
+    // React to session changes (login/logout) in real time
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sessionUser = session?.user;
+      const authed = !!sessionUser && !!sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+      setIsAuthenticated(!!authed);
+      if (authed) {
+        loadProducts();
+        loadHistory();
+      } else {
+        setLoading(false);
+      }
+    });
+
     try {
       const savedFits = localStorage.getItem('ush_admin_fits');
       if (savedFits) setAvailableFits(JSON.parse(savedFits));
@@ -108,6 +123,10 @@ export default function AdminCatalogPage() {
       const savedCats = localStorage.getItem('ush_admin_categories');
       if (savedCats) setAvailableCategories(JSON.parse(savedCats));
     } catch (e) {}
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -115,19 +134,17 @@ export default function AdminCatalogPage() {
     setLoginError('');
 
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
       });
-      const data = await res.json();
 
-      if (res.ok && data.success) {
+      if (!error) {
         setIsAuthenticated(true);
         loadProducts();
         loadHistory();
       } else {
-        setLoginError(data.error || 'Credenciales incorrectas. Verifique el correo o la contraseña.');
+        setLoginError('Credenciales incorrectas. Verifique el correo o la contraseña.');
       }
     } catch (err) {
       setLoginError('Error de conexión con el servidor de autenticación.');
@@ -136,7 +153,7 @@ export default function AdminCatalogPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/logout', { method: 'POST' });
+      await supabase.auth.signOut();
     } catch (e) {}
     setIsAuthenticated(false);
   };
@@ -778,6 +795,15 @@ export default function AdminCatalogPage() {
             }`}
           >
             <ShoppingBag size={14} className="text-[#d88193]" /> Pedidos
+          </button>
+
+          <button
+            onClick={() => setActiveTab('site')}
+            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'site' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
+            }`}
+          >
+            <LayoutTemplate size={14} className="text-[#d88193]" /> Sitio Web
           </button>
         </div>
 
@@ -1427,6 +1453,11 @@ export default function AdminCatalogPage() {
               )}
             </div>
           </div>
+        )}
+
+        {/* ── TAB 7: EDITOR DEL SITIO WEB (tipo Wix) ── */}
+        {activeTab === 'site' && (
+          <SiteContentEditor />
         )}
 
       </div>

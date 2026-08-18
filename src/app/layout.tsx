@@ -7,6 +7,7 @@ import { Footer } from '@/components/Footer';
 import { CartDrawer } from '@/components/CartDrawer';
 import { ToastContainer } from '@/components/ToastContainer';
 import { ScrollReveal } from '@/components/ScrollReveal';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -35,12 +36,14 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} ${playfair.variable} scroll-smooth`}>
       <body className="flex flex-col min-h-screen">
         <CartProvider>
-          <Header />
-          <CartDrawer />
-          <ToastContainer />
-          <ScrollReveal />
-          <main className="flex-grow">{children}</main>
-          <Footer />
+          <ThemeProvider>
+            <Header />
+            <CartDrawer />
+            <ToastContainer />
+            <ScrollReveal />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </ThemeProvider>
         </CartProvider>
       </body>
     </html>

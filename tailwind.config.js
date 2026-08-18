@@ -9,15 +9,15 @@ module.exports = {
     extend: {
       colors: {
         ush: {
-          pink: '#d88193',
-          pinkDark: '#c06579',
-          pinkHover: '#b5586c',
-          pinkLight: '#fdf3f5',
-          pinkSoft: '#f8e4e8',
-          navy: '#1b2333',
-          navyDark: '#121824',
-          card: '#ffffff',
-          accent: '#d88193',
+          pink: 'var(--ush-pink)',
+          pinkDark: 'var(--ush-pink-dark)',
+          pinkHover: 'var(--ush-pink-hover)',
+          pinkLight: 'var(--ush-pink-light)',
+          pinkSoft: 'var(--ush-pink-soft)',
+          navy: 'var(--ush-navy)',
+          navyDark: 'var(--ush-navy-dark)',
+          card: 'var(--ush-card)',
+          accent: 'var(--ush-accent)',
         }
       },
       fontFamily: {

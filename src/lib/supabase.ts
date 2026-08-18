@@ -526,45 +526,27 @@ export async function getTopSellingProductIds(): Promise<string[]> {
   }
 
   try {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // La lectura directa de orders ya no está abierta al público (RLS).
+    // Usamos una función RPC con SECURITY DEFINER que solo devuelve ids.
+    const { data, error } = await supabase.rpc('get_top_selling_ids', { days_back: 30 });
 
-    const { data, error } = await supabase
-      .from('orders')
-      .select('items')
-      .gte('created_at', thirtyDaysAgo.toISOString());
+    if (!error && data && data.length > 0) {
+      const topIds: string[] = (data as Array<{ id: string }>).map((r) => r.id);
 
-    if (error || !data || data.length === 0) {
-      return [];
+      if (typeof window !== 'undefined' && topIds.length > 0) {
+        try {
+          localStorage.setItem(
+            TOP_SELLERS_CACHE_KEY,
+            JSON.stringify({ timestamp: Date.now(), ids: topIds })
+          );
+        } catch (e) {}
+      }
+
+      return topIds;
     }
-
-    const salesMap: Record<string, number> = {};
-    data.forEach((order: any) => {
-      const itemsArr = Array.isArray(order.items) ? order.items : [];
-      itemsArr.forEach((item: any) => {
-        const key = item.product_id || item.reference;
-        if (key) {
-          salesMap[key] = (salesMap[key] || 0) + (Number(item.quantity) || 1);
-        }
-      });
-    });
-
-    const topIds = Object.entries(salesMap)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([id]) => id);
-
-    if (typeof window !== 'undefined' && topIds.length > 0) {
-      try {
-        localStorage.setItem(
-          TOP_SELLERS_CACHE_KEY,
-          JSON.stringify({ timestamp: Date.now(), ids: topIds })
-        );
-      } catch (e) {}
-    }
-
-    return topIds;
   } catch (e) {
     return [];
   }
+
+  return [];
 }

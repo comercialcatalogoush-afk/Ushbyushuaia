@@ -2,30 +2,33 @@
 
 import React from 'react';
 import { Tag, TrendingDown, Layers, Headphones } from 'lucide-react';
+import { usePageContent } from '@/lib/siteContentHooks';
 
 export const Benefits: React.FC = () => {
+  const c = usePageContent('home');
+
   const wholesaleBenefits = [
     {
-      title: 'Prendas a Mayorista',
-      description: 'Descuentos exclusivos en precios de volumen para su negocio.',
+      title: c.benefitsCard1Title || 'Prendas a Mayorista',
+      description: c.benefitsCard1Text || 'Descuentos exclusivos en precios de volumen para su negocio.',
       icon: Tag,
       tag: 'Exclusivo'
     },
     {
-      title: 'Descuentos por Volumen',
-      description: 'Mejor escala de precios desde 12 unidades por referencia elegida.',
+      title: c.benefitsCard2Title || 'Descuentos por Volumen',
+      description: c.benefitsCard2Text || 'Mejor escala de precios desde 12 unidades por referencia elegida.',
       icon: TrendingDown,
       tag: 'Desde 12 Uds'
     },
     {
-      title: 'Compra por Referencia',
-      description: 'Seleccione cantidades específicas de cada referencia.',
+      title: c.benefitsCard3Title || 'Compra por Referencia',
+      description: c.benefitsCard3Text || 'Seleccione cantidades específicas de cada referencia.',
       icon: Layers,
       tag: 'Flexible'
     },
     {
-      title: 'Atención Personalizada',
-      description: 'Asesoría exclusiva para su logística y pedidos.',
+      title: c.benefitsCard4Title || 'Atención Personalizada',
+      description: c.benefitsCard4Text || 'Asesoría exclusiva para su logística y pedidos.',
       icon: Headphones,
       tag: 'Directo'
     }
@@ -36,10 +39,10 @@ export const Benefits: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink mb-2">
-            Beneficios Mayoristas
+            {c.benefitsEyebrow || 'Beneficios Mayoristas'}
           </h2>
           <p className="text-3xl font-extrabold text-neutral-900 tracking-tight">
-            Ventajas competitivas para impulsar tu negocio
+            {c.benefitsSub || 'Ventajas competitivas para impulsar tu negocio'}
           </p>
           <div className="w-12 h-1 bg-ush-pink mx-auto mt-4 rounded-full" />
         </div>
