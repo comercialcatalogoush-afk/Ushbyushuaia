@@ -202,6 +202,18 @@ export async function upsertProduct(product: Product): Promise<{ success: boolea
   }
 }
 
+// Actualización ligera del inventario (stock por talla) desde el listado del
+// admin, sin tocar el resto de campos del producto.
+export async function updateProductStock(id: string, stockBySize: Record<string, number>): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('products').update({ stock_by_size: stockBySize }).eq('id', id);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function deleteProductFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase.from('products').delete().eq('id', id);

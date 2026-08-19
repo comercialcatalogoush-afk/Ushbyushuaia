@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange, updateProductStock } from '@/lib/supabase';
 import { exportBackup, downloadBackup, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
@@ -57,6 +57,9 @@ export default function AdminCatalogPage() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>(ALL_SIZES);
   const [stockBySize, setStockBySize] = useState<Record<string, number>>({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Inventario rápido (edición inline desde el listado)
+  const [savingStock, setSavingStock] = useState<Record<string, boolean>>({});
 
   // Multimedia modal state
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -590,6 +593,34 @@ export default function AdminCatalogPage() {
     }
   };
 
+  // Guarda el inventario editado inline en una fila del listado (con rebote corto).
+  const quickSaveTimers = React.useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const handleQuickStock = (product: Product, size: string, value: string) => {
+    const id = product.id;
+    const num = Math.max(0, parseInt(value, 10) || 0);
+    setProducts(prev => prev.map(p => {
+      if (p.id !== id) return p;
+      const next = { ...p, stock_by_size: { ...(p.stock_by_size || {}), [size]: num } };
+      const sizes = next.options?.find(o => o.key.toLowerCase() === 'talla')?.values || ALL_SIZES;
+      next.in_stock = sizes.some(s => (next.stock_by_size?.[s] || 0) > 0);
+      return next;
+    }));
+
+    if (quickSaveTimers.current[id]) clearTimeout(quickSaveTimers.current[id]);
+    quickSaveTimers.current[id] = setTimeout(async () => {
+      const stock = { ...(product.stock_by_size || {}), [size]: num };
+      setSavingStock(prev => ({ ...prev, [id]: true }));
+      const res = await updateProductStock(id, stock);
+      if (res.success) {
+        publishCatalogChange();
+      } else {
+        console.warn('stock update failed:', res.error);
+      }
+      setSavingStock(prev => ({ ...prev, [id]: false }));
+    }, 600);
+  };
+
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
@@ -893,7 +924,7 @@ export default function AdminCatalogPage() {
             </div>
 
             {/* Product Table List — Wix Studio Style */}
-            <div className="bg-white border border-gray-200 shadow-sm overflow-hidden rounded-sm">
+            <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto rounded-sm">
 
               {/* Table Header Row */}
               <div className="bg-[#116dff] text-white px-5 py-3 flex items-center justify-between">
@@ -909,12 +940,13 @@ export default function AdminCatalogPage() {
               </div>
 
               {/* Column Headers */}
-              <div className="grid grid-cols-[40px_56px_1fr_100px_120px_110px_80px] gap-0 border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              <div className="grid grid-cols-[40px_56px_1fr_95px_105px_190px_85px_70px] gap-0 border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500 min-w-[880px]">
                 <div className="px-3 py-2.5 flex items-center"></div>
                 <div className="px-2 py-2.5 flex items-center"></div>
                 <div className="px-3 py-2.5 flex items-center">Nombre</div>
                 <div className="px-3 py-2.5 flex items-center">Tipo</div>
                 <div className="px-3 py-2.5 flex items-center">Precio</div>
+                <div className="px-3 py-2.5 flex items-center justify-center">Inventario (por talla)</div>
                 <div className="px-3 py-2.5 flex items-center">Estado</div>
                 <div className="px-3 py-2.5 flex items-center"></div>
               </div>
@@ -936,7 +968,7 @@ export default function AdminCatalogPage() {
                   return (
                     <div
                       key={p.id}
-                      className="grid grid-cols-[40px_56px_1fr_100px_120px_110px_80px] gap-0 items-center hover:bg-blue-50/30 transition-colors group cursor-pointer"
+                      className="grid grid-cols-[40px_56px_1fr_95px_105px_190px_85px_70px] gap-0 items-center hover:bg-blue-50/30 transition-colors group cursor-pointer min-w-[880px]"
                       onClick={() => handleEditOpen(p)}
                     >
                       {/* Checkbox placeholder */}
@@ -993,6 +1025,36 @@ export default function AdminCatalogPage() {
                       <div className="px-3 py-3">
                         <p className="text-sm font-bold text-neutral-900">{formatCOP(p.price)}</p>
                         <p className="text-[10px] text-neutral-400">mayorista</p>
+                      </div>
+
+                      {/* Inventario editable (por talla) */}
+                      <div className="px-3 py-2 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                        {(() => {
+                          const sizes = sizeOpt?.values && sizeOpt.values.length > 0 ? sizeOpt.values : ALL_SIZES;
+                          return (
+                            <div className="flex items-center gap-1">
+                              {sizes.map(s => (
+                                <div key={s} className="flex flex-col items-center">
+                                  <span className="text-[8px] font-bold text-neutral-400 leading-none mb-0.5">{s}</span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={p.stock_by_size?.[s] ?? 0}
+                                    onChange={(e) => handleQuickStock(p, s, e.target.value)}
+                                    className={`w-9 h-6 text-center text-[11px] font-semibold border rounded-sm focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-blue-100 ${
+                                      (p.stock_by_size?.[s] ?? 0) > 0
+                                        ? 'border-gray-300 bg-white text-neutral-800'
+                                        : 'border-red-200 bg-red-50 text-red-500'
+                                    }`}
+                                  />
+                                </div>
+                              ))}
+                              {savingStock[p.id] && (
+                                <RefreshCw size={13} className="text-[#116dff] animate-spin ml-0.5 flex-shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Status badge */}
