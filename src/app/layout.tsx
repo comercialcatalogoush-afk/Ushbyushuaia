@@ -10,7 +10,7 @@ import { ScrollReveal } from '@/components/ScrollReveal';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
-const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || '';
+const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-R91RRDYKM1';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
