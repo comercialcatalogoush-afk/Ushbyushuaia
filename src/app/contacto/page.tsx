@@ -18,6 +18,8 @@ export default function ContactoPage() {
 
   return (
     <div className="py-12 bg-neutral-50 min-h-screen">
+      <title>Contacto | Ush By Ushuaia</title>
+      <meta name="description" content="Contáctanos para solicitar información mayorista, precios por volumen, asesoría comercial o despachos. WhatsApp directo con asesores USH BY USHUAIA." />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}

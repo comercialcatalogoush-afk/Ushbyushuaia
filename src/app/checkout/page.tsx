@@ -265,6 +265,9 @@ export default function CheckoutPage() {
 
   return (
     <div className="py-12 bg-neutral-50 min-h-screen">
+      <title>Tramitar Pedido | Ush By Ushuaia</title>
+      <meta name="description" content="Confirma tu pedido mayorista USH BY USHUAIA: revisa el resumen, aplica cupones y finaliza tu compra." />
+      <meta name="robots" content="noindex,nofollow" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <Link

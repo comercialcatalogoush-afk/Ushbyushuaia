@@ -195,6 +195,8 @@ export default function RastreoPage() {
 
   return (
     <div className="py-12 bg-ush-pinkLight min-h-screen">
+      <title>Rastrear mi Pedido | Ush By Ushuaia</title>
+      <meta name="description" content="Consulta el estado y la guía de tu pedido mayorista USH BY USHUAIA. Seguimiento de envíos a toda Colombia." />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link
           href="/"

@@ -702,6 +702,8 @@ export default function AdminCatalogPage() {
 
   return (
     <div className="min-h-screen bg-neutral-100 pb-16">
+      <meta name="robots" content="noindex,nofollow" />
+      <title>Panel de Administración | Ush By Ushuaia</title>
       
       {/* Top Admin Header */}
       <header className="bg-[#1b2333] text-white shadow-md">
