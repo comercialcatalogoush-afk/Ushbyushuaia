@@ -12,6 +12,7 @@ import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { subscribeCatalogChanges, fetchProductBySlug } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
 import { WHOLESALE_FALLBACK } from '@/lib/pricing';
+import { gtagEvent } from '@/lib/analytics';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -58,6 +59,20 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   React.useEffect(() => {
     getWhatsAppNumber().then(setWhatsappNumber);
+  }, []);
+
+  // GA4: vista de producto (view_item)
+  React.useEffect(() => {
+    gtagEvent('view_item', {
+      currency: 'COP',
+      value: currentProduct.price || 0,
+      items: [{
+        item_id: currentProduct.reference || currentProduct.slug,
+        item_name: currentProduct.name,
+        price: currentProduct.price || 0,
+      }],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Realtime: si el admin confirma un pago (o edita el producto), el stock y

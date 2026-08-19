@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { CartItem, Product } from '@/types';
 import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon, WHOLESALE_FALLBACK } from '@/lib/pricing';
 import { subscribeCatalogChanges, fetchProductsFromSupabase } from '@/lib/supabase';
+import { gtagEvent } from '@/lib/analytics';
 
 export interface ToastNotification {
   id: string;
@@ -110,10 +111,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return [...prev, { product, selectedSize, selectedColor, quantity }];
     });
     setIsCartOpen(true);
+    gtagEvent('add_to_cart', {
+      currency: 'COP',
+      value: (product.price || 0) * quantity,
+      items: [{ item_id: product.reference || product.slug, item_name: product.name, quantity, price: product.price || 0 }],
+    });
   };
 
   const removeFromCart = (index: number) => {
+    const removed = items[index];
     setItems((prev) => prev.filter((_, idx) => idx !== index));
+    if (removed) {
+      gtagEvent('remove_from_cart', {
+        currency: 'COP',
+        value: (removed.product.price || 0) * removed.quantity,
+        items: [{ item_id: removed.product.reference || removed.product.slug, item_name: removed.product.name, quantity: removed.quantity, price: removed.product.price || 0 }],
+      });
+    }
   };
 
   const updateQuantity = (index: number, quantity: number) => {

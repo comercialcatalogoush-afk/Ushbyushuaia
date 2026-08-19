@@ -8,7 +8,9 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { ToastContainer } from '@/components/ToastContainer';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import Script from 'next/script';
+import { GoogleAnalytics } from '@next/third-parties/google';
+
+const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || '';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
@@ -45,6 +47,7 @@ export default function RootLayout({
             <Footer />
           </ThemeProvider>
         </CartProvider>
+        {GA4_ID && <GoogleAnalytics gaId={GA4_ID} />}
       </body>
     </html>
   );

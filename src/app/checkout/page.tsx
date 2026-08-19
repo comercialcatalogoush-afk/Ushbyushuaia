@@ -9,6 +9,7 @@ import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
 import { INITIAL_PRODUCTS } from '@/data/products';
+import { gtagEvent } from '@/lib/analytics';
 
 function generateOrderId() {
   const ts = Date.now().toString(36).toUpperCase();
@@ -62,6 +63,22 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsappNumber);
+  }, []);
+
+  // GA4: inicio del checkout (una vez, con el resumen del carrito)
+  useEffect(() => {
+    if (items.length === 0) return;
+    gtagEvent('begin_checkout', {
+      currency: 'COP',
+      value: subtotalCOP,
+      items: items.map((i) => ({
+        item_id: i.product.reference || i.product.slug,
+        item_name: i.product.name,
+        quantity: i.quantity,
+        price: i.product.price || 0,
+      })),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pre-fill from CartDrawer mini-modal (sessionStorage)
@@ -164,6 +181,18 @@ export default function CheckoutPage() {
 
     setCompletedOrder({ ...orderPayload, id: orderId });
     clearCart();
+
+    gtagEvent('purchase', {
+      transaction_id: orderId,
+      currency: 'COP',
+      value: subtotalCOP,
+      items: orderPayload.items.map((i: any) => ({
+        item_id: i.reference,
+        item_name: i.name,
+        quantity: i.quantity,
+        price: i.unit_price,
+      })),
+    });
   };
 
   if (completedOrder) {
