@@ -488,16 +488,20 @@ function sendBroadcast(event: string) {
   }
 }
 
-// Clave compartida con /api/revalidate (purga del caché del edge de Vercel).
-export const REVALIDATE_SECRET = 'ush_cat_rev_2026';
-
 export function publishCatalogChange() {
   sendBroadcast('catalog-changed');
-  // Purga el caché del edge de Vercel para que el cambio del admin se refleje
-  // de inmediato en TODOS los dispositivos y en las páginas (no esperar 60s).
+  // Pide al servidor purgar el caché del edge (verifica la sesión del admin;
+  // sin token o sin sesión de admin el endpoint responde 401/403 y se ignora).
   try {
     if (typeof window !== 'undefined') {
-      fetch(`/api/revalidate?secret=${encodeURIComponent(REVALIDATE_SECRET)}`).catch(() => {});
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          const token = data.session?.access_token;
+          if (!token) return;
+          fetch('/api/revalidate', { headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+        })
+        .catch(() => {});
     }
   } catch (e) {
     console.error('revalidate error:', e);

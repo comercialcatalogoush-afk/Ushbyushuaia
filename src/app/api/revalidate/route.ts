@@ -1,15 +1,24 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
+import { supabase } from '@/lib/supabase';
 
-// Clave compartida con publishCatalogChange (supabase.ts). Su único efecto es
-// purgar el caché del edge de Vercel para que los cambios del admin se reflejen
-// de inmediato en páginas y /api/catalog.
-const REVALIDATE_SECRET = 'ush_cat_rev_2026';
+// Solo el admin (sesión real de Supabase) puede purgar el caché.
+const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  if (searchParams.get('secret') !== REVALIDATE_SECRET) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  const auth = req.headers.get('authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user || data.user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
   try {
