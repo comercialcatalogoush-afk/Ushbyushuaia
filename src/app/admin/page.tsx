@@ -60,6 +60,7 @@ export default function AdminCatalogPage() {
 
   // Inventario rápido (edición inline desde el listado)
   const [savingStock, setSavingStock] = useState<Record<string, boolean>>({});
+  const [confirmingSizes, setConfirmingSizes] = useState(false);
 
   // Multimedia modal state
   const [showMediaModal, setShowMediaModal] = useState(false);

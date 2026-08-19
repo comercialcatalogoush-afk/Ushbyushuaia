@@ -24,8 +24,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
   const allowedSizes = ['6', '8', '10', '12', '14', 'Única'];
-  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s)) || ['6', '8', '10', '12', '14'];
-  
+
+  // Stock por talla
+  const stock = product.stock_by_size || {};
+  const stockForSize = (size: string) => stock[size] ?? 10;
+  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
+
+  // Solo se muestran tallas con stock: las de 0 quedan ocultas en el catálogo.
+  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s) && isSizeAvailable(s)) || [];
+
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   const [quantity, setQuantity] = useState<number>(1);
   const [addedAnimation, setAddedAnimation] = useState(false);
@@ -41,12 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const hasImages = product.images && product.images.length > 0 && product.images[0] !== '';
   const mainImage = hasImages ? (product.images[currentImageIndex] || product.images[0]) : '';
 
-  // Stock por talla
-  const stock = product.stock_by_size || {};
-  const stockForSize = (size: string) => stock[size] ?? 10;
-  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
   const lowStockSizes = availableSizes.filter((s) => isSizeAvailable(s) && stockForSize(s) <= 5);
-  const outOfStockSizes = availableSizes.filter((s) => !isSizeAvailable(s));
 
   const suggestedPrice = product.suggested_price || product.compare_price || 49900;
   const wholesalePrice = product.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
@@ -301,11 +303,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             {lowStockSizes.length > 0 && (
               <p className="mt-1.5 text-[9px] font-bold text-amber-600 uppercase tracking-wide">
                 ⚠️ Pocas unidades: {lowStockSizes.join(', ')}
-              </p>
-            )}
-            {outOfStockSizes.length > 0 && (
-              <p className="mt-1 text-[9px] font-bold text-neutral-400 uppercase tracking-wide">
-                Tallas agotadas: {outOfStockSizes.join(', ')}
               </p>
             )}
           </div>

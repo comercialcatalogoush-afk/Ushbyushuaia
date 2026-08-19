@@ -17,9 +17,6 @@ const PAGE_SIZE = 12;
 
 const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
 
-// Orden preferido de fits (estilo colecciones de la tienda)
-const FIT_ORDER = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Straight'];
-
 // Categorías del sitio oficial (aparecen siempre, aunque aún no tengan productos)
 const OFFICIAL_CATEGORY_ORDER = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas'];
 
@@ -44,7 +41,6 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [activeFit, setActiveFit] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [fitMenuOpen, setFitMenuOpen] = useState(false);
   const [tierInfoOpen, setTierInfoOpen] = useState(true);
 
   // Lee los filtros del menú superior (?categoria=...&fit=...) y la búsqueda (?buscar=...)
@@ -121,21 +117,6 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return ['Todos', ...official, ...extra];
   }, [visibleProducts]);
 
-  // Fits reales presentes en la categoría activa (no hardcodeados)
-  const fitsForCategory = useMemo(() => {
-    const set = new Set<string>();
-    visibleProducts.forEach((p) => {
-      if (activeCategory === 'Todos' || (p.category || '') === activeCategory) {
-        if (p.fit) set.add(p.fit);
-      }
-    });
-    const fits = Array.from(set);
-    const sorted = FIT_ORDER.filter((f) => set.has(f)).concat(
-      fits.filter((f) => !FIT_ORDER.includes(f)).sort()
-    );
-    return ['Todos', ...sorted];
-  }, [visibleProducts, activeCategory]);
-
   const paginatedProducts = catalogProducts.slice(0, visibleCount);
   const hasMore = visibleCount < catalogProducts.length;
 
@@ -146,13 +127,6 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
     setActiveFit('Todos');
-    setFitMenuOpen(false);
-    setVisibleCount(PAGE_SIZE);
-  };
-
-  const handleFitChange = (fit: string) => {
-    setActiveFit(fit);
-    setFitMenuOpen(false);
     setVisibleCount(PAGE_SIZE);
   };
 
@@ -253,37 +227,9 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
                 </button>
               ))}
 
-              {/* Fit dropdown (solo si la categoría activa tiene fits) */}
-              {fitsForCategory.length > 1 && (
-                <div className="relative ml-2">
-                  <button
-                    onClick={() => setFitMenuOpen((o) => !o)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-gray-200 bg-white text-neutral-600 hover:border-[#d88193] hover:text-[#d88193] transition-all"
-                  >
-                    Fit: <span className="text-[#d88193]">{activeFit}</span>
-                    <ChevronDown size={13} className={`transition-transform ${fitMenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {fitMenuOpen && (
-                    <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 shadow-xl min-w-[180px] max-h-72 overflow-y-auto">
-                      {fitsForCategory.map((fit) => (
-                        <button
-                          key={fit}
-                          onClick={() => handleFitChange(fit)}
-                          className={`w-full text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider hover:bg-rose-50 ${
-                            activeFit === fit ? 'text-[#d88193] bg-rose-50' : 'text-neutral-600'
-                          }`}
-                        >
-                          {fit}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
               {(activeCategory !== 'Todos' || activeFit !== 'Todos') && (
                 <button
-                  onClick={() => { handleCategoryChange('Todos'); handleFitChange('Todos'); }}
+                  onClick={() => { handleCategoryChange('Todos'); setActiveFit('Todos'); }}
                   className="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#d88193] hover:underline"
                 >
                   Limpiar filtros

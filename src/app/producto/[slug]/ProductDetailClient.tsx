@@ -27,7 +27,15 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   
   const sizeOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'talla');
   const allowedSizes = ['6', '8', '10', '12', '14', 'Única'];
-  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s)) || ['6', '8', '10', '12', '14'];
+
+  // Stock por talla
+  const stock = currentProduct.stock_by_size || {};
+  const stockForSize = (size: string) => stock[size] ?? 20;
+  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
+
+  // Solo se muestran tallas con stock: las de 0 quedan ocultas en el catálogo.
+  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s) && isSizeAvailable(s)) || [];
+
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   
   const colorOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'color');
@@ -41,11 +49,6 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   const suggestedPrice = currentProduct.suggested_price || currentProduct.compare_price || 49900;
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
-
-  // Stock por talla
-  const stock = currentProduct.stock_by_size || {};
-  const stockForSize = (size: string) => stock[size] ?? 20;
-  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
 
   // Compartir por WhatsApp (precio editable por el cliente)
   const [shareOpen, setShareOpen] = useState(false);
@@ -341,17 +344,11 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </div>
               {(() => {
                 const low = availableSizes.filter((s) => isSizeAvailable(s) && stockForSize(s) <= 5);
-                const out = availableSizes.filter((s) => !isSizeAvailable(s));
                 return (
                   <>
                     {low.length > 0 && (
                       <p className="mt-2 text-[11px] font-bold text-amber-600 uppercase tracking-wide">
                         ⚠️ Pocas unidades: {low.join(', ')}
-                      </p>
-                    )}
-                    {out.length > 0 && (
-                      <p className="mt-1 text-[11px] font-bold text-neutral-400 uppercase tracking-wide">
-                        Tallas agotadas: {out.join(', ')}
                       </p>
                     )}
                   </>
