@@ -23,9 +23,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const { addToCart, formatCOP } = useCart();
   
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
-  const availableSizes = sizeOption?.values.filter(s => ['6', '8', '10', '12', '14'].includes(s)) || ['6', '8', '10', '12', '14'];
+  const allowedSizes = ['08', '10', '12', '14', '16', '18', 'Única'];
+  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s)) || ['08', '10', '12', '14', '16', '18'];
   
-  const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
+  const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '08');
   const [quantity, setQuantity] = useState<number>(1);
   const [addedAnimation, setAddedAnimation] = useState(false);
   const [showAddedToast, setShowAddedToast] = useState(false);

@@ -840,7 +840,7 @@ export const INITIAL_PRODUCTS: Product[] = OFFICIAL_90_REFS.map((refNum, index) 
     hidden: driveImages.length === 0,
     status: 'published',
     is_best_seller: BEST_SELLER_REFS.has(refStr),
-    options: [{ id: 'talla-opt', key: 'Talla', values: ['6', '8', '10', '12', '14'] }],
+    options: [{ id: 'talla-opt', key: 'Talla', values: ['08', '10', '12', '14', '16', '18'] }],
     images: driveImages
   };
 });
