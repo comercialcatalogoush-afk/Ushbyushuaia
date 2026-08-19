@@ -26,9 +26,9 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const [selectedImage, setSelectedImage] = useState<string>(currentProduct.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600');
   
   const sizeOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'talla');
-  const allowedSizes = ['08', '10', '12', '14', '16', '18', 'Única'];
-  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s)) || ['08', '10', '12', '14', '16', '18'];
-  const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '08');
+  const allowedSizes = ['6', '8', '10', '12', '14', 'Única'];
+  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s)) || ['6', '8', '10', '12', '14'];
+  const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   
   const colorOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'color');
   const availableColors = colorOption?.values || (currentProduct.color ? [currentProduct.color] : []);
