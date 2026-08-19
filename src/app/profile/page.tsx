@@ -207,6 +207,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-neutral-50 py-16 px-4 flex items-center justify-center">
       <meta name="robots" content="noindex,nofollow" />
+      <title>Mi Cuenta | Ush By Ushuaia</title>
       <div className="w-full max-w-md bg-white shadow-xl border border-gray-200 overflow-hidden animate-fadeIn">
 
         {/* Header */}

@@ -611,6 +611,8 @@ export default function AdminCatalogPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
+        <meta name="robots" content="noindex,nofollow" />
+        <title>Acceso Restringido | Ush By Ushuaia</title>
         <div className="bg-white max-w-md w-full p-8 border border-gray-200 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
             <div className="w-12 h-12 rounded-full bg-ush-navy text-white flex items-center justify-center mx-auto shadow-md">
