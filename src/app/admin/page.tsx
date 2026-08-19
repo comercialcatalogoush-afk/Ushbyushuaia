@@ -640,6 +640,45 @@ export default function AdminCatalogPage() {
     setTimeout(() => setSyncResult(null), 5000);
   };
 
+  // Asegura que TODOS los productos tengan las tallas 6-14 (las que no tengan
+  // stock quedan en 0 y se ocultan en el catálogo). Persiste y refleja el cambio.
+  const normalizeSizes = (p: Product): Product => {
+    const stock = { ...(p.stock_by_size || {}) };
+    ALL_SIZES.forEach(s => { if (stock[s] === undefined || stock[s] === null) stock[s] = 0; });
+    const options = (p.options || []).map(o =>
+      o.key.toLowerCase() === 'talla' ? { ...o, values: [...ALL_SIZES] } : o
+    );
+    if (!options.some(o => o.key.toLowerCase() === 'talla')) {
+      options.push({ id: 'talla-opt', key: 'Talla', values: [...ALL_SIZES] });
+    }
+    return { ...p, stock_by_size: stock, options };
+  };
+
+  const handleConfirmSizes = async () => {
+    setConfirmingSizes(true);
+    const normalized = products.map(normalizeSizes);
+    let changed = 0;
+    for (let i = 0; i < normalized.length; i++) {
+      const n = normalized[i];
+      const orig = products[i];
+      if (
+        JSON.stringify(orig.stock_by_size) === JSON.stringify(n.stock_by_size) &&
+        JSON.stringify(orig.options) === JSON.stringify(n.options)
+      ) continue;
+      const res = await upsertProduct(n);
+      if (res.success) changed++;
+    }
+    if (changed > 0) {
+      setProducts(normalized);
+      saveLocalProductsOverride(normalized);
+      publishCatalogChange();
+    }
+    setConfirmingSizes(false);
+    alert(changed > 0
+      ? `✅ Tallas confirmadas: ${changed} producto(s) actualizado(s) a 6-14. Los cambios ya se reflejan en el catálogo.`
+      : 'Todos los productos ya tienen las tallas 6 a 14. No hubo cambios.');
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
@@ -932,12 +971,23 @@ export default function AdminCatalogPage() {
                 <h2 className="text-sm font-bold tracking-wide">
                   Productos ({filteredProductsList.length}{filteredProductsList.length !== products.length ? ` de ${products.length}` : ''})
                 </h2>
-                <button
-                  onClick={handleOpenNew}
-                  className="flex items-center gap-1.5 bg-white text-[#116dff] text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-50 transition-colors"
-                >
-                  <Plus size={14} /> Nuevo producto
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleConfirmSizes}
+                    disabled={confirmingSizes}
+                    className="flex items-center gap-1.5 bg-[#1b2333] text-white text-xs font-bold px-4 py-1.5 rounded hover:bg-[#d88193] transition-colors disabled:opacity-60"
+                    title="Asegura que todos los productos tengan las tallas 6 a 14 y publica los cambios"
+                  >
+                    {confirmingSizes ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                    Confirmar tallas modificadas
+                  </button>
+                  <button
+                    onClick={handleOpenNew}
+                    className="flex items-center gap-1.5 bg-white text-[#116dff] text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-50 transition-colors"
+                  >
+                    <Plus size={14} /> Nuevo producto
+                  </button>
+                </div>
               </div>
 
               {/* Column Headers */}
