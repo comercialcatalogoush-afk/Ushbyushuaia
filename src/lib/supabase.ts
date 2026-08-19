@@ -488,8 +488,20 @@ function sendBroadcast(event: string) {
   }
 }
 
+// Clave compartida con /api/revalidate (purga del caché del edge de Vercel).
+export const REVALIDATE_SECRET = 'ush_cat_rev_2026';
+
 export function publishCatalogChange() {
   sendBroadcast('catalog-changed');
+  // Purga el caché del edge de Vercel para que el cambio del admin se refleje
+  // de inmediato en TODOS los dispositivos y en las páginas (no esperar 60s).
+  try {
+    if (typeof window !== 'undefined') {
+      fetch(`/api/revalidate?secret=${encodeURIComponent(REVALIDATE_SECRET)}`).catch(() => {});
+    }
+  } catch (e) {
+    console.error('revalidate error:', e);
+  }
 }
 
 export function publishOrderChange() {
