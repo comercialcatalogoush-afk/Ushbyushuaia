@@ -9,6 +9,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const PRODUCTS_STORAGE_KEY = 'ush_products_override_v6';
 
+// Perfil LIGERO para listados/carrito: evita `select('*')` y no baja los campos
+// pesados (full_description, video_url, options, tags, color) que inflan el egress.
+// `description` y `stock_by_size` se conservan porque el filtrado público y el
+// stock por talla los necesitan.
+export const PRODUCT_LIST_COLUMNS = `id,reference,slug,name,price,suggested_price,compare_price,ribbon,fit,is_best_seller,images,category,category_id,hidden,in_stock,status,description,stock_by_size`;
+
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -104,14 +110,14 @@ export function isCompleteProduct(p: Product): boolean {
   return hasImage && hasTitle && hasDetail;
 }
 
-export async function fetchProductsFromSupabase(): Promise<Product[]> {
+export async function fetchProductsFromSupabase(opts: { slim?: boolean } = {}): Promise<Product[]> {
   // Supabase es la única fuente de verdad: cualquier cambio del admin
   // (agregar / editar / ocultar / eliminar) se refleja en cualquier
   // dispositivo, URL o IP. Solo si Supabase falla se usa el catálogo estático.
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(opts.slim ? PRODUCT_LIST_COLUMNS : '*')
       .order('created_at', { ascending: false });
 
     if (error || !data || data.length === 0) {

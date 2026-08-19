@@ -10,7 +10,7 @@ export const dynamicParams = true;
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  const products = await fetchProductsFromSupabase();
+  const products = await fetchProductsFromSupabase({ slim: true });
   return products.filter((p) => isCompleteProduct(p)).map((p) => ({
     slug: p.slug,
   }));
@@ -36,7 +36,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   // Productos sugeridos: mismo fit/categoría, rango de precio similar y más vendidos
   let related: Awaited<ReturnType<typeof fetchProductsFromSupabase>> = [];
   try {
-    const all = await fetchProductsFromSupabase();
+    const all = await fetchProductsFromSupabase({ slim: true });
     const others = all.filter((p) => p.id !== product.id && p.slug !== product.slug && !p.hidden && p.status !== 'draft' && isCompleteProduct(p));
 
     const score = (p: (typeof all)[number]) => {

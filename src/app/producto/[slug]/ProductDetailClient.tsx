@@ -9,7 +9,7 @@ import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
-import { subscribeCatalogChanges, fetchProductBySlug } from '@/lib/supabase';
+import { subscribeCatalogChanges } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
 import { WHOLESALE_FALLBACK } from '@/lib/pricing';
 import { gtagEvent } from '@/lib/analytics';
@@ -79,11 +79,16 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   // los datos se actualizan al instante desde Supabase.
   React.useEffect(() => {
     const unsubscribe = subscribeCatalogChanges(() => {
-      fetchProductBySlug(currentProduct.slug).then((fresh) => {
-        if (fresh) {
-          setCurrentProduct(fresh);
-        }
-      });
+      // Se sirve desde el cache del edge de Vercel (/api/catalog?slug=...),
+      // no se consulta Supabase por cada cliente ante cada broadcast.
+      fetch(`/api/catalog?slug=${encodeURIComponent(currentProduct.slug)}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
+        .then((fresh: Product) => {
+          if (fresh) {
+            setCurrentProduct(fresh);
+          }
+        })
+        .catch(() => {});
     });
     return unsubscribe;
   }, [currentProduct.slug]);

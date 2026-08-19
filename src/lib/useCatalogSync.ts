@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Product } from '@/types';
-import { subscribeCatalogChanges, fetchProductsFromSupabase } from '@/lib/supabase';
+import { subscribeCatalogChanges } from '@/lib/supabase';
 
 // Suscribe a los cambios del catálogo vía Realtime Broadcast de Supabase.
 // Cuando el admin confirma un pago (o edita/oculta un producto), el stock y
@@ -14,9 +14,14 @@ export function useCatalogSync(initialProducts: Product[]): Product[] {
   useEffect(() => {
     let active = true;
     const refresh = () => {
-      fetchProductsFromSupabase().then((fresh) => {
-        if (active) setProducts(fresh);
-      });
+      // Se sirve desde el cache del edge de Vercel (/api/catalog con s-maxage=60),
+      // no se consulta Supabase por cada cliente ante cada broadcast.
+      fetch('/api/catalog')
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
+        .then((fresh: Product[]) => {
+          if (active) setProducts(fresh);
+        })
+        .catch(() => {});
     };
 
     const unsubscribe = subscribeCatalogChanges(refresh);

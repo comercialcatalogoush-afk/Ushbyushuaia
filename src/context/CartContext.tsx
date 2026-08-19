@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { CartItem, Product } from '@/types';
 import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon, WHOLESALE_FALLBACK } from '@/lib/pricing';
-import { subscribeCatalogChanges, fetchProductsFromSupabase } from '@/lib/supabase';
+import { subscribeCatalogChanges } from '@/lib/supabase';
 import { gtagEvent } from '@/lib/analytics';
 
 export interface ToastNotification {
@@ -197,20 +197,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (typeof window === 'undefined') return () => {};
     const refreshPrices = () => {
-      fetchProductsFromSupabase().then((fresh) => {
-        setItems((prev) => {
-          if (prev.length === 0) return prev;
-          let changed = false;
-          const updated = prev.map((item) => {
-            const freshP = fresh.find((p) => p.id === item.product.id);
-            if (!freshP) return item;
-            if (freshP.suggested_price === item.product.suggested_price && freshP.price === item.product.price) return item;
-            changed = true;
-            return { ...item, product: freshP };
+      // Se sirve desde el cache del edge de Vercel (/api/catalog con s-maxage=60),
+      // no se consulta Supabase por cada cliente ante cada broadcast.
+      fetch('/api/catalog')
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
+        .then((fresh: Product[]) => {
+          setItems((prev) => {
+            if (prev.length === 0) return prev;
+            let changed = false;
+            const updated = prev.map((item) => {
+              const freshP = fresh.find((p) => p.id === item.product.id);
+              if (!freshP) return item;
+              if (freshP.suggested_price === item.product.suggested_price && freshP.price === item.product.price) return item;
+              changed = true;
+              return { ...item, product: freshP };
+            });
+            return changed ? updated : prev;
           });
-          return changed ? updated : prev;
-        });
-      });
+        })
+        .catch(() => {});
     };
     const unsub = subscribeCatalogChanges(refreshPrices);
     return unsub;

@@ -8,11 +8,10 @@ import { getPageContentServer } from '@/lib/siteContent';
 import { Truck, Award, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const allProducts = await fetchProductsFromSupabase();
+  const allProducts = await fetchProductsFromSupabase({ slim: true });
   // Public view: only complete products (photo + title + detailed description)
   const publicProducts = allProducts.filter(p => !p.hidden && isCompleteProduct(p));
   const c = await getPageContentServer('home');

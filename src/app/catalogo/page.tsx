@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
 import { getPageContentServer } from '@/lib/siteContent';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { ArrowLeft } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Catálogo Completo | Ush By Ushuaia',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CatalogoPage() {
-  const allProducts = await fetchProductsFromSupabase();
+  const allProducts = await fetchProductsFromSupabase({ slim: true });
   const publicProducts = allProducts.filter(p => !p.hidden && isCompleteProduct(p));
   const c = await getPageContentServer('catalogo');
 
@@ -38,7 +38,9 @@ export default async function CatalogoPage() {
         </div>
       </div>
 
-      <CatalogGrid products={publicProducts} />
+      <Suspense fallback={<div className="py-24 text-center text-neutral-400 text-sm">Cargando catálogo…</div>}>
+        <CatalogGrid products={publicProducts} />
+      </Suspense>
     </div>
   );
 }
