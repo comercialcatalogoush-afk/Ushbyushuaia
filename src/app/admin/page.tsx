@@ -304,7 +304,7 @@ export default function AdminCatalogPage() {
       const data = await exportBackup();
       exportOrderExcel(data);
       setBackupMsg(
-        `Excel generado con ${data.orders.length} pedidos (hoja "Pedidos" con tus columnas de seguimiento + hoja "Referencias" con unidades y valores).`
+        `Excel generado con ${data.orders.length} pedidos. Hoja "Pedidos" (seguimiento completo) + hoja "Compras por Cliente" (referencias, unidades y valores agrupados por quien compró, con totales).`
       );
     } catch (e: any) {
       setBackupError('No se pudo generar el Excel: ' + (e?.message || 'error'));
@@ -1543,7 +1543,7 @@ export default function AdminCatalogPage() {
                     className="bg-emerald-700 text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-emerald-800 transition-all flex items-center gap-2 disabled:opacity-50"
                   >
                     {backupLoading ? <RefreshCw size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
-                    {backupLoading ? 'Generando...' : 'Exportar Pedidos (Excel)'}
+                    {backupLoading ? 'Generando...' : 'Exportar Excel (Pedidos + Compras)'}
                   </button>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 
 // ── Respaldos y limpieza mensual ──────────────────────────────────
 // El plan gratuito de Supabase tiene límites de almacenamiento/DB. Para no
@@ -52,7 +52,7 @@ export function downloadBackup(data: BackupData) {
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
-// ── Respaldo en Excel: hoja de pedidos + hoja de referencias ────────
+// ── Respaldo en Excel: hoja de pedidos + hoja de compras por cliente ──
 
 const PEDIDOS_HEADERS = [
   'FECHA DE COMPRA', 'FECHA DE DESPACHO', 'ESTADO CLIENTE', 'CORREO', 'NOMBRE', 'APELLIDOS',
@@ -64,7 +64,13 @@ const PEDIDOS_HEADERS = [
 
 const PEDIDOS_WIDTHS = [15, 15, 14, 30, 20, 24, 16, 16, 14, 16, 40, 22, 24, 16, 14, 16, 16, 22, 14, 12, 16, 14, 14, 14];
 
-const REFERENCIAS_HEADERS = ['REFERENCIA', 'NOMBRE', 'UNIDADES', 'VALOR'];
+const DETALLE_HEADERS = ['CLIENTE', 'REFERENCIA', 'NOMBRE', 'UNIDADES', 'VALOR'];
+const DETALLE_WIDTHS = [36, 20, 42, 12, 18];
+
+const NAVY = 'FF1B2333';
+const PINK = 'FFD88193';
+const LIGHT = 'FFF7F7F7';
+const MONEY_FMT = '"$" #,##0';
 
 function splitName(fullName?: string): [string, string] {
   const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
@@ -104,94 +110,253 @@ function paymentLabel(method?: string): string {
   return map[(method || '').toLowerCase()] || method || '';
 }
 
-function applyNumberFormat(ws: XLSX.WorkSheet, col: number, format: string) {
-  if (!ws['!ref']) return;
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  for (let r = range.s.r + 1; r <= range.e.r; r++) {
-    const addr = XLSX.utils.encode_cell({ r, c: col });
-    const cell = ws[addr];
-    if (cell && typeof cell.v === 'number') cell.z = format;
-  }
+function buildOrderRow(o: any): any[] {
+  const [nombres, apellidos] = splitName(o.customer_name);
+  const total = o.total ?? 0;
+  return [
+    formatFecha(o.order_date || (o.created_at ? o.created_at.slice(0, 10) : '')),
+    '',                                            // FECHA DE DESPACHO
+    orderStatusLabel(o.status),                     // ESTADO CLIENTE
+    o.customer_email || '',
+    nombres,
+    apellidos,
+    o.customer_doc || '',
+    o.customer_phone || '',
+    o.department || '',
+    o.city || '',
+    o.shipping_address || '',
+    '',                                            // BARRIO
+    '',                                            // DIRECCION COMPLEMENTARIA
+    '',                                            // DESTINATARIO
+    '',                                            // NUM DE GUÍA
+    o.id || '',                                    // NUMERO FACTURA
+    '',                                            // NUM DE PEDIDO SAG
+    paymentLabel(o.payment_method),
+    '',                                            // ESTADO DEL PAGO
+    '',                                            // ESTADO SAG
+    '',                                            // ESTADO DEL ENVÍO
+    total,                                         // VALOR VENTA
+    '',                                            // VALOR FLETE REAL
+    total,                                         // TOTAL PAGADO
+  ];
 }
 
-function boldHeader(ws: XLSX.WorkSheet, columns: number) {
-  for (let c = 0; c < columns; c++) {
-    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
-    if (cell) cell.s = { font: { bold: true } };
-  }
+const thinBorder = {
+  top: { style: 'thin' as const, color: { argb: 'FFDDDDDD' } },
+  left: { style: 'thin' as const, color: { argb: 'FFDDDDDD' } },
+  bottom: { style: 'thin' as const, color: { argb: 'FFDDDDDD' } },
+  right: { style: 'thin' as const, color: { argb: 'FFDDDDDD' } },
+};
+
+const thickTop = {
+  top: { style: 'medium' as const, color: { argb: NAVY } },
+  left: { style: 'thin' as const, color: { argb: 'FFDDDDDD' } },
+  bottom: { style: 'thin' as const, color: { argb: 'FFDDDDDD' } },
+  right: { style: 'thin' as const, color: { argb: 'FFDDDDDD' } },
+};
+
+function styleHeaderRow(row: ExcelJS.Row, columns: number) {
+  row.height = 26;
+  row.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = thinBorder;
+  });
+  for (let c = columns + 1; c <= row.cellCount; c++) row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
 }
 
-export function exportOrderExcel(data: BackupData) {
+export async function exportOrderExcel(data: BackupData) {
   const orders = Array.isArray(data.orders) ? data.orders : [];
+  const dateStr = new Date().toLocaleDateString('es-CO');
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Ush By Ushuaia';
+  wb.created = new Date();
 
   // ── Hoja 1: Pedidos ──
-  const rows: any[][] = [PEDIDOS_HEADERS];
-  orders.forEach((o: any) => {
-    const [nombres, apellidos] = splitName(o.customer_name);
-    const total = o.total ?? 0;
-    rows.push([
-      formatFecha(o.order_date || (o.created_at ? o.created_at.slice(0, 10) : '')),
-      '',                                            // FECHA DE DESPACHO
-      orderStatusLabel(o.status),                     // ESTADO CLIENTE
-      o.customer_email || '',
-      nombres,
-      apellidos,
-      o.customer_doc || '',
-      o.customer_phone || '',
-      o.department || '',
-      o.city || '',
-      o.shipping_address || '',
-      '',                                            // BARRIO
-      '',                                            // DIRECCION COMPLEMENTARIA
-      '',                                            // DESTINATARIO
-      '',                                            // NUM DE GUÍA
-      o.id || '',                                    // NUMERO FACTURA
-      '',                                            // NUM DE PEDIDO SAG
-      paymentLabel(o.payment_method),
-      '',                                            // ESTADO DEL PAGO
-      '',                                            // ESTADO SAG
-      '',                                            // ESTADO DEL ENVÍO
-      total,                                         // VALOR VENTA
-      '',                                            // VALOR FLETE REAL
-      total,                                         // TOTAL PAGADO
-    ]);
+  const ws1 = wb.addWorksheet('Pedidos', { views: [{ state: 'frozen', ySplit: 3 }] });
+
+  // Título
+  ws1.mergeCells(1, 1, 1, PEDIDOS_HEADERS.length);
+  const title = ws1.getCell(1, 1);
+  title.value = 'REPORTE DE PEDIDOS USH BY USHUAIA';
+  title.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PINK } };
+  title.alignment = { vertical: 'middle', horizontal: 'center' };
+  ws1.getRow(1).height = 28;
+
+  // Subtítulo con fecha de generación
+  ws1.mergeCells(2, 1, 2, PEDIDOS_HEADERS.length);
+  const sub = ws1.getCell(2, 1);
+  sub.value = `Generado: ${dateStr}  ·  ${orders.length} pedidos`;
+  sub.font = { italic: true, size: 9, color: { argb: 'FF555555' } };
+  sub.alignment = { horizontal: 'right', vertical: 'middle' };
+  ws1.getRow(2).height = 18;
+
+  // Encabezados
+  const hdrRow = ws1.addRow(PEDIDOS_HEADERS);
+  styleHeaderRow(hdrRow, PEDIDOS_HEADERS.length);
+
+  // Datos
+  let rowIndex = 4;
+  orders.forEach((o: any, idx: number) => {
+    const row = ws1.addRow(buildOrderRow(o));
+    row.height = 20;
+    row.eachCell((cell, colNumber) => {
+      cell.alignment = { vertical: 'middle', wrapText: !(colNumber >= 5 && colNumber <= 13) };
+      cell.border = thinBorder;
+      if (idx % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT } };
+    });
+    row.getCell(22).numFmt = MONEY_FMT;
+    row.getCell(24).numFmt = MONEY_FMT;
+    rowIndex++;
   });
 
-  const wsPedidos = XLSX.utils.aoa_to_sheet(rows);
-  wsPedidos['!cols'] = PEDIDOS_WIDTHS.map((wch) => ({ wch }));
-  applyNumberFormat(wsPedidos, 21, '#,##0');
-  applyNumberFormat(wsPedidos, 23, '#,##0');
-  boldHeader(wsPedidos, PEDIDOS_HEADERS.length);
+  // Fila de totales
+  const totalRow = ws1.addRow([]);
+  totalRow.height = 22;
+  ws1.mergeCells(totalRow.number, 1, totalRow.number, 21);
+  totalRow.getCell(1).value = 'TOTAL GENERAL';
+  totalRow.getCell(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  totalRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+  totalRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+  const sumVenta = orders.reduce((s, o: any) => s + (o.total ?? 0), 0);
+  totalRow.getCell(22).value = sumVenta;
+  totalRow.getCell(22).numFmt = MONEY_FMT;
+  totalRow.getCell(22).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  totalRow.getCell(22).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+  totalRow.getCell(24).value = sumVenta;
+  totalRow.getCell(24).numFmt = MONEY_FMT;
+  totalRow.getCell(24).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  totalRow.getCell(24).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
 
-  // ── Hoja 2: Referencias (qué se compró, unidades y valores) ──
-  const refMap = new Map<string, { ref: string; name: string; units: number; value: number }>();
+  // Anchuras + autofiltro
+  PEDIDOS_WIDTHS.forEach((w, i) => { ws1.getColumn(i + 1).width = w; });
+  ws1.autoFilter = { from: { row: 3, column: 1 }, to: { row: totalRow.number - 1, column: PEDIDOS_HEADERS.length } };
+
+  // ── Hoja 2: Compras por Cliente (referencias y valores) ──
+  const ws2 = wb.addWorksheet('Compras por Cliente', { views: [{ state: 'frozen', ySplit: 3 }] });
+
+  ws2.mergeCells(1, 1, 1, DETALLE_HEADERS.length);
+  const title2 = ws2.getCell(1, 1);
+  title2.value = 'COMPRAS POR CLIENTE USH BY USHUAIA';
+  title2.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  title2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PINK } };
+  title2.alignment = { vertical: 'middle', horizontal: 'center' };
+  ws2.getRow(1).height = 28;
+
+  ws2.mergeCells(2, 1, 2, DETALLE_HEADERS.length);
+  const sub2 = ws2.getCell(2, 1);
+  sub2.value = `Generado: ${dateStr}  ·  referencias compradas por cliente`;
+  sub2.font = { italic: true, size: 9, color: { argb: 'FF555555' } };
+  sub2.alignment = { horizontal: 'right', vertical: 'middle' };
+  ws2.getRow(2).height = 18;
+
+  const hdr2 = ws2.addRow(DETALLE_HEADERS);
+  styleHeaderRow(hdr2, DETALLE_HEADERS.length);
+
+  // Agrupa por cliente y referencia
+  const map = new Map<string, { client: string; ref: string; name: string; units: number; value: number }>();
   orders.forEach((o: any) => {
+    const client = (o.customer_name || 'SIN NOMBRE').trim();
     const items = Array.isArray(o.items) ? o.items : [];
     items.forEach((it: any) => {
       const ref = it.reference || it.product_id || 'SIN-REFERENCIA';
-      const cur = refMap.get(ref) || { ref, name: it.name || '', units: 0, value: 0 };
+      const key = `${client}::${ref}`;
+      const cur = map.get(key) || { client, ref, name: it.name || '', units: 0, value: 0 };
       const qty = Number(it.quantity) || 0;
       cur.units += qty;
       cur.value += (Number(it.unit_price) || 0) * qty;
-      refMap.set(ref, cur);
+      map.set(key, cur);
     });
   });
 
-  const refRows: any[][] = [REFERENCIAS_HEADERS];
-  Array.from(refMap.values())
-    .sort((a, b) => b.value - a.value)
-    .forEach((r) => refRows.push([r.ref, r.name, r.units, r.value]));
+  const byClient = new Map<string, { client: string; ref: string; name: string; units: number; value: number }[]>();
+  Array.from(map.values()).forEach((e) => {
+    const arr = byClient.get(e.client) || [];
+    arr.push(e);
+    byClient.set(e.client, arr);
+  });
+  const clients = Array.from(byClient.keys()).sort((a, b) => a.localeCompare(b, 'es'));
 
-  const wsRefs = XLSX.utils.aoa_to_sheet(refRows);
-  wsRefs['!cols'] = [{ wch: 18 }, { wch: 40 }, { wch: 12 }, { wch: 16 }];
-  applyNumberFormat(wsRefs, 2, '0');
-  applyNumberFormat(wsRefs, 3, '#,##0');
-  boldHeader(wsRefs, REFERENCIAS_HEADERS.length);
+  let grandUnits = 0;
+  let grandValue = 0;
+  let dataStart = 4;
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, wsPedidos, 'Pedidos');
-  XLSX.utils.book_append_sheet(wb, wsRefs, 'Referencias');
-  XLSX.writeFile(wb, `ush_pedidos_${new Date().toISOString().split('T')[0]}.xlsx`);
+  clients.forEach((client, ci) => {
+    const rows = byClient.get(client)!.sort((a, b) => b.value - a.value);
+
+    // Fila de cliente (grupo)
+    const groupRow = ws2.addRow([]);
+    ws2.mergeCells(groupRow.number, 1, groupRow.number, DETALLE_HEADERS.length);
+    groupRow.getCell(1).value = client;
+    groupRow.getCell(1).font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+    groupRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ci % 2 === 0 ? 'FF3A4A6B' : 'FF4E6091' } };
+    groupRow.getCell(1).alignment = { vertical: 'middle' };
+    groupRow.height = 18;
+
+    rows.forEach((r, idx) => {
+      const row = ws2.addRow([r.client, r.ref, r.name, r.units, r.value]);
+      row.height = 18;
+      row.eachCell((cell) => { cell.border = thinBorder; if (idx % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT } }; });
+      row.getCell(4).numFmt = '#,##0';
+      row.getCell(5).numFmt = MONEY_FMT;
+    });
+
+    // Subtotal del cliente
+    const subRow = ws2.addRow([]);
+    ws2.mergeCells(subRow.number, 1, subRow.number, 3);
+    subRow.getCell(1).value = `TOTAL ${client.toUpperCase()}`;
+    subRow.getCell(1).font = { bold: true };
+    subRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+    const cUnits = rows.reduce((s, r) => s + r.units, 0);
+    const cValue = rows.reduce((s, r) => s + r.value, 0);
+    subRow.getCell(4).value = cUnits;
+    subRow.getCell(4).numFmt = '#,##0';
+    subRow.getCell(4).font = { bold: true };
+    subRow.getCell(5).value = cValue;
+    subRow.getCell(5).numFmt = MONEY_FMT;
+    subRow.getCell(5).font = { bold: true };
+    for (let c = 1; c <= DETALLE_HEADERS.length; c++) subRow.getCell(c).border = thickTop;
+    subRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDF0F5' } };
+    subRow.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDF0F5' } };
+
+    grandUnits += cUnits;
+    grandValue += cValue;
+  });
+
+  // Total general
+  if (clients.length > 0) {
+    const grandRow = ws2.addRow([]);
+    ws2.mergeCells(grandRow.number, 1, grandRow.number, 3);
+    grandRow.getCell(1).value = 'TOTAL GENERAL';
+    grandRow.getCell(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    grandRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+    grandRow.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+    grandRow.getCell(4).value = grandUnits;
+    grandRow.getCell(4).numFmt = '#,##0';
+    grandRow.getCell(4).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    grandRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+    grandRow.getCell(5).value = grandValue;
+    grandRow.getCell(5).numFmt = MONEY_FMT;
+    grandRow.getCell(5).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    grandRow.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
+  }
+
+  DETALLE_WIDTHS.forEach((w, i) => { ws2.getColumn(i + 1).width = w; });
+
+  // Descargar
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ush_pedidos_${new Date().toISOString().split('T')[0]}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
 // Vacía las tablas transaccionales (las que crecen). NO borra products.
