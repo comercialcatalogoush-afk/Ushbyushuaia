@@ -203,10 +203,13 @@ export async function upsertProduct(product: Product): Promise<{ success: boolea
 }
 
 // Actualización ligera del inventario (stock por talla) desde el listado del
-// admin, sin tocar el resto de campos del producto.
-export async function updateProductStock(id: string, stockBySize: Record<string, number>): Promise<{ success: boolean; error?: string }> {
+// admin, sin tocar el resto de campos del producto. Si se indica inStock, se
+// sincroniza también el estado de disponibilidad del producto.
+export async function updateProductStock(id: string, stockBySize: Record<string, number>, inStock?: boolean): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase.from('products').update({ stock_by_size: stockBySize }).eq('id', id);
+    const patch: any = { stock_by_size: stockBySize };
+    if (typeof inStock === 'boolean') patch.in_stock = inStock;
+    const { error } = await supabase.from('products').update(patch).eq('id', id);
     if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err: any) {

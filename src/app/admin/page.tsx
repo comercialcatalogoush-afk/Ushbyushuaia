@@ -58,9 +58,11 @@ export default function AdminCatalogPage() {
   const [stockBySize, setStockBySize] = useState<Record<string, number>>({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Inventario rápido (edición inline desde el listado)
-  const [savingStock, setSavingStock] = useState<Record<string, boolean>>({});
-  const [confirmingSizes, setConfirmingSizes] = useState(false);
+  // Inventario rápido (edición inline desde el listado): se marca como pendiente
+  // hasta que el admin pulse "Aplicar cambios".
+  const [pendingStockIds, setPendingStockIds] = useState<string[]>([]);
+  const [applyingStock, setApplyingStock] = useState(false);
+  const [inventoryMsg, setInventoryMsg] = useState<string | null>(null);
 
   // Multimedia modal state
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -500,8 +502,14 @@ export default function AdminCatalogPage() {
 
   const handleEditOpen = (product: Product) => {
     const sizeOpt = product.options?.find(o => o.key.toLowerCase() === 'talla');
-    setSelectedSizes(sizeOpt?.values || ALL_SIZES);
-    setStockBySize(product.stock_by_size || { '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
+    const allSizes = sizeOpt?.values || ALL_SIZES;
+    const stock = product.stock_by_size || {};
+    // Las tallas con 0 quedan desmarcadas automáticamente (igual que en el
+    // catálogo: no hace falta que el admin las quite a mano). Si todo está en
+    // 0 se conservan marcadas para poder reponer stock.
+    const activeSizes = allSizes.filter(s => (stock[s] ?? 0) > 0);
+    setSelectedSizes(activeSizes.length > 0 ? activeSizes : allSizes);
+    setStockBySize({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20, ...(product.stock_by_size || {}) });
     setEditingProduct(product);
   };
 
@@ -594,9 +602,8 @@ export default function AdminCatalogPage() {
     }
   };
 
-  // Guarda el inventario editado inline en una fila del listado (con rebote corto).
-  const quickSaveTimers = React.useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
+  // Edita el inventario inline: solo actualiza el estado local y marca la fila
+  // como pendiente. La BD y el catálogo se actualizan al pulsar "Aplicar cambios".
   const handleQuickStock = (product: Product, size: string, value: string) => {
     const id = product.id;
     const num = Math.max(0, parseInt(value, 10) || 0);
@@ -607,19 +614,35 @@ export default function AdminCatalogPage() {
       next.in_stock = sizes.some(s => (next.stock_by_size?.[s] || 0) > 0);
       return next;
     }));
+    setPendingStockIds(prev => (prev.includes(id) ? prev : [...prev, id]));
+    setInventoryMsg(null);
+  };
 
-    if (quickSaveTimers.current[id]) clearTimeout(quickSaveTimers.current[id]);
-    quickSaveTimers.current[id] = setTimeout(async () => {
-      const stock = { ...(product.stock_by_size || {}), [size]: num };
-      setSavingStock(prev => ({ ...prev, [id]: true }));
-      const res = await updateProductStock(id, stock);
-      if (res.success) {
-        publishCatalogChange();
-      } else {
-        console.warn('stock update failed:', res.error);
-      }
-      setSavingStock(prev => ({ ...prev, [id]: false }));
-    }, 600);
+  // Aplica los cambios pendientes de inventario: guarda en Supabase y publica
+  // para que el catálogo se actualice al instante en todos los dispositivos.
+  const handleApplyStockChanges = async () => {
+    const ids = pendingStockIds;
+    if (ids.length === 0) return;
+    setApplyingStock(true);
+    let ok = 0;
+    let fail = 0;
+    for (const id of ids) {
+      const prod = products.find(p => p.id === id);
+      if (!prod) continue;
+      const stock = prod.stock_by_size || {};
+      const hasStock = ALL_SIZES.some(s => (stock[s] || 0) > 0);
+      const res = await updateProductStock(id, stock, hasStock);
+      if (res.success) ok++; else fail++;
+    }
+    if (ok > 0) publishCatalogChange();
+    setPendingStockIds([]);
+    setApplyingStock(false);
+    setInventoryMsg(
+      ok > 0
+        ? `✅ Inventario actualizado y publicado (${ok} producto${ok !== 1 ? 's' : ''})${fail ? `, ${fail} con error` : ''}.`
+        : `❌ No se pudo actualizar el inventario${fail ? ` (${fail} con error)` : ''}.`
+    );
+    setTimeout(() => setInventoryMsg(null), 5000);
   };
 
   const [syncing, setSyncing] = useState(false);
@@ -638,45 +661,6 @@ export default function AdminCatalogPage() {
     if (ok > 0) publishCatalogChange();
     setSyncResult(`Sincronización completada: ${ok} referencias en la nube${fail ? `, ${fail} con error` : ''}.`);
     setTimeout(() => setSyncResult(null), 5000);
-  };
-
-  // Asegura que TODOS los productos tengan las tallas 6-14 (las que no tengan
-  // stock quedan en 0 y se ocultan en el catálogo). Persiste y refleja el cambio.
-  const normalizeSizes = (p: Product): Product => {
-    const stock = { ...(p.stock_by_size || {}) };
-    ALL_SIZES.forEach(s => { if (stock[s] === undefined || stock[s] === null) stock[s] = 0; });
-    const options = (p.options || []).map(o =>
-      o.key.toLowerCase() === 'talla' ? { ...o, values: [...ALL_SIZES] } : o
-    );
-    if (!options.some(o => o.key.toLowerCase() === 'talla')) {
-      options.push({ id: 'talla-opt', key: 'Talla', values: [...ALL_SIZES] });
-    }
-    return { ...p, stock_by_size: stock, options };
-  };
-
-  const handleConfirmSizes = async () => {
-    setConfirmingSizes(true);
-    const normalized = products.map(normalizeSizes);
-    let changed = 0;
-    for (let i = 0; i < normalized.length; i++) {
-      const n = normalized[i];
-      const orig = products[i];
-      if (
-        JSON.stringify(orig.stock_by_size) === JSON.stringify(n.stock_by_size) &&
-        JSON.stringify(orig.options) === JSON.stringify(n.options)
-      ) continue;
-      const res = await upsertProduct(n);
-      if (res.success) changed++;
-    }
-    if (changed > 0) {
-      setProducts(normalized);
-      saveLocalProductsOverride(normalized);
-      publishCatalogChange();
-    }
-    setConfirmingSizes(false);
-    alert(changed > 0
-      ? `✅ Tallas confirmadas: ${changed} producto(s) actualizado(s) a 6-14. Los cambios ya se reflejan en el catálogo.`
-      : 'Todos los productos ya tienen las tallas 6 a 14. No hubo cambios.');
   };
 
   if (!isAuthenticated) {
@@ -971,23 +955,12 @@ export default function AdminCatalogPage() {
                 <h2 className="text-sm font-bold tracking-wide">
                   Productos ({filteredProductsList.length}{filteredProductsList.length !== products.length ? ` de ${products.length}` : ''})
                 </h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleConfirmSizes}
-                    disabled={confirmingSizes}
-                    className="flex items-center gap-1.5 bg-[#1b2333] text-white text-xs font-bold px-4 py-1.5 rounded hover:bg-[#d88193] transition-colors disabled:opacity-60"
-                    title="Asegura que todos los productos tengan las tallas 6 a 14 y publica los cambios"
-                  >
-                    {confirmingSizes ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                    Confirmar tallas modificadas
-                  </button>
-                  <button
-                    onClick={handleOpenNew}
-                    className="flex items-center gap-1.5 bg-white text-[#116dff] text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-50 transition-colors"
-                  >
-                    <Plus size={14} /> Nuevo producto
-                  </button>
-                </div>
+                <button
+                  onClick={handleOpenNew}
+                  className="flex items-center gap-1.5 bg-white text-[#116dff] text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-50 transition-colors"
+                >
+                  <Plus size={14} /> Nuevo producto
+                </button>
               </div>
 
               {/* Column Headers */}
@@ -1082,6 +1055,7 @@ export default function AdminCatalogPage() {
                       <div className="px-3 py-2 flex items-center justify-center" onClick={e => e.stopPropagation()}>
                         {(() => {
                           const sizes = sizeOpt?.values && sizeOpt.values.length > 0 ? sizeOpt.values : ALL_SIZES;
+                          const isPending = pendingStockIds.includes(p.id);
                           return (
                             <div className="flex items-center gap-1">
                               {sizes.map(s => (
@@ -1093,15 +1067,17 @@ export default function AdminCatalogPage() {
                                     value={p.stock_by_size?.[s] ?? 0}
                                     onChange={(e) => handleQuickStock(p, s, e.target.value)}
                                     className={`w-9 h-6 text-center text-[11px] font-semibold border rounded-sm focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-blue-100 ${
-                                      (p.stock_by_size?.[s] ?? 0) > 0
+                                      isPending
+                                        ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                        : (p.stock_by_size?.[s] ?? 0) > 0
                                         ? 'border-gray-300 bg-white text-neutral-800'
                                         : 'border-red-200 bg-red-50 text-red-500'
                                     }`}
                                   />
                                 </div>
                               ))}
-                              {savingStock[p.id] && (
-                                <RefreshCw size={13} className="text-[#116dff] animate-spin ml-0.5 flex-shrink-0" />
+                              {isPending && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 ml-0.5 flex-shrink-0" title="Cambio pendiente de aplicar" />
                               )}
                             </div>
                           );
@@ -1143,6 +1119,47 @@ export default function AdminCatalogPage() {
                 })}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Barra de confirmación de cambios de inventario/tallas (aparece solo tras modificar) */}
+        {pendingStockIds.length > 0 && (
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1b2333] text-white shadow-2xl border-t-2 border-[#d88193]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                <RefreshCw size={14} className={applyingStock ? 'animate-spin text-[#d88193]' : 'text-[#d88193]'} />
+                {applyingStock
+                  ? 'Publicando cambios…'
+                  : `${pendingStockIds.length} producto(s) con inventario/tallas modificados sin confirmar.`}
+              </p>
+              <div className="flex items-center gap-2">
+                {!applyingStock && (
+                  <button
+                    type="button"
+                    onClick={() => { setPendingStockIds([]); setInventoryMsg(null); }}
+                    className="text-xs font-bold uppercase tracking-wider text-neutral-300 hover:text-white px-3 py-2"
+                  >
+                    Descartar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleApplyStockChanges}
+                  disabled={applyingStock}
+                  className="bg-[#d88193] hover:bg-[#c06f81] disabled:opacity-60 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 transition-colors"
+                >
+                  <CheckCircle size={14} />
+                  {applyingStock ? 'Aplicando…' : `Aplicar cambios (${pendingStockIds.length})`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mensaje de resultado de la aplicación de cambios */}
+        {inventoryMsg && (
+          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-wider shadow-2xl border border-[#d88193]">
+            {inventoryMsg}
           </div>
         )}
 
@@ -1621,15 +1638,40 @@ export default function AdminCatalogPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {items.map((it: any, idx: number) => (
-                                  <tr key={idx} className="border-t border-gray-100">
-                                    <td className="px-3 py-2 font-bold text-[#1b2333]">{it.reference}</td>
-                                    <td className="px-3 py-2 text-neutral-600">{it.name}</td>
-                                    <td className="px-3 py-2">{it.size || 'Única'}</td>
-                                    <td className="px-3 py-2">{it.color || '—'}</td>
-                                    <td className="px-3 py-2 text-right font-bold">{it.quantity}</td>
-                                  </tr>
-                                ))}
+                                {(() => {
+                                  // Agrupa por referencia: "REF → Talla 6: 5 uds · Talla 8: 3 uds"
+                                  const grouped: Record<string, { name: string; color: string; sizes: { size: string; qty: number }[]; total: number }> = {};
+                                  items.forEach((it: any) => {
+                                    const refKey = String(it.reference || '—');
+                                    const colorKey = String(it.color || '—');
+                                    const key = `${refKey}::${colorKey}`;
+                                    if (!grouped[key]) grouped[key] = { name: it.name, color: colorKey, sizes: [], total: 0 };
+                                    const g = grouped[key];
+                                    const size = it.size || 'Única';
+                                    const existing = g.sizes.find(s => s.size === size);
+                                    const qty = Number(it.quantity) || 0;
+                                    if (existing) existing.qty += qty;
+                                    else g.sizes.push({ size, qty });
+                                    g.total += qty;
+                                  });
+                                  return Object.entries(grouped).map(([key, g]) => (
+                                    <tr key={key} className="border-t border-gray-100">
+                                      <td className="px-3 py-2 font-bold text-[#1b2333]">{key.split('::')[0]}</td>
+                                      <td className="px-3 py-2 text-neutral-600">{g.name}</td>
+                                      <td className="px-3 py-2">
+                                        {g.sizes.map(s => (
+                                          <span key={s.size} className="inline-flex items-baseline gap-1 mr-3">
+                                            <span className="font-bold text-[#1b2333]">{s.size}</span>
+                                            <span className="text-neutral-400">·</span>
+                                            <span className="font-semibold">{s.qty} uds</span>
+                                          </span>
+                                        ))}
+                                      </td>
+                                      <td className="px-3 py-2">{g.color}</td>
+                                      <td className="px-3 py-2 text-right font-bold">{g.total}</td>
+                                    </tr>
+                                  ));
+                                })()}
                               </tbody>
                             </table>
                           </div>
