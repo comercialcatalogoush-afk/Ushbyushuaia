@@ -2,215 +2,208 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, ShieldAlert, KeyRound } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, KeyRound, LogOut, ShieldCheck, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
-const MAX_ADMIN_ATTEMPTS = 3;
-const BLOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
-// Simple localStorage-based user store (replace with Supabase auth later)
-function getUsers(): Record<string, { name: string; password: string }> {
-  try { return JSON.parse(localStorage.getItem('ush_users') || '{}'); } catch { return {}; }
+function friendlyAuthError(err: any): string {
+  if (!err?.message) return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
+  const m = err.message.toLowerCase();
+  if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos. Verifica e intenta de nuevo.';
+  if (m.includes('email not confirmed')) return 'Aún no confirmas tu correo. Revisa tu bandeja y confirma tu cuenta.';
+  if (m.includes('user already registered')) return 'Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.';
+  if (m.includes('rate limit')) return 'Demasiados intentos. Espera un momento y vuelve a intentar.';
+  if (m.includes('signups not allowed')) return 'El registro no está habilitado en este momento.';
+  return err.message;
 }
-function saveUser(email: string, name: string, password: string) {
-  const users = getUsers();
-  users[email.toLowerCase()] = { name, password };
-  localStorage.setItem('ush_users', JSON.stringify(users));
-}
-function verifyUser(email: string, password: string): boolean {
-  const users = getUsers();
-  const u = users[email.toLowerCase()];
-  return !!u && u.password === password;
-}
-function userExists(email: string): boolean {
-  return !!getUsers()[email.toLowerCase()];
+
+function GoogleIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z" />
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.6 39.6 16.3 44 24 44z" />
+      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C36.9 40.1 44 35 44 24c0-1.3-.1-2.6-.4-3.9z" />
+    </svg>
+  );
 }
 
 export default function ProfilePage() {
-  const [mode, setMode] = useState<'login' | 'register' | 'magic' | 'admin'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'recover' | 'newpass'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
   const [name, setName] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-  const [isAdminSession, setIsAdminSession] = useState(false);
-
-  // Admin lockout state
-  const [adminAttempts, setAdminAttempts] = useState(0);
-  const [adminBlocked, setAdminBlocked] = useState(false);
-  const [adminBlockUntil, setAdminBlockUntil] = useState(0);
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPass, setAdminPass] = useState('');
-  const [showAdminPass, setShowAdminPass] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const sessionUser = data.session?.user;
-      if (sessionUser && sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        setIsAdminSession(true);
-      }
-    })();
-
-    // Restore lockout state
-    const blocked = localStorage.getItem('ush_admin_blocked');
-    const until = Number(localStorage.getItem('ush_admin_block_until') || '0');
-    const attempts = Number(localStorage.getItem('ush_admin_attempts') || '0');
-    if (blocked === 'true' && Date.now() < until) {
-      setAdminBlocked(true);
-      setAdminBlockUntil(until);
-    } else {
-      localStorage.removeItem('ush_admin_blocked');
-      localStorage.removeItem('ush_admin_block_until');
+    if (window.location.hash.includes('type=recovery')) {
+      setIsRecovery(true);
+      setMode('newpass');
     }
-    setAdminAttempts(attempts);
+
+    const sync = (session: any) => {
+      setUser(session?.user ?? null);
+      setChecking(false);
+    };
+
+    supabase.auth.getSession().then(({ data }) => sync(data.session));
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      sync(session);
+      if (session && window.location.hash.includes('type=recovery')) {
+        setIsRecovery(true);
+        setMode('newpass');
+      }
+    });
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  // Check if block has expired
-  const remainingBlockMinutes = () => Math.max(0, Math.ceil((adminBlockUntil - Date.now()) / 60000));
+  const isAdminUser = !!user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(''); setSuccess('');
-    setLoading(true);
-
-    const emailVal = email.trim().toLowerCase();
-
-    // Regular user login
-    if (!email || !password) {
-      setError('Por favor completa todos los campos.');
-      setLoading(false); return;
-    }
-    if (!userExists(emailVal)) {
-      setError('No encontramos una cuenta con ese correo. ¿Ya te registraste?');
-      setLoading(false); return;
-    }
-    if (!verifyUser(emailVal, password)) {
-      setError('La contraseña es incorrecta. Verifica e intenta de nuevo.');
-      setLoading(false); return;
-    }
-
-    setSuccess(`✅ ¡Bienvenido! Iniciaste sesión correctamente.`);
-    setLoading(false);
-    setTimeout(() => { window.location.href = '/'; }, 1200);
+  const switchMode = (m: 'login' | 'register' | 'recover') => {
+    setMode(m);
+    setError('');
+    setSuccess('');
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (!email || !password) { setError('Por favor completa todos los campos.'); return; }
+    setLoading(true);
+    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
+    setSuccess('✅ ¡Bienvenido! Iniciaste sesión correctamente.');
+    const isAdmin = data.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    setTimeout(() => { window.location.href = isAdmin ? '/admin' : '/'; }, 1200);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess('');
     if (!name || !email || !password) { setError('Por favor completa todos los campos.'); return; }
-    if (password.length < 8) { setError('La contraseña debe tener mínimo 8 caracteres.'); return; }
-    const emailVal = email.trim().toLowerCase();
-    if (userExists(emailVal)) { setError('Ya existe una cuenta con ese correo. Prueba a iniciar sesión.'); return; }
+    if (password.length < 6) { setError('La contraseña debe tener mínimo 6 caracteres.'); return; }
     setLoading(true);
-    setTimeout(() => {
-      saveUser(emailVal, name, password);
-      setSuccess('✅ ¡Cuenta creada! Ahora puedes iniciar sesión.');
+    const { data, error: err } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: name } },
+    });
+    if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
+    if (data.session) {
+      setSuccess('✅ ¡Cuenta creada! Ya iniciaste sesión.');
+      setTimeout(() => { window.location.href = '/'; }, 1200);
+    } else {
+      setSuccess(`✅ Te enviamos un correo de confirmación a ${email}. Revísalo para activar tu cuenta.`);
       setLoading(false);
-      setTimeout(() => { setMode('login'); setSuccess(''); }, 2000);
-    }, 600);
+    }
   };
 
-  const handleMagicLink = (e: React.FormEvent) => {
+  const handleRecover = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess('');
     if (!email) { setError('Por favor ingresa tu correo.'); return; }
     setLoading(true);
-    setTimeout(() => {
-      setSuccess(`✅ Te enviamos un enlace de acceso a ${email}. Revisa tu bandeja.`);
-      setLoading(false);
-    }, 800);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/profile`,
+    });
+    if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
+    setSuccess(`✅ Te enviamos un enlace para recuperar tu contraseña a ${email}. Revisa tu bandeja.`);
+    setLoading(false);
   };
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
+  const handleNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess('');
-
-    if (adminBlocked && Date.now() < adminBlockUntil) {
-      setError(`🔒 Panel bloqueado. Intenta en ${remainingBlockMinutes()} minuto(s).`);
-      return;
-    }
-
-    const emailOk = adminEmail.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
-
-    if (emailOk) {
-      // Success
-      localStorage.removeItem('ush_admin_attempts');
-      localStorage.removeItem('ush_admin_blocked');
-      localStorage.removeItem('ush_admin_block_until');
-      setSuccess('✅ Acceso de administrador concedido. Redirigiendo al panel...');
-      setLoading(true);
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email: adminEmail.trim(),
-        password: adminPass,
-      });
-
-      if (!error) {
-        setTimeout(() => { window.location.href = '/admin'; }, 1000);
-      } else {
-        setLoading(false);
-        setSuccess('');
-        setError('❌ Credenciales incorrectas. Verifica la contraseña de tu cuenta admin.');
-      }
-    } else {
-      const newAttempts = adminAttempts + 1;
-      setAdminAttempts(newAttempts);
-      localStorage.setItem('ush_admin_attempts', String(newAttempts));
-
-      if (newAttempts >= MAX_ADMIN_ATTEMPTS) {
-        const until = Date.now() + BLOCK_DURATION_MS;
-        localStorage.setItem('ush_admin_blocked', 'true');
-        localStorage.setItem('ush_admin_block_until', String(until));
-        setAdminBlocked(true);
-        setAdminBlockUntil(until);
-        setError(`🔒 Demasiados intentos fallidos. Panel bloqueado por 15 minutos.`);
-      } else {
-        const remaining = MAX_ADMIN_ATTEMPTS - newAttempts;
-        setError(`❌ Credenciales incorrectas. ${remaining} intento(s) restante(s) antes del bloqueo.`);
-      }
-    }
+    if (!password || password.length < 6) { setError('La contraseña debe tener mínimo 6 caracteres.'); return; }
+    setLoading(true);
+    const { error: err } = await supabase.auth.updateUser({ password });
+    if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
+    setSuccess('✅ Contraseña actualizada correctamente.');
+    setLoading(false);
+    setTimeout(() => {
+      window.location.hash = '';
+      window.location.href = '/';
+    }, 2000);
   };
 
-  // Already logged in as admin
-  if (isAdminSession) {
+  const handleGoogle = async () => {
+    setError(''); setSuccess('');
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/profile` },
+    });
+    if (err) setError(friendlyAuthError(err));
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setMode('login');
+    setSuccess('');
+    setError('');
+  };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-[#d88193]" />
+      </div>
+    );
+  }
+
+  // ── Sesión activa ──
+  if (user && !isRecovery) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md bg-white shadow-xl border border-gray-200 overflow-hidden animate-fadeIn text-center">
           <div className="bg-[#d88193] text-white p-8">
-            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 border-2 border-white/40">
-              <Settings size={28} />
-            </div>
-            <h1 className="text-xl font-black uppercase">Panel de Administrador</h1>
-            <p className="text-xs text-white/80 mt-1">Sesión activa</p>
+            {user.user_metadata?.avatar_url ? (
+              <img src={user.user_metadata.avatar_url} alt="" className="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-white/40 object-cover" />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 border-2 border-white/40">
+                <User size={28} />
+              </div>
+            )}
+            <h1 className="text-xl font-black uppercase">Mi Cuenta</h1>
+            <p className="text-xs text-white/80 mt-1 break-all">{user.email}</p>
           </div>
-          <div className="p-8 space-y-4">
-            <p className="text-sm text-neutral-600 font-light">Ya iniciaste sesión como administrador.</p>
-            <a href="/admin" className="block w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest text-center transition-colors">
-              Ir al Panel de Edición →
-            </a>
-            <button onClick={async () => { await supabase.auth.signOut(); setIsAdminSession(false); }}
-              className="block w-full border border-gray-300 text-neutral-600 font-bold py-3 text-xs uppercase tracking-wider hover:bg-gray-50 transition-colors">
-              Cerrar Sesión de Admin
+          <div className="p-8 space-y-3 text-left">
+            <p className="text-sm text-neutral-600">
+              <span className="font-bold text-neutral-800">Nombre:</span> {user.user_metadata?.full_name || user.user_metadata?.name || '—'}
+            </p>
+            {isAdminUser && (
+              <a href="/admin" className="flex items-center justify-center gap-2 w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest transition-colors">
+                <Settings size={16} /> Ir al Panel de Administrador
+              </a>
+            )}
+            <button onClick={handleLogout}
+              className="flex items-center justify-center gap-2 w-full border border-gray-300 text-neutral-600 font-bold py-3 text-xs uppercase tracking-wider hover:bg-gray-50 transition-colors">
+              <LogOut size={15} /> Cerrar Sesión
             </button>
-            <Link href="/" className="block text-xs text-neutral-400 hover:text-neutral-700 mt-2">← Volver al catálogo</Link>
+            <Link href="/" className="block text-center text-xs text-neutral-400 hover:text-neutral-700 mt-1">← Volver al catálogo</Link>
           </div>
         </div>
       </div>
     );
   }
 
+  // ── Auth card ──
   return (
     <div className="min-h-screen bg-neutral-50 py-16 px-4 flex items-center justify-center">
       <meta name="robots" content="noindex,nofollow" />
       <title>Mi Cuenta | Ush By Ushuaia</title>
       <div className="w-full max-w-md bg-white shadow-xl border border-gray-200 overflow-hidden animate-fadeIn">
 
-        {/* Header */}
         <div className="bg-[#d88193] text-white p-8 text-center">
           <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 border-2 border-white/40">
             <User size={28} />
@@ -219,22 +212,22 @@ export default function ProfilePage() {
           <p className="text-xs text-white/80 mt-1">USH BY USHUAIA — Mayoristas</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200">
-          {([
-            { key: 'login',    label: 'Iniciar Sesión' },
-            { key: 'register', label: 'Crear Cuenta' },
-            { key: 'magic',    label: 'Solo Correo' },
-            { key: 'admin',    label: '🔑 Admin' },
-          ] as const).map(({ key, label }) => (
-            <button key={key} onClick={() => { setMode(key); setError(''); setSuccess(''); }}
-              className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors border-r last:border-r-0 border-gray-200 ${
-                mode === key ? 'bg-[#d88193] text-white' : 'text-neutral-500 hover:bg-gray-50'
-              }`}>
-              {label}
-            </button>
-          ))}
-        </div>
+        {!isRecovery && (
+          <div className="flex border-b border-gray-200">
+            {([
+              { key: 'login',    label: 'Iniciar Sesión' },
+              { key: 'register', label: 'Crear Cuenta' },
+              { key: 'recover',  label: 'Recuperar Clave' },
+            ] as const).map(({ key, label }) => (
+              <button key={key} onClick={() => switchMode(key)}
+                className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors border-r last:border-r-0 border-gray-200 ${
+                  mode === key ? 'bg-[#d88193] text-white' : 'text-neutral-500 hover:bg-gray-50'
+                }`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="p-8 space-y-5">
           {error && (
@@ -275,8 +268,23 @@ export default function ProfilePage() {
                 className="w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
                 <LogIn size={16} />{loading ? 'Verificando...' : 'Iniciar Sesión'}
               </button>
+
+              <div className="flex items-center gap-3 py-1">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">o</span>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+
+              <button type="button" onClick={handleGoogle} disabled={loading}
+                className="w-full border border-gray-300 hover:border-[#d88193] hover:bg-gray-50 text-neutral-700 font-bold py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
+                <GoogleIcon size={16} /> Continuar con Google
+              </button>
+
               <p className="text-center text-xs text-neutral-500">
-                ¿Sin contraseña? <button type="button" onClick={() => setMode('magic')} className="text-[#d88193] font-bold hover:underline">Entra solo con tu correo →</button>
+                ¿No tienes cuenta? <button type="button" onClick={() => switchMode('register')} className="text-[#d88193] font-bold hover:underline">Crea una →</button>
+              </p>
+              <p className="text-center text-xs text-neutral-500">
+                ¿Olvidaste tu contraseña? <button type="button" onClick={() => switchMode('recover')} className="text-[#d88193] font-bold hover:underline">Recupérala →</button>
               </p>
             </form>
           )}
@@ -301,10 +309,10 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Contraseña * <span className="text-neutral-400 font-normal normal-case">(mín. 8 caracteres)</span></label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Contraseña * <span className="text-neutral-400 font-normal normal-case">(mín. 6 caracteres)</span></label>
                 <div className="relative">
                   <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type={showPass ? 'text' : 'password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+                  <input type={showPass ? 'text' : 'password'} required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
                     className="w-full border border-gray-300 pl-9 pr-10 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
                   <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -315,13 +323,18 @@ export default function ProfilePage() {
                 className="w-full bg-[#d88193] hover:bg-[#c06579] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
                 <ArrowRight size={16} />{loading ? 'Creando cuenta...' : 'Crear Mi Cuenta'}
               </button>
+              <p className="text-center text-xs text-neutral-500">
+                ¿Ya tienes cuenta? <button type="button" onClick={() => switchMode('login')} className="text-[#d88193] font-bold hover:underline">Inicia sesión →</button>
+              </p>
             </form>
           )}
 
-          {/* ── MAGIC LINK ── */}
-          {mode === 'magic' && (
-            <form onSubmit={handleMagicLink} className="space-y-4">
-              <p className="text-xs text-neutral-500 leading-relaxed text-center">Ingresa tu correo y te enviamos un enlace de acceso seguro sin contraseña.</p>
+          {/* ── RECOVER ── */}
+          {mode === 'recover' && (
+            <form onSubmit={handleRecover} className="space-y-4">
+              <p className="text-xs text-neutral-500 leading-relaxed text-center">
+                Ingresa tu correo y te enviamos un enlace seguro para restablecer tu contraseña.
+              </p>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Correo *</label>
                 <div className="relative">
@@ -332,54 +345,35 @@ export default function ProfilePage() {
               </div>
               <button type="submit" disabled={loading}
                 className="w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-                <Mail size={16} />{loading ? 'Enviando...' : 'Enviarme Enlace de Acceso'}
+                <KeyRound size={16} />{loading ? 'Enviando...' : 'Enviar Enlace de Recuperación'}
               </button>
+              <p className="text-center text-xs text-neutral-500">
+                ¿Recordaste tu contraseña? <button type="button" onClick={() => switchMode('login')} className="text-[#d88193] font-bold hover:underline">Inicia sesión →</button>
+              </p>
             </form>
           )}
 
-          {/* ── ADMIN ── */}
-          {mode === 'admin' && (
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
-                <ShieldAlert size={16} className="flex-shrink-0" />
-                <span>Acceso exclusivo para administrador. Máx. {MAX_ADMIN_ATTEMPTS} intentos.</span>
-              </div>
-
-              {adminBlocked && Date.now() < adminBlockUntil ? (
-                <div className="p-4 bg-red-50 border border-red-200 text-center space-y-2">
-                  <ShieldAlert size={28} className="mx-auto text-red-500" />
-                  <p className="text-xs font-bold text-red-700">Panel bloqueado</p>
-                  <p className="text-xs text-red-600">Demasiados intentos fallidos. Intenta en <strong>{remainingBlockMinutes()} min</strong>.</p>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Confirmar Correo Admin *</label>
-                    <div className="relative">
-                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type="email" required value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="correo de administrador"
-                        className="w-full border border-gray-300 pl-9 pr-3 py-3 text-xs focus:outline-none focus:border-amber-400" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-                      Clave Admin * {adminAttempts > 0 && <span className="text-red-500 font-normal normal-case">({MAX_ADMIN_ATTEMPTS - adminAttempts} intento(s) restantes)</span>}
-                    </label>
-                    <div className="relative">
-                      <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type={showAdminPass ? 'text' : 'password'} required value={adminPass} onChange={e => setAdminPass(e.target.value)} placeholder="••••••••••"
-                        className="w-full border border-gray-300 pl-9 pr-10 py-3 text-xs focus:outline-none focus:border-amber-400" />
-                      <button type="button" onClick={() => setShowAdminPass(!showAdminPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
-                        {showAdminPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                  <button type="submit"
-                    className="w-full bg-[#1b2333] hover:bg-amber-600 text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
-                    <ShieldAlert size={16} /> Acceder como Administrador
+          {/* ── NEW PASSWORD (recovery) ── */}
+          {mode === 'newpass' && (
+            <form onSubmit={handleNewPassword} className="space-y-4">
+              <p className="text-xs text-neutral-500 leading-relaxed text-center">
+                Ingresa tu nueva contraseña. {user && <span className="font-bold text-neutral-700">Cuenta: {user.email}</span>}
+              </p>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Nueva Contraseña * <span className="text-neutral-400 font-normal normal-case">(mín. 6 caracteres)</span></label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input type={showPass ? 'text' : 'password'} required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+                    className="w-full border border-gray-300 pl-9 pr-10 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
-                </>
-              )}
+                </div>
+              </div>
+              <button type="submit" disabled={loading}
+                className="w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
+                <ShieldCheck size={16} />{loading ? 'Guardando...' : 'Guardar Nueva Contraseña'}
+              </button>
             </form>
           )}
 

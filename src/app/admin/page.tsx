@@ -9,7 +9,7 @@ import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
-  CheckSquare, Square, Lock, LogOut, ShieldCheck, Key, Search, Filter, History, 
+  CheckSquare, Square, Lock, LogOut, ShieldCheck, ShieldAlert, Key, Search, Filter, History, 
   Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate, XCircle
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -27,6 +27,7 @@ const DEFAULT_COLORS = [
 
 export default function AdminCatalogPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasNonAdminSession, setHasNonAdminSession] = useState(false);
   const [loginEmail, setLoginEmail] = useState(ADMIN_EMAIL);
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -96,16 +97,18 @@ export default function AdminCatalogPage() {
       try {
         const { data } = await supabase.auth.getSession();
         const sessionUser = data.session?.user;
-        if (sessionUser && sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          setIsAuthenticated(true);
+        const isAdmin = !!sessionUser && !!sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        setIsAuthenticated(isAdmin);
+        setHasNonAdminSession(!!sessionUser && !isAdmin);
+        if (isAdmin) {
           loadProducts();
           loadHistory();
         } else {
-          setIsAuthenticated(false);
           setLoading(false);
         }
       } catch (e) {
         setIsAuthenticated(false);
+        setHasNonAdminSession(false);
         setLoading(false);
       }
     };
@@ -115,7 +118,8 @@ export default function AdminCatalogPage() {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const sessionUser = session?.user;
       const authed = !!sessionUser && !!sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-      setIsAuthenticated(!!authed);
+      setIsAuthenticated(authed);
+      setHasNonAdminSession(!!sessionUser && !authed);
       if (authed) {
         loadProducts();
         loadHistory();
@@ -148,9 +152,19 @@ export default function AdminCatalogPage() {
       });
 
       if (!error) {
-        setIsAuthenticated(true);
-        loadProducts();
-        loadHistory();
+        const sessionUser = (await supabase.auth.getSession()).data.session?.user;
+        const isAdmin = !!sessionUser && !!sessionUser.email && sessionUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        if (isAdmin) {
+          setIsAuthenticated(true);
+          setHasNonAdminSession(false);
+          loadProducts();
+          loadHistory();
+        } else {
+          setHasNonAdminSession(true);
+          setIsAuthenticated(false);
+          setLoginError('Esta cuenta no tiene permisos de administrador.');
+          setLoading(false);
+        }
       } else {
         setLoginError('Credenciales incorrectas. Verifique el correo o la contraseña.');
       }
@@ -681,6 +695,33 @@ export default function AdminCatalogPage() {
   };
 
   if (!isAuthenticated) {
+    if (hasNonAdminSession) {
+      return (
+        <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
+          <meta name="robots" content="noindex,nofollow" />
+          <title>Acceso Restringido | Ush By Ushuaia</title>
+          <div className="bg-white max-w-md w-full p-8 border border-gray-200 shadow-2xl space-y-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-ush-navy text-white flex items-center justify-center mx-auto shadow-md">
+              <ShieldAlert size={22} className="text-ush-pink" />
+            </div>
+            <h1 className="text-xl font-black text-ush-navy uppercase tracking-wide">
+              Acceso Restringido
+            </h1>
+            <p className="text-xs text-neutral-500 font-light">
+              Tu cuenta no tiene permisos de administrador. El panel solo está disponible para la cuenta autorizada.
+            </p>
+            <a href="/profile" className="block w-full bg-ush-navy hover:bg-ush-pink text-white font-bold py-3 text-xs uppercase tracking-widest transition-colors">
+              Ir a Mi Cuenta
+            </a>
+            <button onClick={async () => { await supabase.auth.signOut(); }}
+              className="block w-full border border-gray-300 text-neutral-600 font-bold py-3 text-xs uppercase tracking-wider hover:bg-gray-50 transition-colors">
+              Cerrar Sesión
+            </button>
+            <a href="/" className="block text-xs text-neutral-400 hover:text-neutral-700">← Volver al catálogo</a>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
         <meta name="robots" content="noindex,nofollow" />
