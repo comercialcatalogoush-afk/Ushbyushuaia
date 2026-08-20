@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import * as XLSX from 'xlsx';
 
 // ── Respaldos y limpieza mensual ──────────────────────────────────
 // El plan gratuito de Supabase tiene límites de almacenamiento/DB. Para no
@@ -49,6 +50,148 @@ export function downloadBackup(data: BackupData) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+// ── Respaldo en Excel: hoja de pedidos + hoja de referencias ────────
+
+const PEDIDOS_HEADERS = [
+  'FECHA DE COMPRA', 'FECHA DE DESPACHO', 'ESTADO CLIENTE', 'CORREO', 'NOMBRE', 'APELLIDOS',
+  'CEDULA/NIT/CE', 'CELULAR', 'DEPARTAMENTO', 'MUNICIPIO', 'DIRECCION', 'BARRIO',
+  'DIRECCION COMPLEMENTARIA', 'DESTINATARIO', 'NUM DE GUÍA', 'NUMERO FACTURA', 'NUM DE PEDIDO SAG',
+  'BANCO O METODO DE PAGO', 'ESTADO DEL PAGO', 'ESTADO SAG', 'ESTADO DEL ENVÍO',
+  'VALOR VENTA', 'VALOR FLETE REAL', 'TOTAL PAGADO',
+];
+
+const PEDIDOS_WIDTHS = [15, 15, 14, 30, 20, 24, 16, 16, 14, 16, 40, 22, 24, 16, 14, 16, 16, 22, 14, 12, 16, 14, 14, 14];
+
+const REFERENCIAS_HEADERS = ['REFERENCIA', 'NOMBRE', 'UNIDADES', 'VALOR'];
+
+function splitName(fullName?: string): [string, string] {
+  const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 4) return [parts.slice(0, 2).join(' '), parts.slice(2).join(' ')];
+  if (parts.length === 3) return [parts[0], parts.slice(1).join(' ')];
+  return [parts[0] || '', parts.slice(1).join(' ') || ''];
+}
+
+function formatFecha(value?: string): string {
+  if (!value) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return value;
+}
+
+function orderStatusLabel(status?: string): string {
+  if (!status) return '';
+  const s = status.toLowerCase();
+  if (s === 'confirmed') return 'CONFIRMADO';
+  if (s === 'canceled' || s === 'cancelled') return 'CANCELADO';
+  if (s === 'pending') return 'PENDIENTE';
+  return status.toUpperCase();
+}
+
+function paymentLabel(method?: string): string {
+  const map: Record<string, string> = {
+    transfer: 'TRANSFERENCIA BANCARIA',
+    card: 'PAGO CON TARJETA',
+    addi: 'ADDI',
+    'mercado-pago': 'MERCADO PAGO',
+    'mercado pago': 'MERCADO PAGO',
+    pse: 'PSE',
+    efectivo: 'EFECTIVO',
+    nequi: 'NEQUI',
+    daviplata: 'DAVIPLATA',
+  };
+  return map[(method || '').toLowerCase()] || method || '';
+}
+
+function applyNumberFormat(ws: XLSX.WorkSheet, col: number, format: string) {
+  if (!ws['!ref']) return;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const addr = XLSX.utils.encode_cell({ r, c: col });
+    const cell = ws[addr];
+    if (cell && typeof cell.v === 'number') cell.z = format;
+  }
+}
+
+function boldHeader(ws: XLSX.WorkSheet, columns: number) {
+  for (let c = 0; c < columns; c++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+    if (cell) cell.s = { font: { bold: true } };
+  }
+}
+
+export function exportOrderExcel(data: BackupData) {
+  const orders = Array.isArray(data.orders) ? data.orders : [];
+
+  // ── Hoja 1: Pedidos ──
+  const rows: any[][] = [PEDIDOS_HEADERS];
+  orders.forEach((o: any) => {
+    const [nombres, apellidos] = splitName(o.customer_name);
+    const total = o.total ?? 0;
+    rows.push([
+      formatFecha(o.order_date || (o.created_at ? o.created_at.slice(0, 10) : '')),
+      '',                                            // FECHA DE DESPACHO
+      orderStatusLabel(o.status),                     // ESTADO CLIENTE
+      o.customer_email || '',
+      nombres,
+      apellidos,
+      o.customer_doc || '',
+      o.customer_phone || '',
+      o.department || '',
+      o.city || '',
+      o.shipping_address || '',
+      '',                                            // BARRIO
+      '',                                            // DIRECCION COMPLEMENTARIA
+      '',                                            // DESTINATARIO
+      '',                                            // NUM DE GUÍA
+      o.id || '',                                    // NUMERO FACTURA
+      '',                                            // NUM DE PEDIDO SAG
+      paymentLabel(o.payment_method),
+      '',                                            // ESTADO DEL PAGO
+      '',                                            // ESTADO SAG
+      '',                                            // ESTADO DEL ENVÍO
+      total,                                         // VALOR VENTA
+      '',                                            // VALOR FLETE REAL
+      total,                                         // TOTAL PAGADO
+    ]);
+  });
+
+  const wsPedidos = XLSX.utils.aoa_to_sheet(rows);
+  wsPedidos['!cols'] = PEDIDOS_WIDTHS.map((wch) => ({ wch }));
+  applyNumberFormat(wsPedidos, 21, '#,##0');
+  applyNumberFormat(wsPedidos, 23, '#,##0');
+  boldHeader(wsPedidos, PEDIDOS_HEADERS.length);
+
+  // ── Hoja 2: Referencias (qué se compró, unidades y valores) ──
+  const refMap = new Map<string, { ref: string; name: string; units: number; value: number }>();
+  orders.forEach((o: any) => {
+    const items = Array.isArray(o.items) ? o.items : [];
+    items.forEach((it: any) => {
+      const ref = it.reference || it.product_id || 'SIN-REFERENCIA';
+      const cur = refMap.get(ref) || { ref, name: it.name || '', units: 0, value: 0 };
+      const qty = Number(it.quantity) || 0;
+      cur.units += qty;
+      cur.value += (Number(it.unit_price) || 0) * qty;
+      refMap.set(ref, cur);
+    });
+  });
+
+  const refRows: any[][] = [REFERENCIAS_HEADERS];
+  Array.from(refMap.values())
+    .sort((a, b) => b.value - a.value)
+    .forEach((r) => refRows.push([r.ref, r.name, r.units, r.value]));
+
+  const wsRefs = XLSX.utils.aoa_to_sheet(refRows);
+  wsRefs['!cols'] = [{ wch: 18 }, { wch: 40 }, { wch: 12 }, { wch: 16 }];
+  applyNumberFormat(wsRefs, 2, '0');
+  applyNumberFormat(wsRefs, 3, '#,##0');
+  boldHeader(wsRefs, REFERENCIAS_HEADERS.length);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsPedidos, 'Pedidos');
+  XLSX.utils.book_append_sheet(wb, wsRefs, 'Referencias');
+  XLSX.writeFile(wb, `ush_pedidos_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 // Vacía las tablas transaccionales (las que crecen). NO borra products.

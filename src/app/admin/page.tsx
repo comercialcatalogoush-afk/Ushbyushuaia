@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange, updateProductStock } from '@/lib/supabase';
-import { exportBackup, downloadBackup, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
+import { exportBackup, downloadBackup, exportOrderExcel, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
 import { 
   Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
   CheckSquare, Square, Lock, LogOut, ShieldCheck, ShieldAlert, Key, Search, Filter, History, 
-  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate, XCircle
+  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate, XCircle,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
@@ -291,6 +292,22 @@ export default function AdminCatalogPage() {
       );
     } catch (e: any) {
       setBackupError('No se pudo generar el respaldo: ' + (e?.message || 'error'));
+    }
+    setBackupLoading(false);
+  };
+
+  const handleExportExcel = async () => {
+    setBackupLoading(true);
+    setBackupMsg(null);
+    setBackupError(null);
+    try {
+      const data = await exportBackup();
+      exportOrderExcel(data);
+      setBackupMsg(
+        `Excel generado con ${data.orders.length} pedidos (hoja "Pedidos" con tus columnas de seguimiento + hoja "Referencias" con unidades y valores).`
+      );
+    } catch (e: any) {
+      setBackupError('No se pudo generar el Excel: ' + (e?.message || 'error'));
     }
     setBackupLoading(false);
   };
@@ -1509,15 +1526,26 @@ export default function AdminCatalogPage() {
                   Descarga todos los datos (productos, pedidos, formularios y historial de precios) en un solo archivo JSON.
                   Guárdalo en tu computadora o nube antes de vaciar.
                 </p>
-                <button
-                  type="button"
-                  onClick={handleExportBackup}
-                  disabled={backupLoading}
-                  className="bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-[#d88193] transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  {backupLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-                  {backupLoading ? 'Exportando...' : 'Exportar Respaldo (JSON)'}
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportBackup}
+                    disabled={backupLoading}
+                    className="bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-[#d88193] transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {backupLoading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                    {backupLoading ? 'Exportando...' : 'Exportar Respaldo (JSON)'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportExcel}
+                    disabled={backupLoading}
+                    className="bg-emerald-700 text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-emerald-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {backupLoading ? <RefreshCw size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
+                    {backupLoading ? 'Generando...' : 'Exportar Pedidos (Excel)'}
+                  </button>
+                </div>
               </div>
 
               <div className="bg-white p-6 border border-red-200 shadow-sm">
