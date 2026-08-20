@@ -5,8 +5,7 @@ import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { getPageContentServer } from '@/lib/siteContent';
 import { PoliticasNav } from '@/components/PoliticasNav';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'Políticas de Cambios, Garantías, Envíos y Habeas Data | USH BY USHUAIA',

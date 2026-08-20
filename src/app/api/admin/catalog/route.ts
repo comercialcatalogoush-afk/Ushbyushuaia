@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllProductsAdmin } from '@/lib/supabase';
 
-// Solo el admin (sesión real de Supabase) puede purgar el caché.
+// Solo el admin (sesión real de Supabase) puede leer el catálogo completo.
+// La respuesta queda cacheada en el edge de Vercel (s-maxage), así el admin
+// no lee Supabase en cada carga/refrescado. Se purga con /api/revalidate.
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const auth = req.headers.get('authorization') || '';
@@ -22,16 +25,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Catálogo, home y páginas de contenido (todas leen Supabase y están cacheadas)
-    revalidatePath('/');
-    revalidatePath('/catalogo');
-    revalidatePath('/como-comprar');
-    revalidatePath('/contacto');
-    revalidatePath('/politicas');
-    revalidatePath('/producto/[slug]');
-    revalidatePath('/api/catalog');
-    revalidatePath('/api/admin/catalog');
-    return NextResponse.json({ revalidated: true });
+    const products = await fetchAllProductsAdmin();
+    return NextResponse.json(products, {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300' },
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'error' }, { status: 500 });
   }

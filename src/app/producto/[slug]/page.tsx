@@ -7,7 +7,7 @@ import ProductDetailClient from './ProductDetailClient';
 export const dynamicParams = true;
 
 // Revalidate every 60 seconds so new products appear without a full redeploy
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const products = await fetchProductsFromSupabase({ slim: true });

@@ -196,10 +196,22 @@ export default function CheckoutPage() {
   };
 
   if (completedOrder) {
-    const itemLines = (completedOrder.items || []).map((it: any) => {
-      const colorPart = it.color ? ` | Color: ${it.color}` : '';
-      return `• REF ${it.reference} | Talla: ${it.size || 'Única'}${colorPart} | ${it.quantity} und × ${formatCOP(it.unit_price)} = ${formatCOP(it.unit_price * it.quantity)}`;
-    }).join('\n');
+    // Agrupa por referencia+color para no repetir la misma referencia; muestra
+    // el detalle por talla y el subtotal una sola vez por referencia.
+    const grouped: Record<string, { ref: string; color: string; sizes: { size: string; qty: number }[]; total: number }> = {};
+    (completedOrder.items || []).forEach((it: any) => {
+      const key = `${it.reference}::${it.color || ''}`;
+      if (!grouped[key]) grouped[key] = { ref: it.reference, color: it.color || '', sizes: [], total: 0 };
+      const g = grouped[key];
+      const size = it.size || 'Única';
+      const existing = g.sizes.find((s) => s.size === size);
+      if (existing) existing.qty += it.quantity || 0;
+      else g.sizes.push({ size, qty: it.quantity || 0 });
+      g.total += (it.unit_price || 0) * (it.quantity || 0);
+    });
+    const itemLines = Object.values(grouped).map((g) =>
+      `• *REF ${g.ref}*${g.color ? ` | Color: ${g.color}` : ''}\n    ${g.sizes.map((s) => `Talla ${s.size}: ${s.qty} und`).join(' · ')} = ${formatCOP(g.total)}`
+    ).join('\n');
 
     const completedUnits = (completedOrder.items || []).reduce((s: number, it: any) => s + (it.quantity || 0), 0);
     const isWholesale = completedUnits >= 12;

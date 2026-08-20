@@ -503,8 +503,7 @@ function sendBroadcast(event: string) {
   }
 }
 
-export function publishCatalogChange() {
-  sendBroadcast('catalog-changed');
+function triggerRevalidate() {
   // Pide al servidor purgar el caché del edge (verifica la sesión del admin;
   // sin token o sin sesión de admin el endpoint responde 401/403 y se ignora).
   try {
@@ -523,8 +522,14 @@ export function publishCatalogChange() {
   }
 }
 
+export function publishCatalogChange() {
+  sendBroadcast('catalog-changed');
+  triggerRevalidate();
+}
+
 export function publishOrderChange() {
   sendBroadcast('order-changed');
+  triggerRevalidate();
 }
 
 export function subscribeCatalogChanges(cb: () => void): () => void {

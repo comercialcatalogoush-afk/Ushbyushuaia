@@ -168,7 +168,24 @@ export default function AdminCatalogPage() {
 
   const loadProducts = async () => {
     setLoading(true);
-    // Always fetch directly — bypasses localStorage so admin sees ALL 90 products
+    // Lee el catálogo completo vía el edge de Vercel (cacheado) para no
+    // consumir egress de Supabase en cada carga/refrescado del admin.
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (token) {
+        const res = await fetch('/api/admin/catalog', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const cached = await res.json();
+          if (Array.isArray(cached) && cached.length > 0) {
+            setProducts(cached);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (e) {}
+    // Fallback: lectura directa a Supabase (incluye productos INITIAL no guardados)
     const data = await fetchAllProductsAdmin();
     setProducts(data);
     setLoading(false);
