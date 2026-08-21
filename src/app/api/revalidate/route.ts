@@ -31,6 +31,8 @@ export async function GET(req: Request) {
     revalidatePath('/producto/[slug]');
     revalidatePath('/api/catalog');
     revalidatePath('/api/admin/catalog');
+    revalidatePath('/api/top-sellers');
+    revalidatePath('/api/site-config');
     return NextResponse.json({ revalidated: true });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'error' }, { status: 500 });

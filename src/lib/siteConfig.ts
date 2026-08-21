@@ -20,10 +20,25 @@ export function saveLocalWhatsAppOverride(number: string) {
   } catch (_) {}
 }
 
-// Devuelve el número de WhatsApp configurado. Prioridad: localStorage (admin) → Supabase → default.
+// Devuelve el número de WhatsApp configurado. Prioridad: localStorage (admin) →
+// Edge de Vercel (/api/site-config cacheado) → Supabase directo (respaldo) → default.
 export async function getWhatsAppNumber(): Promise<string> {
   const local = getLocalWhatsAppOverride();
   if (local) return local;
+
+  // Edge-first: no consultar Supabase por cada visitante.
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/site-config');
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.whatsapp) {
+          try { localStorage.setItem(WHATSAPP_STORAGE_KEY, String(json.whatsapp)); } catch (_) {}
+          return String(json.whatsapp);
+        }
+      }
+    } catch (_) {}
+  }
 
   try {
     const { data, error } = await supabase

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
-  Undo2, Redo2, FileClock,
+  Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw,
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -20,6 +20,14 @@ import {
   fetchThemeFromRemote,
 } from '@/lib/siteContent';
 import { uploadProductImage, publishCatalogChange } from '@/lib/supabase';
+import { fetchAllProductsAdmin, upsertProduct } from '@/lib/supabase';
+import { Product } from '@/types';
+
+// ── Opciones del editor de productos (iguales a las del panel admin) ──
+const PRODUCT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
+const PRODUCT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
+const PRODUCT_COLORS = ['Azul', 'Azul Claro', 'Negro', 'Blanco', 'Beige', 'Gris', 'Café', 'Verde', 'Rojo', 'Rosa', 'Vino', 'Amarillo', 'Pantanal'];
+const PRODUCT_SIZES = ['6', '8', '10', '12', '14'];
 
 // Ruta pública de cada página del CMS (para el preview)
 const PAGE_ROUTES: Record<string, string> = {
@@ -249,6 +257,17 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [future, setFuture] = useState<{ values: ContentValues; theme: SiteTheme }[]>([]);
   const [draftSaved, setDraftSaved] = useState(false);
 
+  // ── Gestor de productos (editor tipo Wix para el catálogo) ──
+  const [productsMode, setProductsMode] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [productDraft, setProductDraft] = useState<Product | null>(null);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [productSaved, setProductSaved] = useState(false);
+  const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+
   const undoRef = useRef<() => void>(() => {});
   const redoRef = useRef<() => void>(() => {});
   const flushRef = useRef<() => void>(() => {});
@@ -260,6 +279,86 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const schema = PAGE_SCHEMAS.find((s) => s.id === pageId);
   const groups = schema ? groupFields(schema.fields) : [];
   const activeGroup = groups.find((g) => g.group === groupId) || groups[0];
+
+  // ── Productos: carga, selección y guardado ──
+  const loadProducts = async () => {
+    setProductsLoading(true);
+    try {
+      const list = await fetchAllProductsAdmin();
+      setProducts(list);
+    } catch (e) {}
+    setProductsLoading(false);
+  };
+
+  useEffect(() => {
+    if (productsMode && products.length === 0) loadProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productsMode]);
+
+  const openProduct = (p: Product) => {
+    setSelectedId(p.id);
+    setProductDraft(JSON.parse(JSON.stringify(p)));
+    setProductSaved(false);
+  };
+
+  const closeProduct = () => {
+    setSelectedId(null);
+    setProductDraft(null);
+  };
+
+  const patchDraft = (patch: Partial<Product>) => {
+    setProductDraft((d) => (d ? { ...d, ...patch } : d));
+  };
+
+  const handleSaveProduct = async () => {
+    if (!productDraft) return;
+    setSavingProduct(true);
+    const res = await upsertProduct(productDraft);
+    setSavingProduct(false);
+    if (!res.success) {
+      alert('No se pudo guardar: ' + (res.error || 'error'));
+      return;
+    }
+    publishCatalogChange();
+    setProductSaved(true);
+    setTimeout(() => setProductSaved(false), 3000);
+    loadProducts();
+  };
+
+  // Subida de fotos (comprime y guarda en el bucket product-images)
+  const handleUploadPhoto = async (file: File, slot: number | 'main') => {
+    if (!productDraft) return;
+    setUploadingSlot(String(slot));
+    try {
+      const blob = await compressImage(file);
+      const path = `products/${productDraft.reference || productDraft.id}-${slot === 'main' ? 'principal' : 'galeria' + slot}-${Date.now()}.jpg`;
+      const res = await uploadProductImage(blob, path);
+      if (res.success && res.url) {
+        const images = [...(productDraft.images || [])];
+        if (slot === 'main') images[0] = res.url;
+        else images[slot as number] = res.url;
+        patchDraft({ images });
+      } else {
+        alert('No se pudo subir la imagen: ' + (res.error || 'error'));
+      }
+    } catch (e) {
+      alert('Error al subir la imagen');
+    }
+    setUploadingSlot(null);
+  };
+
+  const addGalleryUrl = () => {
+    if (!productDraft) return;
+    const url = window.prompt('URL de la imagen:');
+    if (!url) return;
+    patchDraft({ images: [...(productDraft.images || []), url] });
+  };
+
+  const removeImage = (idx: number) => {
+    if (!productDraft) return;
+    const images = (productDraft.images || []).filter((_, i) => i !== idx);
+    patchDraft({ images });
+  };
 
   // Modo editor: el preview prioriza la caché local (borrador en vivo)
   useEffect(() => {
@@ -428,6 +527,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const selectPage = (id: string) => {
     setPageId(id);
     setMode('content');
+    setProductsMode(false);
+    closeProduct();
   };
 
   // Doble clic en una sección del preview → navega a su panel de propiedades
@@ -512,6 +613,15 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
   const previewRoute = PAGE_ROUTES[pageId] || '/';
   const iframeSrc = `${previewRoute}${previewRoute.includes('?') ? '&' : '?'}editor=${nonce}`;
+
+  // Lista filtrada del gestor de productos
+  const filteredProductsList = products.filter((p) => {
+    const q = productSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (p.name || '').toLowerCase().includes(q) || (p.reference || '').toLowerCase().includes(q);
+  });
+  const sizeOptionDraft = productDraft?.options?.find((o) => o.key.toLowerCase() === 'talla');
+  const draftSizes = sizeOptionDraft?.values && sizeOptionDraft.values.length > 0 ? sizeOptionDraft.values : PRODUCT_SIZES;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#f3f4f6] overflow-hidden">
@@ -661,14 +771,26 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       {sGroups.map((g) => (
                         <button
                           key={g.group}
-                          onClick={() => setGroupId(g.group)}
+                          onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
                           className={`w-full text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
-                            activeGroup?.group === g.group ? 'bg-[#d88193]/20 text-[#f9c9d2]' : 'text-neutral-500 hover:text-white'
+                            !productsMode && activeGroup?.group === g.group ? 'bg-[#d88193]/20 text-[#f9c9d2]' : 'text-neutral-500 hover:text-white'
                           }`}
                         >
                           {g.group}
                         </button>
                       ))}
+
+                      {/* Gestor de productos: solo en la página Catálogo */}
+                      {s.id === 'catalogo' && (
+                        <button
+                          onClick={() => { setMode('content'); setProductsMode(true); }}
+                          className={`w-full flex items-center gap-1.5 px-3 py-1.5 mt-1 text-[10px] font-bold uppercase tracking-wider rounded-l ${
+                            productsMode ? 'bg-[#d88193] text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <Package size={11} /> Productos
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -711,15 +833,17 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         <aside className="w-72 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
           <div className="px-5 py-4 border-b border-neutral-100 flex-shrink-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">
-              {mode === 'theme' ? <Palette size={12} /> : <LayoutTemplate size={12} />}
-              {mode === 'theme' ? 'Propiedades globales' : 'Propiedades de sección'}
+              {mode === 'theme' ? <Palette size={12} /> : productsMode ? <Package size={12} /> : <LayoutTemplate size={12} />}
+              {mode === 'theme' ? 'Propiedades globales' : productsMode ? 'Gestor de productos' : 'Propiedades de sección'}
             </div>
             <h3 className="text-sm font-black uppercase tracking-tight text-[#1b2333] mt-1">
-              {mode === 'theme' ? 'Diseño del sitio' : (activeGroup?.group || 'General')}
+              {mode === 'theme' ? 'Diseño del sitio' : productsMode ? (selectedId ? 'Editar producto' : 'Productos del catálogo') : (activeGroup?.group || 'General')}
             </h3>
             <p className="text-[11px] text-neutral-500 mt-0.5">
               {mode === 'theme'
                 ? 'Colores de marca y texto de la franja superior. Cambia y publica.'
+                : productsMode
+                ? 'Fotos, precios, categoría, fit e inventario. Se publica en vivo en todo el sitio.'
                 : (schema?.description || '')}
             </p>
           </div>
@@ -758,6 +882,257 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                   </div>
                 ))}
               </div>
+            ) : productsMode ? (
+              /* ── GESTOR DE PRODUCTOS (tipo Wix) ── */
+              selectedId && productDraft ? (
+                <div className="space-y-4">
+                  <button
+                    onClick={closeProduct}
+                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193]"
+                  >
+                    <ArrowLeft size={12} /> Volver a la lista
+                  </button>
+
+                  {/* FOTOS */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Fotos</header>
+                    <div className="p-3 space-y-2.5">
+                      <div className="relative h-36 bg-neutral-100 rounded overflow-hidden border border-neutral-200">
+                        {productDraft.images?.[0] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={productDraft.images[0]} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] text-neutral-400 uppercase font-bold">Sin foto principal</div>
+                        )}
+                        {uploadingSlot === 'main' && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 size={18} className="text-white animate-spin" /></div>
+                        )}
+                      </div>
+                      <label className="flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-600 hover:border-[#d88193] hover:text-[#d88193] cursor-pointer rounded">
+                        <Upload size={11} /> Subir foto principal
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f, 'main'); e.target.value = ''; }} />
+                      </label>
+                      <input
+                        type="url"
+                        value={productDraft.images?.[0] || ''}
+                        onChange={(e) => patchDraft({ images: [e.target.value, ...(productDraft.images || []).slice(1)] })}
+                        placeholder="URL de la foto principal"
+                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-[10px] font-mono focus:outline-none focus:border-[#d88193] rounded"
+                      />
+
+                      {(productDraft.images || []).length > 1 && (
+                        <div className="grid grid-cols-3 gap-1.5 pt-1">
+                          {(productDraft.images || []).slice(1).map((img, i) => (
+                            <div key={i} className="relative h-14 bg-neutral-100 rounded overflow-hidden border border-neutral-200 group">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={img} alt="" className="w-full h-full object-cover" />
+                              <button onClick={() => removeImage(i + 1)} className="absolute top-0.5 right-0.5 bg-white/90 rounded p-0.5 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Trash2 size={10} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <button onClick={addGalleryUrl} className="w-full flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500 hover:text-[#d88193] py-1">
+                        <Plus size={11} /> Agregar foto a la galería
+                      </button>
+                    </div>
+                  </section>
+
+                  {/* PRECIOS */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Precios (COP)</header>
+                    <div className="p-3 space-y-2.5">
+                      {([
+                        { key: 'suggested_price', label: 'Precio sugerido de venta' },
+                        { key: 'price', label: 'Precio mayorista (12+ uds)' },
+                        { key: 'compare_price', label: 'Precio tachado (opcional)' },
+                      ] as const).map((f) => (
+                        <div key={f.key}>
+                          <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">{f.label}</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={(productDraft[f.key] as number) ?? 0}
+                            onChange={(e) => patchDraft({ [f.key]: parseInt(e.target.value) || 0 } as Partial<Product>)}
+                            className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* CLASIFICACIÓN */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Clasificación</header>
+                    <div className="p-3 space-y-2.5">
+                      {([
+                        { key: 'category', label: 'Categoría', options: PRODUCT_CATEGORIES },
+                        { key: 'fit', label: 'Fit / Corte', options: PRODUCT_FITS },
+                        { key: 'color', label: 'Color', options: PRODUCT_COLORS },
+                      ] as const).map((f) => (
+                        <div key={f.key}>
+                          <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">{f.label}</label>
+                          <select
+                            value={(productDraft[f.key] as string) || ''}
+                            onChange={(e) => patchDraft({ [f.key]: e.target.value } as Partial<Product>)}
+                            className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#d88193] rounded bg-white"
+                          >
+                            <option value="">Sin {f.label.toLowerCase()}</option>
+                            {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                        </div>
+                      ))}
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Cinta / Etiqueta</label>
+                        <select
+                          value={productDraft.ribbon || ''}
+                          onChange={(e) => patchDraft({ ribbon: e.target.value })}
+                          className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#d88193] rounded bg-white"
+                        >
+                          <option value="">Sin cinta</option>
+                          <option value="Nuevo">🆕 Nuevo</option>
+                          <option value="Más vendido">🔥 Más vendido</option>
+                          <option value="Oferta">🏷️ Oferta</option>
+                          <option value="Exclusivo">⭐ Exclusivo</option>
+                        </select>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* DESCRIPCIÓN */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Descripción</header>
+                    <div className="p-3 space-y-2.5">
+                      <textarea
+                        value={productDraft.description || ''}
+                        onChange={(e) => patchDraft({ description: e.target.value })}
+                        rows={3}
+                        placeholder="Descripción corta (tarjeta del catálogo)"
+                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
+                      />
+                      <textarea
+                        value={productDraft.full_description || ''}
+                        onChange={(e) => patchDraft({ full_description: e.target.value })}
+                        rows={4}
+                        placeholder="Descripción detallada (página del producto)"
+                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
+                      />
+                    </div>
+                  </section>
+
+                  {/* STOCK Y VISIBILIDAD */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Inventario y visibilidad</header>
+                    <div className="p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-neutral-600 flex items-center gap-1">
+                          {productDraft.hidden ? <EyeOff size={11} className="text-red-400" /> : <Eye size={11} className="text-emerald-500" />}
+                          {productDraft.hidden ? 'Oculto para clientes' : 'Visible en el catálogo'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => patchDraft({ hidden: !productDraft.hidden, status: productDraft.hidden ? 'published' : 'draft' })}
+                          className={`relative w-9 h-5 rounded-full transition-colors ${productDraft.hidden ? 'bg-gray-300' : 'bg-emerald-500'}`}
+                        >
+                          <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${productDraft.hidden ? 'left-0.5' : 'left-4.5'}`} style={{ left: productDraft.hidden ? 2 : 18 }} />
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Unidades por talla</label>
+                        <div className="flex gap-1.5">
+                          {draftSizes.map((s) => (
+                            <div key={s} className="flex-1">
+                              <span className="block text-center text-[8px] font-bold text-neutral-400 mb-0.5">{s}</span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={productDraft.stock_by_size?.[s] ?? 0}
+                                onChange={(e) => patchDraft({ stock_by_size: { ...(productDraft.stock_by_size || {}), [s]: Math.max(0, parseInt(e.target.value) || 0) } })}
+                                className={`w-full text-center text-[11px] font-semibold border rounded py-1 focus:outline-none focus:border-[#d88193] ${(productDraft.stock_by_size?.[s] ?? 0) > 0 ? 'border-gray-200' : 'border-red-200 bg-red-50 text-red-500'}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* GUARDAR */}
+                  <div className="sticky bottom-0 bg-white pt-2 pb-1 border-t border-neutral-100">
+                    <button
+                      onClick={handleSaveProduct}
+                      disabled={savingProduct}
+                      className="w-full flex items-center justify-center gap-2 bg-[#116dff] hover:bg-[#0d5cd6] disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest px-4 py-3 rounded shadow"
+                    >
+                      {savingProduct ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                      {savingProduct ? 'Publicando…' : 'Guardar y publicar'}
+                    </button>
+                    {productSaved && (
+                      <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1">
+                        <CheckCircle size={11} /> Publicado en todo el sitio
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* ── LISTA DE PRODUCTOS ── */
+                <div className="space-y-3 -m-5">
+                  <div className="sticky top-0 bg-white px-5 py-3 border-b border-neutral-100 space-y-2.5 z-10">
+                    <div className="relative">
+                      <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                      <input
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Buscar por nombre o referencia…"
+                        className="w-full border border-neutral-200 pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-[#d88193] rounded"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-neutral-400">
+                      <span>{filteredProductsList.length} referencias</span>
+                      <button onClick={loadProducts} className="flex items-center gap-1 hover:text-[#d88193]">
+                        <RefreshCw size={10} className={productsLoading ? 'animate-spin' : ''} /> Actualizar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="px-2.5 pb-4">
+                    {productsLoading && products.length === 0 ? (
+                      <div className="py-16 flex justify-center"><Loader2 size={20} className="animate-spin text-neutral-300" /></div>
+                    ) : filteredProductsList.length === 0 ? (
+                      <p className="py-12 text-center text-xs text-neutral-400">Sin resultados</p>
+                    ) : filteredProductsList.map((p) => {
+                      const visible = !p.hidden && p.status !== 'draft';
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => openProduct(p)}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-neutral-50 border border-transparent hover:border-neutral-200 transition-all text-left group"
+                        >
+                          <div className="w-9 h-9 bg-neutral-100 rounded overflow-hidden flex-shrink-0">
+                            {p.images?.[0] ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[7px] font-bold text-neutral-400 uppercase">Sin foto</div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-bold text-neutral-800 truncate group-hover:text-[#d88193]">{p.name}</p>
+                            <p className="text-[9px] text-neutral-400 font-semibold tracking-wide">REF. {p.reference}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-[11px] font-black text-neutral-900">${(p.price || 0).toLocaleString('es-CO')}</p>
+                            <p className={`text-[8px] font-bold uppercase tracking-wider ${visible ? 'text-emerald-500' : 'text-red-400'}`}>
+                              {visible ? 'Visible' : 'Oculto'}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )
             ) : (
               activeGroup && (
                 <div className="space-y-5">

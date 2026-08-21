@@ -612,6 +612,24 @@ export async function getTopSellingProducts(daysBack = 30): Promise<TopSellingPr
   }
 
   try {
+    // Edge-first: la RPC se sirve cacheada desde Vercel (/api/top-sellers), así el
+    // egress de Supabase no crece con cada visitante. Si Vercel falla (sin cuota,
+    // caída), caemos directo a la RPC de Supabase como respaldo.
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/top-sellers');
+        if (res.ok) {
+          const list = (await res.json()) as TopSellingProduct[];
+          if (Array.isArray(list) && list.length > 0) {
+            try {
+              localStorage.setItem(TOP_SELLERS_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), list }));
+            } catch (e) {}
+            return list;
+          }
+        }
+      } catch (e) {}
+    }
+
     // La lectura directa de orders ya no está abierta al público (RLS).
     // Usamos una función RPC con SECURITY DEFINER que solo devuelve ids + unidades
     // de pedidos confirmados (salida real de inventario).

@@ -4,7 +4,7 @@ import { Benefits } from '@/components/Benefits';
 import { getPageContentServer } from '@/lib/siteContent';
 import { CheckCircle2, HelpCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata = {
   title: 'Beneficios Mayoristas | Ush By Ushuaia',

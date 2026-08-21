@@ -6,8 +6,9 @@ import ProductDetailClient from './ProductDetailClient';
 // Allow slugs that were NOT pre-generated at build time (e.g. newly added products)
 export const dynamicParams = true;
 
-// Revalidate every 60 seconds so new products appear without a full redeploy
-export const revalidate = 3600;
+// Cache largo en el edge: los cambios del admin purgan vía /api/revalidate,
+// así el TTL solo actúa como red de seguridad (menos egress de Supabase).
+export const revalidate = 86400;
 
 export async function generateStaticParams() {
   const products = await fetchProductsFromSupabase({ slim: true });
