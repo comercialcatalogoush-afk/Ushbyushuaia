@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, triggerRevalidate } from './supabase';
 
 // ============================================================
 // CMS LIGERO DE CONTENIDO (tipo Wix)
@@ -380,6 +380,8 @@ export async function savePageContent(pageId: string, values: ContentValues): Pr
       try { localStorage.setItem(CONTENT_CACHE_PREFIX + pageId, JSON.stringify(values)); } catch (e) {}
       window.dispatchEvent(new Event(CONTENT_EVENT));
     }
+    // Reflejo inmediato en el sitio público (purga ISR + edge)
+    triggerRevalidate();
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message };
@@ -397,6 +399,8 @@ export async function saveTheme(theme: SiteTheme): Promise<{ success: boolean; e
       try { localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme)); } catch (e) {}
       window.dispatchEvent(new Event(THEME_EVENT));
     }
+    // Reflejo inmediato en el sitio público (purga ISR + edge)
+    triggerRevalidate();
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message };

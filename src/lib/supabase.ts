@@ -191,11 +191,14 @@ export async function upsertProduct(product: Product): Promise<{ success: boolea
         .from('products')
         .upsert(buildPayload(false), { onConflict: 'id' });
       if (retryError) return { success: false, error: retryError.message };
+      triggerRevalidate();
       return { success: true, error: undefined };
     }
     if (error) {
       return { success: false, error: error.message };
     }
+    // Reflejo inmediato: purga el caché del sitio público
+    triggerRevalidate();
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -211,6 +214,7 @@ export async function updateProductStock(id: string, stockBySize: Record<string,
     if (typeof inStock === 'boolean') patch.in_stock = inStock;
     const { error } = await supabase.from('products').update(patch).eq('id', id);
     if (error) return { success: false, error: error.message };
+    triggerRevalidate();
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -223,6 +227,7 @@ export async function deleteProductFromSupabase(id: string): Promise<{ success: 
     if (error) {
       return { success: false, error: error.message };
     }
+    triggerRevalidate();
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -503,9 +508,10 @@ function sendBroadcast(event: string) {
   }
 }
 
-function triggerRevalidate() {
-  // Pide al servidor purgar el caché del edge (verifica la sesión del admin;
-  // sin token o sin sesión de admin el endpoint responde 401/403 y se ignora).
+// Pide al servidor purgar el caché del edge (verifica la sesión del admin;
+// sin token o sin sesión de admin el endpoint responde 401/403 y se ignora).
+// Exportada para que cualquier guardado (contenido, tema, WhatsApp…) purgue.
+export function triggerRevalidate() {
   try {
     if (typeof window !== 'undefined') {
       supabase.auth
@@ -591,7 +597,7 @@ export async function fetchPriceHistory() {
 }
 
 // ── TOP SELLERS CALCULATION (rotación de inventario: pedidos confirmados) ──
-const TOP_SELLERS_CACHE_KEY = 'ush_top_sellers_cache_v2';
+const TOP_SELLERS_CACHE_KEY = 'ush_top_sellers_cache_v3';
 
 export interface TopSellingProduct { id: string; units: number }
 
@@ -601,8 +607,8 @@ export async function getTopSellingProducts(daysBack = 30): Promise<TopSellingPr
       const cached = localStorage.getItem(TOP_SELLERS_CACHE_KEY);
       if (cached) {
         const { timestamp, list } = JSON.parse(cached);
-        // Cache valid for 12 hours
-        if (Date.now() - timestamp < 12 * 60 * 60 * 1000 && Array.isArray(list) && list.length > 0) {
+        // Cache válida 1 hora (antes 12 h): badges y orden más frescos
+        if (Date.now() - timestamp < 60 * 60 * 1000 && Array.isArray(list) && list.length > 0) {
           return list;
         }
       }

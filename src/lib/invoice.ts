@@ -280,44 +280,52 @@ export async function generateInvoicePdf(
     y += 12;
 
     // ══ AGRADECIMIENTO ══
-    if (y + 24 > 250) { doc.addPage(); y = 20; }
+    if (y + 30 > 250) { doc.addPage(); y = 20; }
+    const th = 25;
     doc.setFillColor(253, 242, 244);
-    doc.setDrawColor(...PINK);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(M, y, W, 20, 2.5, 2.5, 'FD');
+    doc.roundedRect(M, y, W, th, 2, 2, 'F');
+    doc.setFillColor(...PINK);
+    doc.roundedRect(M, y, 2.4, th, 1.2, 1.2, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
+    doc.setFontSize(12.5);
     doc.setTextColor(...NAVY);
-    doc.text('¡Gracias por tu compra!', M + W / 2, y + 8, { align: 'center' });
+    doc.text('Gracias por su compra', M + 9, y + 9.5);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.3);
+    doc.setFontSize(8.2);
     doc.setTextColor(...GRAY);
-    doc.text('Tu pedido fue confirmado con éxito y ya está en proceso de despacho.', M + W / 2, y + 13.5, { align: 'center' });
-    doc.text('Para cualquier duda o reposición de tallas escríbenos por WhatsApp.', M + W / 2, y + 17.5, { align: 'center' });
-    y += 26;
+    doc.text('Su pedido fue confirmado con éxito y ya se encuentra en proceso de despacho.', M + 9, y + 15.2);
+    doc.text('Para cambios, reposiciones o novedades escríbanos por WhatsApp; con gusto le asesoramos.', M + 9, y + 19.4);
+    y += th + 11;
 
     // ══ POLÍTICAS (pie) ══
-    if (y + 34 > 282) { doc.addPage(); y = 20; }
+    if (y + 42 > 282) { doc.addPage(); y = 20; }
     doc.setDrawColor(...GRID);
     doc.setLineWidth(0.3);
     doc.line(M, y, M + W, y);
-    y += 5;
+    y += 6.5;
+    doc.setFillColor(...PINK);
+    doc.rect(M, y - 2.3, 2.6, 2.6, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
+    doc.setFontSize(7.2);
     doc.setTextColor(...NAVY);
-    doc.text('POLÍTICAS Y CONDICIONES', M, y);
+    doc.text('POLÍTICAS Y CONDICIONES', M + 5.5, y);
+    y += 5.5;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.2);
+    doc.setFontSize(6.3);
     doc.setTextColor(...GRAY);
-    const polLines = [
-      'Precios con IVA incluido. Cambios y reposiciones dentro de los 3 días hábiles siguientes al recibo del pedido, con prendas sin uso y etiquetas intactas (Ley 1480 de 2011, Decreto 587 de 2016).',
-      `Despachos desde ${COMPANY.address}. Los tiempos de entrega se cuentan a partir de la confirmación del pago.`,
-      `Tratamiento de datos personales conforme a la Ley 1581 de 2012 (Habeas Data). Contacto: WhatsApp Lunes a jueves 7:00 a. m. – 4:00 p. m. · ${COMPANY.email}`,
+    const polItems = [
+      'Precios con IVA incluido. Los valores facturados corresponden al precio mayorista según la cantidad adquirida.',
+      'Cambios y reposiciones dentro de los 3 días hábiles siguientes al recibo del pedido, con prendas sin uso y etiquetas intactas (Ley 1480 de 2011 y Decreto 587 de 2016).',
+      'Despachos nacionales desde Cll. 85 Sur #50-72, Itagüí, Antioquia. Los tiempos de entrega se cuentan a partir de la confirmación del pago.',
+      'Tratamiento de datos personales conforme a la Ley 1581 de 2012 (Habeas Data).',
+      `Contacto: WhatsApp de lunes a jueves, 7:00 a. m. – 4:00 p. m. · ${COMPANY.email} · ${COMPANY.web}`,
     ];
-    for (const line of polLines) {
-      const wrapped = doc.splitTextToSize(line, W);
-      doc.text(wrapped, M, y + 4);
-      y += 4 + wrapped.length * 2.6;
+    for (const item of polItems) {
+      doc.setFillColor(...PINK);
+      doc.circle(M + 1.1, y + 0.7, 0.55, 'F');
+      const wrapped = doc.splitTextToSize(item, W - 6);
+      doc.text(wrapped, M + 5, y + 1);
+      y += 3.2 + wrapped.length * 2.7;
     }
     doc.setFontSize(5.8);
     doc.text(

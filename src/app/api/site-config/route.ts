@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 // Evita que cada visitante consulte site_config directamente en Supabase.
 export const dynamic = 'force-dynamic';
 
-const CACHE_CONTROL = 'public, s-maxage=3600, stale-while-revalidate=86400';
+const CACHE_CONTROL = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400';
 const DEFAULT_WHATSAPP_NUMBER = '573011393902';
 
 export async function GET() {

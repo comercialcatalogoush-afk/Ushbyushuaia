@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 // el egress de la base de datos no crece con cada visitante.
 export const dynamic = 'force-dynamic';
 
-const CACHE_CONTROL = 'public, s-maxage=3600, stale-while-revalidate=86400';
+const CACHE_CONTROL = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400';
 
 export async function GET() {
   try {

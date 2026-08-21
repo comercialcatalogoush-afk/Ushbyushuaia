@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
-  Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star,
+  Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star, Copy,
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -381,6 +381,29 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     publishCatalogChange();
     closeProduct();
     loadProducts();
+  };
+
+  // Duplica la referencia actual como borrador con nueva REF (se guarda al publicar)
+  const handleDuplicateProduct = () => {
+    if (!productDraft) return;
+    const num = String(Math.floor(100000 + Math.random() * 900000));
+    const clone: Product = JSON.parse(JSON.stringify(productDraft));
+    clone.id = `ref-${num}`;
+    clone.reference = num;
+    clone.slug = `ref-${num}`;
+    clone.name = `${productDraft.name} (copia)`;
+    openProduct(clone);
+  };
+
+  // Oculta o vuelve a mostrar una talla del producto (options → Talla)
+  const toggleSizeVisible = (size: string) => {
+    if (!productDraft) return;
+    const others = (productDraft.options || []).filter((o) => o.key.toLowerCase() !== 'talla');
+    const current = draftSizes;
+    const updated = current.includes(size)
+      ? current.filter((s) => s !== size)
+      : [...current, size].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b));
+    patchDraft({ options: [...others, { id: `opt-${productDraft.reference}`, key: 'Talla', values: updated }] });
   };
 
   const openProduct = (p: Product) => {
@@ -1057,6 +1080,10 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {filteredProductsList.map((p) => {
                       const visible = !p.hidden && p.status !== 'draft';
+                      const stockVals = Object.values(p.stock_by_size || {});
+                      const totalStock = stockVals.length ? stockVals.reduce((a, b) => a + (Number(b) || 0), 0) : null;
+                      const low = totalStock !== null && totalStock > 0 && totalStock <= 5;
+                      const out = totalStock === 0;
                       return (
                         <button
                           key={p.id}
@@ -1076,6 +1103,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                             {p.ribbon && (
                               <span className="absolute top-2 right-2 bg-[#1b2333]/85 text-white text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
                                 {p.ribbon}
+                              </span>
+                            )}
+                            {(low || out) && (
+                              <span className={`absolute bottom-2 left-2 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${out ? 'bg-red-600 text-white' : 'bg-amber-400 text-neutral-900'}`}>
+                                {out ? 'Sin stock' : `Poco stock · ${totalStock}`}
                               </span>
                             )}
                             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent h-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -1184,15 +1216,24 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     >
                       <ArrowLeft size={12} /> Volver
                     </button>
-                    {!productDraft.id.startsWith('ref-new') && (
+                    <div className="flex items-center gap-3">
                       <button
-                        onClick={handleDeleteProduct}
+                        onClick={handleDuplicateProduct}
                         disabled={savingProduct}
-                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 disabled:opacity-50"
+                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-[#116dff] disabled:opacity-50"
                       >
-                        <Trash2 size={11} /> Eliminar
+                        <Copy size={11} /> Duplicar
                       </button>
-                    )}
+                      {!productDraft.id.startsWith('ref-new') && (
+                        <button
+                          onClick={handleDeleteProduct}
+                          disabled={savingProduct}
+                          className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 disabled:opacity-50"
+                        >
+                          <Trash2 size={11} /> Eliminar
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* PRECIOS */}
@@ -1301,6 +1342,29 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                               />
                             </div>
                           ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Tallas visibles (clic para ocultar/mostrar)</label>
+                        <p className="text-[8.5px] text-neutral-400 leading-snug mb-1.5">Las tallas con inventario en 0 se ocultan solas en la tienda; aquí también puedes ocultarlas manualmente.</p>
+                        <div className="flex flex-wrap gap-1">
+                          {['6', '8', '10', '12', '14'].map((s) => {
+                            const on = draftSizes.includes(s);
+                            return (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => toggleSizeVisible(s)}
+                                className={`w-8 py-1 text-[10px] font-black rounded border transition-colors ${
+                                  on
+                                    ? 'bg-[#1b2333] text-white border-[#1b2333]'
+                                    : 'bg-white text-neutral-300 border-gray-200 line-through'
+                                }`}
+                              >
+                                {s}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
