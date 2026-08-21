@@ -9,6 +9,7 @@ import { ToastContainer } from '@/components/ToastContainer';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { Analytics } from '@vercel/analytics/next';
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-R91RRDYKM1';
 
@@ -48,6 +49,7 @@ export default function RootLayout({
           </ThemeProvider>
         </CartProvider>
         {GA4_ID && <GoogleAnalytics gaId={GA4_ID} />}
+        <Analytics />
       </body>
     </html>
   );
