@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
-  Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw,
+  Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star,
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -19,15 +19,27 @@ import {
   saveTheme,
   fetchThemeFromRemote,
 } from '@/lib/siteContent';
-import { uploadProductImage, publishCatalogChange } from '@/lib/supabase';
-import { fetchAllProductsAdmin, upsertProduct } from '@/lib/supabase';
+import { uploadProductImage, publishCatalogChange, fetchAllProductsAdmin, upsertProduct, deleteProductFromSupabase, logPriceChange } from '@/lib/supabase';
 import { Product } from '@/types';
 
 // ── Opciones del editor de productos (iguales a las del panel admin) ──
-const PRODUCT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
-const PRODUCT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
+const PRODUCT_CATEGORIES_KEY = 'ush_admin_categories';
+const PRODUCT_FITS_KEY = 'ush_admin_fits';
+const DEFAULT_CATEGORIES = ['Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
+const DEFAULT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
 const PRODUCT_COLORS = ['Azul', 'Azul Claro', 'Negro', 'Blanco', 'Beige', 'Gris', 'Café', 'Verde', 'Rojo', 'Rosa', 'Vino', 'Amarillo', 'Pantanal'];
 const PRODUCT_SIZES = ['6', '8', '10', '12', '14'];
+
+function readClassList(key: string, fallback: string[]): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (_) {}
+  return fallback;
+}
 
 // Ruta pública de cada página del CMS (para el preview)
 const PAGE_ROUTES: Record<string, string> = {
@@ -267,6 +279,9 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [savingProduct, setSavingProduct] = useState(false);
   const [productSaved, setProductSaved] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+  const [categoriesList, setCategoriesList] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [fitsList, setFitsList] = useState<string[]>(DEFAULT_FITS);
+  const [showClassify, setShowClassify] = useState(false);
 
   const undoRef = useRef<() => void>(() => {});
   const redoRef = useRef<() => void>(() => {});
@@ -291,9 +306,82 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   };
 
   useEffect(() => {
-    if (productsMode && products.length === 0) loadProducts();
+    if (productsMode) {
+      loadProducts();
+      setCategoriesList(readClassList(PRODUCT_CATEGORIES_KEY, DEFAULT_CATEGORIES));
+      setFitsList(readClassList(PRODUCT_FITS_KEY, DEFAULT_FITS));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productsMode]);
+
+  const saveClassList = (key: string, list: string[], event: string) => {
+    try { localStorage.setItem(key, JSON.stringify(list)); } catch (_) {}
+    window.dispatchEvent(new Event(event));
+  };
+
+  const addCategory = (name: string) => {
+    const clean = name.trim();
+    if (!clean || categoriesList.includes(clean)) return;
+    const updated = [...categoriesList, clean];
+    setCategoriesList(updated);
+    saveClassList(PRODUCT_CATEGORIES_KEY, updated, 'ush_categories_updated');
+  };
+
+  const removeCategory = (cat: string) => {
+    const updated = categoriesList.filter((c) => c !== cat);
+    setCategoriesList(updated);
+    saveClassList(PRODUCT_CATEGORIES_KEY, updated, 'ush_categories_updated');
+  };
+
+  const addFit = (name: string) => {
+    const clean = name.trim();
+    if (!clean || fitsList.includes(clean)) return;
+    const updated = [...fitsList, clean];
+    setFitsList(updated);
+    saveClassList(PRODUCT_FITS_KEY, updated, 'ush_fits_updated');
+  };
+
+  const removeFit = (fit: string) => {
+    const updated = fitsList.filter((f) => f !== fit);
+    setFitsList(updated);
+    saveClassList(PRODUCT_FITS_KEY, updated, 'ush_fits_updated');
+  };
+
+  // Nueva referencia: se crea vacía y solo se guarda al pulsar "Guardar y publicar"
+  const createNewProduct = () => {
+    const num = String(Math.floor(100000 + Math.random() * 900000));
+    const p: Product = {
+      id: `ref-${num}`,
+      name: 'Nueva Referencia',
+      reference: num,
+      slug: `ref-${num}`,
+      suggested_price: 0,
+      price: 0,
+      in_stock: true,
+      status: 'published',
+      hidden: false,
+      options: [{ id: `opt-${num}`, key: 'Talla', values: PRODUCT_SIZES }],
+      images: [],
+      stock_by_size: {},
+      category: categoriesList[0] || 'Jeans',
+    };
+    openProduct(p);
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!productDraft) return;
+    if (!window.confirm(`¿Eliminar la referencia ${productDraft.reference} (${productDraft.name})?\n\nEl producto desaparecerá del catálogo público. Esta acción no se puede deshacer.`)) return;
+    setSavingProduct(true);
+    const res = await deleteProductFromSupabase(productDraft.id);
+    setSavingProduct(false);
+    if (!res.success) {
+      alert('No se pudo eliminar: ' + (res.error || 'error'));
+      return;
+    }
+    publishCatalogChange();
+    closeProduct();
+    loadProducts();
+  };
 
   const openProduct = (p: Product) => {
     setSelectedId(p.id);
@@ -318,6 +406,19 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     if (!res.success) {
       alert('No se pudo guardar: ' + (res.error || 'error'));
       return;
+    }
+    // Historial auditable si cambiaron los precios
+    const original = products.find((p) => p.id === productDraft.id);
+    if (original && (original.price !== productDraft.price || original.suggested_price !== productDraft.suggested_price)) {
+      await logPriceChange({
+        product_id: productDraft.id,
+        product_name: productDraft.name,
+        old_wholesale_price: original.price || 0,
+        new_wholesale_price: productDraft.price || 0,
+        old_suggested_price: original.suggested_price || 0,
+        new_suggested_price: productDraft.suggested_price || 0,
+        changed_by: 'editor-catalogo',
+      });
     }
     publishCatalogChange();
     setProductSaved(true);
@@ -886,12 +987,23 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
               /* ── GESTOR DE PRODUCTOS (tipo Wix) ── */
               selectedId && productDraft ? (
                 <div className="space-y-4">
-                  <button
-                    onClick={closeProduct}
-                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193]"
-                  >
-                    <ArrowLeft size={12} /> Volver a la lista
-                  </button>
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={closeProduct}
+                      className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193]"
+                    >
+                      <ArrowLeft size={12} /> Volver a la lista
+                    </button>
+                    {!productDraft.id.startsWith('ref-new') && (
+                      <button
+                        onClick={handleDeleteProduct}
+                        disabled={savingProduct}
+                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 disabled:opacity-50"
+                      >
+                        <Trash2 size={11} /> Eliminar
+                      </button>
+                    )}
+                  </div>
 
                   {/* FOTOS */}
                   <section className="border border-neutral-200 rounded-lg overflow-hidden">
@@ -967,8 +1079,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Clasificación</header>
                     <div className="p-3 space-y-2.5">
                       {([
-                        { key: 'category', label: 'Categoría', options: PRODUCT_CATEGORIES },
-                        { key: 'fit', label: 'Fit / Corte', options: PRODUCT_FITS },
+                        { key: 'category', label: 'Categoría', options: categoriesList },
+                        { key: 'fit', label: 'Fit / Corte', options: fitsList },
                         { key: 'color', label: 'Color', options: PRODUCT_COLORS },
                       ] as const).map((f) => (
                         <div key={f.key}>
@@ -1018,6 +1130,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                         placeholder="Descripción detallada (página del producto)"
                         className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
                       />
+                      <input
+                        type="url"
+                        value={productDraft.video_url || ''}
+                        onChange={(e) => patchDraft({ video_url: e.target.value })}
+                        placeholder="URL de video (MP4 / YouTube) — opcional"
+                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-[10px] font-mono focus:outline-none focus:border-[#d88193] rounded"
+                      />
                     </div>
                   </section>
 
@@ -1035,7 +1154,20 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                           onClick={() => patchDraft({ hidden: !productDraft.hidden, status: productDraft.hidden ? 'published' : 'draft' })}
                           className={`relative w-9 h-5 rounded-full transition-colors ${productDraft.hidden ? 'bg-gray-300' : 'bg-emerald-500'}`}
                         >
-                          <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${productDraft.hidden ? 'left-0.5' : 'left-4.5'}`} style={{ left: productDraft.hidden ? 2 : 18 }} />
+                          <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: productDraft.hidden ? 2 : 18 }} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-neutral-600 flex items-center gap-1">
+                          <Star size={11} className={productDraft.is_best_seller ? 'text-amber-500 fill-amber-400' : 'text-neutral-300'} />
+                          Más vendido (portada)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => patchDraft({ is_best_seller: !productDraft.is_best_seller })}
+                          className={`relative w-9 h-5 rounded-full transition-colors ${productDraft.is_best_seller ? 'bg-amber-500' : 'bg-gray-300'}`}
+                        >
+                          <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: productDraft.is_best_seller ? 18 : 2 }} />
                         </button>
                       </div>
                       <div>
@@ -1079,14 +1211,22 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 /* ── LISTA DE PRODUCTOS ── */
                 <div className="space-y-3 -m-5">
                   <div className="sticky top-0 bg-white px-5 py-3 border-b border-neutral-100 space-y-2.5 z-10">
-                    <div className="relative">
-                      <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-                      <input
-                        value={productSearch}
-                        onChange={(e) => setProductSearch(e.target.value)}
-                        placeholder="Buscar por nombre o referencia…"
-                        className="w-full border border-neutral-200 pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-[#d88193] rounded"
-                      />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                        <input
+                          value={productSearch}
+                          onChange={(e) => setProductSearch(e.target.value)}
+                          placeholder="Buscar por nombre o referencia…"
+                          className="w-full border border-neutral-200 pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-[#d88193] rounded"
+                        />
+                      </div>
+                      <button
+                        onClick={createNewProduct}
+                        className="flex items-center gap-1 bg-[#d88193] hover:bg-[#c56a7e] text-white text-[10px] font-black uppercase tracking-wider px-3 rounded whitespace-nowrap"
+                      >
+                        <Plus size={12} /> Nueva
+                      </button>
                     </div>
                     <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-neutral-400">
                       <span>{filteredProductsList.length} referencias</span>
@@ -1094,6 +1234,49 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                         <RefreshCw size={10} className={productsLoading ? 'animate-spin' : ''} /> Actualizar
                       </button>
                     </div>
+                  </div>
+
+                  {/* Categorías y Fits del catálogo */}
+                  <div className="px-5">
+                    <button
+                      onClick={() => setShowClassify(!showClassify)}
+                      className="w-full flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193] py-1"
+                    >
+                      Categorías y fits ({categoriesList.length + fitsList.length})
+                      <ChevronDown size={11} className={`transition-transform ${showClassify ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showClassify && (
+                      <div className="mt-2 space-y-3 border border-neutral-200 rounded-lg p-3">
+                        {([
+                          { label: 'Categorías', list: categoriesList, onAdd: addCategory, onRemove: removeCategory },
+                          { label: 'Fits / Cortes', list: fitsList, onAdd: addFit, onRemove: removeFit },
+                        ] as const).map((sec) => (
+                          <div key={sec.label}>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-neutral-400 mb-1.5">{sec.label}</p>
+                            <div className="flex flex-wrap gap-1 mb-1.5">
+                              {sec.list.map((item) => (
+                                <span key={item} className="inline-flex items-center gap-0.5 bg-neutral-100 text-neutral-700 text-[9px] font-bold px-1.5 py-0.5 rounded group">
+                                  {item}
+                                  <button onClick={() => sec.onRemove(item)} className="text-neutral-400 hover:text-red-500">
+                                    <X size={9} />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                            <input
+                              placeholder={`Agregar ${sec.label.toLowerCase().replace(/s$/, '')}… (Enter)`}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  sec.onAdd((e.target as HTMLInputElement).value);
+                                  (e.target as HTMLInputElement).value = '';
+                                }
+                              }}
+                              className="w-full border border-neutral-200 px-2 py-1 text-[10px] focus:outline-none focus:border-[#d88193] rounded"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="px-2.5 pb-4">

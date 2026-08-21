@@ -7,11 +7,12 @@ import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceCha
 import { exportBackup, downloadBackup, exportOrderExcel, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
-import { 
-  Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle, 
-  CheckSquare, Square, Lock, LogOut, ShieldCheck, ShieldAlert, Key, Search, Filter, History, 
+import { generateInvoicePdf, uploadInvoicePdf, buildInvoiceWhatsAppUrl } from '@/lib/invoice';
+import {
+  Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle,
+  CheckSquare, Square, Lock, LogOut, ShieldCheck, ShieldAlert, Key, Search, Filter, History,
   Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate, XCircle,
-  FileSpreadsheet,
+  FileSpreadsheet, FileText,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
@@ -35,7 +36,9 @@ export default function AdminCatalogPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'fits' | 'history' | 'backup' | 'orders' | 'site'>('products');
+  const [activeTab, setActiveTab] = useState<'orders' | 'history' | 'backup' | 'site'>('orders');
+  const [invoiceBusyId, setInvoiceBusyId] = useState<string | null>(null);
+  const [invoiceReady, setInvoiceReady] = useState<{ orderId: string; url: string } | null>(null);
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -232,15 +235,42 @@ export default function AdminCatalogPage() {
     return unsubscribe;
   }, [isAuthenticated]);
 
+  // Genera el PDF de la factura, lo sube al bucket público y devuelve la URL
+  const prepareInvoice = async (order: any): Promise<string | null> => {
+    setInvoiceBusyId(order.id);
+    try {
+      const { blob, error } = await generateInvoicePdf(order, products);
+      if (!blob) {
+        setOrderMsg(`No se pudo generar la factura del pedido ${order.id}: ${error}`);
+        return null;
+      }
+      const up = await uploadInvoicePdf(blob, order.id);
+      if (up.success && up.url) {
+        setInvoiceReady({ orderId: order.id, url: up.url });
+        return up.url;
+      }
+      setOrderMsg(`Factura generada pero no se pudo subir: ${up.error}`);
+    } catch (e) {
+      setOrderMsg(`Error generando la factura del pedido ${order.id}`);
+    }
+    return null;
+  };
+
   const handleConfirmOrder = async (order: any) => {
     setConfirmingOrderId(order.id);
     setOrderMsg(null);
     const res = await confirmOrderAndDeductStock(order, products);
     if (res.success) {
-      setOrderMsg(`Pedido ${order.id} confirmado: se descontó el stock y el pago quedó registrado.`);
+      publishOrderChange();
       await loadOrders();
       await loadProducts();
-      publishOrderChange();
+      // Factura automática con logo → PDF en bucket público → envío por WhatsApp
+      const invoiceUrl = await prepareInvoice(order);
+      setOrderMsg(
+        invoiceUrl
+          ? `Pedido ${order.id} confirmado: stock descontado y factura lista para enviar por WhatsApp.`
+          : `Pedido ${order.id} confirmado: se descontó el stock y el pago quedó registrado.`
+      );
     } else {
       setOrderMsg(`Error al confirmar: ${res.error}`);
     }
@@ -899,33 +929,15 @@ export default function AdminCatalogPage() {
           </div>
         )}
 
-        {/* Tabs Bar */}
+        {/* Tabs Bar: el catálogo se gestiona íntegramente en el Editor del sitio */}
         <div className="flex items-center gap-2 border-b border-gray-200 bg-white p-2 mb-6 shadow-sm overflow-x-auto">
           <button
-            onClick={() => setActiveTab('products')}
+            onClick={() => { setActiveTab('orders'); loadOrders(); }}
             className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-              activeTab === 'products' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
+              activeTab === 'orders' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
             }`}
           >
-            <Layers size={14} /> Catálogo ({products.length} prendas)
-          </button>
-
-          <button
-            onClick={() => setActiveTab('categories')}
-            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-              activeTab === 'categories' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
-            }`}
-          >
-            <Tag size={14} /> Gestión de Categorías ({availableCategories.length})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('fits')}
-            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-              activeTab === 'fits' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
-            }`}
-          >
-            <Tag size={14} className="text-[#d88193]" /> Gestión de Fits ({availableFits.length})
+            <ShoppingBag size={14} className="text-[#d88193]" /> Pedidos
           </button>
 
           <button
@@ -947,21 +959,12 @@ export default function AdminCatalogPage() {
           </button>
 
           <button
-            onClick={() => { setActiveTab('orders'); loadOrders(); }}
-            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-              activeTab === 'orders' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
-            }`}
-          >
-            <ShoppingBag size={14} className="text-[#d88193]" /> Pedidos
-          </button>
-
-          <button
             onClick={() => setActiveTab('site')}
             className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
               activeTab === 'site' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
             }`}
           >
-            <LayoutTemplate size={14} className="text-[#d88193]" /> Sitio Web
+            <LayoutTemplate size={14} className="text-[#d88193]" /> Editor del sitio (Catálogo)
           </button>
         </div>
 
@@ -972,440 +975,6 @@ export default function AdminCatalogPage() {
           </div>
         )}
 
-        {/* ── TAB 1: PRODUCT LIST ── */}
-        {activeTab === 'products' && (
-          <div className="space-y-6">
-            {/* Filters Bar */}
-            <div className="bg-white p-4 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="relative w-full md:w-80">
-                <Search size={16} className="absolute left-3 top-3 text-neutral-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar por Nombre o Referencia..."
-                  className="w-full pl-9 pr-4 py-2 text-xs border border-gray-300 focus:outline-none focus:border-[#d88193]"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 w-full md:w-auto">
-                <select
-                  value={filterFit}
-                  onChange={(e) => setFilterFit(e.target.value)}
-                  className="border border-gray-300 p-2 text-xs font-medium text-neutral-700 bg-white focus:outline-none focus:border-[#d88193]"
-                >
-                  <option value="all">Todos los Fits</option>
-                  {availableFits.map(f => (
-                    <option key={f} value={f}>Fit: {f}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="border border-gray-300 p-2 text-xs font-medium text-neutral-700 bg-white focus:outline-none focus:border-[#d88193]"
-                >
-                  <option value="all">Todos los Estados</option>
-                  <option value="published">🟢 Publicados (Visibles)</option>
-                  <option value="draft">🔴 Borradores (Ocultos)</option>
-                </select>
-
-                <select
-                  value={filterMedia}
-                  onChange={(e) => setFilterMedia(e.target.value)}
-                  className="border border-gray-300 p-2 text-xs font-medium text-neutral-700 bg-white focus:outline-none focus:border-[#d88193]"
-                >
-                  <option value="all">Todas las Fotos</option>
-                  <option value="with_photo">🖼️ Con Fotos ({products.filter(p => p.images && p.images.length > 0 && p.images[0]).length})</option>
-                  <option value="no_photo">📷 Sin Foto / Por Editar ({products.filter(p => !p.images || p.images.length === 0 || !p.images[0]).length})</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Product Table List — Wix Studio Style */}
-            <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto rounded-sm">
-
-              {/* Table Header Row */}
-              <div className="bg-[#116dff] text-white px-5 py-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold tracking-wide">
-                  Productos ({filteredProductsList.length}{filteredProductsList.length !== products.length ? ` de ${products.length}` : ''})
-                </h2>
-                <button
-                  onClick={handleOpenNew}
-                  className="flex items-center gap-1.5 bg-white text-[#116dff] text-xs font-bold px-4 py-1.5 rounded hover:bg-blue-50 transition-colors"
-                >
-                  <Plus size={14} /> Nuevo producto
-                </button>
-              </div>
-
-              {/* Column Headers */}
-              <div className="grid grid-cols-[40px_56px_1fr_105px_190px_85px_70px] gap-0 border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500 min-w-[880px]">
-                <div className="px-3 py-2.5 flex items-center"></div>
-                <div className="px-2 py-2.5 flex items-center"></div>
-                <div className="px-3 py-2.5 flex items-center">Nombre</div>
-                <div className="px-3 py-2.5 flex items-center">Precio</div>
-                <div className="px-3 py-2.5 flex items-center justify-center">Inventario (por talla)</div>
-                <div className="px-3 py-2.5 flex items-center">Estado</div>
-                <div className="px-3 py-2.5 flex items-center"></div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100">
-                {filteredProductsList.length === 0 ? (
-                  <div className="py-16 text-center text-neutral-400">
-                    <ImageIcon size={40} className="mx-auto mb-3 opacity-30" />
-                    <p className="text-sm font-medium">No se encontraron productos</p>
-                    <p className="text-xs mt-1">Ajusta los filtros de búsqueda</p>
-                  </div>
-                ) : filteredProductsList.map((p) => {
-                  const isDraft = p.status === 'draft' || p.hidden;
-                  const firstImg = p.images && p.images.length > 0 ? p.images[0] : '';
-                  const sizeOpt = p.options?.find(o => o.key.toLowerCase() === 'talla');
-                  const variantCount = (sizeOpt?.values || ALL_SIZES).length;
-
-                  return (
-                    <div
-                      key={p.id}
-                      className="grid grid-cols-[40px_56px_1fr_105px_190px_85px_70px] gap-0 items-center hover:bg-blue-50/30 transition-colors group cursor-pointer min-w-[880px]"
-                      onClick={() => handleEditOpen(p)}
-                    >
-                      {/* Checkbox placeholder */}
-                      <div className="px-3 py-3 flex items-center" onClick={e => e.stopPropagation()}>
-                        <div className="w-4 h-4 border border-gray-300 rounded-sm flex-shrink-0" />
-                      </div>
-
-                      {/* Thumbnail */}
-                      <div className="px-2 py-2 flex items-center">
-                        <div className="relative w-10 h-12 bg-neutral-100 border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                          {firstImg ? (
-                            <>
-                              <img
-                                src={firstImg}
-                                alt={p.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                  const fallbackEl = (e.target as HTMLElement).nextElementSibling;
-                                  if (fallbackEl) fallbackEl.classList.remove('hidden');
-                                }}
-                              />
-                              <div className="hidden absolute inset-0 bg-gradient-to-br from-neutral-100 to-rose-50 flex-col items-center justify-center text-center p-1">
-                                <ImageIcon size={12} className="text-ush-pink opacity-60 mb-0.5" />
-                                <p className="text-[6px] font-black uppercase tracking-widest text-ush-navy leading-tight">Foto<br />Próximamente</p>
-                              </div>
-                            </>
-                          ) : (
-                            <ImageIcon size={14} className="text-neutral-300" />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Name + variants info */}
-                      <div className="px-3 py-3 min-w-0">
-                        <p className="text-sm font-semibold text-neutral-900 truncate group-hover:text-[#116dff] transition-colors">
-                          {p.name}
-                        </p>
-                        <p className="text-[10px] text-neutral-400 mt-0.5">
-                          {variantCount} tallas · {p.images?.length || 0} foto{(p.images?.length || 0) !== 1 ? 's' : ''}
-                          {p.video_url ? ' · 🎥 video' : ''}
-                          {p.color ? ` · 🎨 ${p.color}` : ''}
-                          {p.ribbon ? ` · 🏷️ ${p.ribbon}` : ''}
-                        </p>
-                      </div>
-
-                      {/* Price */}
-                      <div className="px-3 py-3">
-                        <p className="text-sm font-bold text-neutral-900">{formatCOP(p.price)}</p>
-                        <p className="text-[10px] text-neutral-400">mayorista</p>
-                      </div>
-
-                      {/* Inventario editable (por talla) */}
-                      <div className="px-3 py-2 flex items-center justify-center" onClick={e => e.stopPropagation()}>
-                        {(() => {
-                          const sizes = sizeOpt?.values && sizeOpt.values.length > 0 ? sizeOpt.values : ALL_SIZES;
-                          const isPending = pendingStockIds.includes(p.id);
-                          return (
-                            <div className="flex items-center gap-1">
-                              {sizes.map(s => (
-                                <div key={s} className="flex flex-col items-center">
-                                  <span className="text-[8px] font-bold text-neutral-400 leading-none mb-0.5">{s}</span>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={p.stock_by_size?.[s] ?? 0}
-                                    onChange={(e) => handleQuickStock(p, s, e.target.value)}
-                                    className={`w-9 h-6 text-center text-[11px] font-semibold border rounded-sm focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-blue-100 ${
-                                      isPending
-                                        ? 'border-amber-300 bg-amber-50 text-amber-900'
-                                        : (p.stock_by_size?.[s] ?? 0) > 0
-                                        ? 'border-gray-300 bg-white text-neutral-800'
-                                        : 'border-red-200 bg-red-50 text-red-500'
-                                    }`}
-                                  />
-                                </div>
-                              ))}
-                              {isPending && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 ml-0.5 flex-shrink-0" title="Cambio pendiente de aplicar" />
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Status badge */}
-                      <div className="px-3 py-3">
-                        {isDraft ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Oculto
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Visible
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="px-3 py-3 flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleEditOpen(p)}
-                          className="p-1.5 text-neutral-400 hover:text-[#116dff] hover:bg-blue-50 rounded transition-colors"
-                          title="Editar"
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p.id)}
-                          className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Barra de confirmación de cambios de inventario/tallas (aparece solo tras modificar) */}
-        {pendingStockIds.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1b2333] text-white shadow-2xl border-t-2 border-[#d88193]">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                <RefreshCw size={14} className={applyingStock ? 'animate-spin text-[#d88193]' : 'text-[#d88193]'} />
-                {applyingStock
-                  ? 'Publicando cambios…'
-                  : `${pendingStockIds.length} producto(s) con inventario/tallas modificados sin confirmar.`}
-              </p>
-              <div className="flex items-center gap-2">
-                {!applyingStock && (
-                  <button
-                    type="button"
-                    onClick={() => { setPendingStockIds([]); setInventoryMsg(null); }}
-                    className="text-xs font-bold uppercase tracking-wider text-neutral-300 hover:text-white px-3 py-2"
-                  >
-                    Descartar
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleApplyStockChanges}
-                  disabled={applyingStock}
-                  className="bg-[#d88193] hover:bg-[#c06f81] disabled:opacity-60 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 transition-colors"
-                >
-                  <CheckCircle size={14} />
-                  {applyingStock ? 'Aplicando…' : `Aplicar cambios (${pendingStockIds.length})`}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Mensaje de resultado de la aplicación de cambios */}
-        {inventoryMsg && (
-          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-wider shadow-2xl border border-[#d88193]">
-            {inventoryMsg}
-          </div>
-        )}
-
-        {/* ── TAB 2: GESTIÓN DE CATEGORÍAS ── */}
-        {activeTab === 'categories' && (
-          <div className="bg-white p-6 border border-gray-200 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-base font-black uppercase text-[#1b2333] tracking-wide">
-                Gestión de Categorías del Catálogo
-              </h2>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Crea, edita o elimina las categorías principales que se muestran en la barra superior del catálogo público (ej. Jeans, Shorts, Faldas, Cargos, Bermuda).
-              </p>
-            </div>
-
-            {/* Add Category Form */}
-            <form onSubmit={handleAddCategory} className="flex gap-3 max-w-md">
-              <input
-                type="text"
-                value={newCatInput}
-                onChange={(e) => setNewCatInput(e.target.value)}
-                placeholder="Nombre de la nueva categoría..."
-                className="flex-1 border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-[#d88193]"
-              />
-              <button
-                type="submit"
-                className="bg-[#1b2333] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 hover:bg-[#d88193] transition-colors flex items-center gap-1.5"
-              >
-                <Plus size={16} /> Agregar
-              </button>
-            </form>
-
-            {/* Category List */}
-            <div className="divide-y divide-gray-100 border border-gray-200">
-              {availableCategories.map((cat, idx) => (
-                <div key={cat} className="p-3.5 flex items-center justify-between hover:bg-neutral-50 transition-colors">
-                  {editingCatIndex === idx ? (
-                    <div className="flex items-center gap-2 flex-1 max-w-md">
-                      <input
-                        type="text"
-                        value={editingCatValue}
-                        onChange={(e) => setEditingCatValue(e.target.value)}
-                        className="flex-1 border border-[#d88193] p-1.5 text-xs font-bold text-neutral-900"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveEditCategory(idx)}
-                        className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold uppercase"
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        onClick={() => setEditingCatIndex(null)}
-                        className="px-3 py-1.5 border border-gray-300 text-xs font-bold"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <Tag size={16} className="text-[#d88193]" />
-                        <span className="text-xs font-bold uppercase text-neutral-900">{cat}</span>
-                        <span className="text-[10px] text-neutral-400 font-mono">
-                          ({products.filter(p => p.category?.toLowerCase() === cat.toLowerCase()).length} prendas)
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => { setEditingCatIndex(idx); setEditingCatValue(cat); }}
-                          className="p-1.5 text-neutral-600 hover:text-[#d88193] border border-gray-200 hover:border-[#d88193]"
-                          title="Editar nombre de categoría"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(cat)}
-                          className="p-1.5 text-red-500 hover:text-red-700 border border-red-100 hover:border-red-300"
-                          title="Eliminar categoría"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── TAB 3: GESTIÓN DE FITS / CORTES ── */}
-        {activeTab === 'fits' && (
-          <div className="bg-white p-6 border border-gray-200 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-base font-black uppercase text-[#1b2333] tracking-wide">
-                Gestión de Fits / Cortes de Prenda
-              </h2>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Administra los tipos de corte asignables a cada prenda (Wide Leg, Barrel, Straight Boot, Vaquero, Bota Flare, Skinny, Mom, Cargo, Bermuda, Straight).
-              </p>
-            </div>
-
-            {/* Add Fit Form */}
-            <form onSubmit={handleAddFit} className="flex gap-3 max-w-md">
-              <input
-                type="text"
-                value={newFitInput}
-                onChange={(e) => setNewFitInput(e.target.value)}
-                placeholder="Nombre del nuevo fit (ej: Barrel)..."
-                className="flex-1 border border-gray-300 p-2.5 text-xs focus:outline-none focus:border-[#d88193]"
-              />
-              <button
-                type="submit"
-                className="bg-[#1b2333] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 hover:bg-[#d88193] transition-colors flex items-center gap-1.5"
-              >
-                <Plus size={16} /> Agregar
-              </button>
-            </form>
-
-            {/* Fits List */}
-            <div className="divide-y divide-gray-100 border border-gray-200">
-              {availableFits.map((fit, idx) => (
-                <div key={fit} className="p-3.5 flex items-center justify-between hover:bg-neutral-50 transition-colors">
-                  {editingFitIndex === idx ? (
-                    <div className="flex items-center gap-2 flex-1 max-w-md">
-                      <input
-                        type="text"
-                        value={editingFitValue}
-                        onChange={(e) => setEditingFitValue(e.target.value)}
-                        className="flex-1 border border-[#d88193] p-1.5 text-xs font-bold text-neutral-900"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveEditFit(idx)}
-                        className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold uppercase"
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        onClick={() => setEditingFitIndex(null)}
-                        className="px-3 py-1.5 border border-gray-300 text-xs font-bold"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <Tag size={16} className="text-[#d88193]" />
-                        <span className="text-xs font-bold uppercase text-neutral-900">{fit}</span>
-                        <span className="text-[10px] text-neutral-400 font-mono">
-                          ({products.filter(p => p.fit?.toLowerCase() === fit.toLowerCase()).length} prendas)
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => { setEditingFitIndex(idx); setEditingFitValue(fit); }}
-                          className="p-1.5 text-neutral-600 hover:text-[#d88193] border border-gray-200 hover:border-[#d88193]"
-                          title="Editar nombre de fit"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteFit(fit)}
-                          className="p-1.5 text-red-500 hover:text-red-700 border border-red-100 hover:border-red-300"
-                          title="Eliminar fit"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── TAB 4: HISTORIAL DE PRECIOS ── */}
         {activeTab === 'history' && (
@@ -1611,6 +1180,44 @@ export default function AdminCatalogPage() {
                 </div>
               )}
 
+              {/* Factura lista: enviar por WhatsApp o descargar */}
+              {invoiceReady && (
+                <div className="mt-4 p-4 bg-white border-2 border-[#d88193] flex flex-wrap items-center gap-3">
+                  <FileText size={18} className="text-[#d88193]" />
+                  <div className="flex-1 min-w-[200px]">
+                    <p className="text-xs font-black uppercase tracking-wider text-[#1b2333]">
+                      Factura del pedido {invoiceReady.orderId} lista
+                    </p>
+                    <p className="text-[11px] text-neutral-500">PDF con logo, referencias, descuentos y políticas. Envíala al cliente por WhatsApp.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const order = orders.find((o) => o.id === invoiceReady.orderId);
+                      if (!order) return;
+                      window.open(
+                        buildInvoiceWhatsAppUrl(order.customer_phone, order.customer_name, order.id, invoiceReady.url),
+                        '_blank'
+                      );
+                    }}
+                    className="bg-[#25D366] hover:bg-[#1da851] text-white text-xs font-black uppercase tracking-wider px-4 py-2.5 flex items-center gap-2"
+                  >
+                    Enviar por WhatsApp
+                  </button>
+                  <a
+                    href={invoiceReady.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="border border-gray-300 text-neutral-700 hover:border-[#d88193] hover:text-[#d88193] text-xs font-bold uppercase tracking-wider px-4 py-2.5"
+                  >
+                    Ver / Descargar PDF
+                  </a>
+                  <button type="button" onClick={() => setInvoiceReady(null)} className="p-1.5 text-neutral-400 hover:text-neutral-700">
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
               {/* Filtro de estados de pedido */}
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 {([
@@ -1691,6 +1298,17 @@ export default function AdminCatalogPage() {
                                   {confirmingOrderId === order.id ? 'Confirmando…' : 'Confirmar pago y descontar stock'}
                                 </button>
                               )}
+                              {statusKey === 'confirmed' && (
+                                <button
+                                  type="button"
+                                  onClick={() => prepareInvoice(order)}
+                                  disabled={invoiceBusyId === order.id}
+                                  className="bg-[#1b2333] hover:bg-[#d88193] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 transition-colors"
+                                >
+                                  <FileText size={14} />
+                                  {invoiceBusyId === order.id ? 'Generando…' : 'Factura PDF'}
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => handleCancelOrder(order)}
@@ -1766,567 +1384,12 @@ export default function AdminCatalogPage() {
 
         {/* ── TAB 7: EDITOR DEL SITIO WEB (tipo Wix) ── */}
         {activeTab === 'site' && (
-          <SiteContentEditor onExit={() => setActiveTab('products')} />
+          <SiteContentEditor onExit={() => setActiveTab('orders')} />
         )}
 
       </div>
 
-      {/* ── EDIT PRODUCT DRAWER — Wix Studio Style ── */}
-      {editingProduct && (
-        <div className="fixed inset-0 z-50 flex overflow-hidden" style={{background: 'rgba(0,0,0,0.55)'}}>
-          {/* Click outside to close */}
-          <div className="flex-1" onClick={() => setEditingProduct(null)} />
 
-          {/* Drawer Panel */}
-          <div className="bg-white w-full max-w-5xl h-full flex flex-col shadow-2xl overflow-hidden">
-
-            {/* Drawer Header — Wix Studio style */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <button onClick={() => setEditingProduct(null)} className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-gray-100 rounded transition-colors">
-                  <X size={18} />
-                </button>
-                <h3 className="text-base font-bold text-neutral-900">
-                  {editingProduct.id ? editingProduct.name || 'Editar Producto' : '+ Nuevo Producto'}
-                </h3>
-                {editingProduct.id && (
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    editingProduct.hidden ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  }`}>
-                    {editingProduct.hidden ? 'Oculto' : 'Visible'}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingProduct(null)}
-                  className="px-4 py-1.5 border border-gray-300 text-xs font-semibold text-neutral-600 hover:bg-gray-50 rounded transition-colors"
-                >
-                  Descartar
-                </button>
-                <button
-                  form="product-edit-form"
-                  type="submit"
-                  className="px-5 py-1.5 bg-[#116dff] text-white text-xs font-bold rounded hover:bg-blue-700 flex items-center gap-1.5 transition-colors"
-                >
-                  <Save size={14} /> Guardar
-                </button>
-              </div>
-            </div>
-
-            {/* Two-column layout */}
-            <div className="flex flex-1 overflow-hidden">
-
-              {/* ── LEFT COLUMN: Main Content ── */}
-              <form id="product-edit-form" onSubmit={handleSave} className="flex-1 overflow-y-auto px-6 py-6 space-y-6 border-r border-gray-200">
-              
-              {/* Section: Nombre */}
-              <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Nombre de la referencia *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingProduct.name || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                  placeholder="Ej: REF: 559100 Jean Wide Leg"
-                  className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20"
-                />
-              </div>
-
-              {/* Section: Referencia / SKU */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Referencia / SKU</label>
-                  <input
-                    type="text"
-                    value={editingProduct.reference || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, reference: e.target.value })}
-                    placeholder="Ej: 559100"
-                    className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Slug (URL)</label>
-                  <input
-                    type="text"
-                    value={editingProduct.slug || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, slug: e.target.value })}
-                    placeholder="Ej: ref-559100"
-                    className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20"
-                  />
-                </div>
-              </div>
-
-              {/* Section: Descripción */}
-              <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Descripción corta</label>
-                <textarea
-                  rows={3}
-                  value={editingProduct.description || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                  placeholder="Ej: Jean Wide Leg Tiro Alto Premium — Confección nacional estilizadora..."
-                  className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-700 focus:outline-none focus:border-[#116dff] focus:ring-1 focus:ring-[#116dff]/20 resize-none"
-                />
-              </div>
-
-              {/* Pricing Section */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-neutral-50 border border-gray-200 rounded">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-1.5">Precio Sugerido Venta (PVP) *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-xs font-bold text-neutral-400">$</span>
-                    <input
-                      type="number"
-                      required
-                      value={editingProduct.suggested_price || 0}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, suggested_price: parseFloat(e.target.value) || 0 })}
-                      className="w-full border border-gray-300 rounded pl-7 pr-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] font-bold"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#116dff] mb-1.5">Precio Mayorista (12+ uds) *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-xs font-bold text-neutral-400">$</span>
-                    <input
-                      type="number"
-                      required
-                      value={editingProduct.price || 0}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full border border-gray-300 rounded pl-7 pr-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] font-bold"
-                    />
-                  </div>
-                </div>
-              </div>
-
-
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-1.5">Etiquetas / Tags <span className="text-neutral-400 font-normal text-xs">(separadas por coma)</span></label>
-                <input
-                  type="text"
-                  value={(editingProduct.tags || []).join(', ')}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                  placeholder="Ej: denim, tiro alto, wide leg"
-                  className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm text-neutral-700 focus:outline-none focus:border-[#116dff]"
-                />
-              </div>
-
-              {/* ── MULTIMEDIA MANAGER (Estilo Captura 5) ── */}
-              <div className="p-4 bg-slate-50 border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#1b2333] flex items-center gap-1.5">
-                      <ImageIcon size={16} className="text-[#d88193]" /> Gestión de Galería Multimedia
-                    </h4>
-                    <p className="text-[10px] text-neutral-500">
-                      Organiza las imágenes y el video de la prenda. La primera foto será la imagen PRINCIPAL.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowMediaModal(true)}
-                    className="px-3.5 py-2 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#d88193] transition-colors flex items-center gap-1.5"
-                  >
-                    <Plus size={14} /> Agregar Multimedia
-                  </button>
-                </div>
-
-                {/* Media Cards Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {(editingProduct.images || []).map((imgUrl, idx) => {
-                    const isPrincipal = idx === 0;
-                    return (
-                      <div key={idx} className="group relative aspect-[3/4] bg-neutral-200 border border-gray-300 overflow-hidden shadow-sm flex items-center justify-center">
-                        <div className="relative w-full h-full">
-                          <img
-                            src={imgUrl}
-                            alt={`Imagen ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                              const fallbackEl = (e.target as HTMLElement).nextElementSibling;
-                              if (fallbackEl) fallbackEl.classList.remove('hidden');
-                            }}
-                          />
-                          <div className="hidden absolute inset-0 bg-gradient-to-br from-neutral-100 to-rose-50 flex-col items-center justify-center text-center p-2">
-                            <ImageIcon size={20} className="text-ush-pink opacity-60 mb-1" />
-                            <p className="text-[8px] font-black uppercase tracking-widest text-ush-navy leading-tight">Foto<br />Próximamente</p>
-                          </div>
-                        </div>
-
-                        {/* Badge */}
-                        {isPrincipal ? (
-                          <span className="absolute top-2 left-2 z-10 text-[9px] font-black uppercase px-2 py-0.5 bg-emerald-500 text-white shadow-md">
-                            PRINCIPAL
-                          </span>
-                        ) : (
-                          <span className="absolute top-2 left-2 z-10 text-[9px] font-bold uppercase px-2 py-0.5 bg-neutral-900/80 text-white">
-                            FOTO #{idx + 1}
-                          </span>
-                        )}
-
-                        {/* Hover Overlay Controls */}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                          {!isPrincipal && (
-                            <button
-                              type="button"
-                              onClick={() => handleMakePrincipalImage(idx)}
-                              className="w-full py-1.5 bg-white text-neutral-900 text-[10px] font-bold uppercase flex items-center justify-center gap-1 hover:bg-emerald-50"
-                            >
-                              <Star size={12} className="text-amber-500 fill-amber-500" /> Principal
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(idx)}
-                            className="w-full py-1.5 bg-red-600 text-white text-[10px] font-bold uppercase flex items-center justify-center gap-1 hover:bg-red-700"
-                          >
-                            <Trash2 size={12} /> Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Video item if exists */}
-                  {editingProduct.video_url && (
-                    <div className="group relative aspect-[3/4] bg-neutral-900 border border-gray-300 overflow-hidden shadow-sm flex flex-col items-center justify-center text-white p-3 text-center">
-                      <Film size={28} className="text-sky-400 mb-2" />
-                      <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-sky-500 text-white mb-1">
-                        VIDEO
-                      </span>
-                      <p className="text-[9px] text-neutral-300 truncate w-full">{editingProduct.video_url}</p>
-
-                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                        <button
-                          type="button"
-                          onClick={() => setEditingProduct({ ...editingProduct, video_url: '' })}
-                          className="w-full py-1.5 bg-red-600 text-white text-[10px] font-bold uppercase flex items-center justify-center gap-1"
-                        >
-                          <Trash2 size={12} /> Quitar Video
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Add (+) Box (Captura 5 style) */}
-                  <button
-                    type="button"
-                    onClick={() => setShowMediaModal(true)}
-                    className="aspect-[3/4] border-2 border-dashed border-sky-300 hover:border-sky-500 bg-sky-50/50 hover:bg-sky-50 transition-colors flex flex-col items-center justify-center text-sky-600 p-4 text-center group"
-                  >
-                    <div className="w-10 h-10 rounded-full border border-sky-300 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                      <Plus size={20} />
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Agregar Multimedia</span>
-                  </button>
-                </div>
-              </div>
-
-            </form>
-
-              {/* ── RIGHT SIDEBAR: Settings ── */}
-              <div className="w-72 flex-shrink-0 overflow-y-auto px-5 py-6 space-y-6 bg-gray-50">
-
-                {/* Visibility Toggle */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-                  <h4 className="text-sm font-bold text-neutral-800">Mostrar en tienda</h4>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-neutral-500">
-                      {editingProduct.hidden ? 'Oculto para clientes' : 'Visible en el catálogo'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setEditingProduct({ ...editingProduct, hidden: !editingProduct.hidden, status: editingProduct.hidden ? 'published' : 'draft' })}
-                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                        editingProduct.hidden ? 'bg-gray-300' : 'bg-[#116dff]'
-                      }`}
-                    >
-                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
-                        editingProduct.hidden ? 'left-0.5' : 'left-5'
-                      }`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Category */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-                  <h4 className="text-sm font-bold text-neutral-800">Categoría</h4>
-                  <select
-                    value={editingProduct.category || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
-                  >
-                    {availableCategories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Fit */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-                  <h4 className="text-sm font-bold text-neutral-800">Fit / Corte</h4>
-                  <select
-                    value={editingProduct.fit || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, fit: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
-                  >
-                    <option value="">Sin fit</option>
-                    {availableFits.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Color */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-                  <h4 className="text-sm font-bold text-neutral-800">Color</h4>
-                  <select
-                    value={editingProduct.color || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
-                  >
-                    <option value="">Sin color</option>
-                    {DEFAULT_COLORS.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <p className="text-[10px] text-neutral-500">
-                    Se muestra en la tarjeta y se envía por WhatsApp al asesor al pedir el producto.
-                  </p>
-                </div>
-
-                {/* Ribbon / Badge */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-                  <h4 className="text-sm font-bold text-neutral-800">Cinta / Etiqueta</h4>
-                  <select
-                    value={editingProduct.ribbon || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, ribbon: e.target.value })}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:border-[#116dff] bg-white"
-                  >
-                    <option value="">Sin cinta</option>
-                    <option value="Nuevo">🆕 Nuevo</option>
-                    <option value="Más vendido">🔥 Más vendido</option>
-                    <option value="Oferta">🏷️ Oferta</option>
-                    <option value="Exclusivo">⭐ Exclusivo</option>
-                  </select>
-                  {editingProduct.ribbon && (
-                    <div className="text-[10px] text-neutral-500">
-                      Se muestra como badge en la tarjeta del producto.
-                    </div>
-                  )}
-                </div>
-
-                {/* Más Vendido Toggle */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-2">
-                  <h4 className="text-sm font-bold text-neutral-800">Más Vendido 🔥</h4>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-neutral-500">Destacar en sección principal</p>
-                    <button
-                      type="button"
-                      onClick={() => setEditingProduct({ ...editingProduct, is_best_seller: !editingProduct.is_best_seller })}
-                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                        editingProduct.is_best_seller ? 'bg-amber-500' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
-                        editingProduct.is_best_seller ? 'left-5' : 'left-0.5'
-                      }`} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tallas */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-                  <h4 className="text-sm font-bold text-neutral-800">Tallas disponibles</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {ALL_SIZES.map((size) => {
-                      const isChecked = selectedSizes.includes(size);
-                      return (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => {
-                            if (isChecked) {
-                              setSelectedSizes(selectedSizes.filter(s => s !== size));
-                            } else {
-                              setSelectedSizes([...selectedSizes, size].sort((a, b) => parseInt(a) - parseInt(b)));
-                            }
-                          }}
-                          className={`w-10 h-10 text-sm font-bold border-2 rounded transition-all ${
-                            isChecked
-                              ? 'bg-[#116dff] text-white border-[#116dff]'
-                              : 'bg-white text-neutral-500 border-gray-300 hover:border-[#116dff]'
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Inventario por talla */}
-                <div className="bg-white border border-gray-200 rounded p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-neutral-800">Inventario por talla</h4>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200">
-                      Stock
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-neutral-500">
-                    Cantidad disponible de cada talla. Si el total es 0, la prenda se muestra agotada.
-                  </p>
-                  <div className="space-y-2">
-                    {ALL_SIZES.map((size) => {
-                      const isSelected = selectedSizes.includes(size);
-                      const stockValue = stockBySize[size] ?? 0;
-                      return (
-                        <div key={size} className={`flex items-center justify-between gap-3 p-2 border rounded ${
-                          isSelected ? 'border-blue-200 bg-blue-50/40' : 'border-gray-200 bg-gray-50 opacity-50'
-                        }`}>
-                          <label className="text-xs font-bold text-neutral-700 w-10">
-                            Talla {size}
-                          </label>
-                          <div className="flex items-center gap-1.5 flex-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!isSelected) return;
-                                setStockBySize({ ...stockBySize, [size]: Math.max(0, (stockBySize[size] ?? 0) - 1) });
-                              }}
-                              className={`w-7 h-7 border flex items-center justify-center text-sm font-bold ${
-                                isSelected ? 'border-gray-300 text-neutral-700 hover:bg-gray-100' : 'border-gray-200 text-neutral-300'
-                              }`}
-                            >
-                              −
-                            </button>
-                            <input
-                              type="number"
-                              min="0"
-                              value={stockValue}
-                              disabled={!isSelected}
-                              onChange={(e) => {
-                                const v = Math.max(0, parseInt(e.target.value) || 0);
-                                setStockBySize({ ...stockBySize, [size]: v });
-                              }}
-                              className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-bold text-center text-neutral-900 focus:outline-none focus:border-[#116dff] disabled:bg-gray-100"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!isSelected) return;
-                                setStockBySize({ ...stockBySize, [size]: (stockBySize[size] ?? 0) + 1 });
-                              }}
-                              className={`w-7 h-7 border flex items-center justify-center text-sm font-bold ${
-                                isSelected ? 'border-gray-300 text-neutral-700 hover:bg-gray-100' : 'border-gray-200 text-neutral-300'
-                              }`}
-                            >
-                              +
-                            </button>
-                          </div>
-                          <span className={`text-[10px] font-black uppercase w-14 text-right ${
-                            stockValue === 0 ? 'text-rose-500' : 'text-emerald-600'
-                          }`}>
-                            {stockValue === 0 ? 'Agotado' : 'OK'}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-              </div>
-            </div>{/* end two-column layout */}
-          </div>{/* end drawer */}
-        </div>
-      )}
-
-      {/* ── MULTIMEDIA UPLOADER MODAL (Subir local o URL) ── */}
-      {showMediaModal && (
-        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center">
-          <div className="bg-white max-w-md w-full border border-gray-200 shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-sm font-black uppercase text-[#1b2333]">Agregar Foto o Video</h3>
-              <button onClick={() => setShowMediaModal(false)} className="text-neutral-400 hover:text-neutral-700">
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Type tabs */}
-            <div className="flex border border-gray-200 p-1">
-              <button
-                type="button"
-                onClick={() => setMediaTypeInput('image')}
-                className={`flex-1 py-2 text-xs font-bold uppercase ${mediaTypeInput === 'image' ? 'bg-[#1b2333] text-white' : 'text-neutral-600'}`}
-              >
-                🖼️ Imagen
-              </button>
-              <button
-                type="button"
-                onClick={() => setMediaTypeInput('video')}
-                className={`flex-1 py-2 text-xs font-bold uppercase ${mediaTypeInput === 'video' ? 'bg-[#1b2333] text-white' : 'text-neutral-600'}`}
-              >
-                🎥 Video (MP4 / YouTube)
-              </button>
-            </div>
-
-            {mediaTypeInput === 'image' && (
-              <div className="space-y-4">
-                {/* Local Upload */}
-                <div className="p-4 border-2 border-dashed border-gray-300 hover:border-[#d88193] text-center space-y-2 bg-neutral-50">
-                  <Upload size={24} className="mx-auto text-neutral-400" />
-                  <p className="text-xs font-bold text-neutral-700 uppercase">Subir Foto desde tu Equipo</p>
-                  <p className="text-[10px] text-neutral-400">Se comprimirá automáticamente en alta calidad</p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageFileUpload}
-                    className="block w-full text-xs text-neutral-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:bg-[#1b2333] file:text-white hover:file:bg-[#d88193]"
-                  />
-                </div>
-
-                <div className="relative text-center text-xs text-neutral-400 font-bold uppercase">
-                  <span>o pega la URL externa</span>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-bold uppercase text-neutral-600 mb-1">
-                {mediaTypeInput === 'image' ? 'URL de la Imagen:' : 'URL del Video (MP4 / YouTube):'}
-              </label>
-              <input
-                type="text"
-                value={mediaUrlInput}
-                onChange={(e) => setMediaUrlInput(e.target.value)}
-                placeholder="https://static.wixstatic.com/media/...jpg"
-                className="w-full border border-gray-300 p-2.5 text-xs text-neutral-900 focus:outline-none focus:border-[#d88193]"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowMediaModal(false)}
-                className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleAddMediaUrl}
-                className="px-5 py-2 bg-[#1b2333] text-white text-xs font-bold uppercase hover:bg-[#d88193]"
-              >
-                Agregar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
