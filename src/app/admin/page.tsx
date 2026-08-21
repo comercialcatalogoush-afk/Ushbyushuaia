@@ -3,15 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { fetchAllProductsAdmin, supabase, saveLocalProductsOverride, logPriceChange, fetchPriceHistory, upsertProduct, deleteProductFromSupabase, uploadProductImage, deleteProductImage, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange, publishCatalogChange, updateProductStock } from '@/lib/supabase';
+import { fetchAllProductsAdmin, supabase, fetchPriceHistory, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange } from '@/lib/supabase';
 import { exportBackup, downloadBackup, exportOrderExcel, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
 import { generateInvoicePdf, uploadInvoicePdf, buildInvoiceWhatsAppUrl } from '@/lib/invoice';
 import {
-  Plus, Edit3, Trash2, Save, X, ArrowLeft, Image as ImageIcon, Video, CheckCircle,
-  CheckSquare, Square, Lock, LogOut, ShieldCheck, ShieldAlert, Key, Search, Filter, History,
-  Upload, Layers, Tag, Eye, EyeOff, Sparkles, RefreshCw, Star, Film, ShoppingBag, LayoutTemplate, XCircle,
+  Trash2, Save, X, ArrowLeft, CheckCircle,
+  Lock, LogOut, ShieldAlert, Key, History,
+  RefreshCw, ShoppingBag, LayoutTemplate, XCircle,
   FileSpreadsheet, FileText,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -39,41 +39,6 @@ export default function AdminCatalogPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'history' | 'backup' | 'site'>('orders');
   const [invoiceBusyId, setInvoiceBusyId] = useState<string | null>(null);
   const [invoiceReady, setInvoiceReady] = useState<{ orderId: string; url: string } | null>(null);
-
-  // Filters & Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterFit, setFilterFit] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterMedia, setFilterMedia] = useState('all');
-
-  // Category & Fit Management State
-  const [availableCategories, setAvailableCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-  const [newCatInput, setNewCatInput] = useState('');
-  const [editingCatIndex, setEditingCatIndex] = useState<number | null>(null);
-  const [editingCatValue, setEditingCatValue] = useState('');
-
-  const [availableFits, setAvailableFits] = useState<string[]>(DEFAULT_FITS);
-  const [newFitInput, setNewFitInput] = useState('');
-  const [editingFitIndex, setEditingFitIndex] = useState<number | null>(null);
-  const [editingFitValue, setEditingFitValue] = useState('');
-
-  // Editing Product state
-  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>(ALL_SIZES);
-  const [stockBySize, setStockBySize] = useState<Record<string, number>>({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Inventario rápido (edición inline desde el listado): se marca como pendiente
-  // hasta que el admin pulse "Aplicar cambios".
-  const [pendingStockIds, setPendingStockIds] = useState<string[]>([]);
-  const [applyingStock, setApplyingStock] = useState(false);
-  const [inventoryMsg, setInventoryMsg] = useState<string | null>(null);
-
-  // Multimedia modal state
-  const [showMediaModal, setShowMediaModal] = useState(false);
-  const [mediaUrlInput, setMediaUrlInput] = useState('');
-  const [mediaTypeInput, setMediaTypeInput] = useState<'image' | 'video'>('image');
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Price History Audit Log
   const [priceHistory, setPriceHistory] = useState<PriceHistoryRecord[]>([]);
@@ -131,14 +96,6 @@ export default function AdminCatalogPage() {
         setLoading(false);
       }
     });
-
-    try {
-      const savedFits = localStorage.getItem('ush_admin_fits');
-      if (savedFits) setAvailableFits(JSON.parse(savedFits));
-
-      const savedCats = localStorage.getItem('ush_admin_categories');
-      if (savedCats) setAvailableCategories(JSON.parse(savedCats));
-    } catch (e) {}
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -381,385 +338,6 @@ export default function AdminCatalogPage() {
     setBackupLoading(false);
   };
 
-  // ── Categories Management CRUD ──
-  const handleAddCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCatInput.trim()) return;
-    const cleanCat = newCatInput.trim();
-    if (!availableCategories.includes(cleanCat)) {
-      const updated = [...availableCategories, cleanCat];
-      setAvailableCategories(updated);
-      try { localStorage.setItem('ush_admin_categories', JSON.stringify(updated)); } catch (e) {}
-      window.dispatchEvent(new Event('ush_categories_updated'));
-    }
-    setNewCatInput('');
-  };
-
-  const handleSaveEditCategory = (index: number) => {
-    if (!editingCatValue.trim()) return;
-    const updated = [...availableCategories];
-    updated[index] = editingCatValue.trim();
-    setAvailableCategories(updated);
-    setEditingCatIndex(null);
-    try { localStorage.setItem('ush_admin_categories', JSON.stringify(updated)); } catch (e) {}
-    window.dispatchEvent(new Event('ush_categories_updated'));
-  };
-
-  const handleDeleteCategory = (catToDelete: string) => {
-    const updated = availableCategories.filter(c => c !== catToDelete);
-    setAvailableCategories(updated);
-    try { localStorage.setItem('ush_admin_categories', JSON.stringify(updated)); } catch (e) {}
-    window.dispatchEvent(new Event('ush_categories_updated'));
-  };
-
-  // ── Fits Management CRUD ──
-  const handleAddFit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFitInput.trim()) return;
-    const cleanFit = newFitInput.trim();
-    if (!availableFits.includes(cleanFit)) {
-      const updated = [...availableFits, cleanFit];
-      setAvailableFits(updated);
-      try { localStorage.setItem('ush_admin_fits', JSON.stringify(updated)); } catch (e) {}
-      window.dispatchEvent(new Event('ush_fits_updated'));
-    }
-    setNewFitInput('');
-  };
-
-  const handleSaveEditFit = (index: number) => {
-    if (!editingFitValue.trim()) return;
-    const updated = [...availableFits];
-    updated[index] = editingFitValue.trim();
-    setAvailableFits(updated);
-    setEditingFitIndex(null);
-    try { localStorage.setItem('ush_admin_fits', JSON.stringify(updated)); } catch (e) {}
-    window.dispatchEvent(new Event('ush_fits_updated'));
-  };
-
-  const handleDeleteFit = (fitToDelete: string) => {
-    const updated = availableFits.filter(f => f !== fitToDelete);
-    setAvailableFits(updated);
-    try { localStorage.setItem('ush_admin_fits', JSON.stringify(updated)); } catch (e) {}
-    window.dispatchEvent(new Event('ush_fits_updated'));
-  };
-
-  // Compress Image Utility (Client-side Canvas) → Blob for Supabase Storage
-  // High-quality near-lossless: 1920px max dim, JPEG q0.92 (visually identical, fits free tier)
-  const compressAndReadImage = (file: File): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = document.createElement('img');
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 1920;
-
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, width, height);
-            canvas.toBlob(
-              (blob) => {
-                if (blob) {
-                  resolve(blob);
-                } else {
-                  reject(new Error('No se pudo comprimir la imagen'));
-                }
-              },
-              'image/jpeg',
-              0.92
-            );
-          } else {
-            reject(new Error('Canvas no disponible'));
-          }
-        };
-        img.onerror = reject;
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploadingImage(true);
-    try {
-      const uploadedUrls: string[] = [];
-      const refFolder = (editingProduct?.reference || editingProduct?.id || 'producto').replace(/[^a-zA-Z0-9_-]/g, '-');
-      for (let i = 0; i < files.length; i++) {
-        try {
-          const blob = await compressAndReadImage(files[i]);
-          const path = `${refFolder}/${Date.now()}-${i}.jpg`;
-          const res = await uploadProductImage(blob, path);
-          if (res.success && res.url) {
-            uploadedUrls.push(res.url);
-          } else {
-            console.warn('Supabase storage upload failed:', res.error);
-          }
-        } catch (err) {
-          console.error('Error uploading image:', err);
-        }
-      }
-      if (editingProduct && uploadedUrls.length > 0) {
-        setEditingProduct({
-          ...editingProduct,
-          images: [...(editingProduct.images || []), ...uploadedUrls]
-        });
-      }
-    } catch (err) {
-      console.error('Error uploading images:', err);
-    }
-    setUploadingImage(false);
-    setShowMediaModal(false);
-  };
-
-  const handleAddMediaUrl = () => {
-    if (!mediaUrlInput.trim() || !editingProduct) return;
-    const url = mediaUrlInput.trim();
-
-    if (mediaTypeInput === 'video') {
-      setEditingProduct({ ...editingProduct, video_url: url });
-    } else {
-      setEditingProduct({
-        ...editingProduct,
-        images: [...(editingProduct.images || []), url]
-      });
-    }
-    setMediaUrlInput('');
-    setShowMediaModal(false);
-  };
-
-  const handleMakePrincipalImage = (index: number) => {
-    if (!editingProduct || !editingProduct.images) return;
-    const imgs = [...editingProduct.images];
-    const [selected] = imgs.splice(index, 1);
-    imgs.unshift(selected);
-    setEditingProduct({ ...editingProduct, images: imgs });
-  };
-
-  const handleRemoveImage = (index: number) => {
-    if (!editingProduct || !editingProduct.images) return;
-    const imgs = [...editingProduct.images];
-    const [removed] = imgs.splice(index, 1);
-    setEditingProduct({ ...editingProduct, images: imgs });
-
-    // If the image lives in our Supabase bucket, delete the file too
-    try {
-      const marker = '/object/public/product-images/';
-      const markerIdx = removed.indexOf(marker);
-      if (markerIdx > -1) {
-        const path = removed.substring(markerIdx + marker.length);
-        deleteProductImage(path).then((res) => {
-          if (!res.success) console.warn('Supabase image delete failed:', res.error);
-        });
-      }
-    } catch (e) {}
-  };
-
-  const handleOpenNew = () => {
-    setSelectedSizes(ALL_SIZES);
-    setStockBySize({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20 });
-    setEditingProduct({
-      id: '',
-      name: 'REF: ',
-      reference: '',
-      slug: '',
-      suggested_price: 79900,
-      price: 54900,
-      ribbon: 'Nuevo',
-      category: availableCategories[0] || 'Jeans',
-      fit: availableFits[0] || 'Wide Leg',
-      status: 'published',
-      description: '',
-      full_description: '',
-      in_stock: true,
-      options: [{ id: 'talla-opt', key: 'Talla', values: ALL_SIZES }],
-      images: [],
-      video_url: ''
-    });
-  };
-
-  const handleEditOpen = (product: Product) => {
-    const sizeOpt = product.options?.find(o => o.key.toLowerCase() === 'talla');
-    const allSizes = sizeOpt?.values || ALL_SIZES;
-    const stock = product.stock_by_size || {};
-    // Las tallas con 0 quedan desmarcadas automáticamente (igual que en el
-    // catálogo: no hace falta que el admin las quite a mano). Si todo está en
-    // 0 se conservan marcadas para poder reponer stock.
-    const activeSizes = allSizes.filter(s => (stock[s] ?? 0) > 0);
-    setSelectedSizes(activeSizes.length > 0 ? activeSizes : allSizes);
-    setStockBySize({ '6': 20, '8': 20, '10': 20, '12': 20, '14': 20, ...(product.stock_by_size || {}) });
-    setEditingProduct(product);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProduct) return;
-
-    const existingProd = products.find(p => p.id === editingProduct.id);
-    const oldWholesale = existingProd ? existingProd.price : 0;
-    const newWholesale = Number(editingProduct.price || 54900);
-    const oldSuggested = existingProd ? existingProd.suggested_price : 0;
-    const newSuggested = Number(editingProduct.suggested_price || 79900);
-
-    const slug = editingProduct.slug || editingProduct.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'ref-' + Date.now();
-    const reference = editingProduct.reference || editingProduct.name?.replace(/ref:?/i, '').trim() || 'REF';
-
-    const otherOptions = (editingProduct.options || []).filter(o => o.key.toLowerCase() !== 'talla');
-    const fullProd: Product = {
-      id: editingProduct.id || 'prod-' + Date.now(),
-      name: editingProduct.name || 'NUEVA REFERENCIA',
-      reference: reference,
-      slug: slug,
-      suggested_price: newSuggested,
-      price: newWholesale,
-      compare_price: newSuggested,
-      ribbon: editingProduct.ribbon || '',
-      category: editingProduct.category || 'Jeans',
-      fit: editingProduct.fit || '',
-      color: editingProduct.color || '',
-      status: editingProduct.status || 'published',
-      stock_by_size: stockBySize,
-      is_best_seller: editingProduct.is_best_seller === true,
-      description: editingProduct.description || '',
-      full_description: editingProduct.full_description || '',
-      video_url: editingProduct.video_url || '',
-      tags: editingProduct.tags || [],
-      in_stock: editingProduct.in_stock !== false,
-      hidden: editingProduct.hidden === true || editingProduct.status === 'draft',
-      options: [...otherOptions, { id: 'talla-opt', key: 'Talla', values: selectedSizes }],
-      images: editingProduct.images || []
-    };
-
-    let updatedList: Product[];
-    if (editingProduct.id) {
-      updatedList = products.map(p => p.id === fullProd.id ? fullProd : p);
-    } else {
-      updatedList = [fullProd, ...products];
-    }
-
-    setProducts(updatedList);
-    saveLocalProductsOverride(updatedList);
-
-    // Persist to Supabase so changes are visible on every device
-    const upsertRes = await upsertProduct(fullProd);
-    if (!upsertRes.success) {
-      console.warn('Supabase upsert failed (falling back to local only):', upsertRes.error);
-    } else {
-      publishCatalogChange();
-    }
-
-    if (oldWholesale !== newWholesale || oldSuggested !== newSuggested) {
-      await logPriceChange({
-        product_id: fullProd.id,
-        product_name: fullProd.name,
-        old_wholesale_price: oldWholesale,
-        new_wholesale_price: newWholesale,
-        old_suggested_price: oldSuggested,
-        new_suggested_price: newSuggested,
-      });
-      loadHistory();
-    }
-
-    setEditingProduct(null);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 4000);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('¿Seguro que deseas eliminar este producto del catálogo?')) {
-      const updated = products.filter(p => p.id !== id);
-      setProducts(updated);
-      saveLocalProductsOverride(updated);
-      deleteProductFromSupabase(id).then(res => {
-        if (!res.success) {
-          console.warn('Supabase delete failed:', res.error);
-        } else {
-          publishCatalogChange();
-        }
-      });
-    }
-  };
-
-  // Edita el inventario inline: solo actualiza el estado local y marca la fila
-  // como pendiente. La BD y el catálogo se actualizan al pulsar "Aplicar cambios".
-  const handleQuickStock = (product: Product, size: string, value: string) => {
-    const id = product.id;
-    const num = Math.max(0, parseInt(value, 10) || 0);
-    setProducts(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      const next = { ...p, stock_by_size: { ...(p.stock_by_size || {}), [size]: num } };
-      const sizes = next.options?.find(o => o.key.toLowerCase() === 'talla')?.values || ALL_SIZES;
-      next.in_stock = sizes.some(s => (next.stock_by_size?.[s] || 0) > 0);
-      return next;
-    }));
-    setPendingStockIds(prev => (prev.includes(id) ? prev : [...prev, id]));
-    setInventoryMsg(null);
-  };
-
-  // Aplica los cambios pendientes de inventario: guarda en Supabase y publica
-  // para que el catálogo se actualice al instante en todos los dispositivos.
-  const handleApplyStockChanges = async () => {
-    const ids = pendingStockIds;
-    if (ids.length === 0) return;
-    setApplyingStock(true);
-    let ok = 0;
-    let fail = 0;
-    for (const id of ids) {
-      const prod = products.find(p => p.id === id);
-      if (!prod) continue;
-      const stock = prod.stock_by_size || {};
-      const hasStock = ALL_SIZES.some(s => (stock[s] || 0) > 0);
-      const res = await updateProductStock(id, stock, hasStock);
-      if (res.success) ok++; else fail++;
-    }
-    if (ok > 0) publishCatalogChange();
-    setPendingStockIds([]);
-    setApplyingStock(false);
-    setInventoryMsg(
-      ok > 0
-        ? `✅ Inventario actualizado y publicado (${ok} producto${ok !== 1 ? 's' : ''})${fail ? `, ${fail} con error` : ''}.`
-        : `❌ No se pudo actualizar el inventario${fail ? ` (${fail} con error)` : ''}.`
-    );
-    setTimeout(() => setInventoryMsg(null), 5000);
-  };
-
-  const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<string | null>(null);
-
-  const handleSyncAll = async () => {
-    setSyncing(true);
-    setSyncResult(null);
-    let ok = 0;
-    let fail = 0;
-    for (const p of products) {
-      const res = await upsertProduct(p);
-      if (res.success) ok++; else fail++;
-    }
-    setSyncing(false);
-    if (ok > 0) publishCatalogChange();
-    setSyncResult(`Sincronización completada: ${ok} referencias en la nube${fail ? `, ${fail} con error` : ''}.`);
-    setTimeout(() => setSyncResult(null), 5000);
-  };
-
   if (!isAuthenticated) {
     if (hasNonAdminSession) {
       return (
@@ -858,28 +436,6 @@ export default function AdminCatalogPage() {
     );
   }
 
-  const filteredProductsList = products.filter(p => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchName = p.name.toLowerCase().includes(q);
-      const matchRef = p.reference.toLowerCase().includes(q);
-      if (!matchName && !matchRef) return false;
-    }
-    if (filterFit !== 'all') {
-      if ((p.fit || '').toLowerCase() !== filterFit.toLowerCase()) return false;
-    }
-    if (filterStatus !== 'all') {
-      const isDraft = p.status === 'draft' || p.hidden;
-      if (filterStatus === 'published' && isDraft) return false;
-      if (filterStatus === 'draft' && !isDraft) return false;
-    }
-    if (filterMedia !== 'all') {
-      const hasPhoto = p.images && p.images.length > 0 && p.images[0] && p.images[0].trim() !== '';
-      if (filterMedia === 'with_photo' && !hasPhoto) return false;
-      if (filterMedia === 'no_photo' && hasPhoto) return false;
-    }
-    return true;
-  });
 
   return (
     <div className="min-h-screen bg-neutral-100 pb-16">
@@ -914,39 +470,14 @@ export default function AdminCatalogPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Action Header & Tabs */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-black text-[#1b2333] uppercase tracking-tight">
-              Administración de Referencias
-            </h1>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              Gestiona precios, imágenes, categorías, fits y visibilidad del catálogo en tiempo real.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleSyncAll}
-              disabled={syncing}
-              className="bg-white text-[#1b2333] border-2 border-[#1b2333] text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-sm hover:bg-[#1b2333] hover:text-white transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Upload size={16} /> {syncing ? 'Sincronizando...' : 'Sincronizar todo a la nube'}
-            </button>
-            <button
-              onClick={handleOpenNew}
-              className="bg-[#d88193] text-white text-xs font-bold uppercase tracking-widest px-5 py-3 shadow-md hover:bg-[#c06579] transition-all flex items-center gap-2"
-            >
-              <Plus size={16} /> Agregar Nueva Referencia
-            </button>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-black text-[#1b2333] uppercase tracking-tight">
+            Panel de Administración
+          </h1>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Pedidos, historial de precios, respaldos y el editor del catálogo. Los cambios se publican en la tienda al instante.
+          </p>
         </div>
-
-        {syncResult && (
-          <div className="p-4 bg-sky-50 border border-sky-200 text-sky-900 text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-6">
-            <CheckCircle size={18} className="text-sky-600" />
-            <span>{syncResult}</span>
-          </div>
-        )}
 
         {/* Tabs Bar: el catálogo se gestiona íntegramente en el Editor del sitio */}
         <div className="flex items-center gap-2 border-b border-gray-200 bg-white p-2 mb-6 shadow-sm overflow-x-auto">
@@ -986,14 +517,6 @@ export default function AdminCatalogPage() {
             <LayoutTemplate size={14} className="text-[#d88193]" /> Editor del sitio (Catálogo)
           </button>
         </div>
-
-        {saveSuccess && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-6">
-            <CheckCircle size={18} className="text-emerald-600" />
-            <span>¡Cambios guardados con éxito en el catálogo!</span>
-          </div>
-        )}
-
 
         {/* ── TAB 4: HISTORIAL DE PRECIOS ── */}
         {activeTab === 'history' && (

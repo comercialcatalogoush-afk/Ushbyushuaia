@@ -5,6 +5,7 @@ import {
   Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
   Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star, Copy,
+  ChevronLeft,
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -279,6 +280,27 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [savingProduct, setSavingProduct] = useState(false);
   const [productSaved, setProductSaved] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+
+  // Vista previa de imágenes (lightbox estilo Wix): al pasar el mouse sobre una
+  // foto aparece el botón de ojo y se abre a pantalla completa.
+  const [previewList, setPreviewList] = useState<string[] | null>(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const openPreview = (images: string[], index: number) => {
+    const clean = (images || []).filter(Boolean);
+    if (clean.length === 0) return;
+    setPreviewList(clean);
+    setPreviewIndex(Math.min(Math.max(0, index), clean.length - 1));
+  };
+  useEffect(() => {
+    if (!previewList) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPreviewList(null);
+      if (e.key === 'ArrowRight') setPreviewIndex((i) => Math.min(i + 1, (previewList?.length || 1) - 1));
+      if (e.key === 'ArrowLeft') setPreviewIndex((i) => Math.max(i - 1, 0));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewList]);
   const [categoriesList, setCategoriesList] = useState<string[]>(DEFAULT_CATEGORIES);
   const [fitsList, setFitsList] = useState<string[]>(DEFAULT_FITS);
   const [showClassify, setShowClassify] = useState(false);
@@ -944,7 +966,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 {/* Fotos (izquierda del lienzo) */}
                 <div className="space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Fotos</p>
-                  <div className="relative bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden aspect-[3/4] max-h-[460px] w-full">
+                  <div className="relative group/main bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden aspect-[3/4] max-h-[460px] w-full">
                     {productDraft.images?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={productDraft.images[0]} alt="" className="w-full h-full object-cover" />
@@ -954,6 +976,17 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                         <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Subir foto principal</span>
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f, 'main'); e.target.value = ''; }} />
                       </label>
+                    )}
+                    {productDraft.images?.[0] && (
+                      <button
+                        onClick={() => openPreview(productDraft.images || [], 0)}
+                        title="Ver imagen"
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/main:bg-black/35 transition-all cursor-zoom-in"
+                      >
+                        <span className="opacity-0 group-hover/main:opacity-100 transition-opacity bg-white/95 rounded-full p-3 shadow-lg text-[#1b2333]">
+                          <Eye size={20} />
+                        </span>
+                      </button>
                     )}
                     {productDraft.images?.[0] && (
                       <label className="absolute bottom-3 right-3 bg-white/95 shadow px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-neutral-600 hover:text-[#d88193] cursor-pointer rounded flex items-center gap-1">
@@ -977,10 +1010,19 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                   {(productDraft.images || []).length > 1 && (
                     <div className="grid grid-cols-5 gap-2">
                       {(productDraft.images || []).slice(1).map((img, i) => (
-                        <div key={i} className="relative aspect-square bg-white rounded-lg overflow-hidden border border-neutral-200 shadow-sm group">
+                        <div key={i} className="relative aspect-square bg-white rounded-lg overflow-hidden border border-neutral-200 shadow-sm group/thumb">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={img} alt="" className="w-full h-full object-cover" />
-                          <button onClick={() => removeImage(i + 1)} className="absolute top-1 right-1 bg-white/90 rounded p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shadow">
+                          <button
+                            onClick={() => openPreview(productDraft.images || [], i + 1)}
+                            title="Ver imagen"
+                            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/thumb:bg-black/30 transition-all cursor-zoom-in"
+                          >
+                            <span className="opacity-0 group-hover/thumb:opacity-100 transition-opacity bg-white/95 rounded-full p-1.5 shadow text-[#1b2333]">
+                              <Eye size={12} />
+                            </span>
+                          </button>
+                          <button onClick={() => removeImage(i + 1)} className="absolute top-1 right-1 bg-white/90 rounded p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shadow z-10">
                             <Trash2 size={11} />
                           </button>
                           {uploadingSlot === String(i + 1) && (
@@ -1110,6 +1152,14 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                                 {out ? 'Sin stock' : `Poco stock · ${totalStock}`}
                               </span>
                             )}
+                            <span
+                              role="button"
+                              title="Ver imagen"
+                              onClick={(e) => { e.stopPropagation(); openPreview(p.images || [], 0); }}
+                              className="absolute bottom-2 right-2 bg-white/95 rounded-full p-1.5 text-[#1b2333] opacity-0 group-hover:opacity-100 transition-opacity shadow cursor-zoom-in"
+                            >
+                              <Eye size={13} />
+                            </span>
                             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent h-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                           </div>
                           <div className="p-3">
@@ -1484,6 +1534,52 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </div>
         </aside>
       </div>
+
+      {/* ── LIGHTBOX: vista previa de imágenes a pantalla completa ── */}
+      {previewList && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/85 flex items-center justify-center"
+          onClick={() => setPreviewList(null)}
+        >
+          <button
+            onClick={() => setPreviewList(null)}
+            title="Cerrar"
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+          >
+            <X size={20} />
+          </button>
+          {previewList.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPreviewIndex((i) => Math.max(0, i - 1)); }}
+                disabled={previewIndex === 0}
+                title="Anterior"
+                className="absolute left-4 text-white/80 hover:text-white disabled:opacity-25 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPreviewIndex((i) => Math.min(previewList.length - 1, i + 1)); }}
+                disabled={previewIndex === previewList.length - 1}
+                title="Siguiente"
+                className="absolute right-4 text-white/80 hover:text-white disabled:opacity-25 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewList[previewIndex]}
+            alt=""
+            className="max-h-[86vh] max-w-[90vw] object-contain shadow-2xl rounded"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <span className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 text-xs font-bold tracking-[0.25em]">
+            {previewIndex + 1} / {previewList.length}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -37,7 +37,11 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s) && isSizeAvailable(s)) || [];
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
-  
+
+  // Si el producto tiene datos de stock y ninguna talla disponible, está agotado
+  const hasStockData = Object.keys(stock).length > 0;
+  const soldOut = hasStockData && availableSizes.length === 0;
+
   const colorOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'color');
   const availableColors = colorOption?.values || (currentProduct.color ? [currentProduct.color] : []);
   const [selectedColor, setSelectedColor] = useState<string>(availableColors[0] || currentProduct.color || '');
@@ -412,13 +416,18 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             <div className="pt-4 space-y-3">
               <button
                 onClick={handleAddToCart}
+                disabled={soldOut}
                 className={`w-full py-4 px-6 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all duration-200 shadow-md ${
-                  added
+                  soldOut
+                    ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                    : added
                     ? 'bg-emerald-600 text-white'
                     : 'bg-ush-navy text-white hover:bg-ush-pink active:scale-[0.99]'
                 }`}
               >
-                {added ? (
+                {soldOut ? (
+                  <>Agotado</>
+                ) : added ? (
                   <>
                     <Check size={18} /> ¡Agregado ({quantity} unidades)!
                   </>

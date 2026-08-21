@@ -50,6 +50,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
   const lowStockSizes = availableSizes.filter((s) => isSizeAvailable(s) && stockForSize(s) <= 5);
 
+  // Si el producto tiene datos de stock y ninguna talla disponible, está agotado
+  const hasStockData = Object.keys(stock).length > 0;
+  const soldOut = hasStockData && availableSizes.length === 0;
+
   const suggestedPrice = product.suggested_price || product.compare_price || 49900;
   const wholesalePrice = product.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
 
@@ -341,13 +345,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
+          disabled={soldOut}
           className={`mt-4 w-full py-3 px-4 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-200 ${
-            addedAnimation
+            soldOut
+              ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+              : addedAnimation
               ? 'bg-emerald-600 text-white'
               : 'bg-ush-navy text-white hover:bg-ush-pink active:scale-[0.98]'
           }`}
         >
-          {addedAnimation ? (
+          {soldOut ? (
+            <>Agotado</>
+          ) : addedAnimation ? (
             <>
               <Check size={15} /> ¡Agregado ({quantity})!
             </>
