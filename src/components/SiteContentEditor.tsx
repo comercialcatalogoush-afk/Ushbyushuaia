@@ -62,6 +62,14 @@ const SECTION_MAP: Record<string, { pageId: string; group: string }> = {
   'footer-notice': { pageId: 'footer', group: 'Mayoristas' },
 };
 
+// Sección del preview (atributo data-editor-section) correspondiente a cada página+grupo
+function sectionForGroup(pageId: string, group: string): string | null {
+  for (const [sec, m] of Object.entries(SECTION_MAP)) {
+    if (m.pageId === pageId && m.group === group) return sec;
+  }
+  return null;
+}
+
 const THEME_FIELDS: { key: keyof SiteTheme; label: string; type: 'color' | 'text' }[] = [
   { key: 'pink', label: 'Rosa principal', type: 'color' },
   { key: 'pinkDark', label: 'Rosa oscuro', type: 'color' },
@@ -247,6 +255,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const wiredRef = useRef<{ doc: Document; onDbl: (e: Event) => void; onKey: (e: Event) => void } | null>(null);
+  const pendingScrollRef = useRef<string | null>(null);
 
   const schema = PAGE_SCHEMAS.find((s) => s.id === pageId);
   const groups = schema ? groupFields(schema.fields) : [];
@@ -430,6 +439,28 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setGroupId(m.group);
   };
 
+  // Desplaza el preview (iframe) hasta la sección activa del editor
+  const scrollPreviewToSection = (sectionId: string | null) => {
+    const frame = iframeRef.current;
+    const doc = frame?.contentDocument;
+    if (!doc || !sectionId) return;
+    const el = doc.querySelector(`[data-editor-section="${sectionId}"]`) as HTMLElement | null;
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.style.outline = '2px solid #d88193';
+    el.style.outlineOffset = '2px';
+    setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1600);
+  };
+
+  // Al cambiar de página o sección: marca la sección objetivo y hace scroll
+  // en el preview (si el iframe ya está cargado).
+  useEffect(() => {
+    const sec = sectionForGroup(pageId, activeGroup?.group || '');
+    pendingScrollRef.current = sec;
+    scrollPreviewToSection(sec);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, pageId]);
+
   // Conecta el iframe del preview: estilos de edición + doble clic
   const wireFrame = () => {
     const frame = iframeRef.current;
@@ -472,6 +503,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     doc.addEventListener('dblclick', onDbl, true);
     doc.addEventListener('keydown', onKey, true);
     wiredRef.current = { doc, onDbl, onKey };
+
+    // Si hay una sección pendiente (se cambió de página/grupo), hace scroll al recargar
+    if (pendingScrollRef.current) {
+      scrollPreviewToSection(pendingScrollRef.current);
+    }
   };
 
   const previewRoute = PAGE_ROUTES[pageId] || '/';

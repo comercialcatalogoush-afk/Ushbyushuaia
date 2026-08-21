@@ -590,18 +590,20 @@ export async function fetchPriceHistory() {
   }
 }
 
-// ── TOP SELLERS CALCULATION (Last 30 days) ──────────────────────────
-const TOP_SELLERS_CACHE_KEY = 'ush_top_sellers_cache_v1';
+// ── TOP SELLERS CALCULATION (rotación de inventario: pedidos confirmados) ──
+const TOP_SELLERS_CACHE_KEY = 'ush_top_sellers_cache_v2';
 
-export async function getTopSellingProductIds(): Promise<string[]> {
+export interface TopSellingProduct { id: string; units: number }
+
+export async function getTopSellingProducts(daysBack = 30): Promise<TopSellingProduct[]> {
   if (typeof window !== 'undefined') {
     try {
       const cached = localStorage.getItem(TOP_SELLERS_CACHE_KEY);
       if (cached) {
-        const { timestamp, ids } = JSON.parse(cached);
+        const { timestamp, list } = JSON.parse(cached);
         // Cache valid for 12 hours
-        if (Date.now() - timestamp < 12 * 60 * 60 * 1000 && Array.isArray(ids) && ids.length > 0) {
-          return ids;
+        if (Date.now() - timestamp < 12 * 60 * 60 * 1000 && Array.isArray(list) && list.length > 0) {
+          return list;
         }
       }
     } catch (e) {
@@ -611,26 +613,35 @@ export async function getTopSellingProductIds(): Promise<string[]> {
 
   try {
     // La lectura directa de orders ya no está abierta al público (RLS).
-    // Usamos una función RPC con SECURITY DEFINER que solo devuelve ids.
-    const { data, error } = await supabase.rpc('get_top_selling_ids', { days_back: 30 });
+    // Usamos una función RPC con SECURITY DEFINER que solo devuelve ids + unidades
+    // de pedidos confirmados (salida real de inventario).
+    const { data, error } = await supabase.rpc('get_top_selling_ids', { days_back: daysBack });
 
     if (!error && data && data.length > 0) {
-      const topIds: string[] = (data as Array<{ id: string }>).map((r) => r.id);
+      const list: TopSellingProduct[] = (data as Array<{ id: string; units: number }>).map((r) => ({
+        id: r.id,
+        units: Number(r.units) || 0,
+      }));
 
-      if (typeof window !== 'undefined' && topIds.length > 0) {
+      if (typeof window !== 'undefined' && list.length > 0) {
         try {
           localStorage.setItem(
             TOP_SELLERS_CACHE_KEY,
-            JSON.stringify({ timestamp: Date.now(), ids: topIds })
+            JSON.stringify({ timestamp: Date.now(), list })
           );
         } catch (e) {}
       }
 
-      return topIds;
+      return list;
     }
   } catch (e) {
-    return [];
+    console.error('Failed to fetch top sellers:', e);
   }
 
   return [];
+}
+
+export async function getTopSellingProductIds(): Promise<string[]> {
+  const list = await getTopSellingProducts(30);
+  return list.map((p) => p.id);
 }

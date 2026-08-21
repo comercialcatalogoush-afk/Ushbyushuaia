@@ -67,22 +67,24 @@ CREATE POLICY "Authenticated categories insert access" ON public.categories FOR 
 CREATE POLICY "Authenticated categories update access" ON public.categories FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "Authenticated categories delete access" ON public.categories FOR DELETE TO authenticated USING (true);
 
--- ── RPC: top vendedores (el público puede llamarla, pero solo devuelve ids) ──
+-- ── RPC: top vendedores por rotación de inventario (el público puede llamarla, pero solo devuelve ids) ──
 CREATE OR REPLACE FUNCTION public.get_top_selling_ids(days_back integer DEFAULT 30)
-RETURNS TABLE(id text)
+RETURNS TABLE(id text, units numeric)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
-  SELECT item->>'product_id'::text AS id
+  SELECT item->>'product_id'::text AS id,
+         SUM(COALESCE((item->>'quantity')::numeric, 1)) AS units
   FROM public.orders o
   CROSS JOIN LATERAL jsonb_array_elements(o.items) AS item
   WHERE o.created_at >= NOW() - make_interval(days => days_back)
+    AND o.status = 'confirmed'
     AND item->>'product_id' IS NOT NULL
   GROUP BY item->>'product_id'
-  ORDER BY SUM(COALESCE((item->>'quantity')::numeric, 1)) DESC
-  LIMIT 5;
+  ORDER BY units DESC
+  LIMIT 12;
 END;
 $$;
 

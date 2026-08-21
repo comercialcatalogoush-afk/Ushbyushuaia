@@ -21,18 +21,35 @@ export default async function CatalogoPage() {
   return (
     <div className="bg-white min-h-screen">
       <div data-editor-section="cat-header" className="bg-ush-pinkLight border-b border-rose-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-600 hover:text-ush-pink mb-4 group"
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 hover:text-ush-pink mb-2 group"
           >
-            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
             Volver al Inicio
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-ush-navy">
-            {c.catTitle} <span className="text-ush-pink">{c.catTitleEm}</span>
+          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-ush-navy">
+            {(() => {
+              const full = (c.catTitle || 'Catálogo Completo').trim();
+              const em = (c.catTitleEm || '').trim();
+              const words = full.split(/\s+/);
+              let base = full;
+              let emWord = em;
+              // Evita duplicados: si la palabra destacada ya es la última del título, no se repite
+              if (em && words.length > 1 && words[words.length - 1].toLowerCase() === em.toLowerCase()) {
+                base = words.slice(0, -1).join(' ');
+                emWord = em;
+              }
+              return (
+                <>
+                  {base}
+                  {emWord && <span className="text-ush-pink"> {emWord}</span>}
+                </>
+              );
+            })()}
           </h1>
-          <p className="text-sm text-neutral-600 font-light mt-2 max-w-2xl">
+          <p className="text-xs text-neutral-600 font-light mt-1 max-w-2xl">
             {c.catIntro}
           </p>
         </div>

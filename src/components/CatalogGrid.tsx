@@ -4,8 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Flame, ChevronDown, ChevronRight, Percent, ArrowUpRight } from 'lucide-react';
-import { isCompleteProduct } from '@/lib/supabase';
+import { Flame, ChevronDown, ChevronRight, Percent, ArrowUpRight, ArrowUpDown } from 'lucide-react';
+import { isCompleteProduct, getTopSellingProducts } from '@/lib/supabase';
 import { useCatalogSync } from '@/lib/useCatalogSync';
 
 interface CatalogGridProps {
@@ -41,7 +41,20 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [activeFit, setActiveFit] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [tierInfoOpen, setTierInfoOpen] = useState(true);
+  const [tierInfoOpen, setTierInfoOpen] = useState(false);
+
+  // Top sellers (rotación real: unidades vendidas en pedidos confirmados)
+  const [topUnitsById, setTopUnitsById] = useState<Map<string, number>>(new Map());
+  const [sortBy, setSortBy] = useState<'top' | 'price-asc' | 'price-desc' | 'name'>('top');
+
+  useEffect(() => {
+    let cancelled = false;
+    getTopSellingProducts(30).then((list) => {
+      if (cancelled || list.length === 0) return;
+      setTopUnitsById(new Map(list.map((t) => [t.id, t.units])));
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // Lee los filtros del menú superior (?categoria=...&fit=...) y la búsqueda (?buscar=...)
   useEffect(() => {
@@ -117,7 +130,25 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return ['Todos', ...official, ...extra];
   }, [visibleProducts]);
 
-  const paginatedProducts = catalogProducts.slice(0, visibleCount);
+  const paginatedProducts = useMemo(() => {
+    const sorted = [...catalogProducts];
+    switch (sortBy) {
+      case 'top':
+        // Más vendidos primero (por unidades vendidas); el resto conserva su orden
+        sorted.sort((a, b) => (topUnitsById.get(b.id) ?? 0) - (topUnitsById.get(a.id) ?? 0));
+        break;
+      case 'price-asc':
+        sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
+        break;
+      case 'price-desc':
+        sorted.sort((a, b) => (b.price || 0) - (a.price || 0));
+        break;
+      case 'name':
+        sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
+        break;
+    }
+    return sorted.slice(0, visibleCount);
+  }, [catalogProducts, sortBy, topUnitsById, visibleCount]);
   const hasMore = visibleCount < catalogProducts.length;
 
   const handleLoadMore = () => {
@@ -132,26 +163,44 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
 
   return (
     <section id="catalogo" className="reveal scroll-mt-20 bg-white">
-      <div className="py-12 bg-white">
+      <div className="py-4 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Result count header */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 animate-fadeInUp">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-3 animate-fadeInUp">
             <div>
               {showHeader && (
-                <h2 className="text-xl font-black text-[#1b2333] uppercase tracking-tight">
+                <h2 className="text-lg font-black text-[#1b2333] uppercase tracking-tight">
                   Catálogo Completo
                 </h2>
               )}
-              <p className="text-xs text-neutral-500 mt-0.5">
+              <p className="text-[11px] text-neutral-500 mt-0.5">
                 {catalogProducts.length} referencias disponibles
                 {catalogProducts.length > visibleCount && ` · Mostrando ${paginatedProducts.length} de ${catalogProducts.length}`}
               </p>
             </div>
+
+            {/* Ordenar */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <ArrowUpDown size={12} className="text-neutral-400" />
+              <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                Ordenar:
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-700 focus:outline-none focus:border-[#d88193] cursor-pointer"
+              >
+                <option value="top">Más vendidos</option>
+                <option value="price-asc">Precio: menor a mayor</option>
+                <option value="price-desc">Precio: mayor a menor</option>
+                <option value="name">Nombre (A-Z)</option>
+              </select>
+            </div>
           </div>
 
           {/* ── Escala de precios mayorista (desde 8 unidades) ── */}
-          <div className="mb-6 animate-fadeInUp">
+          <div className="mb-3 animate-fadeInUp">
             <div className="border border-gray-200 bg-neutral-50 overflow-hidden">
               <button
                 onClick={() => setTierInfoOpen((o) => !o)}
@@ -208,7 +257,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
           </div>
 
           {/* ── Filtro de prendas (colecciones del sitio) ── */}
-          <div className="mb-8 animate-fadeInUp">
+          <div className="mb-4 animate-fadeInUp">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mr-1">
                 Categoría:
@@ -246,7 +295,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
                     key={product.id}
                     className={`animate-fadeInUp delay-${Math.min((i % 4) * 100 + 100, 500)}`}
                   >
-                    <ProductCard product={product} />
+                    <ProductCard product={product} isTopSeller={(topUnitsById.get(product.id) ?? 0) > 0} />
                   </div>
                 ))}
               </div>

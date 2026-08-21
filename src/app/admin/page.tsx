@@ -1039,11 +1039,10 @@ export default function AdminCatalogPage() {
               </div>
 
               {/* Column Headers */}
-              <div className="grid grid-cols-[40px_56px_1fr_95px_105px_190px_85px_70px] gap-0 border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500 min-w-[880px]">
+              <div className="grid grid-cols-[40px_56px_1fr_105px_190px_85px_70px] gap-0 border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500 min-w-[880px]">
                 <div className="px-3 py-2.5 flex items-center"></div>
                 <div className="px-2 py-2.5 flex items-center"></div>
                 <div className="px-3 py-2.5 flex items-center">Nombre</div>
-                <div className="px-3 py-2.5 flex items-center">Tipo</div>
                 <div className="px-3 py-2.5 flex items-center">Precio</div>
                 <div className="px-3 py-2.5 flex items-center justify-center">Inventario (por talla)</div>
                 <div className="px-3 py-2.5 flex items-center">Estado</div>
@@ -1067,7 +1066,7 @@ export default function AdminCatalogPage() {
                   return (
                     <div
                       key={p.id}
-                      className="grid grid-cols-[40px_56px_1fr_95px_105px_190px_85px_70px] gap-0 items-center hover:bg-blue-50/30 transition-colors group cursor-pointer min-w-[880px]"
+                      className="grid grid-cols-[40px_56px_1fr_105px_190px_85px_70px] gap-0 items-center hover:bg-blue-50/30 transition-colors group cursor-pointer min-w-[880px]"
                       onClick={() => handleEditOpen(p)}
                     >
                       {/* Checkbox placeholder */}
@@ -1112,12 +1111,6 @@ export default function AdminCatalogPage() {
                           {p.color ? ` · 🎨 ${p.color}` : ''}
                           {p.ribbon ? ` · 🏷️ ${p.ribbon}` : ''}
                         </p>
-                      </div>
-
-                      {/* Type */}
-                      <div className="px-3 py-3">
-                        <span className="text-xs font-semibold text-neutral-700">{p.category || '—'}</span>
-                        {p.fit && <p className="text-[10px] text-neutral-400">{p.fit}</p>}
                       </div>
 
                       {/* Price */}
