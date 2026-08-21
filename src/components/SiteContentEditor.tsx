@@ -912,39 +912,229 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </div>
         </aside>
 
-        {/* Center: live preview canvas */}
-        <div className="flex-1 min-w-0 bg-[#e5e7eb] p-4 overflow-auto flex justify-center">
-          <div
-            className="bg-white shadow-2xl ring-1 ring-black/10 transition-all duration-300"
-            style={{ width: DEVICE_WIDTH[device], height: '100%', minHeight: '100%' }}
-          >
-            <iframe
-              key={pageId + nonce}
-              ref={iframeRef}
-              src={iframeSrc}
-              onLoad={wireFrame}
-              className="w-full h-full"
-              style={{ border: 'none' }}
-              title="Preview del sitio"
-            />
+        {/* Center: lienzo — preview del sitio o workspace de productos (tipo Wix) */}
+        {productsMode ? (
+          <div className="flex-1 min-w-0 bg-[#eef0f3] overflow-auto">
+            {selectedId && productDraft ? (
+              /* ── EDITOR VISUAL DEL PRODUCTO ── */
+              <div className="max-w-5xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* Fotos (izquierda del lienzo) */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Fotos</p>
+                  <div className="relative bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden aspect-[3/4] max-h-[460px] w-full">
+                    {productDraft.images?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={productDraft.images[0]} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-neutral-50 transition-colors">
+                        <Upload size={26} className="text-neutral-300" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Subir foto principal</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f, 'main'); e.target.value = ''; }} />
+                      </label>
+                    )}
+                    {productDraft.images?.[0] && (
+                      <label className="absolute bottom-3 right-3 bg-white/95 shadow px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-neutral-600 hover:text-[#d88193] cursor-pointer rounded flex items-center gap-1">
+                        <Upload size={10} /> Cambiar
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f, 'main'); e.target.value = ''; }} />
+                      </label>
+                    )}
+                    {uploadingSlot === 'main' && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 size={22} className="text-white animate-spin" /></div>
+                    )}
+                  </div>
+
+                  <input
+                    type="url"
+                    value={productDraft.images?.[0] || ''}
+                    onChange={(e) => patchDraft({ images: [e.target.value, ...(productDraft.images || []).slice(1)] })}
+                    placeholder="URL de la foto principal"
+                    className="w-full border border-neutral-200 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-[#d88193] rounded bg-white"
+                  />
+
+                  {(productDraft.images || []).length > 1 && (
+                    <div className="grid grid-cols-5 gap-2">
+                      {(productDraft.images || []).slice(1).map((img, i) => (
+                        <div key={i} className="relative aspect-square bg-white rounded-lg overflow-hidden border border-neutral-200 shadow-sm group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <button onClick={() => removeImage(i + 1)} className="absolute top-1 right-1 bg-white/90 rounded p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shadow">
+                            <Trash2 size={11} />
+                          </button>
+                          {uploadingSlot === String(i + 1) && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 size={14} className="text-white animate-spin" /></div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button onClick={addGalleryUrl} className="w-full flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 py-2.5 text-[10px] font-black uppercase tracking-wider text-neutral-500 hover:border-[#d88193] hover:text-[#d88193] rounded-lg bg-white">
+                    <Plus size={12} /> Agregar foto a la galería
+                  </button>
+                </div>
+
+                {/* Textos (derecha del lienzo) */}
+                <div className="space-y-4 bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                  <div>
+                    <input
+                      value={productDraft.name}
+                      onChange={(e) => patchDraft({ name: e.target.value })}
+                      placeholder="Nombre de la prenda"
+                      className="w-full text-xl font-black uppercase tracking-tight text-[#1b2333] border-b-2 border-transparent hover:border-neutral-100 focus:border-[#d88193] focus:outline-none pb-1"
+                    />
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <span className="bg-neutral-100 text-neutral-500 text-[10px] font-black tracking-widest px-2 py-0.5 rounded">REF. {productDraft.reference}</span>
+                      <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${!productDraft.hidden && productDraft.status !== 'draft' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+                        {!productDraft.hidden && productDraft.status !== 'draft' ? 'Visible' : 'Oculto'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-1">Descripción corta (tarjeta del catálogo)</label>
+                    <textarea
+                      value={productDraft.description || ''}
+                      onChange={(e) => patchDraft({ description: e.target.value })}
+                      rows={3}
+                      className="w-full border border-neutral-200 px-3 py-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-1">Descripción detallada (página del producto)</label>
+                    <textarea
+                      value={productDraft.full_description || ''}
+                      onChange={(e) => patchDraft({ full_description: e.target.value })}
+                      rows={8}
+                      className="w-full border border-neutral-200 px-3 py-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-1">Video (MP4 / YouTube) — opcional</label>
+                    <input
+                      type="url"
+                      value={productDraft.video_url || ''}
+                      onChange={(e) => patchDraft({ video_url: e.target.value })}
+                      className="w-full border border-neutral-200 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-[#d88193] rounded"
+                    />
+                  </div>
+
+                  {productSaved && (
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1">
+                      <CheckCircle size={12} /> Publicado en todo el sitio
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* ── CUADRÍCULA DE PRODUCTOS ── */
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="relative flex-1 max-w-md">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                    <input
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      placeholder="Buscar por nombre o referencia…"
+                      className="w-full bg-white border border-neutral-200 shadow-sm pl-9 pr-3 py-2.5 text-xs focus:outline-none focus:border-[#d88193] rounded-lg"
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">{filteredProductsList.length} referencias</span>
+                  <button
+                    onClick={createNewProduct}
+                    className="ml-auto flex items-center gap-1.5 bg-[#d88193] hover:bg-[#c56a7e] text-white text-[11px] font-black uppercase tracking-wider px-4 py-2.5 rounded-lg shadow-sm"
+                  >
+                    <Plus size={14} /> Nueva referencia
+                  </button>
+                </div>
+
+                {productsLoading && products.length === 0 ? (
+                  <div className="py-24 flex justify-center"><Loader2 size={24} className="animate-spin text-neutral-300" /></div>
+                ) : filteredProductsList.length === 0 ? (
+                  <div className="py-24 text-center">
+                    <Package size={34} className="mx-auto text-neutral-300 mb-3" />
+                    <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">Sin resultados</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    {filteredProductsList.map((p) => {
+                      const visible = !p.hidden && p.status !== 'draft';
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => openProduct(p)}
+                          className="group text-left bg-white rounded-xl overflow-hidden border border-neutral-200 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                        >
+                          <div className="relative aspect-[3/4] bg-neutral-100">
+                            {p.images?.[0] ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-neutral-300 uppercase tracking-widest">Sin foto</div>
+                            )}
+                            <span className={`absolute top-2 left-2 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${visible ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+                              {visible ? 'Visible' : 'Oculto'}
+                            </span>
+                            {p.ribbon && (
+                              <span className="absolute top-2 right-2 bg-[#1b2333]/85 text-white text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                                {p.ribbon}
+                              </span>
+                            )}
+                            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent h-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                          </div>
+                          <div className="p-3">
+                            <p className="text-[11px] font-black text-neutral-800 truncate group-hover:text-[#d88193]">{p.name}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-[9px] text-neutral-400 font-bold tracking-wide">REF. {p.reference}</span>
+                              <span className="text-xs font-black text-[#1b2333]">${(p.price || 0).toLocaleString('es-CO')}</span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 min-w-0 bg-[#e5e7eb] p-4 overflow-auto flex justify-center">
+            <div
+              className="bg-white shadow-2xl ring-1 ring-black/10 transition-all duration-300"
+              style={{ width: DEVICE_WIDTH[device], height: '100%', minHeight: '100%' }}
+            >
+              <iframe
+                key={pageId + nonce}
+                ref={iframeRef}
+                src={iframeSrc}
+                onLoad={wireFrame}
+                className="w-full h-full"
+                style={{ border: 'none' }}
+                title="Preview del sitio"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Right: properties */}
         <aside className="w-72 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
           <div className="px-5 py-4 border-b border-neutral-100 flex-shrink-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">
               {mode === 'theme' ? <Palette size={12} /> : productsMode ? <Package size={12} /> : <LayoutTemplate size={12} />}
-              {mode === 'theme' ? 'Propiedades globales' : productsMode ? 'Gestor de productos' : 'Propiedades de sección'}
+              {mode === 'theme' ? 'Propiedades globales' : productsMode ? (selectedId ? 'Inspector de producto' : 'Gestor de productos') : 'Propiedades de sección'}
             </div>
-            <h3 className="text-sm font-black uppercase tracking-tight text-[#1b2333] mt-1">
-              {mode === 'theme' ? 'Diseño del sitio' : productsMode ? (selectedId ? 'Editar producto' : 'Productos del catálogo') : (activeGroup?.group || 'General')}
+            <h3 className="text-sm font-black uppercase tracking-tight text-[#1b2333] mt-1 truncate">
+              {mode === 'theme'
+                ? 'Diseño del sitio'
+                : productsMode
+                ? (selectedId && productDraft ? (productDraft.name || 'Producto') : 'Catálogo')
+                : (activeGroup?.group || 'General')}
             </h3>
             <p className="text-[11px] text-neutral-500 mt-0.5">
               {mode === 'theme'
                 ? 'Colores de marca y texto de la franja superior. Cambia y publica.'
+                : productsMode && selectedId && productDraft
+                ? `REF. ${productDraft.reference} — ajusta precios, clasificación e inventario`
                 : productsMode
-                ? 'Fotos, precios, categoría, fit e inventario. Se publica en vivo en todo el sitio.'
+                ? 'Administra las prendas desde el lienzo central.'
                 : (schema?.description || '')}
             </p>
           </div>
@@ -984,7 +1174,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 ))}
               </div>
             ) : productsMode ? (
-              /* ── GESTOR DE PRODUCTOS (tipo Wix) ── */
+              /* ── INSPECTOR DEL PRODUCTO (panel derecho, como Wix) ── */
               selectedId && productDraft ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -992,7 +1182,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       onClick={closeProduct}
                       className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193]"
                     >
-                      <ArrowLeft size={12} /> Volver a la lista
+                      <ArrowLeft size={12} /> Volver
                     </button>
                     {!productDraft.id.startsWith('ref-new') && (
                       <button
@@ -1004,52 +1194,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       </button>
                     )}
                   </div>
-
-                  {/* FOTOS */}
-                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
-                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Fotos</header>
-                    <div className="p-3 space-y-2.5">
-                      <div className="relative h-36 bg-neutral-100 rounded overflow-hidden border border-neutral-200">
-                        {productDraft.images?.[0] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={productDraft.images[0]} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center text-[10px] text-neutral-400 uppercase font-bold">Sin foto principal</div>
-                        )}
-                        {uploadingSlot === 'main' && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 size={18} className="text-white animate-spin" /></div>
-                        )}
-                      </div>
-                      <label className="flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-neutral-600 hover:border-[#d88193] hover:text-[#d88193] cursor-pointer rounded">
-                        <Upload size={11} /> Subir foto principal
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f, 'main'); e.target.value = ''; }} />
-                      </label>
-                      <input
-                        type="url"
-                        value={productDraft.images?.[0] || ''}
-                        onChange={(e) => patchDraft({ images: [e.target.value, ...(productDraft.images || []).slice(1)] })}
-                        placeholder="URL de la foto principal"
-                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-[10px] font-mono focus:outline-none focus:border-[#d88193] rounded"
-                      />
-
-                      {(productDraft.images || []).length > 1 && (
-                        <div className="grid grid-cols-3 gap-1.5 pt-1">
-                          {(productDraft.images || []).slice(1).map((img, i) => (
-                            <div key={i} className="relative h-14 bg-neutral-100 rounded overflow-hidden border border-neutral-200 group">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={img} alt="" className="w-full h-full object-cover" />
-                              <button onClick={() => removeImage(i + 1)} className="absolute top-0.5 right-0.5 bg-white/90 rounded p-0.5 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Trash2 size={10} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <button onClick={addGalleryUrl} className="w-full flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500 hover:text-[#d88193] py-1">
-                        <Plus size={11} /> Agregar foto a la galería
-                      </button>
-                    </div>
-                  </section>
 
                   {/* PRECIOS */}
                   <section className="border border-neutral-200 rounded-lg overflow-hidden">
@@ -1109,34 +1253,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                           <option value="Exclusivo">⭐ Exclusivo</option>
                         </select>
                       </div>
-                    </div>
-                  </section>
-
-                  {/* DESCRIPCIÓN */}
-                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
-                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Descripción</header>
-                    <div className="p-3 space-y-2.5">
-                      <textarea
-                        value={productDraft.description || ''}
-                        onChange={(e) => patchDraft({ description: e.target.value })}
-                        rows={3}
-                        placeholder="Descripción corta (tarjeta del catálogo)"
-                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
-                      />
-                      <textarea
-                        value={productDraft.full_description || ''}
-                        onChange={(e) => patchDraft({ full_description: e.target.value })}
-                        rows={4}
-                        placeholder="Descripción detallada (página del producto)"
-                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
-                      />
-                      <input
-                        type="url"
-                        value={productDraft.video_url || ''}
-                        onChange={(e) => patchDraft({ video_url: e.target.value })}
-                        placeholder="URL de video (MP4 / YouTube) — opcional"
-                        className="w-full border border-neutral-200 px-2.5 py-1.5 text-[10px] font-mono focus:outline-none focus:border-[#d88193] rounded"
-                      />
                     </div>
                   </section>
 
@@ -1208,36 +1324,30 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                   </div>
                 </div>
               ) : (
-                /* ── LISTA DE PRODUCTOS ── */
-                <div className="space-y-3 -m-5">
-                  <div className="sticky top-0 bg-white px-5 py-3 border-b border-neutral-100 space-y-2.5 z-10">
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-                        <input
-                          value={productSearch}
-                          onChange={(e) => setProductSearch(e.target.value)}
-                          placeholder="Buscar por nombre o referencia…"
-                          className="w-full border border-neutral-200 pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-[#d88193] rounded"
-                        />
+                /* ── PANEL DE LISTA: resumen + clasificaciones ── */
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { label: 'Total', value: products.length, color: 'text-neutral-900' },
+                      { label: 'Visibles', value: products.filter((p) => !p.hidden && p.status !== 'draft').length, color: 'text-emerald-600' },
+                      { label: 'Ocultos', value: products.filter((p) => p.hidden || p.status === 'draft').length, color: 'text-red-500' },
+                    ] as const).map((s) => (
+                      <div key={s.label} className="border border-neutral-200 rounded-lg py-2.5 text-center">
+                        <p className={`text-lg font-black ${s.color}`}>{s.value}</p>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{s.label}</p>
                       </div>
-                      <button
-                        onClick={createNewProduct}
-                        className="flex items-center gap-1 bg-[#d88193] hover:bg-[#c56a7e] text-white text-[10px] font-black uppercase tracking-wider px-3 rounded whitespace-nowrap"
-                      >
-                        <Plus size={12} /> Nueva
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-neutral-400">
-                      <span>{filteredProductsList.length} referencias</span>
-                      <button onClick={loadProducts} className="flex items-center gap-1 hover:text-[#d88193]">
-                        <RefreshCw size={10} className={productsLoading ? 'animate-spin' : ''} /> Actualizar
-                      </button>
-                    </div>
+                    ))}
                   </div>
 
+                  <button
+                    onClick={createNewProduct}
+                    className="w-full flex items-center justify-center gap-1.5 bg-[#d88193] hover:bg-[#c56a7e] text-white text-[10px] font-black uppercase tracking-widest px-3 py-2.5 rounded"
+                  >
+                    <Plus size={13} /> Nueva referencia
+                  </button>
+
                   {/* Categorías y Fits del catálogo */}
-                  <div className="px-5">
+                  <div>
                     <button
                       onClick={() => setShowClassify(!showClassify)}
                       className="w-full flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193] py-1"
@@ -1279,41 +1389,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     )}
                   </div>
 
-                  <div className="px-2.5 pb-4">
-                    {productsLoading && products.length === 0 ? (
-                      <div className="py-16 flex justify-center"><Loader2 size={20} className="animate-spin text-neutral-300" /></div>
-                    ) : filteredProductsList.length === 0 ? (
-                      <p className="py-12 text-center text-xs text-neutral-400">Sin resultados</p>
-                    ) : filteredProductsList.map((p) => {
-                      const visible = !p.hidden && p.status !== 'draft';
-                      return (
-                        <button
-                          key={p.id}
-                          onClick={() => openProduct(p)}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-neutral-50 border border-transparent hover:border-neutral-200 transition-all text-left group"
-                        >
-                          <div className="w-9 h-9 bg-neutral-100 rounded overflow-hidden flex-shrink-0">
-                            {p.images?.[0] ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[7px] font-bold text-neutral-400 uppercase">Sin foto</div>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-bold text-neutral-800 truncate group-hover:text-[#d88193]">{p.name}</p>
-                            <p className="text-[9px] text-neutral-400 font-semibold tracking-wide">REF. {p.reference}</p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-[11px] font-black text-neutral-900">${(p.price || 0).toLocaleString('es-CO')}</p>
-                            <p className={`text-[8px] font-bold uppercase tracking-wider ${visible ? 'text-emerald-500' : 'text-red-400'}`}>
-                              {visible ? 'Visible' : 'Oculto'}
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <p className="text-[10px] leading-relaxed text-neutral-400 border-l-2 border-[#d88193] pl-2">
+                    Haz clic sobre una prenda en el lienzo central para editarla. Los cambios se publican en vivo en todo el sitio.
+                  </p>
+
+                  <button onClick={loadProducts} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-neutral-400 hover:text-[#d88193]">
+                    <RefreshCw size={10} className={productsLoading ? 'animate-spin' : ''} /> Actualizar lista
+                  </button>
                 </div>
               )
             ) : (

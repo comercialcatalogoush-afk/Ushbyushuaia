@@ -235,23 +235,34 @@ export default function AdminCatalogPage() {
     return unsubscribe;
   }, [isAuthenticated]);
 
-  // Genera el PDF de la factura, lo sube al bucket público y devuelve la URL
+  // Genera el PDF de la factura y lo sube al bucket público. Corre en segundo
+  // plano con tiempos límite para nunca dejar la UI colgada.
   const prepareInvoice = async (order: any): Promise<string | null> => {
     setInvoiceBusyId(order.id);
     try {
-      const { blob, error } = await generateInvoicePdf(order, products);
+      const { blob, error } = await Promise.race([
+        generateInvoicePdf(order, products),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('tiempo agotado generando PDF')), 30000)),
+      ]) as any;
       if (!blob) {
-        setOrderMsg(`No se pudo generar la factura del pedido ${order.id}: ${error}`);
+        setOrderMsg(`No se pudo generar la factura del pedido ${order.id}: ${error || 'error'}`);
         return null;
       }
-      const up = await uploadInvoicePdf(blob, order.id);
+      const up = await Promise.race([
+        uploadInvoicePdf(blob, order.id),
+        new Promise<{ success: boolean; url?: string; error?: string }>(
+          (res) => setTimeout(() => res({ success: false, error: 'tiempo agotado subiendo' }), 25000)
+        ),
+      ]);
       if (up.success && up.url) {
         setInvoiceReady({ orderId: order.id, url: up.url });
         return up.url;
       }
-      setOrderMsg(`Factura generada pero no se pudo subir: ${up.error}`);
+      setOrderMsg(`Factura generada pero no se pudo subir: ${up.error || 'error'}. Reintenta con el botón "Factura PDF".`);
     } catch (e) {
-      setOrderMsg(`Error generando la factura del pedido ${order.id}`);
+      setOrderMsg(`Error generando la factura del pedido ${order.id}. Reintenta con el botón "Factura PDF".`);
+    } finally {
+      setInvoiceBusyId(null);
     }
     return null;
   };
@@ -259,21 +270,29 @@ export default function AdminCatalogPage() {
   const handleConfirmOrder = async (order: any) => {
     setConfirmingOrderId(order.id);
     setOrderMsg(null);
-    const res = await confirmOrderAndDeductStock(order, products);
+    setInvoiceReady(null);
+    // Tiempo límite para no dejar el botón en "Confirmando…" indefinidamente
+    const res = await Promise.race([
+      confirmOrderAndDeductStock(order, products),
+      new Promise<{ success: boolean; error?: string }>(
+        (res) => setTimeout(() => res({ success: false, error: 'tiempo agotado — verifica en Pedidos si el estado ya cambió' }), 45000)
+      ),
+    ]);
     if (res.success) {
       publishOrderChange();
       await loadOrders();
       await loadProducts();
-      // Factura automática con logo → PDF en bucket público → envío por WhatsApp
-      const invoiceUrl = await prepareInvoice(order);
-      setOrderMsg(
-        invoiceUrl
-          ? `Pedido ${order.id} confirmado: stock descontado y factura lista para enviar por WhatsApp.`
-          : `Pedido ${order.id} confirmado: se descontó el stock y el pago quedó registrado.`
-      );
-    } else {
-      setOrderMsg(`Error al confirmar: ${res.error}`);
+      // La confirmación NO espera a la factura: se genera en segundo plano
+      setOrderMsg(`Pedido ${order.id} confirmado: stock descontado y pago registrado. Generando factura…`);
+      setConfirmingOrderId(null);
+      prepareInvoice(order).then((url) => {
+        if (url) {
+          setOrderMsg(`Pedido ${order.id} confirmado. Factura lista para enviar por WhatsApp.`);
+        }
+      });
+      return;
     }
+    setOrderMsg(`Error al confirmar: ${res.error}`);
     setConfirmingOrderId(null);
   };
 

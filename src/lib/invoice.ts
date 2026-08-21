@@ -228,15 +228,19 @@ export async function generateInvoicePdf(
         x += cols[i].w;
         doc.line(x, y, x, y + rowH);
       }
+      // Offset acumulado real de cada columna (evita textos sobrepuestos)
+      const colX: number[] = [];
+      let acc = M;
+      for (const c of cols) { colX.push(acc); acc += c.w; }
       const cell = (text: string, ci: number, opts: { size?: number; bold?: boolean; color?: [number,number,number] } = {}) => {
         const c = cols[ci];
-        const cx = c.align === 'right' ? x0 + c.w - 2 : c.align === 'center' ? x0 + c.w / 2 : x0 + 2;
+        const baseX = colX[ci];
+        const cx = c.align === 'right' ? baseX + c.w - 2 : c.align === 'center' ? baseX + c.w / 2 : baseX + 2;
         doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
         doc.setFontSize(opts.size || 8);
         doc.setTextColor(...(opts.color || NAVY));
         doc.text(text, cx, y + rowH / 2 + 1.2, { align: c.align });
       };
-      const x0 = M;
       cell(r.ref, 0, { bold: true, size: 8.2 });
       cell(String(r.units), 1);
       cell(r.sizes.join('-') || '—', 2, { size: 7.6 });
