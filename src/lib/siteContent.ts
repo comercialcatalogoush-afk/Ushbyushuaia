@@ -243,7 +243,7 @@ export const PAGE_SCHEMAS: PageSchema[] = [
   },
 ];
 
-// ── TEMA GLOBAL (colores de marca) ──────────────────────────
+// ── TEMA GLOBAL (colores de marca, tipografía y estilo Wix) ──
 export interface SiteTheme {
   pink: string;
   pinkDark: string;
@@ -255,6 +255,12 @@ export interface SiteTheme {
   accent: string;
   bodyBg: string;
   topNoticeText: string;
+  fontFamily?: string;
+  btnRadius?: string;
+  bannerActive?: boolean;
+  bannerText?: string;
+  bannerBg?: string;
+  bannerTextColor?: string;
 }
 
 export const DEFAULT_THEME: SiteTheme = {
@@ -268,6 +274,12 @@ export const DEFAULT_THEME: SiteTheme = {
   accent: '#d88193',
   bodyBg: '#ffffff',
   topNoticeText: '45 DÍAS DE GARANTÍA POR DEFECTOS DE FÁBRICA · 15 DÍAS PARA CAMBIOS · ENVÍO GRATIS DESDE 12 UNIDADES · CONFECCIÓN NACIONAL — ITAGÜÍ, ANTIOQUIA ✦',
+  fontFamily: 'Montserrat',
+  btnRadius: '0px',
+  bannerActive: true,
+  bannerText: '🔥 PRECIOS MAYORISTAS DESDE 8 UNIDADES · ENVÍO GRATIS EN PEDIDOS DE 12+ UNIDADES ✦',
+  bannerBg: '#1b2333',
+  bannerTextColor: '#ffffff',
 };
 
 // ── LECTURA / ESCRITURA EN Supabase ─────────────────────────
@@ -411,15 +423,21 @@ export async function saveTheme(theme: SiteTheme): Promise<{ success: boolean; e
 export function applyTheme(theme: SiteTheme) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  root.style.setProperty('--ush-pink', theme.pink);
-  root.style.setProperty('--ush-pink-dark', theme.pinkDark);
-  root.style.setProperty('--ush-pink-hover', theme.pinkHover);
-  root.style.setProperty('--ush-pink-light', theme.pinkLight);
-  root.style.setProperty('--ush-pink-soft', theme.pinkSoft);
-  root.style.setProperty('--ush-navy', theme.navy);
-  root.style.setProperty('--ush-navy-dark', theme.navyDark);
-  root.style.setProperty('--ush-accent', theme.accent);
-  root.style.setProperty('--ush-body-bg', theme.bodyBg);
+  root.style.setProperty('--ush-pink', theme.pink || '#d88193');
+  root.style.setProperty('--ush-pink-dark', theme.pinkDark || '#c06579');
+  root.style.setProperty('--ush-pink-hover', theme.pinkHover || '#b5586c');
+  root.style.setProperty('--ush-pink-light', theme.pinkLight || '#fdf3f5');
+  root.style.setProperty('--ush-pink-soft', theme.pinkSoft || '#f8e4e8');
+  root.style.setProperty('--ush-navy', theme.navy || '#1b2333');
+  root.style.setProperty('--ush-navy-dark', theme.navyDark || '#121824');
+  root.style.setProperty('--ush-accent', theme.accent || '#d88193');
+  root.style.setProperty('--ush-body-bg', theme.bodyBg || '#ffffff');
+  if (theme.fontFamily) {
+    root.style.setProperty('--ush-font-family', `'${theme.fontFamily}', sans-serif`);
+  }
+  if (theme.btnRadius) {
+    root.style.setProperty('--ush-btn-radius', theme.btnRadius);
+  }
 }
 
 export function isAdminAuthenticated(): Promise<boolean> {

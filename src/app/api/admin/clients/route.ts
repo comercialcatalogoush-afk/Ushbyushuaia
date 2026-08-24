@@ -46,14 +46,33 @@ export async function GET(req: Request) {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // 3. Fetch password requests and client overrides from site_config
+    // 2.1 Fetch registered users directly from Supabase Auth if Service Role is available
+    let authUsers: any[] = [];
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
+    if (serviceRoleKey) {
+      try {
+        const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+        const { data: authData } = await adminSupabase.auth.admin.listUsers();
+        if (authData?.users) {
+          authUsers = authData.users;
+        }
+      } catch (e) {
+        console.warn('Auth admin listUsers notice in GET:', e);
+      }
+    }
+
+    // 3. Fetch password requests, client overrides and new registrations from site_config
     const { data: configData } = await supabase
       .from('site_config')
       .select('*')
-      .in('key', ['password_reset_requests', 'client_password_records']);
+      .in('key', ['password_reset_requests', 'client_password_records', 'new_user_registrations']);
 
     let resetRequests: any[] = [];
     let passwordRecords: Record<string, any> = {};
+    let newRegistrations: any[] = [];
 
     configData?.forEach((c) => {
       if (c.key === 'password_reset_requests') {
@@ -61,6 +80,9 @@ export async function GET(req: Request) {
       }
       if (c.key === 'client_password_records') {
         try { passwordRecords = JSON.parse(c.value); } catch (_) {}
+      }
+      if (c.key === 'new_user_registrations') {
+        try { newRegistrations = JSON.parse(c.value); } catch (_) {}
       }
     });
 
@@ -152,13 +174,69 @@ export async function GET(req: Request) {
       }
     });
 
+    // Aggregate direct auth users
+    authUsers.forEach((u: any) => {
+      const email = (u.email || '').trim().toLowerCase();
+      if (!email || email === ADMIN_EMAIL.toLowerCase()) return;
+      const meta = u.user_metadata || {};
+      const fullName = meta.full_name || meta.name || '';
+      if (!clientsMap.has(email)) {
+        clientsMap.set(email, {
+          id: u.id || email,
+          email: email,
+          name: fullName || 'Cliente Registrado',
+          phone: u.phone || meta.phone || '',
+          doc: '',
+          city: meta.city || '',
+          department: '',
+          address: '',
+          orders_count: 0,
+          total_spent: 0,
+          orders: [],
+          last_order_date: null,
+          created_at: u.created_at || new Date().toISOString(),
+          has_pending_reset: false,
+          last_reset_request: null,
+          password_assigned_at: passwordRecords[email]?.assigned_at || null,
+        });
+      } else {
+        const client = clientsMap.get(email)!;
+        if (!client.name && fullName) client.name = fullName;
+      }
+    });
+
+    // Aggregate new user registrations
+    newRegistrations.forEach((reg: any) => {
+      const email = (reg.email || '').trim().toLowerCase();
+      if (!email) return;
+      if (!clientsMap.has(email)) {
+        clientsMap.set(email, {
+          id: email,
+          email: email,
+          name: reg.name || 'Cliente Registrado',
+          phone: '',
+          doc: '',
+          city: '',
+          department: '',
+          address: '',
+          orders_count: 0,
+          total_spent: 0,
+          orders: [],
+          last_order_date: null,
+          created_at: reg.registered_at || new Date().toISOString(),
+          has_pending_reset: false,
+          last_reset_request: null,
+          password_assigned_at: passwordRecords[email]?.assigned_at || null,
+        });
+      }
+    });
+
     // Cross-reference reset requests
     resetRequests.forEach((reqItem: any) => {
       const email = (reqItem.email || '').trim().toLowerCase();
       if (!email) return;
       let match = clientsMap.get(email);
       if (!match) {
-        // If not already present, create a client entry
         match = {
           id: email,
           email: email,

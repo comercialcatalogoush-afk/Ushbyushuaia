@@ -407,6 +407,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const handleCatDragEnd = async () => {
     setDraggedCatIdx(null);
     await saveCategoriesOrder(categoriesList);
+    publishCatalogChange();
     addRevision('Reordenamiento de Categorías', `Nuevo orden: ${categoriesList.join(', ')}`);
   };
 
@@ -429,6 +430,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setDraggedProductIdx(null);
     const productIds = products.map((p) => p.id);
     await saveCatalogProductsOrder(productIds);
+    publishCatalogChange();
     addRevision('Reordenamiento de Productos', `Reordenadas ${productIds.length} referencias en el catálogo`);
   };
 
@@ -438,12 +440,14 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     const updated = [...categoriesList, clean];
     setCategoriesList(updated);
     saveCategoriesOrder(updated);
+    publishCatalogChange();
   };
 
   const removeCategory = (cat: string) => {
     const updated = categoriesList.filter((c) => c !== cat);
     setCategoriesList(updated);
     saveCategoriesOrder(updated);
+    publishCatalogChange();
   };
 
   const addFit = (name: string) => {
@@ -1538,37 +1542,108 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {mode === 'theme' ? (
-              <div className="space-y-4">
-                {THEME_FIELDS.map((f) => (
-                  <div key={f.key}>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
-                      {f.label}
+              <div className="space-y-6">
+                {/* 1. TIPOGRAFÍA Y FUENTES (WIX STYLE) */}
+                <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                  <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500 flex items-center justify-between">
+                    <span>Tipografía del Sitio (Google Fonts)</span>
+                    <Sparkles size={11} className="text-[#d88193]" />
+                  </header>
+                  <div className="p-3 space-y-2.5">
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500">
+                      Fuente Principal
                     </label>
-                    {f.type === 'color' ? (
-                      <div className="flex items-center gap-2.5">
-                        <input
-                          type="color"
-                          value={/^#[0-9a-fA-F]{6}$/.test(theme[f.key] as string) ? (theme[f.key] as string) : '#d88193'}
-                          onChange={(e) => handleThemeChange(f.key, e.target.value)}
-                          className="w-11 h-10 border border-neutral-200 cursor-pointer bg-white p-1 rounded"
-                        />
-                        <input
-                          type="text"
-                          value={theme[f.key] as string}
-                          onChange={(e) => handleThemeChange(f.key, e.target.value)}
-                          className="flex-1 border border-neutral-200 px-3 py-2 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
-                        />
-                      </div>
-                    ) : (
-                      <textarea
-                        value={theme.topNoticeText}
-                        onChange={(e) => handleThemeChange('topNoticeText', e.target.value)}
-                        rows={3}
-                        className="w-full border border-neutral-200 px-3 py-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
-                      />
-                    )}
+                    <select
+                      value={theme.fontFamily || 'Montserrat'}
+                      onChange={(e) => handleThemeChange('fontFamily', e.target.value)}
+                      className="w-full bg-white border border-neutral-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded"
+                    >
+                      <option value="Montserrat">Montserrat (Elegante & Comercial)</option>
+                      <option value="Outfit">Outfit (Moderna & Minimalista)</option>
+                      <option value="Poppins">Poppins (Geométrica & Suave)</option>
+                      <option value="Inter">Inter (Limpia & Corporativa)</option>
+                      <option value="Playfair Display">Playfair Display (Editorial / Moda de Lujo)</option>
+                      <option value="Plus Jakarta Sans">Plus Jakarta Sans (Moderna Tech)</option>
+                      <option value="Cinzel">Cinzel (Clásica & Premium)</option>
+                    </select>
+                    <p className="text-[9px] text-neutral-400">
+                      Aplica a todos los títulos, botones y textos del catálogo en vivo.
+                    </p>
                   </div>
-                ))}
+                </section>
+
+                {/* 2. ESTILO DE BOTONES (WIX STYLE) */}
+                <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                  <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">
+                    Estilo de Botones
+                  </header>
+                  <div className="p-3 space-y-2.5">
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500">
+                      Bordes de Botones
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { val: '0px', label: 'Recto (Clásico)' },
+                        { val: '4px', label: 'Sutil (4px)' },
+                        { val: '8px', label: 'Redondeado (8px)' },
+                        { val: '9999px', label: 'Píldora (Wix)' },
+                      ].map((btn) => (
+                        <button
+                          key={btn.val}
+                          type="button"
+                          onClick={() => handleThemeChange('btnRadius', btn.val)}
+                          className={`py-2 px-2.5 text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                            (theme.btnRadius || '0px') === btn.val
+                              ? 'border-[#1b2333] bg-[#1b2333] text-white shadow-sm'
+                              : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#d88193]'
+                          }`}
+                          style={{ borderRadius: btn.val }}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* 3. COLORES DE MARCA */}
+                <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                  <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">
+                    Paleta de Colores de Marca
+                  </header>
+                  <div className="p-3 space-y-3">
+                    {THEME_FIELDS.map((f) => (
+                      <div key={f.key}>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-600 mb-1">
+                          {f.label}
+                        </label>
+                        {f.type === 'color' ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={/^#[0-9a-fA-F]{6}$/.test(theme[f.key] as string) ? (theme[f.key] as string) : '#d88193'}
+                              onChange={(e) => handleThemeChange(f.key, e.target.value)}
+                              className="w-10 h-8 border border-neutral-200 cursor-pointer bg-white p-0.5 rounded"
+                            />
+                            <input
+                              type="text"
+                              value={theme[f.key] as string}
+                              onChange={(e) => handleThemeChange(f.key, e.target.value)}
+                              className="flex-1 border border-neutral-200 px-2.5 py-1 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
+                            />
+                          </div>
+                        ) : (
+                          <textarea
+                            value={theme.topNoticeText}
+                            onChange={(e) => handleThemeChange('topNoticeText', e.target.value)}
+                            rows={3}
+                            className="w-full border border-neutral-200 px-3 py-2 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </div>
             ) : productsMode ? (
               selectedId && productDraft ? (

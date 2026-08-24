@@ -53,6 +53,11 @@ export default function AdminCatalogPage() {
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [clientActionFeedback, setClientActionFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
+  // ── Alerta de nuevo registro en tiempo real ──
+  // Se activa cuando llega un broadcast 'user-registered' desde Supabase.
+  const [newUserAlert, setNewUserAlert] = useState<{ email: string; name: string } | null>(null);
+  const newUserAlertTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Price History Audit Log
   const [priceHistory, setPriceHistory] = useState<PriceHistoryRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -282,18 +287,33 @@ export default function AdminCatalogPage() {
     }
   };
 
-  // Realtime: cuando el cliente registra un pedido o se edita un producto,
-  // refrescamos automáticamente para mantener el panel sincronizado.
+  // Realtime: cuando el cliente registra un pedido, se edita un producto o
+  // un nuevo usuario se registra, refrescamos automáticamente el panel.
   useEffect(() => {
     if (!isAuthenticated) return;
     loadOrders();
     loadClients();
-    const unsubscribe = subscribeCatalogChanges(() => {
-      loadOrders();
-      loadProducts();
-      loadClients();
-    });
-    return unsubscribe;
+    const unsubscribe = subscribeCatalogChanges(
+      () => {
+        loadOrders();
+        loadProducts();
+        loadClients();
+      },
+      // Callback exclusivo para nuevos registros: muestra alerta y cambia al tab
+      (payload) => {
+        const email = payload?.email || 'usuario nuevo';
+        const name = payload?.name || 'Cliente';
+        setNewUserAlert({ email, name });
+        setActiveTab('clients');
+        // Auto-dismiss después de 8 segundos
+        if (newUserAlertTimerRef.current) clearTimeout(newUserAlertTimerRef.current);
+        newUserAlertTimerRef.current = setTimeout(() => setNewUserAlert(null), 8000);
+      }
+    );
+    return () => {
+      unsubscribe();
+      if (newUserAlertTimerRef.current) clearTimeout(newUserAlertTimerRef.current);
+    };
   }, [isAuthenticated]);
 
   // Genera el PDF de la factura y lo sube al bucket público. Corre en segundo
@@ -595,14 +615,21 @@ export default function AdminCatalogPage() {
           </button>
 
           <button
-            onClick={() => { setActiveTab('clients'); loadClients(); }}
+            onClick={() => { setActiveTab('clients'); loadClients(); setNewUserAlert(null); }}
             className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 relative ${
               activeTab === 'clients' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
             }`}
           >
             <Users size={14} className="text-[#d88193]" /> Clientes
+            {/* Badge: solicitud de clave pendiente */}
             {clients.some((c) => c.has_pending_reset) && (
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" title="Solicitud de clave pendiente" />
+            )}
+            {/* Badge: nuevo usuario registrado en tiempo real */}
+            {newUserAlert && activeTab !== 'clients' && (
+              <span className="absolute -top-1.5 -right-1 flex items-center gap-1 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow animate-bounce whitespace-nowrap">
+                🆕 Nuevo
+              </span>
             )}
           </button>
 

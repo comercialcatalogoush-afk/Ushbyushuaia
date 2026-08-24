@@ -50,8 +50,18 @@ export default function ProfilePage() {
     }
 
     const sync = (session: any) => {
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
       setChecking(false);
+
+      if (u && u.email && u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+        const fullName = u.user_metadata?.full_name || u.user_metadata?.name || '';
+        fetch('/api/auth/register-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: u.email.trim().toLowerCase(), name: fullName }),
+        }).catch(() => {});
+      }
     };
 
     supabase.auth.getSession().then(({ data }) => sync(data.session));
@@ -99,6 +109,14 @@ export default function ProfilePage() {
       options: { data: { full_name: name } },
     });
     if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
+
+    // Notifica al admin en tiempo real (fire-and-forget, no bloquea al usuario)
+    fetch('/api/auth/register-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), name }),
+    }).catch(() => {});
+
     if (data.session) {
       setSuccess('✅ ¡Cuenta creada! Ya iniciaste sesión.');
       setTimeout(() => { window.location.href = '/'; }, 1200);

@@ -535,13 +535,29 @@ export function publishOrderChange() {
   triggerRevalidate();
 }
 
-export function subscribeCatalogChanges(cb: () => void): () => void {
+// Notifica que un nuevo usuario se acaba de registrar.
+// El broadcast lo emite el servidor (/api/auth/register-notify);
+// esta función del cliente sirve como fallback si se necesita emitir desde browser.
+export function publishUserRegistered() {
+  sendBroadcast('user-registered');
+}
+
+export function subscribeCatalogChanges(
+  cb: () => void,
+  onUserRegistered?: (payload?: { email?: string; name?: string }) => void
+): () => void {
   if (typeof window === 'undefined') return () => {};
   try {
     const ch = supabase.channel(SYNC_CHANNEL);
     ch
       .on('broadcast', { event: 'catalog-changed' }, () => cb())
       .on('broadcast', { event: 'order-changed' }, () => cb())
+      .on('broadcast', { event: 'user-registered' }, ({ payload }) => {
+        // Refresca la lista de clientes del admin
+        cb();
+        // Si el admin pasó un callback dedicado, lo ejecuta con los datos del nuevo usuario
+        if (onUserRegistered) onUserRegistered(payload as { email?: string; name?: string });
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
