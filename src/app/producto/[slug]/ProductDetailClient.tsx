@@ -627,8 +627,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             />
           </div>
         </div>
-
-        {/* Hint */}
+            {/* Hint */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-neutral-500 text-xs flex items-center gap-4 z-20 bg-white/90 px-4 py-2 border border-gray-200 rounded-full">
           <span>Rueda del mouse: zoom</span>
           <span>Arrastra: mover</span>
@@ -637,20 +636,22 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
       </div>
     )}
 
-    {/* ── Modal Compartir Referencia (Personalizable + Enlace + Imagen) ── */}
+    {/* ── Modal Compartir Referencia ── */}
     {shareOpen && (() => {
-      const productUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/producto/${currentProduct.slug}`
-        : `https://ushbyushuaia-catalogo-mayorista.vercel.app/producto/${currentProduct.slug}`;
       const imageUrl = currentProduct.images[0] || '';
+      // El link siempre apunta al ecommerce público (precio ecommerce)
+      const retailUrl = `https://ushuaiajeans.com.co`;
 
-      const defaultMessage = `👗 *${currentProduct.name}* (Ref. #${currentProduct.reference})\n` +
+      const msg =
+        `👗 *${currentProduct.name}* (Ref. #${currentProduct.reference})\n` +
         `💲 Precio: *${formatCOP(sharePrice)}*\n` +
         `${selectedColor ? `🎨 Color: ${selectedColor}\n` : ''}` +
-        `${selectedSize ? `📏 Talla disponible: ${selectedSize}\n` : ''}` +
-        `\n🔗 *Ver prenda en el catálogo:* ${productUrl}\n` +
-        (imageUrl ? `📸 *Foto oficial:* ${imageUrl}\n` : '') +
-        `\n¿Te gusta? Escríbeme y te tomo el pedido de inmediato.`;
+        `${selectedSize ? `📏 Talla: ${selectedSize}\n` : ''}` +
+        `\n🔗 Ver prenda aquí: ${retailUrl}\n` +
+        (imageUrl ? `📸 Foto: ${imageUrl}\n` : '') +
+        `\n¿Te gusta? Escríbeme y te tomo el pedido.`;
+
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
 
       return (
         <div
@@ -661,6 +662,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             className="bg-white w-full max-w-lg shadow-2xl rounded-xl overflow-hidden animate-fadeIn border border-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="p-5 bg-[#1b2333] text-white flex items-center justify-between">
               <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
                 <Share2 size={16} className="text-[#d88193]" /> Compartir Referencia con Clientes
@@ -676,32 +678,41 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             </div>
 
             <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-              {/* Product preview card */}
+
+              {/* Product preview */}
               <div className="flex gap-3 items-center p-3 bg-neutral-50 rounded-lg border border-neutral-200">
                 <div className="w-14 h-16 relative bg-neutral-200 rounded overflow-hidden flex-shrink-0">
                   {imageUrl && (
-                    <Image
-                      src={imageUrl}
-                      alt={currentProduct.name}
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
+                    <Image src={imageUrl} alt={currentProduct.name} fill sizes="64px" className="object-cover" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase text-[#d88193]">
-                    Ref. #{currentProduct.reference}
-                  </p>
+                  <p className="text-[10px] font-black uppercase text-[#d88193]">Ref. #{currentProduct.reference}</p>
                   <p className="text-xs font-bold text-neutral-800 truncate">{currentProduct.name}</p>
-                  <p className="text-[10px] text-neutral-400 truncate mt-0.5">{productUrl}</p>
+                  <p className="text-[10px] text-[#d88193] font-bold mt-0.5 truncate">→ ushuaiajeans.com.co</p>
                 </div>
               </div>
 
-              {/* Price adjustment */}
+              {/* ⚠️ Aviso precio ecommerce */}
+              <div className="flex gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <span className="text-amber-500 text-base flex-shrink-0 mt-0.5">⚠️</span>
+                <div>
+                  <p className="text-[11px] font-black text-amber-800 uppercase tracking-wide mb-1">
+                    El enlace va a ushuaiajeans.com.co
+                  </p>
+                  <p className="text-[11px] text-amber-700 leading-relaxed">
+                    Tu cliente verá la prenda en <strong>ushuaiajeans.com.co</strong> con el{' '}
+                    <strong>precio de ecommerce de esa página</strong>.
+                    El precio que ingresas abajo solo aparece en tu mensaje de WhatsApp —
+                    es el precio que <strong>tú le cobras</strong> a tu cliente.
+                  </p>
+                </div>
+              </div>
+
+              {/* Precio que el mayorista muestra en su mensaje */}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-1.5">
-                  Precio de venta sugerido / personalizado:
+                  Precio que le mostrarás a tu cliente (en el mensaje):
                 </label>
                 <div className="flex items-center border border-gray-300 focus-within:border-[#d88193] rounded-lg overflow-hidden bg-white">
                   <span className="px-3 text-sm font-bold text-neutral-400">$</span>
@@ -714,59 +725,53 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   />
                 </div>
                 <p className="text-[10px] text-neutral-400 mt-1">
-                  Puedes personalizar el precio que le mostrarás a tu cliente final.
+                  Pon el precio al que tú lo vendes. Solo aparece en el mensaje, no en el sitio.
                 </p>
               </div>
 
-              {/* Message preview & edit */}
+              {/* Vista previa del mensaje */}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-1.5">
-                  Vista previa del mensaje a enviar:
+                  Vista previa del mensaje:
                 </label>
-                <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg text-xs text-neutral-700 font-mono whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto">
-                  {defaultMessage}
+                <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg text-xs text-neutral-700 font-mono whitespace-pre-line leading-relaxed max-h-44 overflow-y-auto">
+                  {msg}
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const msg = encodeURIComponent(defaultMessage);
-                    window.open(`https://wa.me/?text=${msg}`, '_blank');
-                    setShareOpen(false);
-                  }}
+              {/* Botones de acción */}
+              <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setShareOpen(false)}
                   className="w-full py-3 bg-[#25D366] hover:bg-[#1fb959] text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 rounded-lg transition-colors shadow-sm"
                 >
                   <MessageCircle size={16} /> Enviar por WhatsApp
-                </button>
+                </a>
 
                 <button
                   type="button"
                   onClick={() => {
                     if (navigator.clipboard) {
-                      navigator.clipboard.writeText(defaultMessage);
-                      alert('¡Mensaje y enlace de la referencia copiados al portapapeles!');
+                      navigator.clipboard.writeText(msg);
+                      alert('¡Mensaje copiado al portapapeles!');
                     }
                   }}
                   className="w-full py-3 bg-[#1b2333] hover:bg-black text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 rounded-lg transition-colors shadow-sm"
                 >
-                  <Copy size={16} /> Copiar Mensaje + Enlace
+                  <Copy size={16} /> Copiar Mensaje
                 </button>
               </div>
 
-              {/* Mobile native share if supported */}
+              {/* Compartir nativo en móvil */}
               {typeof navigator !== 'undefined' && 'share' in navigator && (
                 <button
                   type="button"
                   onClick={async () => {
                     try {
-                      await navigator.share({
-                        title: currentProduct.name,
-                        text: defaultMessage,
-                        url: productUrl,
-                      });
+                      await navigator.share({ title: currentProduct.name, text: msg, url: retailUrl });
                       setShareOpen(false);
                     } catch (_) {}
                   }}
