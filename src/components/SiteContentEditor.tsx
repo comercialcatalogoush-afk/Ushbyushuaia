@@ -6,7 +6,7 @@ import {
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
   Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star, Copy,
   ChevronLeft, GripVertical, History as HistoryIcon, Sparkles, CheckCircle2,
-  MousePointerClick, Edit3, SlidersHorizontal, Layers, Crop
+  MousePointerClick, Edit3, SlidersHorizontal, Layers, Crop, Flame, Tag, ArrowLeftRight, Video
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -302,6 +302,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [savingProduct, setSavingProduct] = useState(false);
   const [productSaved, setProductSaved] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+  const [newTagInput, setNewTagInput] = useState('');
 
   // Drag states for reordering
   const [draggedCatIdx, setDraggedCatIdx] = useState<number | null>(null);
@@ -316,6 +317,17 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setPreviewList(clean);
     setPreviewIndex(Math.min(Math.max(0, index), clean.length - 1));
   };
+
+  useEffect(() => {
+    if (!previewList) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPreviewList(null);
+      if (e.key === 'ArrowRight') setPreviewIndex((i) => Math.min(i + 1, (previewList?.length || 1) - 1));
+      if (e.key === 'ArrowLeft') setPreviewIndex((i) => Math.max(i - 1, 0));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewList]);
 
   const [categoriesList, setCategoriesList] = useState<string[]>(DEFAULT_CATEGORIES);
   const [fitsList, setFitsList] = useState<string[]>(DEFAULT_FITS);
@@ -434,6 +446,20 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     saveCategoriesOrder(updated);
   };
 
+  const addFit = (name: string) => {
+    const clean = name.trim();
+    if (!clean || fitsList.includes(clean)) return;
+    const updated = [...fitsList, clean];
+    setFitsList(updated);
+    try { localStorage.setItem(PRODUCT_FITS_KEY, JSON.stringify(updated)); } catch (_) {}
+  };
+
+  const removeFit = (fit: string) => {
+    const updated = fitsList.filter((f) => f !== fit);
+    setFitsList(updated);
+    try { localStorage.setItem(PRODUCT_FITS_KEY, JSON.stringify(updated)); } catch (_) {}
+  };
+
   const addRevision = (title: string, desc: string) => {
     const newEntry: RevisionEntry = {
       id: String(Date.now()),
@@ -539,6 +565,42 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     publishCatalogChange();
     loadProducts();
     setTimeout(() => setProductSaved(false), 3000);
+  };
+
+  // ── Manejo de Fotos: Poner como portada, reordenar y recortar ──
+  const setAsMainPhoto = (galleryIdx: number) => {
+    if (!productDraft || !productDraft.images) return;
+    const current = [...productDraft.images];
+    const [chosen] = current.splice(galleryIdx, 1);
+    current.unshift(chosen); // Coloca la foto seleccionada en la posición 0 (portada)
+    patchDraft({ images: current });
+    addRevision('Foto de portada actualizada', `Nueva foto principal para REF. ${productDraft.reference}`);
+  };
+
+  const movePhotoInGallery = (fromIdx: number, toIdx: number) => {
+    if (!productDraft || !productDraft.images) return;
+    if (toIdx < 0 || toIdx >= productDraft.images.length) return;
+    const current = [...productDraft.images];
+    const [item] = current.splice(fromIdx, 1);
+    current.splice(toIdx, 0, item);
+    patchDraft({ images: current });
+  };
+
+  // ── Manejo de Tags / Etiquetas ──
+  const addTag = (tagText: string) => {
+    if (!productDraft) return;
+    const clean = tagText.trim().toLowerCase();
+    if (!clean) return;
+    const currentTags = productDraft.tags || [];
+    if (currentTags.includes(clean)) return;
+    patchDraft({ tags: [...currentTags, clean] });
+    setNewTagInput('');
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    if (!productDraft) return;
+    const currentTags = productDraft.tags || [];
+    patchDraft({ tags: currentTags.filter((t) => t !== tagToRemove) });
   };
 
   // Image Cropping Handlers
@@ -806,7 +868,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         const onBlur = () => {
           target.contentEditable = 'false';
           const newText = target.innerText.trim();
-          // Find matching field in current values schema
           const currentSchema = PAGE_SCHEMAS.find((s) => s.id === pageId);
           if (currentSchema) {
             const matchedField = currentSchema.fields.find(
@@ -1083,7 +1144,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         {productsMode ? (
           <div className="flex-1 min-w-0 bg-[#eef0f3] overflow-auto">
             {selectedId && productDraft ? (
-              /* ── VISUAL PRODUCT EDITOR ── */
+              /* ── VISUAL PRODUCT EDITOR (WIX STYLE) ── */
               <div className="max-w-5xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 {/* Photos */}
                 <div className="space-y-3">
@@ -1091,6 +1152,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Fotos del Producto</p>
                     <span className="text-[10px] text-neutral-400 font-bold">Proporción 3:4 Jeans</span>
                   </div>
+
+                  {/* Main Cover Photo */}
                   <div className="relative group/main bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden aspect-[3/4] max-h-[460px] w-full">
                     {productDraft.images?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -1113,7 +1176,25 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     )}
 
                     {productDraft.images?.[0] && (
-                      <label className="absolute bottom-3 right-3 bg-white/95 shadow px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-neutral-600 hover:text-[#d88193] cursor-pointer rounded flex items-center gap-1">
+                      <div className="absolute top-2 left-2 bg-[#1b2333]/90 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow flex items-center gap-1">
+                        <Star size={10} className="text-amber-400 fill-amber-400" /> Foto Principal (Portada)
+                      </div>
+                    )}
+
+                    {productDraft.images?.[0] && (
+                      <button
+                        onClick={() => openPreview(productDraft.images || [], 0)}
+                        title="Ver imagen grande"
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/main:bg-black/35 transition-all cursor-zoom-in"
+                      >
+                        <span className="opacity-0 group-hover/main:opacity-100 transition-opacity bg-white/95 rounded-full p-3 shadow-lg text-[#1b2333]">
+                          <Eye size={20} />
+                        </span>
+                      </button>
+                    )}
+
+                    {productDraft.images?.[0] && (
+                      <label className="absolute bottom-3 right-3 bg-white/95 shadow px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-neutral-600 hover:text-[#d88193] cursor-pointer rounded flex items-center gap-1 z-10">
                         <Crop size={10} /> Cambiar / Recortar
                         <input
                           type="file"
@@ -1142,29 +1223,77 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     className="w-full border border-neutral-200 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-[#d88193] rounded bg-white"
                   />
 
-                  {/* Gallery thumbnails */}
+                  {/* Gallery thumbnails with "Poner como principal" and reordering */}
                   {(productDraft.images || []).length > 1 && (
-                    <div className="grid grid-cols-5 gap-2">
-                      {(productDraft.images || []).slice(1).map((img, i) => (
-                        <div key={i} className="relative aspect-square bg-white rounded-lg overflow-hidden border border-neutral-200 shadow-sm group/thumb">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={img} alt="" className="w-full h-full object-cover" />
-                          <button
-                            onClick={() => {
-                              const f = (productDraft.images || []).filter((_, idx) => idx !== i + 1);
-                              patchDraft({ images: f });
-                            }}
-                            className="absolute top-1 right-1 bg-white/90 rounded p-1 text-red-500 opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow z-10"
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
-                      ))}
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">
+                        Galería ({productDraft.images.length - 1} fotos adicionales)
+                      </p>
+                      <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                        {(productDraft.images || []).slice(1).map((img, i) => {
+                          const realIdx = i + 1;
+                          return (
+                            <div key={i} className="relative aspect-[3/4] bg-white rounded-lg overflow-hidden border border-neutral-200 shadow-sm group/thumb">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={img} alt="" className="w-full h-full object-cover" />
+
+                              {/* Overlay actions */}
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex flex-col justify-between p-1.5 z-10">
+                                <div className="flex items-center justify-between">
+                                  <button
+                                    onClick={() => setAsMainPhoto(realIdx)}
+                                    title="⭐ Poner de primera como foto principal"
+                                    className="bg-amber-400 text-neutral-900 rounded p-1 hover:bg-amber-300 transition-colors"
+                                  >
+                                    <Star size={11} className="fill-neutral-900" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const f = (productDraft.images || []).filter((_, idx) => idx !== realIdx);
+                                      patchDraft({ images: f });
+                                    }}
+                                    title="Eliminar foto"
+                                    className="bg-red-500 text-white rounded p-1 hover:bg-red-600 transition-colors"
+                                  >
+                                    <Trash2 size={11} />
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    onClick={() => openPreview(productDraft.images || [], realIdx)}
+                                    title="Ver grande"
+                                    className="bg-white/90 text-neutral-800 rounded p-1 hover:bg-white"
+                                  >
+                                    <Eye size={11} />
+                                  </button>
+                                  <button
+                                    onClick={() => movePhotoInGallery(realIdx, realIdx - 1)}
+                                    disabled={realIdx <= 1}
+                                    title="Mover a la izquierda"
+                                    className="bg-white/90 text-neutral-800 rounded p-1 hover:bg-white disabled:opacity-30"
+                                  >
+                                    <ChevronLeft size={11} />
+                                  </button>
+                                  <button
+                                    onClick={() => movePhotoInGallery(realIdx, realIdx + 1)}
+                                    disabled={realIdx >= (productDraft.images || []).length - 1}
+                                    title="Mover a la derecha"
+                                    className="bg-white/90 text-neutral-800 rounded p-1 hover:bg-white disabled:opacity-30"
+                                  >
+                                    <ChevronRight size={11} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
-                  <label className="w-full flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 py-2.5 text-[10px] font-black uppercase tracking-wider text-neutral-500 hover:border-[#d88193] hover:text-[#d88193] rounded-lg bg-white cursor-pointer">
-                    <Plus size={12} /> Agregar foto con recorte
+                  <label className="w-full flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 py-2.5 text-[10px] font-black uppercase tracking-wider text-neutral-500 hover:border-[#d88193] hover:text-[#d88193] rounded-lg bg-white cursor-pointer transition-colors">
+                    <Plus size={12} /> Agregar otra foto con recorte (3:4)
                     <input
                       type="file"
                       accept="image/*"
@@ -1178,7 +1307,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                   </label>
                 </div>
 
-                {/* Details Form */}
+                {/* Details Form (Wix Style) */}
                 <div className="space-y-4 bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
                   <div>
                     <input
@@ -1192,6 +1321,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${!productDraft.hidden && productDraft.status !== 'draft' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
                         {!productDraft.hidden && productDraft.status !== 'draft' ? 'Visible' : 'Oculto'}
                       </span>
+                      {productDraft.ribbon && (
+                        <span className="bg-rose-50 text-ush-pink text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">
+                          {productDraft.ribbon}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -1209,14 +1343,14 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     <textarea
                       value={productDraft.full_description || ''}
                       onChange={(e) => patchDraft({ full_description: e.target.value })}
-                      rows={8}
+                      rows={6}
                       className="w-full border border-neutral-200 px-3 py-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
                     />
                   </div>
 
                   {productSaved && (
                     <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1">
-                      <CheckCircle size={12} /> Guardado y publicado
+                      <CheckCircle size={12} /> Guardado y publicado en vivo
                     </p>
                   )}
                 </div>
@@ -1337,6 +1471,19 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                             <span className={`absolute top-2 left-2 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${visible ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
                               {visible ? 'Visible' : 'Oculto'}
                             </span>
+                            {p.ribbon && (
+                              <span className="absolute top-2 right-2 bg-[#1b2333]/85 text-white text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                                {p.ribbon}
+                              </span>
+                            )}
+                            <span
+                              role="button"
+                              title="Ver imagen"
+                              onClick={(e) => { e.stopPropagation(); openPreview(p.images || [], 0); }}
+                              className="absolute bottom-2 right-2 bg-white/95 rounded-full p-1.5 text-[#1b2333] opacity-0 group-hover:opacity-100 transition-opacity shadow cursor-zoom-in"
+                            >
+                              <Eye size={13} />
+                            </span>
                           </div>
                           <div className="p-3">
                             <p className="text-[11px] font-black text-neutral-800 truncate group-hover:text-[#d88193]">{p.name}</p>
@@ -1373,23 +1520,23 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </div>
         )}
 
-        {/* Right: Properties Inspector */}
-        <aside className="w-72 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
+        {/* Right: Properties Inspector (Wix Style) */}
+        <aside className="w-80 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
           <div className="px-5 py-4 border-b border-neutral-100 flex-shrink-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">
               {mode === 'theme' ? <Palette size={12} /> : productsMode ? <Package size={12} /> : <LayoutTemplate size={12} />}
-              {mode === 'theme' ? 'Propiedades globales' : productsMode ? (selectedId ? 'Inspector de producto' : 'Gestor de productos') : 'Propiedades de sección'}
+              {mode === 'theme' ? 'Propiedades globales' : productsMode ? (selectedId ? 'Inspector de prenda (Wix)' : 'Gestor de productos') : 'Propiedades de sección'}
             </div>
             <h3 className="text-sm font-black uppercase tracking-tight text-[#1b2333] mt-1 truncate">
               {mode === 'theme'
                 ? 'Diseño del sitio'
                 : productsMode
-                ? (selectedId && productDraft ? (productDraft.name || 'Producto') : 'Catálogo')
+                ? (selectedId && productDraft ? (productDraft.name || 'Prenda') : 'Catálogo')
                 : (activeGroup?.group || 'General')}
             </h3>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {mode === 'theme' ? (
               <div className="space-y-4">
                 {THEME_FIELDS.map((f) => (
@@ -1431,17 +1578,215 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       onClick={closeProduct}
                       className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193]"
                     >
-                      <ArrowLeft size={12} /> Volver
+                      <ArrowLeft size={12} /> Volver a lista
                     </button>
-                    <button
-                      onClick={handleDuplicateProduct}
-                      className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-[#116dff]"
-                    >
-                      <Copy size={11} /> Duplicar
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleDuplicateProduct}
+                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-[#116dff]"
+                      >
+                        <Copy size={11} /> Duplicar
+                      </button>
+                      {!productDraft.id.startsWith('ref-new') && (
+                        <button
+                          onClick={handleDeleteProduct}
+                          className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600"
+                        >
+                          <Trash2 size={11} /> Eliminar
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Pricing */}
+                  {/* 1. CLASIFICACIÓN & FILTROS (CATEGORÍA, FIT, COLOR) */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500 flex items-center justify-between">
+                      <span>Clasificación & Filtros</span>
+                      <button
+                        onClick={() => setShowClassify((v) => !v)}
+                        className="text-[9px] text-[#d88193] hover:underline font-bold"
+                      >
+                        {showClassify ? 'Cerrar' : '+ Administrar'}
+                      </button>
+                    </header>
+
+                    {showClassify && (
+                      <div className="p-3 bg-rose-50/50 border-b border-neutral-200 space-y-2">
+                        <div>
+                          <span className="block text-[8px] font-bold uppercase text-neutral-500 mb-1">Nueva categoría</span>
+                          <div className="flex gap-1.5">
+                            <input
+                              id="newCatInput"
+                              placeholder="Ej: Chaquetas"
+                              className="flex-1 bg-white border border-neutral-200 px-2 py-1 text-xs rounded"
+                            />
+                            <button
+                              onClick={() => {
+                                const el = document.getElementById('newCatInput') as HTMLInputElement;
+                                if (el && el.value) { addCategory(el.value); el.value = ''; }
+                              }}
+                              className="bg-[#d88193] text-white text-[10px] font-bold px-2 py-1 rounded"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="block text-[8px] font-bold uppercase text-neutral-500 mb-1">Nuevo fit / silueta</span>
+                          <div className="flex gap-1.5">
+                            <input
+                              id="newFitInput"
+                              placeholder="Ej: Bootcut"
+                              className="flex-1 bg-white border border-neutral-200 px-2 py-1 text-xs rounded"
+                            />
+                            <button
+                              onClick={() => {
+                                const el = document.getElementById('newFitInput') as HTMLInputElement;
+                                if (el && el.value) { addFit(el.value); el.value = ''; }
+                              }}
+                              className="bg-[#d88193] text-white text-[10px] font-bold px-2 py-1 rounded"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-3 space-y-3">
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Categoría</label>
+                        <select
+                          value={productDraft.category || categoriesList[0] || 'Jeans'}
+                          onChange={(e) => patchDraft({ category: e.target.value })}
+                          className="w-full bg-white border border-neutral-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded"
+                        >
+                          {categoriesList.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Silueta / Fit</label>
+                        <select
+                          value={productDraft.fit || fitsList[0] || 'Wide Leg'}
+                          onChange={(e) => patchDraft({ fit: e.target.value })}
+                          className="w-full bg-white border border-neutral-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded"
+                        >
+                          {fitsList.map((fit) => (
+                            <option key={fit} value={fit}>{fit}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Color de la prenda</label>
+                        <select
+                          value={productDraft.color || ''}
+                          onChange={(e) => patchDraft({ color: e.target.value })}
+                          className="w-full bg-white border border-neutral-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded"
+                        >
+                          <option value="">(Sin color especificado)</option>
+                          {PRODUCT_COLORS.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* 2. ETIQUETAS, DISTINTIVOS & TAGS (WIX) */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500 flex items-center gap-1.5">
+                      <Tag size={11} className="text-[#d88193]" /> Etiquetas & Distintivos (Tags)
+                    </header>
+                    <div className="p-3 space-y-3">
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Cinta / Ribbon (Insignia visual)</label>
+                        <select
+                          value={productDraft.ribbon || ''}
+                          onChange={(e) => patchDraft({ ribbon: e.target.value })}
+                          className="w-full bg-white border border-neutral-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded mb-1.5"
+                        >
+                          <option value="">(Sin cinta)</option>
+                          <option value="Nuevo">Nuevo</option>
+                          <option value="Oferta">Oferta</option>
+                          <option value="Más Vendido">Más Vendido</option>
+                          <option value="Últimas Unidades">Últimas Unidades</option>
+                          <option value="Tendencia">Tendencia</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={productDraft.ribbon || ''}
+                          onChange={(e) => patchDraft({ ribbon: e.target.value })}
+                          placeholder="O escribe una cinta personalizada…"
+                          className="w-full border border-neutral-200 px-3 py-1.5 text-xs focus:outline-none focus:border-[#d88193] rounded"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-neutral-100">
+                        <span className="text-xs font-bold text-neutral-700 flex items-center gap-1">
+                          <Flame size={13} className="text-rose-500 fill-rose-500" /> Más Vendido
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={productDraft.is_best_seller ?? false}
+                          onChange={(e) => patchDraft({ is_best_seller: e.target.checked })}
+                          className="w-4 h-4 text-[#d88193] rounded cursor-pointer"
+                        />
+                      </div>
+
+                      {/* TAGS / ETIQUETAS DE BÚSQUEDA */}
+                      <div className="pt-2 border-t border-neutral-100">
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+                          Tags de búsqueda y filtros
+                        </label>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {(productDraft.tags || []).map((t) => (
+                            <span
+                              key={t}
+                              className="inline-flex items-center gap-1 bg-rose-50 text-ush-pink text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-100"
+                            >
+                              #{t}
+                              <button
+                                type="button"
+                                onClick={() => removeTag(t)}
+                                className="hover:text-red-600 font-black ml-0.5"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            value={newTagInput}
+                            onChange={(e) => setNewTagInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addTag(newTagInput);
+                              }
+                            }}
+                            placeholder="Añadir tag (ej: rigido, tiro alto)..."
+                            className="flex-1 border border-neutral-200 px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#d88193] rounded"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addTag(newTagInput)}
+                            className="bg-[#1b2333] hover:bg-black text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* 3. PRECIOS (COP) */}
                   <section className="border border-neutral-200 rounded-lg overflow-hidden">
                     <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Precios (COP)</header>
                     <div className="p-3 space-y-2.5">
@@ -1463,34 +1808,103 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     </div>
                   </section>
 
-                  {/* Stock by size */}
+                  {/* 4. INVENTARIO & TALLAS VISIBLES */}
                   <section className="border border-neutral-200 rounded-lg overflow-hidden">
-                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Inventario por talla</header>
-                    <div className="p-3 grid grid-cols-5 gap-1.5">
-                      {PRODUCT_SIZES.map((sz) => (
-                        <div key={sz} className="text-center">
-                          <span className="block text-[9px] font-bold text-neutral-500 mb-1">{sz}</span>
-                          <input
-                            type="number"
-                            value={productDraft.stock_by_size?.[sz] ?? 0}
-                            onChange={(e) => {
-                              const s = { ...(productDraft.stock_by_size || {}), [sz]: parseInt(e.target.value) || 0 };
-                              patchDraft({ stock_by_size: s });
-                            }}
-                            className="w-full border border-neutral-200 py-1 text-center text-xs font-mono font-bold focus:outline-none focus:border-[#d88193] rounded"
-                          />
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500 flex items-center justify-between">
+                      <span>Inventario & Tallas</span>
+                      <label className="flex items-center gap-1 text-[9px] font-bold cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={productDraft.in_stock ?? true}
+                          onChange={(e) => patchDraft({ in_stock: e.target.checked })}
+                          className="w-3.5 h-3.5 text-[#d88193] rounded"
+                        />
+                        <span>En stock</span>
+                      </label>
+                    </header>
+                    <div className="p-3 space-y-3">
+                      <div>
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Tallas activas para este producto</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {PRODUCT_SIZES.map((sz) => {
+                            const isVisible = draftSizes.includes(sz);
+                            return (
+                              <button
+                                key={sz}
+                                type="button"
+                                onClick={() => toggleSizeVisible(sz)}
+                                className={`px-2.5 py-1 text-[10px] font-black rounded border transition-colors ${
+                                  isVisible ? 'bg-[#1b2333] text-white border-[#1b2333]' : 'bg-neutral-50 text-neutral-400 border-neutral-200 line-through'
+                                }`}
+                              >
+                                Talla {sz}
+                              </button>
+                            );
+                          })}
                         </div>
-                      ))}
+                      </div>
+
+                      <div>
+                        <span className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">Cantidad en stock por talla</span>
+                        <div className="grid grid-cols-5 gap-1.5">
+                          {PRODUCT_SIZES.map((sz) => (
+                            <div key={sz} className="text-center">
+                              <span className="block text-[9px] font-bold text-neutral-500 mb-1">{sz}</span>
+                              <input
+                                type="number"
+                                value={productDraft.stock_by_size?.[sz] ?? 0}
+                                onChange={(e) => {
+                                  const s = { ...(productDraft.stock_by_size || {}), [sz]: parseInt(e.target.value) || 0 };
+                                  patchDraft({ stock_by_size: s });
+                                }}
+                                className="w-full border border-neutral-200 py-1 text-center text-xs font-mono font-bold focus:outline-none focus:border-[#d88193] rounded"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* 5. VISIBILIDAD & VIDEO */}
+                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Visibilidad & Video</header>
+                    <div className="p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-neutral-700">Visible en catálogo público</span>
+                        <input
+                          type="checkbox"
+                          checked={!productDraft.hidden && productDraft.status !== 'draft'}
+                          onChange={(e) => {
+                            const isVis = e.target.checked;
+                            patchDraft({ hidden: !isVis, status: isVis ? 'published' : 'draft' });
+                          }}
+                          className="w-4 h-4 text-[#d88193] rounded cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1 flex items-center gap-1">
+                          <Video size={11} className="text-[#d88193]" /> Video de la prenda (opcional)
+                        </label>
+                        <input
+                          type="url"
+                          value={productDraft.video_url || ''}
+                          onChange={(e) => patchDraft({ video_url: e.target.value })}
+                          placeholder="https://...mp4 o YouTube"
+                          className="w-full border border-neutral-200 px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
+                        />
+                      </div>
                     </div>
                   </section>
 
                   <button
                     onClick={handleSaveProduct}
                     disabled={savingProduct}
-                    className="w-full bg-[#d88193] hover:bg-[#c3687c] text-white font-bold py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded-lg transition-colors"
+                    className="w-full bg-[#d88193] hover:bg-[#c3687c] text-white font-bold py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded-lg transition-colors shadow-md"
                   >
                     {savingProduct ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                    Guardar Producto
+                    Guardar y Publicar Producto
                   </button>
                 </div>
               ) : (
@@ -1557,6 +1971,52 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </div>
         )}
       </div>
+
+      {/* ── LIGHTBOX: vista previa de imágenes a pantalla completa ── */}
+      {previewList && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/85 flex items-center justify-center"
+          onClick={() => setPreviewList(null)}
+        >
+          <button
+            onClick={() => setPreviewList(null)}
+            title="Cerrar"
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+          >
+            <X size={20} />
+          </button>
+          {previewList.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPreviewIndex((i) => Math.max(0, i - 1)); }}
+                disabled={previewIndex === 0}
+                title="Anterior"
+                className="absolute left-4 text-white/80 hover:text-white disabled:opacity-25 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setPreviewIndex((i) => Math.min(previewList.length - 1, i + 1)); }}
+                disabled={previewIndex === previewList.length - 1}
+                title="Siguiente"
+                className="absolute right-4 text-white/80 hover:text-white disabled:opacity-25 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewList[previewIndex]}
+            alt=""
+            className="max-h-[86vh] max-w-[90vw] object-contain shadow-2xl rounded"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <span className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 text-xs font-bold tracking-[0.25em]">
+            {previewIndex + 1} / {previewList.length}
+          </span>
+        </div>
+      )}
 
       {/* ── IMAGE CROPPER MODAL INTEGRATION ── */}
       <ImageCropperModal

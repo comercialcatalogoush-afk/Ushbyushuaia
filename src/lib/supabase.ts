@@ -98,16 +98,13 @@ function mergeWithInitial(supabaseProducts: Product[]): Product[] {
   return [...supabaseProducts, ...localOnly];
 }
 
-// Un producto es "completo" (visible al público) si tiene foto, título y
-// descripción detallada. Los incompletos (ej. "REF: 552631") se ocultan del
-// público para que el admin los complete desde el panel.
+// Un producto es visible si tiene foto o nombre válido y no está marcado como oculto.
 export function isCompleteProduct(p: Product): boolean {
+  if (!p) return false;
   const hasImage = Array.isArray(p.images) && p.images.length > 0 && !!p.images[0] && p.images[0].trim() !== '';
   const title = (p.name || '').trim();
-  const hasTitle = title.length > 0 && !/^REF:?\s*\d+$/i.test(title);
-  const desc = (p.description || '').trim();
-  const hasDetail = desc.length >= 30 && !/^REF:?\s*\d+$/i.test(desc);
-  return hasImage && hasTitle && hasDetail;
+  const hasTitle = title.length > 0;
+  return hasImage || hasTitle;
 }
 
 export async function fetchProductsFromSupabase(opts: { slim?: boolean } = {}): Promise<Product[]> {
