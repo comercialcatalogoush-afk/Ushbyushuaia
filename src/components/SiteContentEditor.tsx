@@ -1047,100 +1047,86 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       <div className="flex flex-1 min-h-0 relative">
         {/* Left: Pages + Categories manager */}
         <aside className="w-56 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
-          <div className="px-4 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 border-b border-white/5 flex items-center justify-between">
-            <span>Páginas</span>
-          </div>
-          <div className="flex-1 overflow-y-auto py-2">
-            {PAGE_SCHEMAS.map((s) => {
-              const isActive = mode === 'content' && pageId === s.id;
-              const sGroups = groupFields(s.fields);
-              return (
-                <div key={s.id}>
-                  <button
-                    onClick={() => selectPage(s.id)}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
-                      isActive ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
-                    <span className="flex-1 truncate">{s.label}</span>
-                    {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
-                  </button>
-
-                  {isActive && (
-                    <div className="ml-3 pl-3 border-l border-white/10 pb-2">
-                      {sGroups.map((g) => (
-                        <button
-                          key={g.group}
-                          onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
-                          className={`w-full text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
-                            !productsMode && activeGroup?.group === g.group ? 'bg-[#d88193]/20 text-[#f9c9d2]' : 'text-neutral-500 hover:text-white'
-                          }`}
-                        >
-                          {g.group}
-                        </button>
-                      ))}
-
-                      {/* Gestor de productos: solo en la página Catálogo */}
-                      {s.id === 'catalogo' && (
-                        <button
-                          onClick={() => { setMode('content'); setProductsMode(true); }}
-                          className={`w-full flex items-center gap-1.5 px-3 py-1.5 mt-1 text-[10px] font-bold uppercase tracking-wider rounded-l ${
-                            productsMode ? 'bg-[#d88193] text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                          }`}
-                        >
-                          <Package size={11} /> Productos
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Drag & Drop Reordering of Categories */}
-            <div className="mt-4 px-4 py-2 border-t border-white/5">
-              <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-2">
-                <span>Categorías (Arrastrar)</span>
-              </div>
-              <div className="space-y-1">
-                {categoriesList.map((cat, idx) => (
-                  <div
-                    key={cat}
-                    draggable
-                    onDragStart={() => handleCatDragStart(idx)}
-                    onDragOver={(e) => handleCatDragOver(e, idx)}
-                    onDragEnd={handleCatDragEnd}
-                    className={`flex items-center justify-between px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded text-[10px] text-neutral-300 font-semibold cursor-grab active:cursor-grabbing transition-all ${
-                      draggedCatIdx === idx ? 'opacity-40 border border-dashed border-[#d88193]' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <GripVertical size={12} className="text-neutral-500 flex-shrink-0" />
-                      <span className="truncate">{cat}</span>
-                    </div>
-                    <button
-                      onClick={() => removeCategory(cat)}
-                      className="text-neutral-500 hover:text-red-400 p-0.5"
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-white/5 py-2">
+          <div className="p-2 border-b border-white/5 grid grid-cols-2 gap-1">
             <button
-              onClick={() => { setMode('theme'); setDirty(false); setSaved(false); }}
-              className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
-                mode === 'theme' ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              onClick={() => { setMode('content'); setProductsMode(false); closeProduct(); }}
+              className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
+                mode === 'content' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Palette size={13} className={mode === 'theme' ? 'text-[#d88193]' : 'text-neutral-500'} />
-              Diseño · Colores
+              <FileText size={12} /> Páginas
             </button>
+            <button
+              onClick={() => { setMode('theme'); setProductsMode(false); closeProduct(); setDirty(false); setSaved(false); }}
+              className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
+                mode === 'theme' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Palette size={12} /> Diseño (Wix)
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto py-2">
+            {mode === 'content' ? (
+              PAGE_SCHEMAS.map((s) => {
+                const isActive = mode === 'content' && pageId === s.id;
+                const sGroups = groupFields(s.fields);
+                return (
+                  <div key={s.id}>
+                    <button
+                      onClick={() => selectPage(s.id)}
+                      className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
+                        isActive ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
+                      <span className="flex-1 truncate">{s.label}</span>
+                      {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
+                    </button>
+
+                    {isActive && (
+                      <div className="ml-3 pl-3 border-l border-white/10 pb-2">
+                        {sGroups.map((g) => (
+                          <button
+                            key={g.group}
+                            onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
+                            className={`w-full text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
+                              !productsMode && activeGroup?.group === g.group ? 'bg-[#d88193]/20 text-[#f9c9d2]' : 'text-neutral-500 hover:text-white'
+                            }`}
+                          >
+                            {g.group}
+                          </button>
+                        ))}
+
+                        {/* Gestor de productos: solo en la página Catálogo */}
+                        {s.id === 'catalogo' && (
+                          <button
+                            onClick={() => { setMode('content'); setProductsMode(true); }}
+                            className={`w-full flex items-center gap-1.5 px-3 py-1.5 mt-1 text-[10px] font-bold uppercase tracking-wider rounded-l ${
+                              productsMode ? 'bg-[#d88193] text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <Package size={11} /> Catálogo de Prendas
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-4 space-y-3">
+                <div className="p-3 bg-white/5 rounded-lg border border-white/5 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-white">
+                    <Sparkles size={14} className="text-[#d88193]" />
+                    Estilos Globales del Sitio
+                  </div>
+                  <p className="text-[10px] text-neutral-400 leading-relaxed">
+                    Edita tipografías de Google Fonts, estilos de botones redondeados, colores de marca y franja superior en el panel lateral derecho.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </aside>
 
