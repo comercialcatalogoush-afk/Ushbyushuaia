@@ -8,7 +8,8 @@ import { getPageContentServer } from '@/lib/siteContent';
 import { Truck, Award, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 
-export const revalidate = 86400;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function HomePage() {
   const allProducts = await fetchProductsFromSupabase({ slim: true });

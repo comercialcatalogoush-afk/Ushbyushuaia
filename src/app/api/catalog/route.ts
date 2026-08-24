@@ -4,8 +4,9 @@ import { fetchProductsFromSupabase, fetchProductBySlug, isCompleteProduct } from
 // Siempre dinámica (nunca se hornea en build), pero el header Cache-Control
 // hace que Vercel cachee la respuesta en su Edge Network (s-maxage).
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-const CACHE_CONTROL = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400';
+const CACHE_CONTROL = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

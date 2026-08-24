@@ -6,7 +6,8 @@ import { getPageContentServer } from '@/lib/siteContent';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { ArrowLeft } from 'lucide-react';
 
-export const revalidate = 86400;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Catálogo Completo | Ush By Ushuaia',

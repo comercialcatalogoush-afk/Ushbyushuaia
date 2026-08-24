@@ -4,8 +4,9 @@ import { supabase } from '@/lib/supabase';
 // Configuración pública del sitio servida desde el Edge de Vercel.
 // Evita que cada visitante consulte site_config directamente en Supabase.
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-const CACHE_CONTROL = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400';
+const CACHE_CONTROL = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0';
 const DEFAULT_WHATSAPP_NUMBER = '573011393902';
 
 export async function GET() {

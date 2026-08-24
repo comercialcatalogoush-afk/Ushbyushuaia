@@ -327,7 +327,12 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   return (
                     <button
                       key={size}
-                      onClick={() => available && setSelectedSize(size)}
+                      onClick={() => {
+                        if (available) {
+                          setSelectedSize(size);
+                          setQuantity(1);
+                        }
+                      }}
                       disabled={!available}
                       title={!available ? 'Agotada' : low ? `Últimas ${stockForSize(size)} unidades` : `Stock: ${stockForSize(size)}`}
                       className={`relative w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
