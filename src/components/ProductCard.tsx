@@ -23,7 +23,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const { addToCart, formatCOP } = useCart();
   
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
-  const allowedSizes = ['6', '8', '10', '12', '14', 'Única'];
+  const allowedSizes = ['6', '8', '10', '12', '14'];
 
   // Las tallas vienen del producto o de la lista estándar
   const rawSizes = sizeOption?.values && sizeOption.values.length > 0 ? sizeOption.values : allowedSizes;

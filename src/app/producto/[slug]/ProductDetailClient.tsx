@@ -27,7 +27,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const [selectedImage, setSelectedImage] = useState<string>(currentProduct.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600');
   
   const sizeOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'talla');
-  const allowedSizes = ['6', '8', '10', '12', '14', 'Única'];
+  const allowedSizes = ['6', '8', '10', '12', '14'];
 
   // Las tallas vienen del producto o de la lista estándar
   const rawSizes = sizeOption?.values && sizeOption.values.length > 0 ? sizeOption.values : allowedSizes;
