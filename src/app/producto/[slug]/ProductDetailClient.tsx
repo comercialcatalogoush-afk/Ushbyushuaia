@@ -29,19 +29,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const sizeOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'talla');
   const allowedSizes = ['6', '8', '10', '12', '14', 'Única'];
 
-  // Stock por talla
-  const stock = currentProduct.stock_by_size || {};
-  const stockForSize = (size: string) => stock[size] ?? 20;
-  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
-
-  // Solo se muestran tallas con stock: las de 0 quedan ocultas en el catálogo.
-  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s) && isSizeAvailable(s)) || [];
+  // Las tallas vienen del producto o de la lista estándar
+  const rawSizes = sizeOption?.values && sizeOption.values.length > 0 ? sizeOption.values : allowedSizes;
+  const availableSizes = rawSizes.filter((s) => allowedSizes.includes(s) || allowedSizes.includes(s.trim()));
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
 
-  // Si el producto tiene datos de stock y ninguna talla disponible, está agotado
-  const hasStockData = Object.keys(stock).length > 0;
-  const soldOut = hasStockData && availableSizes.length === 0;
+  // Solo está agotado si el admin lo marca explícitamente en el editor
+  const soldOut = currentProduct.in_stock === false;
 
   const colorOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'color');
   const availableColors = colorOption?.values || (currentProduct.color ? [currentProduct.color] : []);
@@ -337,47 +332,25 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
               <div className="flex flex-wrap gap-2">
                 {availableSizes.map((size) => {
-                  const available = isSizeAvailable(size);
-                  const low = available && stockForSize(size) <= 5;
                   return (
                     <button
                       key={size}
                       onClick={() => {
-                        if (available) {
-                          setSelectedSize(size);
-                          setQuantity(1);
-                        }
+                        setSelectedSize(size);
+                        setQuantity(1);
                       }}
-                      disabled={!available}
-                      title={!available ? 'Agotada' : low ? `Últimas ${stockForSize(size)} unidades` : `Stock: ${stockForSize(size)}`}
+                      disabled={soldOut}
                       className={`relative w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
-                        !available
-                          ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed line-through'
-                          : selectedSize === size
+                        selectedSize === size
                           ? 'border-ush-pink bg-ush-pink text-white shadow-md'
                           : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
                       }`}
                     >
                       {size}
-                      {low && (
-                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full" title="Pocas unidades" />
-                      )}
                     </button>
                   );
                 })}
               </div>
-              {(() => {
-                const low = availableSizes.filter((s) => isSizeAvailable(s) && stockForSize(s) <= 5);
-                return (
-                  <>
-                    {low.length > 0 && (
-                      <p className="mt-2 text-[11px] font-bold text-amber-600 uppercase tracking-wide">
-                        ⚠️ Pocas unidades: {low.join(', ')}
-                      </p>
-                    )}
-                  </>
-                );
-              })()}
             </div>
 
             {/* Color Selection (si la prenda tiene color) */}

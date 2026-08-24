@@ -1116,6 +1116,12 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
               })
             ) : (
               <div className="p-4 space-y-3">
+                <button
+                  onClick={() => setMode('content')}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-white/10 hover:bg-white/15 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition-colors"
+                >
+                  <ArrowLeft size={13} /> Volver a Páginas
+                </button>
                 <div className="p-3 bg-white/5 rounded-lg border border-white/5 space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
                     <Sparkles size={14} className="text-[#d88193]" />
@@ -1135,7 +1141,20 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           <div className="flex-1 min-w-0 bg-[#eef0f3] overflow-auto">
             {selectedId && productDraft ? (
               /* ── VISUAL PRODUCT EDITOR (WIX STYLE) ── */
-              <div className="max-w-5xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <div className="max-w-5xl mx-auto p-6 space-y-4">
+                <div className="flex items-center justify-between bg-white px-4 py-3 rounded-xl border border-neutral-200 shadow-sm">
+                  <button
+                    onClick={closeProduct}
+                    className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#1b2333] hover:text-[#d88193] transition-colors"
+                  >
+                    <ArrowLeft size={16} /> Volver al listado de prendas
+                  </button>
+                  <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                    Editando: {productDraft.name || `Ref. #${productDraft.reference}`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 {/* Photos */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -1344,10 +1363,23 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     </p>
                   )}
                 </div>
+                </div>
               </div>
             ) : (
               /* ── PRODUCTS LIST / DRAG & DROP REORDER ── */
               <div className="p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <button
+                    onClick={() => { setProductsMode(false); }}
+                    className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-neutral-700 hover:text-[#d88193] bg-white px-3.5 py-2 rounded-lg border border-neutral-200 shadow-sm transition-colors"
+                  >
+                    <ArrowLeft size={14} /> Volver a edición de páginas
+                  </button>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-neutral-400">
+                    Catálogo de Prendas ({products.length} referencias)
+                  </span>
+                </div>
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                   <div className="relative flex-1 max-w-md">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />

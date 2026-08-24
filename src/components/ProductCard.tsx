@@ -25,13 +25,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
   const allowedSizes = ['6', '8', '10', '12', '14', 'Única'];
 
-  // Stock por talla
-  const stock = product.stock_by_size || {};
-  const stockForSize = (size: string) => stock[size] ?? 10;
-  const isSizeAvailable = (size: string) => stockForSize(size) > 0;
-
-  // Solo se muestran tallas con stock: las de 0 quedan ocultas en el catálogo.
-  const availableSizes = sizeOption?.values.filter(s => allowedSizes.includes(s) && isSizeAvailable(s)) || [];
+  // Las tallas vienen del producto o de la lista estándar
+  const rawSizes = sizeOption?.values && sizeOption.values.length > 0 ? sizeOption.values : allowedSizes;
+  const availableSizes = rawSizes.filter((s) => allowedSizes.includes(s) || allowedSizes.includes(s.trim()));
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   const [quantity, setQuantity] = useState<number>(1);
@@ -48,11 +44,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const hasImages = product.images && product.images.length > 0 && product.images[0] !== '';
   const mainImage = hasImages ? (product.images[currentImageIndex] || product.images[0]) : '';
 
-  const lowStockSizes = availableSizes.filter((s) => isSizeAvailable(s) && stockForSize(s) <= 5);
-
-  // Si el producto tiene datos de stock y ninguna talla disponible, está agotado
-  const hasStockData = Object.keys(stock).length > 0;
-  const soldOut = hasStockData && availableSizes.length === 0;
+  // Solo está agotado si el admin lo marca explícitamente como fuera de stock
+  const soldOut = product.in_stock === false;
 
   const suggestedPrice = product.suggested_price || product.compare_price || 49900;
   const wholesalePrice = product.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
@@ -278,37 +271,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
             <div className="flex flex-wrap gap-1">
               {availableSizes.map((size) => {
-                const available = isSizeAvailable(size);
-                const low = available && stockForSize(size) <= 5;
                 return (
                   <button
                     key={size}
                     type="button"
-                    onClick={() => available && handleSizeChange(size)}
-                    disabled={!available}
-                    title={!available ? 'Agotada' : low ? `Últimas ${stockForSize(size)} unidades` : `Stock: ${stockForSize(size)}`}
+                    onClick={() => handleSizeChange(size)}
+                    disabled={soldOut}
                     className={`relative text-[11px] w-7 h-7 font-bold border transition-all flex items-center justify-center ${
-                      selectedSize === size && available
+                      selectedSize === size
                         ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
-                        : available
-                        ? 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
-                        : 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed line-through'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
                     }`}
                   >
                     {size}
-                    {low && (
-                      <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-amber-500 rounded-full" title="Pocas unidades" />
-                    )}
                   </button>
                 );
               })}
             </div>
-
-            {lowStockSizes.length > 0 && (
-              <p className="mt-1.5 text-[9px] font-bold text-amber-600 uppercase tracking-wide">
-                ⚠️ Pocas unidades: {lowStockSizes.join(', ')}
-              </p>
-            )}
           </div>
 
           {/* Quantity Selector */}
