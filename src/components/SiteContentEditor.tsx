@@ -1946,15 +1946,18 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
                       <div>
                         <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1 flex items-center gap-1">
-                          <Video size={11} className="text-[#d88193]" /> Video de la prenda (opcional)
+                          <Video size={11} className="text-[#d88193]" /> Video de la prenda (Google Drive, YouTube o MP4)
                         </label>
                         <input
                           type="url"
                           value={productDraft.video_url || ''}
                           onChange={(e) => patchDraft({ video_url: e.target.value })}
-                          placeholder="https://...mp4 o YouTube"
+                          placeholder="https://drive.google.com/file/... o YouTube"
                           className="w-full border border-neutral-200 px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
                         />
+                        <p className="text-[9px] text-neutral-400 mt-1">
+                          Pega cualquier enlace de Google Drive o YouTube; se reproducirá automáticamente sin ocupar espacio en Supabase.
+                        </p>
                       </div>
                     </div>
                   </section>

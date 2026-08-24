@@ -13,6 +13,7 @@ import { subscribeCatalogChanges } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
 import { WHOLESALE_FALLBACK } from '@/lib/pricing';
 import { gtagEvent } from '@/lib/analytics';
+import { formatVideoUrl } from '@/lib/videoUtils';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -218,16 +219,30 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             </div>
 
             {/* Promotional Video Player if available */}
-            {currentProduct.video_url && (
-              <div id="product-video" className="mt-6 pt-6 border-t border-gray-100">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-ush-navy flex items-center gap-2 mb-3">
-                  <Film size={16} className="text-ush-pink" /> Video de la Prenda en Movimiento
-                </h4>
-                <div className="aspect-video w-full bg-black overflow-hidden shadow-sm">
-                  <video src={currentProduct.video_url} controls className="w-full h-full object-cover" />
+            {(() => {
+              const video = formatVideoUrl(currentProduct.video_url);
+              if (!video.isSupported || !video.src) return null;
+              return (
+                <div id="product-video" className="mt-6 pt-6 border-t border-gray-100">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-ush-navy flex items-center gap-2 mb-3">
+                    <Film size={16} className="text-ush-pink" /> Video de la Prenda en Movimiento
+                  </h4>
+                  <div className="aspect-video w-full bg-black overflow-hidden shadow-sm rounded-lg">
+                    {video.type === 'iframe' ? (
+                      <iframe
+                        src={video.src}
+                        className="w-full h-full border-0"
+                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                        allowFullScreen
+                        title={`Video de ${currentProduct.name}`}
+                      />
+                    ) : (
+                      <video src={video.src} controls className="w-full h-full object-cover" />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
 
