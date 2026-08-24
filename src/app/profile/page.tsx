@@ -113,12 +113,32 @@ export default function ProfilePage() {
     setError(''); setSuccess('');
     if (!email) { setError('Por favor ingresa tu correo.'); return; }
     setLoading(true);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/profile`,
-    });
-    if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
-    setSuccess(`✅ Te enviamos un enlace para recuperar tu contraseña a ${email}. Revisa tu bandeja.`);
-    setLoading(false);
+
+    try {
+      // 1. Notifica y registra la solicitud en el backend
+      fetch('/api/auth/recovery-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      }).catch(() => {});
+
+      // 2. Ejecuta el restablecimiento seguro de Supabase Auth
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/profile`,
+      });
+
+      if (err) {
+        setError(friendlyAuthError(err));
+        setLoading(false);
+        return;
+      }
+
+      setSuccess(`✅ Te enviamos un enlace para recuperar tu contraseña a ${email}. Revisa tu bandeja de entrada o spam.`);
+    } catch (err: any) {
+      setError(friendlyAuthError(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleNewPassword = async (e: React.FormEvent) => {

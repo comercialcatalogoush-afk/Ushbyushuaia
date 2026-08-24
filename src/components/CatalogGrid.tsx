@@ -7,6 +7,7 @@ import { ProductCard } from './ProductCard';
 import { Flame, ChevronDown, ChevronRight, Percent, ArrowUpRight, ArrowUpDown } from 'lucide-react';
 import { isCompleteProduct, getTopSellingProducts } from '@/lib/supabase';
 import { useCatalogSync } from '@/lib/useCatalogSync';
+import { getCategoriesOrder, getCatalogProductsOrder } from '@/lib/siteContent';
 
 interface CatalogGridProps {
   products: Product[];
@@ -36,6 +37,8 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const syncedProducts = useCatalogSync(products);
   const [displayProducts, setDisplayProducts] = useState<Product[]>(syncedProducts);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [customCategoriesOrder, setCustomCategoriesOrder] = useState<string[]>(OFFICIAL_CATEGORY_ORDER);
+  const [customProductsOrder, setCustomProductsOrder] = useState<string[]>([]);
 
   // Filtros de prendas (estilo colecciones del sitio)
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
@@ -46,6 +49,21 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   // Top sellers (rotación real: unidades vendidas en pedidos confirmados)
   const [topUnitsById, setTopUnitsById] = useState<Map<string, number>>(new Map());
   const [sortBy, setSortBy] = useState<'top' | 'price-asc' | 'price-desc' | 'name'>('top');
+
+  const refreshOrders = () => {
+    getCategoriesOrder().then(setCustomCategoriesOrder);
+    getCatalogProductsOrder().then(setCustomProductsOrder);
+  };
+
+  useEffect(() => {
+    refreshOrders();
+    window.addEventListener('ush_categories_updated', refreshOrders);
+    window.addEventListener('ush_products_updated', refreshOrders);
+    return () => {
+      window.removeEventListener('ush_categories_updated', refreshOrders);
+      window.removeEventListener('ush_products_updated', refreshOrders);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,23 +138,46 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return true;
   });
 
-  // Categorías reales presentes en el catálogo + las oficiales del sitio
+  // Categorías reales presentes en el catálogo ordenadas por la lista personalizada del admin
   const availableCategories = useMemo(() => {
     const present = new Set<string>();
     visibleProducts.forEach((p) => { if (p.category) present.add(p.category); });
-    // Cargos siempre visible (como en el sitio oficial), aunque aún no tenga productos
-    const official = OFFICIAL_CATEGORY_ORDER.filter((c) => present.has(c) || c === 'Cargos');
-    const extra = Array.from(present).filter((c) => !OFFICIAL_CATEGORY_ORDER.includes(c));
-    return ['Todos', ...official, ...extra];
-  }, [visibleProducts]);
+    
+    // Usar orden personalizado configurado por el admin
+    const baseOrder = customCategoriesOrder && customCategoriesOrder.length > 0
+      ? customCategoriesOrder
+      : OFFICIAL_CATEGORY_ORDER;
+
+    const ordered = baseOrder.filter((c) => present.has(c) || c === 'Cargos');
+    const extra = Array.from(present).filter((c) => !baseOrder.includes(c));
+    return ['Todos', ...ordered, ...extra];
+  }, [visibleProducts, customCategoriesOrder]);
 
   const paginatedProducts = useMemo(() => {
     const sorted = [...catalogProducts];
     switch (sortBy) {
-      case 'top':
-        // Más vendidos primero (por unidades vendidas); el resto conserva su orden
-        sorted.sort((a, b) => (topUnitsById.get(b.id) ?? 0) - (topUnitsById.get(a.id) ?? 0));
+      case 'top': {
+        // Si hay un orden de catálogo manual definido por el admin, se respeta primero
+        const orderMap = new Map<string, number>();
+        if (customProductsOrder && customProductsOrder.length > 0) {
+          customProductsOrder.forEach((id, idx) => orderMap.set(id, idx));
+        }
+
+        sorted.sort((a, b) => {
+          const aManual = orderMap.get(a.id);
+          const bManual = orderMap.get(b.id);
+          if (aManual !== undefined && bManual !== undefined) return aManual - bManual;
+          if (aManual !== undefined) return -1;
+          if (bManual !== undefined) return 1;
+
+          // Si no tienen orden manual, ordenar por rotación / unidades vendidas
+          const aTop = topUnitsById.get(a.id) ?? 0;
+          const bTop = topUnitsById.get(b.id) ?? 0;
+          if (bTop !== aTop) return bTop - aTop;
+          return 0;
+        });
         break;
+      }
       case 'price-asc':
         sorted.sort((a, b) => (a.price || 0) - (b.price || 0));
         break;
@@ -148,7 +189,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
         break;
     }
     return sorted.slice(0, visibleCount);
-  }, [catalogProducts, sortBy, topUnitsById, visibleCount]);
+  }, [catalogProducts, sortBy, topUnitsById, customProductsOrder, visibleCount]);
   const hasMore = visibleCount < catalogProducts.length;
 
   const handleLoadMore = () => {

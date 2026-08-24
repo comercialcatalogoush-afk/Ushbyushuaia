@@ -428,3 +428,105 @@ export function isAdminAuthenticated(): Promise<boolean> {
     return !!user && !!user.email && user.email.toLowerCase() === 'comercialmayoristas@ushuaiajeans.com.co'.toLowerCase();
   }).catch(() => false);
 }
+
+// ── ORDEN PERSONALIZADO DE CATEGORÍAS (Drag & Drop) ─────────────
+const CATEGORIES_ORDER_KEY = 'ush_admin_categories_order';
+
+export async function saveCategoriesOrder(order: string[]): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(CATEGORIES_ORDER_KEY, JSON.stringify(order)); } catch (_) {}
+      window.dispatchEvent(new Event('ush_categories_updated'));
+    }
+    const { error } = await supabase.from('site_config').upsert({
+      key: 'categories_order',
+      value: JSON.stringify(order),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+    if (error) return { success: false, error: error.message };
+    triggerRevalidate();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message };
+  }
+}
+
+export async function getCategoriesOrder(): Promise<string[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const local = localStorage.getItem(CATEGORIES_ORDER_KEY);
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+  }
+  try {
+    const { data, error } = await supabase
+      .from('site_config')
+      .select('value')
+      .eq('key', 'categories_order')
+      .maybeSingle();
+    if (!error && data?.value) {
+      const parsed = JSON.parse(data.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(CATEGORIES_ORDER_KEY, JSON.stringify(parsed)); } catch (_) {}
+        }
+        return parsed;
+      }
+    }
+  } catch (_) {}
+  return ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas', 'Bermuda', 'Nuevo'];
+}
+
+// ── ORDEN PERSONALIZADO DE PRODUCTOS (Drag & Drop) ──────────────
+const PRODUCTS_ORDER_KEY = 'ush_admin_products_order';
+
+export async function saveCatalogProductsOrder(productIds: string[]): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(PRODUCTS_ORDER_KEY, JSON.stringify(productIds)); } catch (_) {}
+      window.dispatchEvent(new Event('ush_products_updated'));
+    }
+    const { error } = await supabase.from('site_config').upsert({
+      key: 'catalog_products_order',
+      value: JSON.stringify(productIds),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+    if (error) return { success: false, error: error.message };
+    triggerRevalidate();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message };
+  }
+}
+
+export async function getCatalogProductsOrder(): Promise<string[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const local = localStorage.getItem(PRODUCTS_ORDER_KEY);
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+  }
+  try {
+    const { data, error } = await supabase
+      .from('site_config')
+      .select('value')
+      .eq('key', 'catalog_products_order')
+      .maybeSingle();
+    if (!error && data?.value) {
+      const parsed = JSON.parse(data.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(PRODUCTS_ORDER_KEY, JSON.stringify(parsed)); } catch (_) {}
+        }
+        return parsed;
+      }
+    }
+  } catch (_) {}
+  return [];
+}

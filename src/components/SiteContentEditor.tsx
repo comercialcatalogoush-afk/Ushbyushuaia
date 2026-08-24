@@ -5,7 +5,8 @@ import {
   Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
   Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star, Copy,
-  ChevronLeft,
+  ChevronLeft, GripVertical, History as HistoryIcon, Sparkles, CheckCircle2,
+  MousePointerClick, Edit3, SlidersHorizontal, Layers, Crop
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -19,9 +20,14 @@ import {
   savePageContent,
   saveTheme,
   fetchThemeFromRemote,
+  saveCategoriesOrder,
+  getCategoriesOrder,
+  saveCatalogProductsOrder,
+  getCatalogProductsOrder,
 } from '@/lib/siteContent';
 import { uploadProductImage, publishCatalogChange, fetchAllProductsAdmin, upsertProduct, deleteProductFromSupabase, logPriceChange } from '@/lib/supabase';
 import { Product } from '@/types';
+import { ImageCropperModal } from './ImageCropperModal';
 
 // ── Opciones del editor de productos (iguales a las del panel admin) ──
 const PRODUCT_CATEGORIES_KEY = 'ush_admin_categories';
@@ -83,7 +89,6 @@ const SECTION_MAP: Record<string, { pageId: string; group: string }> = {
   'footer-notice': { pageId: 'footer', group: 'Mayoristas' },
 };
 
-// Sección del preview (atributo data-editor-section) correspondiente a cada página+grupo
 function sectionForGroup(pageId: string, group: string): string | null {
   for (const [sec, m] of Object.entries(SECTION_MAP)) {
     if (m.pageId === pageId && m.group === group) return sec;
@@ -110,57 +115,46 @@ const DEVICE_WIDTH: Record<'desktop' | 'tablet' | 'mobile', string> = {
   mobile: '390px',
 };
 
-// ── Utilidades ──────────────────────────────────────────────
-const compressImage = (file: File): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = document.createElement('img');
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const MAX = 1600;
-        if (width > MAX || height > MAX) {
-          const ratio = Math.min(MAX / width, MAX / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { reject(new Error('canvas')); return; }
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('toBlob'));
-        }, 'image/jpeg', 0.88);
-      };
-      img.onerror = () => reject(new Error('img'));
-      img.src = String(event.target?.result);
-    };
-    reader.onerror = () => reject(new Error('read'));
-    reader.readAsDataURL(file);
-  });
-};
+interface RevisionEntry {
+  id: string;
+  timestamp: number;
+  title: string;
+  desc: string;
+  values: ContentValues;
+  theme: SiteTheme;
+}
 
 interface FieldInputProps {
   field: FieldDef;
   value: string;
   onChange: (value: string) => void;
   uploadPath: string;
+  onOpenCropper?: (fileSrc: string, fieldKey: string) => void;
 }
 
-function FieldInput({ field, value, onChange, uploadPath }: FieldInputProps) {
+function FieldInput({ field, value, onChange, uploadPath, onOpenCropper }: FieldInputProps) {
   const [uploading, setUploading] = useState(false);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (onOpenCropper) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          onOpenCropper(String(ev.target.result), field.key);
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     try {
-      const blob = await compressImage(file);
-      const res = await uploadProductImage(blob, uploadPath);
+      const path = uploadPath || `content/${field.key}-${Date.now()}.jpg`;
+      const res = await uploadProductImage(file, path);
       if (res.success && res.url) onChange(res.url);
       else alert('No se pudo subir la imagen: ' + (res.error || 'error'));
     } catch (err) {
@@ -206,9 +200,16 @@ function FieldInput({ field, value, onChange, uploadPath }: FieldInputProps) {
     return (
       <div className="space-y-2">
         {value && (
-          <div className="relative h-32 overflow-hidden rounded border border-neutral-200 bg-neutral-50">
+          <div className="relative h-32 overflow-hidden rounded border border-neutral-200 bg-neutral-50 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt="" className="w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={() => onOpenCropper && onOpenCropper(value, field.key)}
+              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity"
+            >
+              <Crop size={14} /> Recortar foto
+            </button>
             {uploading && (
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                 <Loader2 size={20} className="text-white animate-spin" />
@@ -217,7 +218,7 @@ function FieldInput({ field, value, onChange, uploadPath }: FieldInputProps) {
           </div>
         )}
         <label className="flex items-center justify-center gap-2 border border-dashed border-neutral-300 px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 hover:border-[#d88193] hover:text-[#d88193] cursor-pointer rounded">
-          <Upload size={13} /> {value ? 'Reemplazar imagen' : 'Subir imagen'}
+          <Upload size={13} /> {value ? 'Reemplazar con recorte' : 'Subir con recorte'}
           <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
         </label>
         <input
@@ -270,8 +271,29 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [future, setFuture] = useState<{ values: ContentValues; theme: SiteTheme }[]>([]);
   const [draftSaved, setDraftSaved] = useState(false);
 
-  // ── Gestor de productos (editor tipo Wix para el catálogo) ──
+  // ── Modo Edición In-line ──
+  const [inlineEditEnabled, setInlineEditEnabled] = useState(true);
+
+  // ── Historial de Revisiones ──
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [revisions, setRevisions] = useState<RevisionEntry[]>([]);
+
+  // ── Modal de Recorte de Imagen (Cropper) ──
+  const [cropperModal, setCropperModal] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+    targetFieldKey?: string;
+    targetType?: 'field' | 'product_main' | 'product_gallery';
+    slotIndex?: number;
+    initialAspect?: number | null;
+  }>({
+    isOpen: false,
+    imageSrc: '',
+  });
+
+  // ── Gestor de productos y Drag & Drop ──
   const [productsMode, setProductsMode] = useState(false);
+  const [productViewMode, setProductViewMode] = useState<'grid' | 'reorder'>('grid');
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productSearch, setProductSearch] = useState('');
@@ -281,8 +303,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [productSaved, setProductSaved] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
 
-  // Vista previa de imágenes (lightbox estilo Wix): al pasar el mouse sobre una
-  // foto aparece el botón de ojo y se abre a pantalla completa.
+  // Drag states for reordering
+  const [draggedCatIdx, setDraggedCatIdx] = useState<number | null>(null);
+  const [draggedProductIdx, setDraggedProductIdx] = useState<number | null>(null);
+
+  // Lightbox preview
   const [previewList, setPreviewList] = useState<string[] | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
   const openPreview = (images: string[], index: number) => {
@@ -291,16 +316,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setPreviewList(clean);
     setPreviewIndex(Math.min(Math.max(0, index), clean.length - 1));
   };
-  useEffect(() => {
-    if (!previewList) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPreviewList(null);
-      if (e.key === 'ArrowRight') setPreviewIndex((i) => Math.min(i + 1, (previewList?.length || 1) - 1));
-      if (e.key === 'ArrowLeft') setPreviewIndex((i) => Math.max(i - 1, 0));
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [previewList]);
+
   const [categoriesList, setCategoriesList] = useState<string[]>(DEFAULT_CATEGORIES);
   const [fitsList, setFitsList] = useState<string[]>(DEFAULT_FITS);
   const [showClassify, setShowClassify] = useState(false);
@@ -317,11 +333,38 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const groups = schema ? groupFields(schema.fields) : [];
   const activeGroup = groups.find((g) => g.group === groupId) || groups[0];
 
-  // ── Productos: carga, selección y guardado ──
+  // Carga inicial de contenido
+  useEffect(() => {
+    getPageContentClient(pageId).then((data) => {
+      setValues(data);
+    });
+    fetchThemeFromRemote().then((t) => {
+      if (t) setTheme(t);
+    });
+  }, [pageId]);
+
+  // Carga de orden de categorías y productos
+  useEffect(() => {
+    getCategoriesOrder().then(setCategoriesList);
+  }, []);
+
+  // Productos: carga, selección y guardado
   const loadProducts = async () => {
     setProductsLoading(true);
     try {
       const list = await fetchAllProductsAdmin();
+      const customOrder = await getCatalogProductsOrder();
+      if (customOrder && customOrder.length > 0) {
+        const orderMap = new Map(customOrder.map((id, idx) => [id, idx]));
+        list.sort((a, b) => {
+          const aIdx = orderMap.get(a.id);
+          const bIdx = orderMap.get(b.id);
+          if (aIdx !== undefined && bIdx !== undefined) return aIdx - bIdx;
+          if (aIdx !== undefined) return -1;
+          if (bIdx !== undefined) return 1;
+          return 0;
+        });
+      }
       setProducts(list);
     } catch (e) {}
     setProductsLoading(false);
@@ -330,15 +373,51 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     if (productsMode) {
       loadProducts();
-      setCategoriesList(readClassList(PRODUCT_CATEGORIES_KEY, DEFAULT_CATEGORIES));
       setFitsList(readClassList(PRODUCT_FITS_KEY, DEFAULT_FITS));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productsMode]);
 
-  const saveClassList = (key: string, list: string[], event: string) => {
-    try { localStorage.setItem(key, JSON.stringify(list)); } catch (_) {}
-    window.dispatchEvent(new Event(event));
+  // ── Drag & Drop Categorías ──
+  const handleCatDragStart = (idx: number) => {
+    setDraggedCatIdx(idx);
+  };
+
+  const handleCatDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggedCatIdx === null || draggedCatIdx === idx) return;
+    const reordered = [...categoriesList];
+    const [moved] = reordered.splice(draggedCatIdx, 1);
+    reordered.splice(idx, 0, moved);
+    setDraggedCatIdx(idx);
+    setCategoriesList(reordered);
+  };
+
+  const handleCatDragEnd = async () => {
+    setDraggedCatIdx(null);
+    await saveCategoriesOrder(categoriesList);
+    addRevision('Reordenamiento de Categorías', `Nuevo orden: ${categoriesList.join(', ')}`);
+  };
+
+  // ── Drag & Drop Productos (Reorder) ──
+  const handleProductDragStart = (idx: number) => {
+    setDraggedProductIdx(idx);
+  };
+
+  const handleProductDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggedProductIdx === null || draggedProductIdx === idx) return;
+    const reordered = [...products];
+    const [moved] = reordered.splice(draggedProductIdx, 1);
+    reordered.splice(idx, 0, moved);
+    setDraggedProductIdx(idx);
+    setProducts(reordered);
+  };
+
+  const handleProductDragEnd = async () => {
+    setDraggedProductIdx(null);
+    const productIds = products.map((p) => p.id);
+    await saveCatalogProductsOrder(productIds);
+    addRevision('Reordenamiento de Productos', `Reordenadas ${productIds.length} referencias en el catálogo`);
   };
 
   const addCategory = (name: string) => {
@@ -346,30 +425,36 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     if (!clean || categoriesList.includes(clean)) return;
     const updated = [...categoriesList, clean];
     setCategoriesList(updated);
-    saveClassList(PRODUCT_CATEGORIES_KEY, updated, 'ush_categories_updated');
+    saveCategoriesOrder(updated);
   };
 
   const removeCategory = (cat: string) => {
     const updated = categoriesList.filter((c) => c !== cat);
     setCategoriesList(updated);
-    saveClassList(PRODUCT_CATEGORIES_KEY, updated, 'ush_categories_updated');
+    saveCategoriesOrder(updated);
   };
 
-  const addFit = (name: string) => {
-    const clean = name.trim();
-    if (!clean || fitsList.includes(clean)) return;
-    const updated = [...fitsList, clean];
-    setFitsList(updated);
-    saveClassList(PRODUCT_FITS_KEY, updated, 'ush_fits_updated');
+  const addRevision = (title: string, desc: string) => {
+    const newEntry: RevisionEntry = {
+      id: String(Date.now()),
+      timestamp: Date.now(),
+      title,
+      desc,
+      values: { ...values },
+      theme: { ...theme },
+    };
+    setRevisions((prev) => [newEntry, ...prev.slice(0, 49)]);
   };
 
-  const removeFit = (fit: string) => {
-    const updated = fitsList.filter((f) => f !== fit);
-    setFitsList(updated);
-    saveClassList(PRODUCT_FITS_KEY, updated, 'ush_fits_updated');
+  const restoreRevision = (rev: RevisionEntry) => {
+    setPast((p) => [...p.slice(-49), { values, theme }]);
+    setValues(rev.values);
+    setTheme(rev.theme);
+    setDirty(true);
+    setShowHistoryDrawer(false);
+    flushDraft();
   };
 
-  // Nueva referencia: se crea vacía y solo se guarda al pulsar "Guardar y publicar"
   const createNewProduct = () => {
     const num = String(Math.floor(100000 + Math.random() * 900000));
     const p: Product = {
@@ -392,7 +477,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
   const handleDeleteProduct = async () => {
     if (!productDraft) return;
-    if (!window.confirm(`¿Eliminar la referencia ${productDraft.reference} (${productDraft.name})?\n\nEl producto desaparecerá del catálogo público. Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(`¿Eliminar la referencia ${productDraft.reference} (${productDraft.name})?`)) return;
     setSavingProduct(true);
     const res = await deleteProductFromSupabase(productDraft.id);
     setSavingProduct(false);
@@ -405,7 +490,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     loadProducts();
   };
 
-  // Duplica la referencia actual como borrador con nueva REF (se guarda al publicar)
   const handleDuplicateProduct = () => {
     if (!productDraft) return;
     const num = String(Math.floor(100000 + Math.random() * 900000));
@@ -417,7 +501,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     openProduct(clone);
   };
 
-  // Oculta o vuelve a mostrar una talla del producto (options → Talla)
   const toggleSizeVisible = (size: string) => {
     if (!productDraft) return;
     const others = (productDraft.options || []).filter((o) => o.key.toLowerCase() !== 'talla');
@@ -449,103 +532,91 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     const res = await upsertProduct(productDraft);
     setSavingProduct(false);
     if (!res.success) {
-      alert('No se pudo guardar: ' + (res.error || 'error'));
+      alert('No se pudo guardar el producto: ' + (res.error || 'error'));
       return;
     }
-    // Historial auditable si cambiaron los precios
-    const original = products.find((p) => p.id === productDraft.id);
-    if (original && (original.price !== productDraft.price || original.suggested_price !== productDraft.suggested_price)) {
-      await logPriceChange({
-        product_id: productDraft.id,
-        product_name: productDraft.name,
-        old_wholesale_price: original.price || 0,
-        new_wholesale_price: productDraft.price || 0,
-        old_suggested_price: original.suggested_price || 0,
-        new_suggested_price: productDraft.suggested_price || 0,
-        changed_by: 'editor-catalogo',
-      });
-    }
-    publishCatalogChange();
     setProductSaved(true);
-    setTimeout(() => setProductSaved(false), 3000);
+    publishCatalogChange();
     loadProducts();
+    setTimeout(() => setProductSaved(false), 3000);
   };
 
-  // Subida de fotos (comprime y guarda en el bucket product-images)
-  const handleUploadPhoto = async (file: File, slot: number | 'main') => {
-    if (!productDraft) return;
-    setUploadingSlot(String(slot));
-    try {
-      const blob = await compressImage(file);
-      const path = `products/${productDraft.reference || productDraft.id}-${slot === 'main' ? 'principal' : 'galeria' + slot}-${Date.now()}.jpg`;
-      const res = await uploadProductImage(blob, path);
-      if (res.success && res.url) {
-        const images = [...(productDraft.images || [])];
-        if (slot === 'main') images[0] = res.url;
-        else images[slot as number] = res.url;
-        patchDraft({ images });
-      } else {
-        alert('No se pudo subir la imagen: ' + (res.error || 'error'));
+  // Image Cropping Handlers
+  const handleOpenCropperForField = (fileSrc: string, fieldKey: string) => {
+    setCropperModal({
+      isOpen: true,
+      imageSrc: fileSrc,
+      targetFieldKey: fieldKey,
+      targetType: 'field',
+      initialAspect: 16 / 9,
+    });
+  };
+
+  const handleOpenCropperForProductMain = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        setCropperModal({
+          isOpen: true,
+          imageSrc: String(ev.target.result),
+          targetType: 'product_main',
+          initialAspect: 3 / 4, // standard 3:4 for jeans portrait
+        });
       }
-    } catch (e) {
-      alert('Error al subir la imagen');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleOpenCropperForProductGallery = (file: File, index: number) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        setCropperModal({
+          isOpen: true,
+          imageSrc: String(ev.target.result),
+          targetType: 'product_gallery',
+          slotIndex: index,
+          initialAspect: 3 / 4,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob, croppedDataUrl: string) => {
+    if (cropperModal.targetType === 'field' && cropperModal.targetFieldKey) {
+      const fieldKey = cropperModal.targetFieldKey;
+      const path = `content/${fieldKey}-${Date.now()}.jpg`;
+      const res = await uploadProductImage(croppedBlob, path);
+      if (res.success && res.url) {
+        handleChange(fieldKey, res.url);
+      }
+    } else if (cropperModal.targetType === 'product_main' && productDraft) {
+      setUploadingSlot('main');
+      const path = `products/prod-${productDraft.reference || productDraft.id}-${Date.now()}-main.jpg`;
+      const res = await uploadProductImage(croppedBlob, path);
+      setUploadingSlot(null);
+      if (res.success && res.url) {
+        const others = (productDraft.images || []).slice(1);
+        patchDraft({ images: [res.url, ...others] });
+      }
+    } else if (cropperModal.targetType === 'product_gallery' && productDraft) {
+      const idx = cropperModal.slotIndex ?? 1;
+      setUploadingSlot(String(idx));
+      const path = `products/prod-${productDraft.reference || productDraft.id}-${Date.now()}-gal-${idx}.jpg`;
+      const res = await uploadProductImage(croppedBlob, path);
+      setUploadingSlot(null);
+      if (res.success && res.url) {
+        const current = [...(productDraft.images || [])];
+        current[idx] = res.url;
+        patchDraft({ images: current });
+      }
     }
-    setUploadingSlot(null);
   };
 
-  const addGalleryUrl = () => {
-    if (!productDraft) return;
-    const url = window.prompt('URL de la imagen:');
-    if (!url) return;
-    patchDraft({ images: [...(productDraft.images || []), url] });
-  };
-
-  const removeImage = (idx: number) => {
-    if (!productDraft) return;
-    const images = (productDraft.images || []).filter((_, i) => i !== idx);
-    patchDraft({ images });
-  };
-
-  // Modo editor: el preview prioriza la caché local (borrador en vivo)
+  // Sync state changes with localStorage & debounce live preview
   useEffect(() => {
-    try { sessionStorage.setItem('ush_editor_live', '1'); } catch (e) {}
-    return () => {
-      try { sessionStorage.removeItem('ush_editor_live'); } catch (e) {}
-    };
-  }, []);
-
-  // Cargar contenido de la página seleccionada
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      const v = await getPageContentClient(pageId);
-      if (!cancelled) setValues(v);
-    };
-    load();
-    const first = groups[0];
-    setGroupId(first ? first.group : null);
-    setDirty(false);
-    setSaved(false);
-    setPast([]);
-    setFuture([]);
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId]);
-
-  // Cargar tema global
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      const t = await fetchThemeFromRemote();
-      if (!cancelled && t) setTheme(t);
-    };
-    load();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Live preview: escribe el borrador en la caché (el iframe escucha el evento storage)
-  useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || mode !== 'content') return;
     const timer = setTimeout(() => {
       try {
         localStorage.setItem('ush_content_' + pageId, JSON.stringify(values));
@@ -553,8 +624,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       window.dispatchEvent(new Event(CONTENT_EVENT));
     }, 250);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, dirty]);
+  }, [values, dirty, pageId, mode]);
 
   useEffect(() => {
     if (!dirty || mode !== 'theme') return;
@@ -565,7 +635,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       window.dispatchEvent(new Event(THEME_EVENT));
     }, 200);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme, dirty, mode]);
 
   const handleChange = (key: string, val: string) => {
@@ -574,6 +643,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setValues((prev) => ({ ...prev, [key]: val }));
     setDirty(true);
     setSaved(false);
+    addRevision(`Modificado campo "${key}"`, val.slice(0, 40));
   };
 
   const handleThemeChange = (key: keyof SiteTheme, val: string) => {
@@ -582,6 +652,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setTheme((prev) => ({ ...prev, [key]: val }));
     setDirty(true);
     setSaved(false);
+    addRevision(`Color del tema "${key}"`, val);
   };
 
   const handleUndo = () => {
@@ -609,7 +680,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   undoRef.current = handleUndo;
   redoRef.current = handleRedo;
 
-  // Guarda el borrador local al instante (sin publicar en el sitio)
   const flushDraft = () => {
     try { localStorage.setItem('ush_content_' + pageId, JSON.stringify(values)); } catch (e) {}
     try { localStorage.setItem('ush_theme_cache', JSON.stringify(theme)); } catch (e) {}
@@ -620,7 +690,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   };
   flushRef.current = flushDraft;
 
-  // Atajos de teclado en el editor
+  // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
@@ -636,7 +706,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReset = () => {
@@ -677,7 +746,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     closeProduct();
   };
 
-  // Doble clic en una sección del preview → navega a su panel de propiedades
   const selectSection = (sectionId: string) => {
     const m = SECTION_MAP[sectionId];
     if (!m) return;
@@ -686,7 +754,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setGroupId(m.group);
   };
 
-  // Desplaza el preview (iframe) hasta la sección activa del editor
   const scrollPreviewToSection = (sectionId: string | null) => {
     const frame = iframeRef.current;
     const doc = frame?.contentDocument;
@@ -699,59 +766,73 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1600);
   };
 
-  // Al cambiar de página o sección: marca la sección objetivo y hace scroll
-  // en el preview (si el iframe ya está cargado).
   useEffect(() => {
     const sec = sectionForGroup(pageId, activeGroup?.group || '');
     pendingScrollRef.current = sec;
     scrollPreviewToSection(sec);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId, pageId]);
 
-  // Conecta el iframe del preview: estilos de edición + doble clic
+  // Conecta el iframe del preview con modo in-line interactivo
   const wireFrame = () => {
     const frame = iframeRef.current;
     const doc = frame?.contentDocument;
     if (!doc || !frame) return;
-    if (wiredRef.current?.doc === doc) return;
 
     let style = doc.getElementById('ush-editor-style') as HTMLStyleElement | null;
     if (!style) {
       style = doc.createElement('style');
       style.id = 'ush-editor-style';
       style.textContent = `
-        [data-editor-section] { cursor: crosshair; }
+        [data-editor-section] { cursor: pointer; transition: outline 0.2s ease; }
         [data-editor-section]:hover { outline: 2px dashed #d88193; outline-offset: 2px; }
+        [contenteditable="true"] { outline: 2px solid #10b981 !important; outline-offset: 3px !important; background: rgba(255,255,255,0.85) !important; color: #1b2333 !important; border-radius: 4px; padding: 2px 4px; }
       `;
       doc.head.appendChild(style);
     }
 
-    const onDbl = (e: Event) => {
+    const onClickOrDbl = (e: Event) => {
       const target = e.target as HTMLElement;
-      const el = target?.closest?.('[data-editor-section]') as HTMLElement | null;
-      if (!el) return;
-      e.preventDefault();
-      const id = el.getAttribute('data-editor-section') || '';
-      el.style.outline = '2px solid #116dff';
-      el.style.outlineOffset = '2px';
-      setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1400);
-      selectSection(id);
-    };
-    const onKey = (e: Event) => {
-      const ke = e as KeyboardEvent;
-      if ((ke.ctrlKey || ke.metaKey) && ke.key.toLowerCase() === 'z') {
-        ke.preventDefault();
-        if (ke.shiftKey) redoRef.current(); else undoRef.current();
-      } else if ((ke.ctrlKey || ke.metaKey) && ke.key.toLowerCase() === 'y') {
-        ke.preventDefault();
-        redoRef.current();
+      const sectionEl = target?.closest?.('[data-editor-section]') as HTMLElement | null;
+      if (!sectionEl) return;
+
+      const secId = sectionEl.getAttribute('data-editor-section') || '';
+      selectSection(secId);
+
+      // In-line text editing
+      if (inlineEditEnabled && ['H1', 'H2', 'H3', 'P', 'SPAN', 'BUTTON', 'A'].includes(target.tagName)) {
+        target.contentEditable = 'true';
+        target.focus();
+
+        const onBlur = () => {
+          target.contentEditable = 'false';
+          const newText = target.innerText.trim();
+          // Find matching field in current values schema
+          const currentSchema = PAGE_SCHEMAS.find((s) => s.id === pageId);
+          if (currentSchema) {
+            const matchedField = currentSchema.fields.find(
+              (f) => values[f.key] === target.getAttribute('data-original-val') || f.default === target.getAttribute('data-original-val')
+            );
+            if (matchedField) {
+              handleChange(matchedField.key, newText);
+            }
+          }
+          target.removeEventListener('blur', onBlur);
+        };
+        target.addEventListener('blur', onBlur);
+      }
+
+      // In-line image click
+      if (target.tagName === 'IMG') {
+        const src = (target as HTMLImageElement).src;
+        if (src) {
+          handleOpenCropperForField(src, 'heroImage');
+        }
       }
     };
-    doc.addEventListener('dblclick', onDbl, true);
-    doc.addEventListener('keydown', onKey, true);
-    wiredRef.current = { doc, onDbl, onKey };
 
-    // Si hay una sección pendiente (se cambió de página/grupo), hace scroll al recargar
+    doc.addEventListener('click', onClickOrDbl, true);
+    doc.addEventListener('dblclick', onClickOrDbl, true);
+
     if (pendingScrollRef.current) {
       scrollPreviewToSection(pendingScrollRef.current);
     }
@@ -760,7 +841,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const previewRoute = PAGE_ROUTES[pageId] || '/';
   const iframeSrc = `${previewRoute}${previewRoute.includes('?') ? '&' : '?'}editor=${nonce}`;
 
-  // Lista filtrada del gestor de productos
   const filteredProductsList = products.filter((p) => {
     const q = productSearch.trim().toLowerCase();
     if (!q) return true;
@@ -797,9 +877,17 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden xl:flex items-center gap-1.5 text-[10px] text-neutral-400 mr-1">
-            <Pointer size={11} className="text-[#d88193]" /> Doble clic en una sección para editarla
-          </span>
+          {/* In-Line Editing Toggle */}
+          <button
+            onClick={() => setInlineEditEnabled((v) => !v)}
+            className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-colors ${
+              inlineEditEnabled ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40' : 'bg-white/5 text-neutral-400'
+            }`}
+            title="Haz clic directo sobre textos o imágenes en el sitio real para editarlos"
+          >
+            <MousePointerClick size={12} className={inlineEditEnabled ? 'text-emerald-400' : ''} />
+            {inlineEditEnabled ? 'Edición In-Line: Activa' : 'Edición In-Line: Inactiva'}
+          </button>
 
           {/* Device toggle */}
           <div className="flex items-center bg-white/10 rounded-md overflow-hidden">
@@ -819,7 +907,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
             onClick={handleUndo}
             disabled={past.length === 0}
             title="Deshacer (Ctrl+Z)"
-            className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-300"
+            className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md disabled:opacity-30"
           >
             <Undo2 size={14} />
           </button>
@@ -827,9 +915,18 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
             onClick={handleRedo}
             disabled={future.length === 0}
             title="Rehacer (Ctrl+Shift+Z)"
-            className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-300"
+            className="p-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-md disabled:opacity-30"
           >
             <Redo2 size={14} />
+          </button>
+
+          {/* Change History Drawer Trigger */}
+          <button
+            onClick={() => setShowHistoryDrawer((v) => !v)}
+            title="Ver historial de revisiones"
+            className={`p-2 rounded-md transition-colors ${showHistoryDrawer ? 'bg-[#d88193] text-white' : 'text-neutral-300 hover:bg-white/10'}`}
+          >
+            <HistoryIcon size={14} />
           </button>
 
           <button
@@ -850,21 +947,21 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </a>
 
           <div className="flex items-center gap-2 pl-2 border-l border-white/15">
-            {draftSaved && (
+            {dirty ? (
+              <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                Borrador sin publicar
+              </span>
+            ) : (
               <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                <CheckCircle size={12} /> Borrador guardado
+                <CheckCircle size={12} /> Publicado en vivo
               </span>
             )}
-            {dirty && <span className="hidden md:block text-[10px] font-bold uppercase tracking-wider text-amber-300">Sin publicar</span>}
-            {saved && (
-              <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                <CheckCircle size={12} /> Publicado
-              </span>
-            )}
+
             <button
               onClick={flushDraft}
               title="Guardar borrador local (Ctrl+S)"
-              className="hidden sm:flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded shadow disabled:opacity-50"
+              className="hidden sm:flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded shadow"
             >
               <FileClock size={13} />
               Guardar
@@ -875,25 +972,18 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
               className="flex items-center gap-2 bg-[#116dff] hover:bg-[#0d5cd6] text-white text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded shadow-lg disabled:opacity-50"
             >
               {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-              Publicar
+              Publicar Cambios
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Draft banner: preview local hasta publicar ── */}
-      {dirty && (
-        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 flex-shrink-0">
-          Modo borrador: los cambios solo se ven en esta vista previa. Pulsa Publicar para aplicarlos en todo el sitio, otras URLs y dispositivos.
-        </div>
-      )}
-
-      {/* ── Body: left / canvas / right ── */}
-      <div className="flex flex-1 min-h-0">
-        {/* Left: Pages + layers */}
-        <aside className="w-52 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
-          <div className="px-4 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 border-b border-white/5">
-            Páginas
+      {/* ── Body: Left Sidebar / Canvas / Right Inspector ── */}
+      <div className="flex flex-1 min-h-0 relative">
+        {/* Left: Pages + Categories manager */}
+        <aside className="w-56 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
+          <div className="px-4 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 border-b border-white/5 flex items-center justify-between">
+            <span>Páginas</span>
           </div>
           <div className="flex-1 overflow-y-auto py-2">
             {PAGE_SCHEMAS.map((s) => {
@@ -942,6 +1032,38 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 </div>
               );
             })}
+
+            {/* Drag & Drop Reordering of Categories */}
+            <div className="mt-4 px-4 py-2 border-t border-white/5">
+              <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-2">
+                <span>Categorías (Arrastrar)</span>
+              </div>
+              <div className="space-y-1">
+                {categoriesList.map((cat, idx) => (
+                  <div
+                    key={cat}
+                    draggable
+                    onDragStart={() => handleCatDragStart(idx)}
+                    onDragOver={(e) => handleCatDragOver(e, idx)}
+                    onDragEnd={handleCatDragEnd}
+                    className={`flex items-center justify-between px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded text-[10px] text-neutral-300 font-semibold cursor-grab active:cursor-grabbing transition-all ${
+                      draggedCatIdx === idx ? 'opacity-40 border border-dashed border-[#d88193]' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <GripVertical size={12} className="text-neutral-500 flex-shrink-0" />
+                      <span className="truncate">{cat}</span>
+                    </div>
+                    <button
+                      onClick={() => removeCategory(cat)}
+                      className="text-neutral-500 hover:text-red-400 p-0.5"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="border-t border-white/5 py-2">
@@ -957,15 +1079,18 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </div>
         </aside>
 
-        {/* Center: lienzo — preview del sitio o workspace de productos (tipo Wix) */}
+        {/* Center: Canvas or Products Workspace */}
         {productsMode ? (
           <div className="flex-1 min-w-0 bg-[#eef0f3] overflow-auto">
             {selectedId && productDraft ? (
-              /* ── EDITOR VISUAL DEL PRODUCTO ── */
+              /* ── VISUAL PRODUCT EDITOR ── */
               <div className="max-w-5xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                {/* Fotos (izquierda del lienzo) */}
+                {/* Photos */}
                 <div className="space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Fotos</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">Fotos del Producto</p>
+                    <span className="text-[10px] text-neutral-400 font-bold">Proporción 3:4 Jeans</span>
+                  </div>
                   <div className="relative group/main bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden aspect-[3/4] max-h-[460px] w-full">
                     {productDraft.images?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -973,29 +1098,39 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     ) : (
                       <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-neutral-50 transition-colors">
                         <Upload size={26} className="text-neutral-300" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Subir foto principal</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f, 'main'); e.target.value = ''; }} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Subir foto con recorte</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleOpenCropperForProductMain(f);
+                            e.target.value = '';
+                          }}
+                        />
                       </label>
                     )}
-                    {productDraft.images?.[0] && (
-                      <button
-                        onClick={() => openPreview(productDraft.images || [], 0)}
-                        title="Ver imagen"
-                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/main:bg-black/35 transition-all cursor-zoom-in"
-                      >
-                        <span className="opacity-0 group-hover/main:opacity-100 transition-opacity bg-white/95 rounded-full p-3 shadow-lg text-[#1b2333]">
-                          <Eye size={20} />
-                        </span>
-                      </button>
-                    )}
+
                     {productDraft.images?.[0] && (
                       <label className="absolute bottom-3 right-3 bg-white/95 shadow px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-neutral-600 hover:text-[#d88193] cursor-pointer rounded flex items-center gap-1">
-                        <Upload size={10} /> Cambiar
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPhoto(f, 'main'); e.target.value = ''; }} />
+                        <Crop size={10} /> Cambiar / Recortar
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleOpenCropperForProductMain(f);
+                            e.target.value = '';
+                          }}
+                        />
                       </label>
                     )}
                     {uploadingSlot === 'main' && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 size={22} className="text-white animate-spin" /></div>
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Loader2 size={22} className="text-white animate-spin" />
+                      </div>
                     )}
                   </div>
 
@@ -1007,6 +1142,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     className="w-full border border-neutral-200 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-[#d88193] rounded bg-white"
                   />
 
+                  {/* Gallery thumbnails */}
                   {(productDraft.images || []).length > 1 && (
                     <div className="grid grid-cols-5 gap-2">
                       {(productDraft.images || []).slice(1).map((img, i) => (
@@ -1014,30 +1150,35 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={img} alt="" className="w-full h-full object-cover" />
                           <button
-                            onClick={() => openPreview(productDraft.images || [], i + 1)}
-                            title="Ver imagen"
-                            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/thumb:bg-black/30 transition-all cursor-zoom-in"
+                            onClick={() => {
+                              const f = (productDraft.images || []).filter((_, idx) => idx !== i + 1);
+                              patchDraft({ images: f });
+                            }}
+                            className="absolute top-1 right-1 bg-white/90 rounded p-1 text-red-500 opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow z-10"
                           >
-                            <span className="opacity-0 group-hover/thumb:opacity-100 transition-opacity bg-white/95 rounded-full p-1.5 shadow text-[#1b2333]">
-                              <Eye size={12} />
-                            </span>
-                          </button>
-                          <button onClick={() => removeImage(i + 1)} className="absolute top-1 right-1 bg-white/90 rounded p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shadow z-10">
                             <Trash2 size={11} />
                           </button>
-                          {uploadingSlot === String(i + 1) && (
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Loader2 size={14} className="text-white animate-spin" /></div>
-                          )}
                         </div>
                       ))}
                     </div>
                   )}
-                  <button onClick={addGalleryUrl} className="w-full flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 py-2.5 text-[10px] font-black uppercase tracking-wider text-neutral-500 hover:border-[#d88193] hover:text-[#d88193] rounded-lg bg-white">
-                    <Plus size={12} /> Agregar foto a la galería
-                  </button>
+
+                  <label className="w-full flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 py-2.5 text-[10px] font-black uppercase tracking-wider text-neutral-500 hover:border-[#d88193] hover:text-[#d88193] rounded-lg bg-white cursor-pointer">
+                    <Plus size={12} /> Agregar foto con recorte
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleOpenCropperForProductGallery(f, (productDraft.images || []).length);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
                 </div>
 
-                {/* Textos (derecha del lienzo) */}
+                {/* Details Form */}
                 <div className="space-y-4 bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
                   <div>
                     <input
@@ -1072,27 +1213,18 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       className="w-full border border-neutral-200 px-3 py-2.5 text-xs leading-relaxed focus:outline-none focus:border-[#d88193] rounded resize-y"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-1">Video (MP4 / YouTube) — opcional</label>
-                    <input
-                      type="url"
-                      value={productDraft.video_url || ''}
-                      onChange={(e) => patchDraft({ video_url: e.target.value })}
-                      className="w-full border border-neutral-200 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-[#d88193] rounded"
-                    />
-                  </div>
 
                   {productSaved && (
                     <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1">
-                      <CheckCircle size={12} /> Publicado en todo el sitio
+                      <CheckCircle size={12} /> Guardado y publicado
                     </p>
                   )}
                 </div>
               </div>
             ) : (
-              /* ── CUADRÍCULA DE PRODUCTOS ── */
+              /* ── PRODUCTS LIST / DRAG & DROP REORDER ── */
               <div className="p-6">
-                <div className="flex items-center gap-3 mb-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                   <div className="relative flex-1 max-w-md">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
                     <input
@@ -1102,13 +1234,35 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       className="w-full bg-white border border-neutral-200 shadow-sm pl-9 pr-3 py-2.5 text-xs focus:outline-none focus:border-[#d88193] rounded-lg"
                     />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">{filteredProductsList.length} referencias</span>
-                  <button
-                    onClick={createNewProduct}
-                    className="ml-auto flex items-center gap-1.5 bg-[#d88193] hover:bg-[#c56a7e] text-white text-[11px] font-black uppercase tracking-wider px-4 py-2.5 rounded-lg shadow-sm"
-                  >
-                    <Plus size={14} /> Nueva referencia
-                  </button>
+
+                  {/* Mode switcher: Grid vs Drag & Drop Reorder */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center bg-white border border-neutral-200 rounded-lg p-1">
+                      <button
+                        onClick={() => setProductViewMode('grid')}
+                        className={`px-3 py-1.5 text-[10px] font-black uppercase rounded ${
+                          productViewMode === 'grid' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-50'
+                        }`}
+                      >
+                        Cuadrícula
+                      </button>
+                      <button
+                        onClick={() => setProductViewMode('reorder')}
+                        className={`px-3 py-1.5 text-[10px] font-black uppercase rounded flex items-center gap-1 ${
+                          productViewMode === 'reorder' ? 'bg-[#d88193] text-white' : 'text-neutral-600 hover:bg-neutral-50'
+                        }`}
+                      >
+                        <GripVertical size={12} /> Reordenar (Drag & Drop)
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={createNewProduct}
+                      className="flex items-center gap-1.5 bg-[#d88193] hover:bg-[#c56a7e] text-white text-[11px] font-black uppercase tracking-wider px-4 py-2.5 rounded-lg shadow-sm"
+                    >
+                      <Plus size={14} /> Nueva referencia
+                    </button>
+                  </div>
                 </div>
 
                 {productsLoading && products.length === 0 ? (
@@ -1118,14 +1272,55 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     <Package size={34} className="mx-auto text-neutral-300 mb-3" />
                     <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">Sin resultados</p>
                   </div>
+                ) : productViewMode === 'reorder' ? (
+                  /* Reorder List Mode */
+                  <div className="space-y-2 max-w-3xl mx-auto">
+                    <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3 rounded-lg text-xs font-semibold flex items-center gap-2">
+                      <GripVertical size={16} className="text-amber-700" />
+                      Arrastra y suelta los productos para definir la secuencia exacta en que aparecerán en la tienda.
+                    </div>
+                    {filteredProductsList.map((p, idx) => (
+                      <div
+                        key={p.id}
+                        draggable
+                        onDragStart={() => handleProductDragStart(idx)}
+                        onDragOver={(e) => handleProductDragOver(e, idx)}
+                        onDragEnd={handleProductDragEnd}
+                        className={`flex items-center justify-between p-3 bg-white rounded-xl border border-neutral-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-[#d88193] transition-all ${
+                          draggedProductIdx === idx ? 'opacity-30 border-2 border-dashed border-[#d88193]' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <GripVertical size={16} className="text-neutral-400 flex-shrink-0" />
+                          <span className="w-7 h-7 rounded-full bg-[#1b2333] text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                            #{idx + 1}
+                          </span>
+                          <div className="w-12 h-14 bg-neutral-100 rounded overflow-hidden flex-shrink-0">
+                            {p.images?.[0] ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-xs font-black uppercase text-[#1b2333]">{p.name}</p>
+                            <p className="text-[10px] text-neutral-400 font-bold">REF. {p.reference} · ${(p.price || 0).toLocaleString('es-CO')}</p>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => openProduct(p)}
+                          className="px-3 py-1.5 border border-gray-200 text-neutral-700 text-xs font-bold uppercase rounded hover:bg-neutral-50"
+                        >
+                          Editar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
+                  /* Standard Grid Mode */
                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {filteredProductsList.map((p) => {
                       const visible = !p.hidden && p.status !== 'draft';
-                      const stockVals = Object.values(p.stock_by_size || {});
-                      const totalStock = stockVals.length ? stockVals.reduce((a, b) => a + (Number(b) || 0), 0) : null;
-                      const low = totalStock !== null && totalStock > 0 && totalStock <= 5;
-                      const out = totalStock === 0;
                       return (
                         <button
                           key={p.id}
@@ -1142,25 +1337,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                             <span className={`absolute top-2 left-2 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${visible ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
                               {visible ? 'Visible' : 'Oculto'}
                             </span>
-                            {p.ribbon && (
-                              <span className="absolute top-2 right-2 bg-[#1b2333]/85 text-white text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                                {p.ribbon}
-                              </span>
-                            )}
-                            {(low || out) && (
-                              <span className={`absolute bottom-2 left-2 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${out ? 'bg-red-600 text-white' : 'bg-amber-400 text-neutral-900'}`}>
-                                {out ? 'Sin stock' : `Poco stock · ${totalStock}`}
-                              </span>
-                            )}
-                            <span
-                              role="button"
-                              title="Ver imagen"
-                              onClick={(e) => { e.stopPropagation(); openPreview(p.images || [], 0); }}
-                              className="absolute bottom-2 right-2 bg-white/95 rounded-full p-1.5 text-[#1b2333] opacity-0 group-hover:opacity-100 transition-opacity shadow cursor-zoom-in"
-                            >
-                              <Eye size={13} />
-                            </span>
-                            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent h-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                           </div>
                           <div className="p-3">
                             <p className="text-[11px] font-black text-neutral-800 truncate group-hover:text-[#d88193]">{p.name}</p>
@@ -1178,6 +1354,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
             )}
           </div>
         ) : (
+          /* Live Page Preview with Interactive Iframe */
           <div className="flex-1 min-w-0 bg-[#e5e7eb] p-4 overflow-auto flex justify-center">
             <div
               className="bg-white shadow-2xl ring-1 ring-black/10 transition-all duration-300"
@@ -1196,7 +1373,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </div>
         )}
 
-        {/* Right: properties */}
+        {/* Right: Properties Inspector */}
         <aside className="w-72 bg-white border-l border-neutral-200 flex flex-col flex-shrink-0 min-h-0">
           <div className="px-5 py-4 border-b border-neutral-100 flex-shrink-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">
@@ -1210,15 +1387,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 ? (selectedId && productDraft ? (productDraft.name || 'Producto') : 'Catálogo')
                 : (activeGroup?.group || 'General')}
             </h3>
-            <p className="text-[11px] text-neutral-500 mt-0.5">
-              {mode === 'theme'
-                ? 'Colores de marca y texto de la franja superior. Cambia y publica.'
-                : productsMode && selectedId && productDraft
-                ? `REF. ${productDraft.reference} — ajusta precios, clasificación e inventario`
-                : productsMode
-                ? 'Administra las prendas desde el lienzo central.'
-                : (schema?.description || '')}
-            </p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -1256,7 +1424,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 ))}
               </div>
             ) : productsMode ? (
-              /* ── INSPECTOR DEL PRODUCTO (panel derecho, como Wix) ── */
               selectedId && productDraft ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -1266,27 +1433,15 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     >
                       <ArrowLeft size={12} /> Volver
                     </button>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={handleDuplicateProduct}
-                        disabled={savingProduct}
-                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-[#116dff] disabled:opacity-50"
-                      >
-                        <Copy size={11} /> Duplicar
-                      </button>
-                      {!productDraft.id.startsWith('ref-new') && (
-                        <button
-                          onClick={handleDeleteProduct}
-                          disabled={savingProduct}
-                          className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 disabled:opacity-50"
-                        >
-                          <Trash2 size={11} /> Eliminar
-                        </button>
-                      )}
-                    </div>
+                    <button
+                      onClick={handleDuplicateProduct}
+                      className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-[#116dff]"
+                    >
+                      <Copy size={11} /> Duplicar
+                    </button>
                   </div>
 
-                  {/* PRECIOS */}
+                  {/* Pricing */}
                   <section className="border border-neutral-200 rounded-lg overflow-hidden">
                     <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Precios (COP)</header>
                     <div className="p-3 space-y-2.5">
@@ -1299,287 +1454,118 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                           <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">{f.label}</label>
                           <input
                             type="number"
-                            min={0}
-                            value={(productDraft[f.key] as number) ?? 0}
-                            onChange={(e) => patchDraft({ [f.key]: parseInt(e.target.value) || 0 } as Partial<Product>)}
-                            className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded"
+                            value={(productDraft as any)[f.key] ?? 0}
+                            onChange={(e) => patchDraft({ [f.key]: parseFloat(e.target.value) || 0 })}
+                            className="w-full border border-neutral-200 px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:border-[#d88193] rounded"
                           />
                         </div>
                       ))}
                     </div>
                   </section>
 
-                  {/* CLASIFICACIÓN */}
+                  {/* Stock by size */}
                   <section className="border border-neutral-200 rounded-lg overflow-hidden">
-                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Clasificación</header>
-                    <div className="p-3 space-y-2.5">
-                      {([
-                        { key: 'category', label: 'Categoría', options: categoriesList },
-                        { key: 'fit', label: 'Fit / Corte', options: fitsList },
-                        { key: 'color', label: 'Color', options: PRODUCT_COLORS },
-                      ] as const).map((f) => (
-                        <div key={f.key}>
-                          <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">{f.label}</label>
-                          <select
-                            value={(productDraft[f.key] as string) || ''}
-                            onChange={(e) => patchDraft({ [f.key]: e.target.value } as Partial<Product>)}
-                            className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#d88193] rounded bg-white"
-                          >
-                            <option value="">Sin {f.label.toLowerCase()}</option>
-                            {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
-                          </select>
+                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Inventario por talla</header>
+                    <div className="p-3 grid grid-cols-5 gap-1.5">
+                      {PRODUCT_SIZES.map((sz) => (
+                        <div key={sz} className="text-center">
+                          <span className="block text-[9px] font-bold text-neutral-500 mb-1">{sz}</span>
+                          <input
+                            type="number"
+                            value={productDraft.stock_by_size?.[sz] ?? 0}
+                            onChange={(e) => {
+                              const s = { ...(productDraft.stock_by_size || {}), [sz]: parseInt(e.target.value) || 0 };
+                              patchDraft({ stock_by_size: s });
+                            }}
+                            className="w-full border border-neutral-200 py-1 text-center text-xs font-mono font-bold focus:outline-none focus:border-[#d88193] rounded"
+                          />
                         </div>
                       ))}
-                      <div>
-                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Cinta / Etiqueta</label>
-                        <select
-                          value={productDraft.ribbon || ''}
-                          onChange={(e) => patchDraft({ ribbon: e.target.value })}
-                          className="w-full border border-neutral-200 px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#d88193] rounded bg-white"
-                        >
-                          <option value="">Sin cinta</option>
-                          <option value="Nuevo">🆕 Nuevo</option>
-                          <option value="Más vendido">🔥 Más vendido</option>
-                          <option value="Oferta">🏷️ Oferta</option>
-                          <option value="Exclusivo">⭐ Exclusivo</option>
-                        </select>
-                      </div>
                     </div>
                   </section>
-
-                  {/* STOCK Y VISIBILIDAD */}
-                  <section className="border border-neutral-200 rounded-lg overflow-hidden">
-                    <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Inventario y visibilidad</header>
-                    <div className="p-3 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-neutral-600 flex items-center gap-1">
-                          {productDraft.hidden ? <EyeOff size={11} className="text-red-400" /> : <Eye size={11} className="text-emerald-500" />}
-                          {productDraft.hidden ? 'Oculto para clientes' : 'Visible en el catálogo'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => patchDraft({ hidden: !productDraft.hidden, status: productDraft.hidden ? 'published' : 'draft' })}
-                          className={`relative w-9 h-5 rounded-full transition-colors ${productDraft.hidden ? 'bg-gray-300' : 'bg-emerald-500'}`}
-                        >
-                          <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: productDraft.hidden ? 2 : 18 }} />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-neutral-600 flex items-center gap-1">
-                          <Star size={11} className={productDraft.is_best_seller ? 'text-amber-500 fill-amber-400' : 'text-neutral-300'} />
-                          Más vendido (portada)
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => patchDraft({ is_best_seller: !productDraft.is_best_seller })}
-                          className={`relative w-9 h-5 rounded-full transition-colors ${productDraft.is_best_seller ? 'bg-amber-500' : 'bg-gray-300'}`}
-                        >
-                          <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all" style={{ left: productDraft.is_best_seller ? 18 : 2 }} />
-                        </button>
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Unidades por talla</label>
-                        <div className="flex gap-1.5">
-                          {draftSizes.map((s) => (
-                            <div key={s} className="flex-1">
-                              <span className="block text-center text-[8px] font-bold text-neutral-400 mb-0.5">{s}</span>
-                              <input
-                                type="number"
-                                min={0}
-                                value={productDraft.stock_by_size?.[s] ?? 0}
-                                onChange={(e) => patchDraft({ stock_by_size: { ...(productDraft.stock_by_size || {}), [s]: Math.max(0, parseInt(e.target.value) || 0) } })}
-                                className={`w-full text-center text-[11px] font-semibold border rounded py-1 focus:outline-none focus:border-[#d88193] ${(productDraft.stock_by_size?.[s] ?? 0) > 0 ? 'border-gray-200' : 'border-red-200 bg-red-50 text-red-500'}`}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-500 mb-1">Tallas visibles (clic para ocultar/mostrar)</label>
-                        <p className="text-[8.5px] text-neutral-400 leading-snug mb-1.5">Las tallas con inventario en 0 se ocultan solas en la tienda; aquí también puedes ocultarlas manualmente.</p>
-                        <div className="flex flex-wrap gap-1">
-                          {['6', '8', '10', '12', '14'].map((s) => {
-                            const on = draftSizes.includes(s);
-                            return (
-                              <button
-                                key={s}
-                                type="button"
-                                onClick={() => toggleSizeVisible(s)}
-                                className={`w-8 py-1 text-[10px] font-black rounded border transition-colors ${
-                                  on
-                                    ? 'bg-[#1b2333] text-white border-[#1b2333]'
-                                    : 'bg-white text-neutral-300 border-gray-200 line-through'
-                                }`}
-                              >
-                                {s}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* GUARDAR */}
-                  <div className="sticky bottom-0 bg-white pt-2 pb-1 border-t border-neutral-100">
-                    <button
-                      onClick={handleSaveProduct}
-                      disabled={savingProduct}
-                      className="w-full flex items-center justify-center gap-2 bg-[#116dff] hover:bg-[#0d5cd6] disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest px-4 py-3 rounded shadow"
-                    >
-                      {savingProduct ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                      {savingProduct ? 'Publicando…' : 'Guardar y publicar'}
-                    </button>
-                    {productSaved && (
-                      <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1">
-                        <CheckCircle size={11} /> Publicado en todo el sitio
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                /* ── PANEL DE LISTA: resumen + clasificaciones ── */
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-2">
-                    {([
-                      { label: 'Total', value: products.length, color: 'text-neutral-900' },
-                      { label: 'Visibles', value: products.filter((p) => !p.hidden && p.status !== 'draft').length, color: 'text-emerald-600' },
-                      { label: 'Ocultos', value: products.filter((p) => p.hidden || p.status === 'draft').length, color: 'text-red-500' },
-                    ] as const).map((s) => (
-                      <div key={s.label} className="border border-neutral-200 rounded-lg py-2.5 text-center">
-                        <p className={`text-lg font-black ${s.color}`}>{s.value}</p>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-neutral-400">{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
 
                   <button
-                    onClick={createNewProduct}
-                    className="w-full flex items-center justify-center gap-1.5 bg-[#d88193] hover:bg-[#c56a7e] text-white text-[10px] font-black uppercase tracking-widest px-3 py-2.5 rounded"
+                    onClick={handleSaveProduct}
+                    disabled={savingProduct}
+                    className="w-full bg-[#d88193] hover:bg-[#c3687c] text-white font-bold py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded-lg transition-colors"
                   >
-                    <Plus size={13} /> Nueva referencia
-                  </button>
-
-                  {/* Categorías y Fits del catálogo */}
-                  <div>
-                    <button
-                      onClick={() => setShowClassify(!showClassify)}
-                      className="w-full flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#d88193] py-1"
-                    >
-                      Categorías y fits ({categoriesList.length + fitsList.length})
-                      <ChevronDown size={11} className={`transition-transform ${showClassify ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showClassify && (
-                      <div className="mt-2 space-y-3 border border-neutral-200 rounded-lg p-3">
-                        {([
-                          { label: 'Categorías', list: categoriesList, onAdd: addCategory, onRemove: removeCategory },
-                          { label: 'Fits / Cortes', list: fitsList, onAdd: addFit, onRemove: removeFit },
-                        ] as const).map((sec) => (
-                          <div key={sec.label}>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-neutral-400 mb-1.5">{sec.label}</p>
-                            <div className="flex flex-wrap gap-1 mb-1.5">
-                              {sec.list.map((item) => (
-                                <span key={item} className="inline-flex items-center gap-0.5 bg-neutral-100 text-neutral-700 text-[9px] font-bold px-1.5 py-0.5 rounded group">
-                                  {item}
-                                  <button onClick={() => sec.onRemove(item)} className="text-neutral-400 hover:text-red-500">
-                                    <X size={9} />
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                            <input
-                              placeholder={`Agregar ${sec.label.toLowerCase().replace(/s$/, '')}… (Enter)`}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  sec.onAdd((e.target as HTMLInputElement).value);
-                                  (e.target as HTMLInputElement).value = '';
-                                }
-                              }}
-                              className="w-full border border-neutral-200 px-2 py-1 text-[10px] focus:outline-none focus:border-[#d88193] rounded"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <p className="text-[10px] leading-relaxed text-neutral-400 border-l-2 border-[#d88193] pl-2">
-                    Haz clic sobre una prenda en el lienzo central para editarla. Los cambios se publican en vivo en todo el sitio.
-                  </p>
-
-                  <button onClick={loadProducts} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-neutral-400 hover:text-[#d88193]">
-                    <RefreshCw size={10} className={productsLoading ? 'animate-spin' : ''} /> Actualizar lista
+                    {savingProduct ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                    Guardar Producto
                   </button>
                 </div>
+              ) : (
+                <p className="text-xs text-neutral-400">Selecciona un producto para editar sus propiedades.</p>
               )
             ) : (
-              activeGroup && (
-                <div className="space-y-5">
-                  {activeGroup.fields.map((f) => (
-                    <div key={f.key}>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
-                        {f.label}
-                      </label>
-                      <FieldInput
-                        field={f}
-                        value={values[f.key] ?? f.default}
-                        uploadPath={`site/${pageId}-${f.key}.jpg`}
-                        onChange={(v) => handleChange(f.key, v)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )
+              /* Content Page Properties */
+              <div className="space-y-4">
+                {activeGroup?.fields.map((f) => (
+                  <div key={f.key}>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5">
+                      {f.label}
+                    </label>
+                    <FieldInput
+                      field={f}
+                      value={values[f.key] ?? f.default}
+                      onChange={(v) => handleChange(f.key, v)}
+                      uploadPath={`content/${pageId}-${f.key}.jpg`}
+                      onOpenCropper={handleOpenCropperForField}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </aside>
+
+        {/* ── REVISION HISTORY SLIDE-OVER DRAWER ── */}
+        {showHistoryDrawer && (
+          <div className="absolute right-0 top-0 bottom-0 w-80 bg-[#121824] text-white shadow-2xl z-30 flex flex-col border-l border-white/10 animate-slideLeft">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider">
+                <HistoryIcon size={14} className="text-[#d88193]" />
+                Historial de Cambios
+              </div>
+              <button onClick={() => setShowHistoryDrawer(false)} className="text-neutral-400 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {revisions.length === 0 ? (
+                <p className="text-xs text-neutral-400 text-center py-12">
+                  No hay cambios registrados en esta sesión aún.
+                </p>
+              ) : (
+                revisions.map((rev) => (
+                  <div key={rev.id} className="p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 space-y-1.5 transition-colors">
+                    <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                      <span>{new Date(rev.timestamp).toLocaleTimeString()}</span>
+                      <button
+                        onClick={() => restoreRevision(rev)}
+                        className="text-[#d88193] hover:underline font-bold"
+                      >
+                        Revertir a esta versión
+                      </button>
+                    </div>
+                    <p className="text-xs font-bold text-neutral-200">{rev.title}</p>
+                    {rev.desc && <p className="text-[10px] text-neutral-400 truncate">{rev.desc}</p>}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── LIGHTBOX: vista previa de imágenes a pantalla completa ── */}
-      {previewList && (
-        <div
-          className="fixed inset-0 z-[200] bg-black/85 flex items-center justify-center"
-          onClick={() => setPreviewList(null)}
-        >
-          <button
-            onClick={() => setPreviewList(null)}
-            title="Cerrar"
-            className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
-          >
-            <X size={20} />
-          </button>
-          {previewList.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setPreviewIndex((i) => Math.max(0, i - 1)); }}
-                disabled={previewIndex === 0}
-                title="Anterior"
-                className="absolute left-4 text-white/80 hover:text-white disabled:opacity-25 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
-              >
-                <ChevronLeft size={22} />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setPreviewIndex((i) => Math.min(previewList.length - 1, i + 1)); }}
-                disabled={previewIndex === previewList.length - 1}
-                title="Siguiente"
-                className="absolute right-4 text-white/80 hover:text-white disabled:opacity-25 bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
-              >
-                <ChevronRight size={22} />
-              </button>
-            </>
-          )}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewList[previewIndex]}
-            alt=""
-            className="max-h-[86vh] max-w-[90vw] object-contain shadow-2xl rounded"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <span className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 text-xs font-bold tracking-[0.25em]">
-            {previewIndex + 1} / {previewList.length}
-          </span>
-        </div>
-      )}
+      {/* ── IMAGE CROPPER MODAL INTEGRATION ── */}
+      <ImageCropperModal
+        isOpen={cropperModal.isOpen}
+        imageSrc={cropperModal.imageSrc}
+        initialAspectRatio={cropperModal.initialAspect ?? 3 / 4}
+        onClose={() => setCropperModal({ isOpen: false, imageSrc: '' })}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
