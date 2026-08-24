@@ -56,7 +56,7 @@ export async function POST(req: Request) {
         key: 'new_user_registrations',
         value: JSON.stringify(registrations),
         updated_at: now,
-      });
+      }, { onConflict: 'key' });
     } catch (dbErr) {
       console.error('Error saving new user registration to site_config:', dbErr);
     }

@@ -46,7 +46,7 @@ export async function GET(req: Request) {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // 2.1 Fetch registered users directly from Supabase Auth if Service Role is available
+    // 2.1 Fetch registered users directly from Supabase Auth
     let authUsers: any[] = [];
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
@@ -61,6 +61,23 @@ export async function GET(req: Request) {
         }
       } catch (e) {
         console.warn('Auth admin listUsers notice in GET:', e);
+      }
+    }
+
+    // 2.2 Fallback RPC to fetch all auth users directly from Postgres auth.users
+    if (authUsers.length === 0) {
+      try {
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('get_admin_users');
+        if (!rpcErr && Array.isArray(rpcData)) {
+          authUsers = rpcData.map((u: any) => ({
+            id: u.id,
+            email: u.email,
+            created_at: u.created_at,
+            user_metadata: u.raw_user_meta_data || {},
+          }));
+        }
+      } catch (rpcCatch) {
+        // RPC might not be created yet in Postgres
       }
     }
 
