@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { fetchProductBySlug, fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import ProductDetailClient from './ProductDetailClient';
@@ -6,9 +6,9 @@ import ProductDetailClient from './ProductDetailClient';
 // Allow slugs that were NOT pre-generated at build time (e.g. newly added products)
 export const dynamicParams = true;
 
-// Cache largo en el edge: los cambios del admin purgan vía /api/revalidate,
-// así el TTL solo actúa como red de seguridad (menos egress de Supabase).
-export const revalidate = 86400;
+// Cache corto en el edge: los cambios del admin purgan via /api/revalidate y
+// los cambios directos en BD purgan via /api/revalidate-db (webhook Supabase).
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   const products = await fetchProductsFromSupabase({ slim: true });
