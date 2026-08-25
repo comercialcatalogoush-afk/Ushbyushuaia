@@ -145,6 +145,9 @@ export default function CheckoutPage() {
       department: formData.department,
       payment_method: formData.payment_method,
       total: subtotalCOP,
+      subtotal_before_discount: subtotalCOP + discountCOP,
+      discount: discountCOP,
+      coupon_code: coupon?.code || null,
       items: items.map((i) => ({
         product_id: i.product.id,
         reference: i.product.reference,
@@ -232,6 +235,9 @@ export default function CheckoutPage() {
       `───────────────────────\n` +
       `📦 *DETALLE DEL PEDIDO:*\n${itemLines}\n` +
       `───────────────────────\n` +
+      (completedOrder.discount > 0
+        ? `🏷️ *Descuento${completedOrder.coupon_code ? ` (${completedOrder.coupon_code})` : ''}:* -${formatCOP(completedOrder.discount)}\n`
+        : '') +
       `💰 *TOTAL:* ${formatCOP(completedOrder.total)}\n` +
       `🚚 *Envío:* ${isWholesale ? '✅ GRATIS (12+ unidades)' : '⚠️ Asume el cliente'}\n` +
       `💳 *Tarifa:* ${isWholesale ? 'Mayorista (precio mayorista)' : isEscala8 ? 'Mayorista 8–11 uds (20% de descuento)' : 'Detal (sin descuento mayorista)'}\n` +
@@ -263,6 +269,9 @@ export default function CheckoutPage() {
             <p><span className="font-bold">Destino:</span> {completedOrder.city}{completedOrder.department ? `, ${completedOrder.department}` : ''} — {completedOrder.shipping_address}</p>
             <p><span className="font-bold">Teléfono:</span> {completedOrder.customer_phone}</p>
             <p><span className="font-bold">Método de pago:</span> {paymentLabels[completedOrder.payment_method] || completedOrder.payment_method}</p>
+            {completedOrder.discount > 0 && (
+              <p><span className="font-bold">Descuento{completedOrder.coupon_code ? ` (${completedOrder.coupon_code})` : ''}:</span> -{formatCOP(completedOrder.discount)}</p>
+            )}
             <p><span className="font-bold">Total a pagar:</span> {formatCOP(completedOrder.total)}</p>
             <p className="pt-1 text-ush-pink font-bold border-t border-gray-200">
               {isWholesale ? '🎉 Tarifa Mayorista (precio mayorista 12+ uds) + ENVÍO GRATIS' : isEscala8 ? '✓ Tarifa Mayorista 8–11 uds: 20% de descuento aplicado (el cliente asume el envío).' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}

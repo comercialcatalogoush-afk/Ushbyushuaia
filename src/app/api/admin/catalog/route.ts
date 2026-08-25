@@ -27,7 +27,10 @@ export async function GET(req: Request) {
   try {
     const products = await fetchAllProductsAdmin();
     return NextResponse.json(products, {
-      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300' },
+      // Datos autenticados: NUNCA cacheables en caché compartida del CDN.
+      // Con 'public, s-maxage' el edge servía esta respuesta a cualquier
+      // visitante anónimo durante la ventana de caché (fuga de datos).
+      headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'error' }, { status: 500 });

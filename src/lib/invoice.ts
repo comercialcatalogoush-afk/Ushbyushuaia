@@ -85,7 +85,15 @@ const PAY_LABELS: Record<string, string> = {
 
 function fmtDate(order: any): string {
   const raw = order.order_date || order.created_at;
-  const d = raw ? new Date(raw) : new Date();
+  // "YYYY-MM-DD" se parsea como fecha local para evitar el off-by-one por UTC
+  // (medianoche UTC en es-CO/UTC-5 retrocede al día anterior).
+  let d: Date;
+  if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+    const [yy, mm, dd] = raw.trim().split('-').map(Number);
+    d = new Date(yy, mm - 1, dd);
+  } else {
+    d = raw ? new Date(raw) : new Date();
+  }
   return isNaN(d.getTime())
     ? String(raw || '')
     : d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -256,7 +264,21 @@ export async function generateInvoicePdf(
 
     // ══ TOTALES ══
     const totalUnits = rows.reduce((a, r) => a + r.units, 0);
-    const grandTotal = rows.reduce((a, r) => a + r.total, 0);
+    const itemsTotal = rows.reduce((a, r) => a + r.total, 0);
+    // Descuento a nivel de orden (cupón aplicado en el checkout)
+    const orderDiscount = Math.max(0, Number(order.discount) || 0);
+    const grandTotal = Math.max(0, itemsTotal - orderDiscount);
+
+    if (orderDiscount > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...GRAY);
+      const couponLabel = order.coupon_code ? ` (${String(order.coupon_code)})` : '';
+      doc.text(`Subtotal: ${fmtCOP(itemsTotal)}`, M + W - 4, y + 5, { align: 'right' });
+      doc.text(`Descuento${couponLabel}: -${fmtCOP(orderDiscount)}`, M + W - 4, y + 9.5, { align: 'right' });
+      y += 12;
+    }
+
     doc.setFillColor(...NAVY);
     doc.rect(M + W - 78, y, 78, 11, 'F');
     doc.setFont('helvetica', 'bold');

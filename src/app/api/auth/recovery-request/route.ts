@@ -1,19 +1,67 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-const NOTIFICATION_EMAIL = 'comercial.catalogoush@gmail.com';
+// Orígenes permitidos para el redirectTo del email de recuperación.
+// Usar el header Origin sin validar permite open-redirect / robo del token
+// de reset (un atacante llama a la API con Origin: https://evil.com y el
+// enlace del correo apunta a su dominio).
+const ALLOWED_ORIGINS = new Set([
+  'https://ushbyushuaia-catalogo-mayorista.vercel.app',
+  'http://localhost:3000',
+]);
+const DEFAULT_ORIGIN = 'https://ushbyushuaia-catalogo-mayorista.vercel.app';
+
+function safeOrigin(req: Request): string {
+  const originHeader = req.headers.get('origin') || '';
+  if (!originHeader) return DEFAULT_ORIGIN;
+  try {
+    // Se acepta el Origin solo si está en la allowlist o apunta al mismo host
+    // que atiende la petición (cubre dominios propios/previews de Vercel).
+    const reqHost = new URL(req.url).host;
+    const originHost = new URL(originHeader).host;
+    if (ALLOWED_ORIGINS.has(originHeader) || originHost === reqHost) return originHeader;
+  } catch (_) {}
+  return DEFAULT_ORIGIN;
+}
+
+// Rate limit básico en memoria: máx. 5 solicitudes por hora por IP.
+// Mitiga email-bombing desde el endpoint público.
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const rateMap = new Map<string, number[]>();
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const hits = (rateMap.get(key) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (hits.length >= RATE_LIMIT_MAX) return true;
+  hits.push(now);
+  rateMap.set(key, hits);
+  return false;
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, name = '', phone = '' } = body;
+    let { email, name = '', phone = '' } = body;
 
-    if (!email || !email.includes('@')) {
+    email = typeof email === 'string' ? email.trim() : '';
+    name = String(name || '').slice(0, 120);
+    phone = String(phone || '').slice(0, 40);
+
+    if (!email || !email.includes('@') || email.length > 254) {
       return NextResponse.json({ error: 'Correo electrónico no válido' }, { status: 400 });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const origin = req.headers.get('origin') || 'https://ushuaiajeans.com.co';
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' },
+        { status: 429 }
+      );
+    }
+
+    const normalizedEmail = email.toLowerCase();
+    const origin = safeOrigin(req);
 
     // 1. Trigger Supabase Auth reset password email (100% automated & free)
     const { error: resetErr } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
@@ -74,6 +122,6 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error('Recovery request error:', err);
-    return NextResponse.json({ error: err.message || 'Error del servidor' }, { status: 500 });
+    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
   }
 }

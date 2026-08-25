@@ -470,6 +470,44 @@ export async function saveCategoriesOrder(order: string[]): Promise<{ success: b
 }
 
 export async function getCategoriesOrder(): Promise<string[]> {
+  const DEFAULT = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas', 'Bermuda', 'Nuevo'];
+  let cached: string[] | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const local = localStorage.getItem(CATEGORIES_ORDER_KEY);
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) cached = parsed;
+      }
+    } catch (_) {}
+  }
+  // Revalidación en segundo plano: si el caché local quedó obsoleto (p. ej. el
+  // admin reordenó en otro dispositivo), se sincroniza y avisa a la UI.
+  const sync = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_config')
+        .select('value')
+        .eq('key', 'categories_order')
+        .maybeSingle();
+      if (error || !data?.value) return;
+      const parsed = JSON.parse(data.value);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+      if (typeof window === 'undefined') return;
+      try {
+        const prev = localStorage.getItem(CATEGORIES_ORDER_KEY);
+        if (prev !== JSON.stringify(parsed)) {
+          localStorage.setItem(CATEGORIES_ORDER_KEY, JSON.stringify(parsed));
+          window.dispatchEvent(new Event('ush_products_updated'));
+        }
+      } catch (_) {}
+    } catch (_) {}
+  };
+  if (cached) {
+    sync();
+    return cached;
+  }
+  await sync();
   if (typeof window !== 'undefined') {
     try {
       const local = localStorage.getItem(CATEGORIES_ORDER_KEY);
@@ -479,23 +517,7 @@ export async function getCategoriesOrder(): Promise<string[]> {
       }
     } catch (_) {}
   }
-  try {
-    const { data, error } = await supabase
-      .from('site_config')
-      .select('value')
-      .eq('key', 'categories_order')
-      .maybeSingle();
-    if (!error && data?.value) {
-      const parsed = JSON.parse(data.value);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        if (typeof window !== 'undefined') {
-          try { localStorage.setItem(CATEGORIES_ORDER_KEY, JSON.stringify(parsed)); } catch (_) {}
-        }
-        return parsed;
-      }
-    }
-  } catch (_) {}
-  return ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas', 'Bermuda', 'Nuevo'];
+  return DEFAULT;
 }
 
 // ── ORDEN PERSONALIZADO DE PRODUCTOS (Drag & Drop) ──────────────
@@ -521,6 +543,43 @@ export async function saveCatalogProductsOrder(productIds: string[]): Promise<{ 
 }
 
 export async function getCatalogProductsOrder(): Promise<string[]> {
+  let cached: string[] | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const local = localStorage.getItem(PRODUCTS_ORDER_KEY);
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) cached = parsed;
+      }
+    } catch (_) {}
+  }
+  // Igual que el orden de categorías: el caché responde al instante, pero se
+  // revalida contra la nube para no quedarse pegado a un orden viejo.
+  const sync = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_config')
+        .select('value')
+        .eq('key', 'catalog_products_order')
+        .maybeSingle();
+      if (error || !data?.value) return;
+      const parsed = JSON.parse(data.value);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+      if (typeof window === 'undefined') return;
+      try {
+        const prev = localStorage.getItem(PRODUCTS_ORDER_KEY);
+        if (prev !== JSON.stringify(parsed)) {
+          localStorage.setItem(PRODUCTS_ORDER_KEY, JSON.stringify(parsed));
+          window.dispatchEvent(new Event('ush_products_updated'));
+        }
+      } catch (_) {}
+    } catch (_) {}
+  };
+  if (cached) {
+    sync();
+    return cached;
+  }
+  await sync();
   if (typeof window !== 'undefined') {
     try {
       const local = localStorage.getItem(PRODUCTS_ORDER_KEY);
@@ -530,21 +589,5 @@ export async function getCatalogProductsOrder(): Promise<string[]> {
       }
     } catch (_) {}
   }
-  try {
-    const { data, error } = await supabase
-      .from('site_config')
-      .select('value')
-      .eq('key', 'catalog_products_order')
-      .maybeSingle();
-    if (!error && data?.value) {
-      const parsed = JSON.parse(data.value);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        if (typeof window !== 'undefined') {
-          try { localStorage.setItem(PRODUCTS_ORDER_KEY, JSON.stringify(parsed)); } catch (_) {}
-        }
-        return parsed;
-      }
-    }
-  } catch (_) {}
   return [];
 }

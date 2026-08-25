@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Store, ArrowUpRight, Video } from 'lucide-react';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { usePageContent } from '@/lib/siteContentHooks';
+import { formatVideoUrl } from '@/lib/videoUtils';
 
 export const OutletSection: React.FC = () => {
   const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
@@ -33,6 +34,9 @@ export const OutletSection: React.FC = () => {
   };
 
   const OUTLET_FINAL = { ...OUTLET, whatsapp: `https://wa.me/${whatsapp}` };
+  // Normaliza la URL del CMS (Drive/YouTube/Vimeo/MP4) para reproducirla bien:
+  // antes se metía cruda en <video> y un enlace de Drive/YouTube daba cuadro negro.
+  const outletVideo = formatVideoUrl(OUTLET.videoUrl);
   return (
     <section id="outlet" data-editor-section="outlet-card" className="scroll-mt-20 bg-[#FDF8F4] border-y border-[#e8d9c8] overflow-hidden relative">
       {/* Decorative */}
@@ -59,18 +63,27 @@ export const OutletSection: React.FC = () => {
           {/* ── Tarjeta 1: Video / Media del Outlet ── */}
           <article className="bg-white border border-[#e8d9c8] shadow-[0_20px_50px_-20px_rgba(196,154,108,0.35)] overflow-hidden flex flex-col">
             <div className="relative aspect-video bg-[#1b2333]">
-              {OUTLET.videoUrl ? (
-                <video
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="none"
-                  poster={OUTLET.poster || undefined}
-                >
-                  <source src={OUTLET.videoUrl} type="video/mp4" />
-                </video>
+              {outletVideo.isSupported && outletVideo.src ? (
+                outletVideo.type === 'iframe' ? (
+                  <iframe
+                    src={outletVideo.src}
+                    className="w-full h-full"
+                    allow="autoplay; encrypted-media; fullscreen"
+                    allowFullScreen
+                    title={`${OUTLET.name} — video`}
+                  />
+                ) : (
+                  <video
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="none"
+                    poster={OUTLET.poster || undefined}
+                    src={outletVideo.src}
+                  />
+                )
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-[#1b2333] to-[#2c3547]">
                   <div className="w-16 h-16 rounded-full border border-[#c49a6c]/40 bg-[#c49a6c]/10 flex items-center justify-center mb-4">

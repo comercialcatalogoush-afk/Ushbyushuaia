@@ -30,8 +30,20 @@ export const WholesaleInquiryForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    // Validación de campos obligatorios: la ciudad es un botón custom (no un
+    // input con required), así que antes se podían enviar leads sin municipio.
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) {
+      setError('Por favor completa nombre, correo y teléfono.');
+      return;
+    }
+    if (!formData.department || !formData.city) {
+      setError('Selecciona el departamento y la ciudad / municipio.');
+      return;
+    }
+
+    setLoading(true);
 
     const extraLines = [
       formData.company && `Empresa / Razón Social: ${formData.company}`,
@@ -298,7 +310,7 @@ export const WholesaleInquiryForm: React.FC = () => {
               </label>
               {(() => {
                 const citiesForDep = formData.department
-                  ? COLOMBIA_MUNICIPALITIES[formData.department] || []
+                  ? Array.from(new Set(COLOMBIA_MUNICIPALITIES[formData.department] || []))
                   : [];
                 const filtered = cityQuery.trim()
                   ? citiesForDep.filter((c) => c.toLowerCase().includes(cityQuery.toLowerCase()))

@@ -84,7 +84,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       if (existingIdx > -1) {
         const updated = [...prev];
-        updated[existingIdx].quantity += quantity;
+        updated[existingIdx] = { ...updated[existingIdx], quantity: updated[existingIdx].quantity + quantity };
         return updated;
       }
 
@@ -136,8 +136,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     setItems((prev) => {
+      if (index < 0 || index >= prev.length) return prev;
       const updated = [...prev];
-      updated[index].quantity = quantity;
+      updated[index] = { ...updated[index], quantity };
       return updated;
     });
   };
@@ -196,12 +197,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // del carrito se actualizan con los precios vigentes (sin perder talla/color/cant).
   useEffect(() => {
     if (typeof window === 'undefined') return () => {};
+    let fetchSeq = 0;
     const refreshPrices = () => {
       // Se sirve desde el cache del edge de Vercel (/api/catalog con s-maxage=60),
       // no se consulta Supabase por cada cliente ante cada broadcast.
+      const seq = ++fetchSeq;
       fetch('/api/catalog')
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
         .then((fresh: Product[]) => {
+          if (seq !== fetchSeq) return;
           setItems((prev) => {
             if (prev.length === 0) return prev;
             let changed = false;

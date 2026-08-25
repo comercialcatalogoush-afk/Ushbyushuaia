@@ -15,6 +15,8 @@ export async function GET() {
     const list = (data || []).map((r: any) => ({ id: String(r.id), units: Number(r.units) || 0 }));
     return NextResponse.json(list, { headers: { 'Cache-Control': CACHE_CONTROL } });
   } catch {
-    return NextResponse.json([], { headers: { 'Cache-Control': CACHE_CONTROL } });
+    // Error transitorio NO cacheable: con los headers cacheables un fallo puntual
+    // de BD dejaba el catálogo "sin top sellers" hasta 24 h en el edge.
+    return NextResponse.json([], { headers: { 'Cache-Control': 'no-store' } });
   }
 }

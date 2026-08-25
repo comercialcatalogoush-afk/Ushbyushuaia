@@ -14,16 +14,32 @@ export interface BackupData {
   price_history: any[];
 }
 
+const BACKUP_PAGE_SIZE = 1000;
+const BACKUP_MAX_ROWS = 200000;
+
 async function fetchTable(table: string, orderCol?: string): Promise<any[]> {
   try {
-    let q = supabase.from(table).select('*').limit(5000);
-    if (orderCol) q = q.order(orderCol, { ascending: false });
-    const { data, error } = await q;
-    if (error) {
-      console.warn(`backup: no se pudo leer ${table}`, error.message);
-      return [];
+    // Paginación completa: antes .limit(5000) truncaba silenciosamente el
+    // respaldo y el purgado posterior borraba filas que nunca se exportaron.
+    const all: any[] = [];
+    let from = 0;
+    while (from < BACKUP_MAX_ROWS) {
+      let q = supabase
+        .from(table)
+        .select('*')
+        .range(from, from + BACKUP_PAGE_SIZE - 1);
+      if (orderCol) q = q.order(orderCol, { ascending: false });
+      const { data, error } = await q;
+      if (error) {
+        console.warn(`backup: no se pudo leer ${table}`, error.message);
+        break;
+      }
+      const rows = data || [];
+      all.push(...rows);
+      if (rows.length < BACKUP_PAGE_SIZE) break;
+      from += BACKUP_PAGE_SIZE;
     }
-    return data || [];
+    return all;
   } catch (_) {
     return [];
   }

@@ -299,6 +299,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [productSearch, setProductSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [productDraft, setProductDraft] = useState<Product | null>(null);
+  const [isNewProduct, setIsNewProduct] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [productSaved, setProductSaved] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
@@ -337,6 +338,12 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const redoRef = useRef<() => void>(() => {});
   const flushRef = useRef<() => void>(() => {});
 
+  // Guardas de carga/edición para no publicar datos vacíos ni pisar la nube
+  const contentLoadedRef = useRef(false);
+  const themeLoadedRef = useRef(false);
+  const themeDirtyRef = useRef(false);
+  const loadTokenRef = useRef(0);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const wiredRef = useRef<{ doc: Document; onDbl: (e: Event) => void; onKey: (e: Event) => void } | null>(null);
   const pendingScrollRef = useRef<string | null>(null);
@@ -345,13 +352,20 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const groups = schema ? groupFields(schema.fields) : [];
   const activeGroup = groups.find((g) => g.group === groupId) || groups[0];
 
-  // Carga inicial de contenido
+  // Carga inicial de contenido (con guarda anti-carrera al cambiar de página)
   useEffect(() => {
+    const token = ++loadTokenRef.current;
+    contentLoadedRef.current = false;
     getPageContentClient(pageId).then((data) => {
+      if (token !== loadTokenRef.current) return;
       setValues(data);
+      contentLoadedRef.current = true;
     });
     fetchThemeFromRemote().then((t) => {
-      if (t) setTheme(t);
+      if (t && token === loadTokenRef.current) {
+        setTheme(t);
+        themeLoadedRef.current = true;
+      }
     });
   }, [pageId]);
 
@@ -464,14 +478,17 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     try { localStorage.setItem(PRODUCT_FITS_KEY, JSON.stringify(updated)); } catch (_) {}
   };
 
-  const addRevision = (title: string, desc: string) => {
+  const addRevision = (title: string, desc: string, snapshot?: { values: ContentValues; theme: SiteTheme }) => {
+    // Snapshot explícito: por defecto el estado actual; al modificar un campo se
+    // pasa el estado NUEVO para que "Revertir" restaure lo que la entrada describe.
+    const snap = snapshot || { values, theme };
     const newEntry: RevisionEntry = {
       id: String(Date.now()),
       timestamp: Date.now(),
       title,
       desc,
-      values: { ...values },
-      theme: { ...theme },
+      values: { ...snap.values },
+      theme: { ...snap.theme },
     };
     setRevisions((prev) => [newEntry, ...prev.slice(0, 49)]);
   };
@@ -503,6 +520,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       category: categoriesList[0] || 'Jeans',
     };
     openProduct(p);
+    setIsNewProduct(true);
   };
 
   const handleDeleteProduct = async () => {
@@ -529,6 +547,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     clone.slug = `ref-${num}`;
     clone.name = `${productDraft.name} (copia)`;
     openProduct(clone);
+    setIsNewProduct(true);
   };
 
   const toggleSizeVisible = (size: string) => {
@@ -545,11 +564,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setSelectedId(p.id);
     setProductDraft(JSON.parse(JSON.stringify(p)));
     setProductSaved(false);
+    setIsNewProduct(false);
   };
 
   const closeProduct = () => {
     setSelectedId(null);
     setProductDraft(null);
+    setIsNewProduct(false);
   };
 
   const patchDraft = (patch: Partial<Product>) => {
@@ -559,11 +580,29 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const handleSaveProduct = async () => {
     if (!productDraft) return;
     setSavingProduct(true);
+    const previous = products.find((p) => p.id === productDraft.id);
     const res = await upsertProduct(productDraft);
     setSavingProduct(false);
     if (!res.success) {
       alert('No se pudo guardar el producto: ' + (res.error || 'error'));
       return;
+    }
+    // Auditoría de precios: registra el cambio en price_history cuando aplica
+    if (previous) {
+      const oldW = Number(previous.price) || 0;
+      const newW = Number(productDraft.price) || 0;
+      const oldS = Number(previous.suggested_price) || 0;
+      const newS = Number(productDraft.suggested_price) || 0;
+      if (oldW !== newW || oldS !== newS) {
+        logPriceChange({
+          product_id: productDraft.id,
+          product_name: productDraft.name,
+          old_wholesale_price: oldW,
+          new_wholesale_price: newW,
+          old_suggested_price: oldS,
+          new_suggested_price: newS,
+        }).catch(() => {});
+      }
     }
     setProductSaved(true);
     publishCatalogChange();
@@ -706,19 +745,22 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const handleChange = (key: string, val: string) => {
     setPast((p) => [...p.slice(-49), { values, theme }]);
     setFuture([]);
-    setValues((prev) => ({ ...prev, [key]: val }));
+    const newValues = { ...values, [key]: val };
+    setValues(newValues);
     setDirty(true);
     setSaved(false);
-    addRevision(`Modificado campo "${key}"`, val.slice(0, 40));
+    addRevision(`Modificado campo "${key}"`, val.slice(0, 40), { values: newValues, theme });
   };
 
   const handleThemeChange = (key: keyof SiteTheme, val: string) => {
     setPast((p) => [...p.slice(-49), { values, theme }]);
     setFuture([]);
-    setTheme((prev) => ({ ...prev, [key]: val }));
+    const newTheme = { ...theme, [key]: val };
+    setTheme(newTheme);
+    themeDirtyRef.current = true;
     setDirty(true);
     setSaved(false);
-    addRevision(`Color del tema "${key}"`, val);
+    addRevision(`Color del tema "${key}"`, val, { values, theme: newTheme });
   };
 
   const handleUndo = () => {
@@ -753,6 +795,18 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     window.dispatchEvent(new Event(THEME_EVENT));
     setDraftSaved(true);
     setTimeout(() => setDraftSaved(false), 2500);
+    // Persistencia real en la nube: "Guardar" antes solo escribía el borrador
+    // local y los cambios (p. ej. videos) nunca llegaban al sitio público.
+    if (contentLoadedRef.current && pageId) {
+      savePageContent(pageId, values)
+        .then((r) => { if (!r.success) console.error('savePageContent:', r.error); })
+        .catch(() => {});
+    }
+    if ((themeLoadedRef.current || themeDirtyRef.current) && contentLoadedRef.current) {
+      saveTheme(theme)
+        .then((r) => { if (!r.success) console.error('saveTheme:', r.error); })
+        .catch(() => {});
+    }
   };
   flushRef.current = flushDraft;
 
@@ -786,17 +840,29 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   };
 
   const handlePublish = async () => {
-    setSaving(true);
-    let res: { success: boolean; error?: string };
-    if (mode === 'theme') {
-      res = await saveTheme(theme);
-    } else {
-      res = await savePageContent(pageId, values);
+    // No publicar antes de que el contenido de la página activa haya cargado:
+    // evitaría pisar la nube con valores por defecto.
+    if (!contentLoadedRef.current) {
+      alert('El contenido aún se está cargando. Espera un momento e inténtalo de nuevo.');
+      return;
     }
+    setSaving(true);
+    // Publica SIEMPRE ambos modos: antes, publicar en "Páginas" descartaba
+    // cambios de tema pendientes (y viceversa) al compartir el flag dirty.
+    const [resContent, resTheme] = await Promise.all([
+      savePageContent(pageId, values),
+      (themeLoadedRef.current || themeDirtyRef.current)
+        ? saveTheme(theme)
+        : Promise.resolve({ success: true } as { success: boolean; error?: string }),
+    ]);
     setSaving(false);
+    const res = resContent.success && resTheme.success
+      ? { success: true }
+      : { success: false, error: resContent.error || resTheme.error };
     if (res.success) {
       setSaved(true);
       setDirty(false);
+      themeDirtyRef.current = false;
       publishCatalogChange();
       setNonce((n) => n + 1);
       setTimeout(() => setSaved(false), 4000);
@@ -808,6 +874,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const selectPage = (id: string) => {
     setPageId(id);
     setMode('content');
+    setDirty(false);
+    setSaved(false);
     setProductsMode(false);
     closeProduct();
   };
@@ -869,6 +937,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         target.contentEditable = 'true';
         target.focus();
 
+        // Guarda el texto original en un atributo para poder identificar el
+        // campo correspondiente del schema cuando se termine la edición.
+        // Antes nadie establecía este atributo y la edición inline nunca guardaba.
+        if (!target.hasAttribute('data-original-val')) {
+          target.setAttribute('data-original-val', target.innerText.trim());
+        }
+
         const onBlur = () => {
           target.contentEditable = 'false';
           const newText = target.innerText.trim();
@@ -886,11 +961,21 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         target.addEventListener('blur', onBlur);
       }
 
-      // In-line image click
+      // In-line image click: identifica el campo de imagen correspondiente en
+      // lugar de sobrescribir siempre heroImage.
       if (target.tagName === 'IMG') {
-        const src = (target as HTMLImageElement).src;
+        const src = target.getAttribute('src') || '';
         if (src) {
-          handleOpenCropperForField(src, 'heroImage');
+          const currentSchema = PAGE_SCHEMAS.find((s) => s.id === pageId);
+          let fieldKey: string | null = null;
+          if (currentSchema) {
+            const imgFields = currentSchema.fields.filter((f) => f.type === 'image');
+            const matched = imgFields.find((f) => values[f.key] === src || f.default === src);
+            fieldKey = (matched || imgFields[0])?.key || null;
+          }
+          if (fieldKey) {
+            handleOpenCropperForField(src, fieldKey);
+          }
         }
       }
     };
@@ -1025,7 +1110,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
             <button
               onClick={flushDraft}
-              title="Guardar borrador local (Ctrl+S)"
+              title="Guardar en la nube y en este navegador (Ctrl+S)"
               className="hidden sm:flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded shadow"
             >
               <FileClock size={13} />
@@ -1435,21 +1520,26 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       <GripVertical size={16} className="text-amber-700" />
                       Arrastra y suelta los productos para definir la secuencia exacta en que aparecerán en la tienda.
                     </div>
-                    {filteredProductsList.map((p, idx) => (
+                    {filteredProductsList.map((p) => {
+                    // Usa el índice REAL dentro del array completo de productos:
+                    // con un filtro de búsqueda activo, el índice filtrado
+                    // reordenaría/eliminaría el producto equivocado.
+                    const realIdx = products.indexOf(p);
+                    return (
                       <div
                         key={p.id}
                         draggable
-                        onDragStart={() => handleProductDragStart(idx)}
-                        onDragOver={(e) => handleProductDragOver(e, idx)}
+                        onDragStart={() => handleProductDragStart(realIdx)}
+                        onDragOver={(e) => handleProductDragOver(e, realIdx)}
                         onDragEnd={handleProductDragEnd}
                         className={`flex items-center justify-between p-3 bg-white rounded-xl border border-neutral-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-[#d88193] transition-all ${
-                          draggedProductIdx === idx ? 'opacity-30 border-2 border-dashed border-[#d88193]' : ''
+                          draggedProductIdx === realIdx ? 'opacity-30 border-2 border-dashed border-[#d88193]' : ''
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <GripVertical size={16} className="text-neutral-400 flex-shrink-0" />
                           <span className="w-7 h-7 rounded-full bg-[#1b2333] text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">
-                            #{idx + 1}
+                            #{realIdx + 1}
                           </span>
                           <div className="w-12 h-14 bg-neutral-100 rounded overflow-hidden flex-shrink-0">
                             {p.images?.[0] ? (
@@ -1470,7 +1560,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                           Editar
                         </button>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   /* Standard Grid Mode */
@@ -1680,7 +1771,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       >
                         <Copy size={11} /> Duplicar
                       </button>
-                      {!productDraft.id.startsWith('ref-new') && (
+                      {!isNewProduct && (
                         <button
                           onClick={handleDeleteProduct}
                           className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600"

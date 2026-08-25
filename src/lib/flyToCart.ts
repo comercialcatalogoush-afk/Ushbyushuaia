@@ -19,7 +19,7 @@ export function animateFlyToCart(sourceElement: HTMLElement | null) {
   clone.style.pointerEvents = 'none';
   clone.style.borderRadius = '8px';
   clone.style.boxShadow = '0 10px 25px rgba(216, 129, 147, 0.5)';
-  clone.style.transition = 'all 0.7s cubic-[#0.16, 1, 0.3, 1]';
+  clone.style.transition = 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
   clone.style.opacity = '0.95';
 
   document.body.appendChild(clone);

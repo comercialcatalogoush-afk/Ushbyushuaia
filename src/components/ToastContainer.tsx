@@ -15,7 +15,7 @@ export const ToastContainer: React.FC = () => {
         <div
           key={toast.id}
           className="bg-white border-l-4 border-[#d88193] shadow-2xl rounded-sm p-4 flex items-start gap-3 pointer-events-auto"
-          style={{ animation: 'slideInRight 0.3s0ease-out' }}
+          style={{ animation: 'slideInRight 0.3s ease-out' }}
           role="alert"
           aria-live="polite"
         >

@@ -34,7 +34,8 @@ export async function GET(req: Request) {
     const { data: ordersData, error: ordersErr } = await supabase
       .from('orders')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(500);
 
     if (ordersErr) {
       console.error('Error fetching orders for clients:', ordersErr);
@@ -44,9 +45,12 @@ export async function GET(req: Request) {
     const { data: leadsData } = await supabase
       .from('wholesale_leads')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(500);
 
-    // 2.1 Fetch registered users directly from Supabase Auth
+    // 2.1 Fetch registered users directly from Supabase Auth (paginado:
+    // sin paginación solo llegaba la primera página (~50 usuarios) y los
+    // clientes posteriores no aparecían ni podían recibir contraseña).
     let authUsers: any[] = [];
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
@@ -55,31 +59,18 @@ export async function GET(req: Request) {
         const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
           auth: { autoRefreshToken: false, persistSession: false },
         });
-        const { data: authData } = await adminSupabase.auth.admin.listUsers();
-        if (authData?.users) {
-          authUsers = authData.users;
+        for (let page = 1; page <= 20; page++) {
+          const { data: authData } = await adminSupabase.auth.admin.listUsers({ page, perPage: 200 });
+          if (!authData?.users || authData.users.length === 0) break;
+          authUsers = authUsers.concat(authData.users);
+          if (authData.users.length < 200) break;
         }
       } catch (e) {
         console.warn('Auth admin listUsers notice in GET:', e);
       }
     }
-
-    // 2.2 Fallback RPC to fetch all auth users directly from Postgres auth.users
-    if (authUsers.length === 0) {
-      try {
-        const { data: rpcData, error: rpcErr } = await supabase.rpc('get_admin_users');
-        if (!rpcErr && Array.isArray(rpcData)) {
-          authUsers = rpcData.map((u: any) => ({
-            id: u.id,
-            email: u.email,
-            created_at: u.created_at,
-            user_metadata: u.raw_user_meta_data || {},
-          }));
-        }
-      } catch (rpcCatch) {
-        // RPC might not be created yet in Postgres
-      }
-    }
+    // (Se eliminó el fallback RPC anónimo get_admin_users: si era ejecutable
+    // por cualquiera exponía todos los emails de auth.users con la key pública.)
 
     // 3. Fetch password requests, client overrides and new registrations from site_config
     const { data: configData } = await supabase
@@ -314,8 +305,14 @@ export async function POST(req: Request) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (action === 'send_reset_email') {
-      // Trigger standard Supabase Auth reset password email
-      const origin = req.headers.get('origin') || 'https://ushuaiajeans.com.co';
+      // Trigger standard Supabase Auth reset password email.
+      // Origin validado contra allowlist/mismo host (evita open redirect del enlace).
+      const reqHost = new URL(req.url).host;
+      const originHeader = req.headers.get('origin') || '';
+      let origin = 'https://ushbyushuaia-catalogo-mayorista.vercel.app';
+      try {
+        if (originHeader && new URL(originHeader).host === reqHost) origin = originHeader;
+      } catch (_) {}
       const { error: resetErr } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo: `${origin}/profile`,
       });
@@ -349,17 +346,22 @@ export async function POST(req: Request) {
             auth: { autoRefreshToken: false, persistSession: false },
           });
 
-          // Find user by email
-          const { data: usersData, error: listErr } = await adminSupabase.auth.admin.listUsers();
-          if (!listErr && usersData?.users) {
-            const targetUser = usersData.users.find((u) => u.email?.toLowerCase() === normalizedEmail);
-            if (targetUser) {
-              const { error: updateErr } = await adminSupabase.auth.admin.updateUserById(targetUser.id, {
-                password: password,
-              });
-              if (!updateErr) {
-                updatedViaAdminApi = true;
-              }
+          // Find user by email (paginado hasta encontrarlo; antes solo se
+          // buscaba en la primera página y la contraseña no se actualizaba
+          // para usuarios fuera de ella, respondiendo éxito igualmente)
+          let targetUser: any = null;
+          for (let page = 1; page <= 20 && !targetUser; page++) {
+            const { data: usersData, error: listErr } = await adminSupabase.auth.admin.listUsers({ page, perPage: 200 });
+            if (listErr || !usersData?.users?.length) break;
+            targetUser = usersData.users.find((u) => u.email?.toLowerCase() === normalizedEmail);
+            if (usersData.users.length < 200) break;
+          }
+          if (targetUser) {
+            const { error: updateErr } = await adminSupabase.auth.admin.updateUserById(targetUser.id, {
+              password: password,
+            });
+            if (!updateErr) {
+              updatedViaAdminApi = true;
             }
           }
         } catch (e) {

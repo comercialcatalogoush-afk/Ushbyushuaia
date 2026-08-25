@@ -269,83 +269,34 @@ export async function deleteProductImage(path: string): Promise<{ success: boole
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
   // On the server localStorage is unavailable, so we query Supabase directly
   // to ensure newly-added products (not yet in INITIAL_PRODUCTS) resolve correctly.
+  // Se sanitiza el slug ANTES de interpolarlo: comas/paréntesis permitirían
+  // inyectar condiciones arbitrarias en el filtro .or() de PostgREST.
+  const safeSlug = String(slug || '').trim().replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!safeSlug) return null;
+
   try {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .or(`slug.eq.${slug},id.eq.${slug}`)
+      .or(`slug.eq.${safeSlug},id.eq.${safeSlug}`)
+      // No exponer borradores/productos ocultos por URL directa
+      // (o() con is.null evita excluir filas donde la columna es NULL)
+      .or('hidden.is.null,hidden.eq.false')
+      .or('status.is.null,status.neq.draft')
       .limit(1)
-      .single();
-
-    // Busca directa sin interpolación dentro del filtro (evita inyección PostgREST)
-    if (error) {
-      const safeSlug = slug.replace(/[^a-zA-Z0-9-]/g, '');
-      const fallback = await supabase
-        .from('products')
-        .select('*')
-        .or(`slug.eq.${safeSlug},id.eq.${safeSlug}`)
-        .limit(1)
-        .maybeSingle();
-      if (!fallback.error && fallback.data) {
-        return {
-          id: fallback.data.id,
-          name: fallback.data.name,
-          reference: fallback.data.reference || fallback.data.name.replace(/ref:?/i, '').trim(),
-          slug: fallback.data.slug,
-          suggested_price: fallback.data.suggested_price ? Number(fallback.data.suggested_price) : Number(fallback.data.compare_price || fallback.data.price || 49900),
-          price: Number(fallback.data.price),
-          compare_price: fallback.data.compare_price ? Number(fallback.data.compare_price) : 0,
-          ribbon: fallback.data.ribbon || '',
-          fit: fallback.data.fit || 'Wide Leg',
-          status: fallback.data.status || (fallback.data.hidden ? 'draft' : 'published'),
-          stock_by_size: typeof fallback.data.stock_by_size === 'string' ? JSON.parse(fallback.data.stock_by_size) : (fallback.data.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 }),
-          is_best_seller: fallback.data.is_best_seller === true,
-          description: fallback.data.description || '',
-          full_description: fallback.data.full_description || '',
-          color: fallback.data.color || '',
-          tags: Array.isArray(fallback.data.tags) ? fallback.data.tags : (fallback.data.tags ? JSON.parse(fallback.data.tags) : []),
-          video_url: fallback.data.video_url || '',
-          in_stock: fallback.data.in_stock !== false,
-          hidden: fallback.data.hidden === true || fallback.data.status === 'draft',
-          options: typeof fallback.data.options === 'string' ? JSON.parse(fallback.data.options) : (fallback.data.options || []),
-          images: Array.isArray(fallback.data.images) ? fallback.data.images : (fallback.data.images ? [fallback.data.images] : []),
-          category_id: fallback.data.category_id,
-        };
-      }
-    }
+      .maybeSingle();
 
     if (!error && data) {
-      return {
-        id: data.id,
-        name: data.name,
-        reference: data.reference || data.name.replace(/ref:?/i, '').trim(),
-        slug: data.slug,
-        suggested_price: data.suggested_price ? Number(data.suggested_price) : Number(data.compare_price || data.price || 49900),
-        price: Number(data.price),
-        compare_price: data.compare_price ? Number(data.compare_price) : 0,
-        ribbon: data.ribbon || '',
-        fit: data.fit || 'Wide Leg',
-        status: data.status || (data.hidden ? 'draft' : 'published'),
-        stock_by_size: typeof data.stock_by_size === 'string' ? JSON.parse(data.stock_by_size) : (data.stock_by_size || { '6': 10, '8': 10, '10': 10, '12': 10, '14': 10 }),
-        is_best_seller: data.is_best_seller === true,
-        description: data.description || '',
-        full_description: data.full_description || '',
-        color: data.color || '',
-        tags: Array.isArray(data.tags) ? data.tags : (data.tags ? JSON.parse(data.tags) : []),
-        video_url: data.video_url || '',
-        in_stock: data.in_stock !== false,
-        hidden: data.hidden === true || data.status === 'draft',
-        options: typeof data.options === 'string' ? JSON.parse(data.options) : (data.options || []),
-        images: Array.isArray(data.images) ? data.images : (data.images ? [data.images] : []),
-        category_id: data.category_id,
-      };
+      return mapProductRow(data);
     }
   } catch (_) {
     // Supabase unavailable – fall through to static data
   }
 
-  // Fallback: search in static INITIAL_PRODUCTS list
-  const match = INITIAL_PRODUCTS.find(p => p.slug === slug || p.id === slug);
+  // Fallback: search in static INITIAL_PRODUCTS list (también sin ocultos)
+  const match = INITIAL_PRODUCTS.find(
+    (p) => (p.slug === slug || p.id === slug) && !p.hidden && p.status !== 'draft'
+  );
   return match || null;
 }
 
@@ -403,12 +354,29 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
 }
 
 // Confirma una orden: descuenta stock de cada ítem en products y marca la
-// orden como 'confirmed'. Devuelve true y publica evento de sincronización.
+// orden como 'confirmed'. Es idempotente: solo procesa la orden si sigue en
+// estado 'pending' (reclamo atómico), y lee el stock FRESCO de la BD para cada
+// ítem evitando pisar cambios hechos por otras sesiones (lost updates).
 export async function confirmOrderAndDeductStock(
   order: any,
-  productsRef: Product[]
+  _productsRef?: Product[]
 ): Promise<{ success: boolean; error?: string; changed?: boolean }> {
   try {
+    // 1. Reclamo atómico: solo continúa si la orden aún está 'pending'.
+    //    Si otro confirmación llegó primero (p. ej. tras un timeout), aquí
+    //    termina sin volver a descontar inventario (doble descuento).
+    const claim = await supabase
+      .from('orders')
+      .update({ status: 'confirmed' }, { count: 'exact' })
+      .eq('id', order.id)
+      .eq('status', 'pending');
+    if (claim.error) return { success: false, error: `estado: ${claim.error.message}` };
+    if ((claim.count ?? 0) === 0) {
+      const { data: current } = await supabase.from('orders').select('status').eq('id', order.id).maybeSingle();
+      if (current?.status === 'confirmed') return { success: true, changed: false };
+      return { success: false, error: 'La orden ya no está pendiente; no se modificó el inventario.' };
+    }
+
     const items: Array<{ product_id?: string; reference?: string; size?: string; quantity?: number }> =
       Array.isArray(order.items) ? order.items : [];
     let changed = false;
@@ -419,65 +387,96 @@ export async function confirmOrderAndDeductStock(
       const pid = item.product_id;
       if (qty <= 0 || !size || !pid) continue;
 
-      const current = productsRef.find((p) => p.id === pid) || productsRef.find((p) => p.reference === pid);
-      if (!current) continue;
+      // Lee el stock actual directamente de la BD (no del snapshot local)
+      const { data: row, error: readErr } = await supabase
+        .from('products')
+        .select('stock_by_size')
+        .eq('id', pid)
+        .maybeSingle();
+      if (readErr || !row) continue;
 
-      const stock = { ...(current.stock_by_size || {}) };
+      let stock: Record<string, number>;
+      try {
+        stock = typeof row.stock_by_size === 'string' ? JSON.parse(row.stock_by_size || '{}') : (row.stock_by_size || {});
+      } catch (_) {
+        stock = {};
+      }
       const currentStock = Number(stock[size] ?? 0);
       if (currentStock <= 0) continue;
 
-      const newStock = Math.max(0, currentStock - qty);
-      stock[size] = newStock;
+      stock[size] = Math.max(0, currentStock - qty);
       changed = true;
 
-      const { error } = await supabase.from('products').update({ stock_by_size: stock }).eq('id', current.id);
-      if (error) return { success: false, error: `stock ${current.reference}: ${error.message}` };
+      const { error } = await supabase.from('products').update({ stock_by_size: stock }).eq('id', pid);
+      if (error) return { success: false, error: `stock ${pid}: ${error.message}` };
     }
-
-    const { error: statusErr } = await supabase.from('orders').update({ status: 'confirmed' }).eq('id', order.id);
-    if (statusErr) return { success: false, error: `estado: ${statusErr.message}` };
 
     if (changed) publishCatalogChange();
     return { success: true, changed };
   } catch (err: any) {
     return { success: false, error: err.message };
-  }
+ }
 }
 
 // Cancela una orden (carrito abandonado / cliente no tomó el pedido):
 // si estaba confirmada, restaura el stock descontado; marca la orden como
-// 'canceled' y publica el cambio para que el inventario se refleje en la página.
+// 'canceled' y publica el cambio. Reclamo atómico + stock fresco de la BD.
 export async function cancelOrderAndRestoreStock(
   order: any,
-  productsRef: Product[]
+  _productsRef?: Product[]
 ): Promise<{ success: boolean; error?: string; changed?: boolean }> {
   try {
-    const items: Array<{ product_id?: string; reference?: string; size?: string; quantity?: number }> =
-      Array.isArray(order.items) ? order.items : [];
-    let changed = false;
+    // 1. Lee el estado real de la orden para saber si debe restaurar inventario
+    const { data: currentOrder, error: readErr } = await supabase
+      .from('orders')
+      .select('status')
+      .eq('id', order.id)
+      .maybeSingle();
+    if (readErr) return { success: false, error: `estado: ${readErr.message}` };
+    const wasConfirmed = currentOrder?.status === 'confirmed';
 
-    // Solo restaura stock si la orden estaba confirmada (ya había descontado inventario)
-    if (order.status === 'confirmed') {
+    // 2. Reclamo atómico: solo cancela si sigue 'pending' o 'confirmed'
+    const claim = await supabase
+      .from('orders')
+      .update({ status: 'canceled' }, { count: 'exact' })
+      .eq('id', order.id)
+      .in('status', ['pending', 'confirmed']);
+    if (claim.error) return { success: false, error: `estado: ${claim.error.message}` };
+    if ((claim.count ?? 0) === 0) {
+      return { success: false, error: 'La orden ya fue procesada con otro estado.' };
+    }
+
+    let changed = false;
+    if (wasConfirmed) {
+      const items: Array<{ product_id?: string; reference?: string; size?: string; quantity?: number }> =
+        Array.isArray(order.items) ? order.items : [];
+
       for (const item of items) {
         const qty = Number(item.quantity) || 0;
         const size = String(item.size || '').trim();
         const pid = item.product_id;
         if (qty <= 0 || !size || !pid) continue;
 
-        const current = productsRef.find((p) => p.id === pid) || productsRef.find((p) => p.reference === pid);
-        if (!current) continue;
+        const { data: row, error: rowErr } = await supabase
+          .from('products')
+          .select('stock_by_size')
+          .eq('id', pid)
+          .maybeSingle();
+        if (rowErr || !row) continue;
 
-        const stock = { ...(current.stock_by_size || {}) };
+        let stock: Record<string, number>;
+        try {
+          stock = typeof row.stock_by_size === 'string' ? JSON.parse(row.stock_by_size || '{}') : (row.stock_by_size || {});
+        } catch (_) {
+          stock = {};
+        }
         stock[size] = (Number(stock[size] ?? 0) || 0) + qty;
         changed = true;
 
-        const { error } = await supabase.from('products').update({ stock_by_size: stock }).eq('id', current.id);
-        if (error) return { success: false, error: `stock ${current.reference}: ${error.message}` };
+        const { error } = await supabase.from('products').update({ stock_by_size: stock }).eq('id', pid);
+        if (error) return { success: false, error: `stock ${pid}: ${error.message}` };
       }
     }
-
-    const { error: statusErr } = await supabase.from('orders').update({ status: 'canceled' }).eq('id', order.id);
-    if (statusErr) return { success: false, error: `estado: ${statusErr.message}` };
 
     if (changed) publishCatalogChange();
     return { success: true, changed };

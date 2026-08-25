@@ -55,6 +55,14 @@ export default function ProfilePage() {
       setChecking(false);
 
       if (u && u.email && u.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+        // Notifica el registro UNA sola vez por usuario y navegador: antes se
+        // enviaba en cada evento de sesión (incluido TOKEN_REFRESHED cada hora),
+        // saturando al admin y re-marcando usuarios antiguos como "nuevos".
+        try {
+          const flagKey = `ush_register_notified_${u.id}`;
+          if (localStorage.getItem(flagKey)) return;
+          localStorage.setItem(flagKey, '1');
+        } catch (_) {}
         const fullName = u.user_metadata?.full_name || u.user_metadata?.name || '';
         fetch('/api/auth/register-notify', {
           method: 'POST',

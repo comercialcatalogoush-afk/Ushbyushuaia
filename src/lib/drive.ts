@@ -6,10 +6,14 @@ export function getGoogleDriveImageUrl(fileIdOrUrl: string): string {
 
   // If it's already a full direct URL (e.g., wixstatic, unsplash, lh3), return clean
   if (fileIdOrUrl.startsWith('http://') || fileIdOrUrl.startsWith('https://')) {
-    // If it's a drive.google.com file link, extract file ID
-    const driveMatch = fileIdOrUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || fileIdOrUrl.match(/id=([a-zA-Z0-9_-]+)/);
-    if (driveMatch && driveMatch[1]) {
-      return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+    // Solo reescribe enlaces de dominios de Google Drive: el patrón genérico
+    // `id=...` convertía URLs de otros CDNs en imágenes de Drive rotas.
+    const isDriveHost = /^https?:\/\/(?:drive\.google\.com|docs\.google\.com)\//i.test(fileIdOrUrl);
+    if (isDriveHost) {
+      const driveMatch = fileIdOrUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || fileIdOrUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (driveMatch && driveMatch[1]) {
+        return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+      }
     }
     return fileIdOrUrl;
   }

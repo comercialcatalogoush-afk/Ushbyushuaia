@@ -45,26 +45,32 @@ export function usePageContent(pageId: string): ContentValues {
 }
 
 export function useSiteTheme(): SiteTheme {
-  const [theme, setTheme] = useState<SiteTheme>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('ush_theme_cache');
-        if (cached) return { ...DEFAULT_THEME, ...JSON.parse(cached) };
-      } catch (e) {}
-    }
-    return DEFAULT_THEME;
-  });
+  // Siempre inicia con DEFAULT en servidor Y cliente para evitar hydration
+  // mismatch; el caché local se aplica justo después en el efecto.
+  const [theme, setTheme] = useState<SiteTheme>(DEFAULT_THEME);
 
   useEffect(() => {
     let cancelled = false;
+
+    // Aplica primero el caché local (si existe) para evitar el flash de tema default
+    try {
+      const cached = localStorage.getItem('ush_theme_cache');
+      if (cached) {
+        const merged = { ...DEFAULT_THEME, ...JSON.parse(cached) };
+        setTheme(merged);
+        applyTheme(merged);
+      }
+    } catch (_) {}
+
     const load = async () => {
       const t = await fetchThemeFromRemote();
-      if (!cancelled && t) {
-        setTheme(t);
-        applyTheme(t);
-      } else if (!cancelled) {
-        applyTheme(DEFAULT_THEME);
+      if (cancelled || !t) {
+        // Si falla la red NO se pisa el tema ya aplicado (caché o default):
+        // antes se forzaba DEFAULT y la UI quedaba desincronizada del hook.
+        return;
       }
+      setTheme(t);
+      applyTheme(t);
     };
     load();
 

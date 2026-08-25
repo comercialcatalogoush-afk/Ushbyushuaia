@@ -139,8 +139,9 @@ export default function RastreoPage() {
       }
     } catch (_) {
       if (!isAutoRefresh) setError('Error de conexión con la transportadora. Verifica tu conexión e inténtalo de nuevo.');
+    } finally {
+      if (isAutoRefresh) setRefreshing(false); else setLoading(false);
     }
-    if (isAutoRefresh) setRefreshing(false); else setLoading(false);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -6,19 +6,45 @@ import { createClient } from '@supabase/supabase-js';
 // Guarda el registro en site_config y emite un broadcast al canal ush-catalog-sync.
 export const dynamic = 'force-dynamic';
 
+// Rate limit básico en memoria por IP (mitiga spam/email-bombing)
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const rateMap = new Map<string, number[]>();
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const hits = (rateMap.get(key) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (hits.length >= RATE_LIMIT_MAX) return true;
+  hits.push(now);
+  rateMap.set(key, hits);
+  return false;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, name = '' } = body;
+    let { email, name = '' } = body;
 
-    if (!email || !email.includes('@')) {
+    email = typeof email === 'string' ? email.trim() : '';
+    name = String(name || '').slice(0, 120);
+
+    if (!email || !email.includes('@') || email.length > 254) {
       return NextResponse.json({ error: 'Correo electrónico no válido' }, { status: 400 });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' },
+        { status: 429 }
+      );
+    }
+
+    const normalizedEmail = email.toLowerCase();
     const now = new Date().toISOString();
 
     // 1. Guardar en site_config para que el admin lo vea si recarga
+    let isNewRegistration = false;
     try {
       const { data: configRow } = await supabase
         .from('site_config')
@@ -31,38 +57,45 @@ export async function POST(req: Request) {
         try { registrations = JSON.parse(configRow.value); } catch (_) {}
       }
 
-      // Evitar duplicados: si ya está, actualiza la fecha
+      // Evitar duplicados: si ya existe se conserva su entrada original.
+      // Antes se sobrescribía con status:'new' y fecha actual en CADA llamada,
+      // re-marcando usuarios antiguos como "nuevos" en el panel del admin.
       const existingIdx = registrations.findIndex(
         (r) => (r.email || '').toLowerCase() === normalizedEmail
       );
 
-      const entry = {
-        email: normalizedEmail,
-        name: name || 'Cliente Nuevo',
-        registered_at: now,
-        status: 'new',
-      };
+      if (existingIdx < 0) {
+        isNewRegistration = true;
+        registrations.unshift({
+          email: normalizedEmail,
+          name: name || 'Cliente Nuevo',
+          registered_at: now,
+          status: 'new',
+        });
+        // Rolling de 100 registros
+        registrations = registrations.slice(0, 100);
 
-      if (existingIdx >= 0) {
-        registrations[existingIdx] = entry;
-      } else {
-        registrations.unshift(entry);
+        await supabase.from('site_config').upsert({
+          key: 'new_user_registrations',
+          value: JSON.stringify(registrations),
+          updated_at: now,
+        }, { onConflict: 'key' });
       }
-
-      // Rolling de 100 registros
-      registrations = registrations.slice(0, 100);
-
-      await supabase.from('site_config').upsert({
-        key: 'new_user_registrations',
-        value: JSON.stringify(registrations),
-        updated_at: now,
-      }, { onConflict: 'key' });
     } catch (dbErr) {
       console.error('Error saving new user registration to site_config:', dbErr);
     }
 
-    // 2. Emitir broadcast desde el servidor via Supabase Realtime
-    // Usamos el cliente anon con broadcast (no requiere service role para broadcast)
+    // 2. Emitir broadcast SOLO para registros genuinamente nuevos.
+    // Antes se emitía en cada evento de sesión (TOKEN_REFRESHED cada hora,
+    // recargas de /profile…) y el admin recibía notificaciones infinitas.
+    if (!isNewRegistration) {
+      return NextResponse.json({
+        success: true,
+        message: `Registro ya conocido para ${normalizedEmail}`,
+        duplicate: true,
+      });
+    }
+
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_kOqjv3pdiOQoIp0AHKXWeg_H61J-N2g';
@@ -98,6 +131,6 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error('register-notify error:', err);
-    return NextResponse.json({ error: err.message || 'Error del servidor' }, { status: 500 });
+    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
   }
 }
