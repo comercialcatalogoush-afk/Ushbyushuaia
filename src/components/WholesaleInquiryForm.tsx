@@ -215,7 +215,7 @@ export const WholesaleInquiryForm: React.FC = () => {
                   className="border border-gray-300 border-r-0 bg-white px-2 text-xs font-bold text-neutral-800 focus:outline-none focus:border-ush-pink flex items-center gap-1"
                   title="Código de país"
                 >
-                  <span className="text-base leading-none">{PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.flag}</span>
+                  <img src={PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.flag} alt="" className="w-5 h-auto rounded-sm" />
                   <span>{phoneCountry}</span>
                   <ChevronDown size={12} className="text-neutral-400" />
                 </button>
@@ -241,7 +241,7 @@ export const WholesaleInquiryForm: React.FC = () => {
                           onClick={() => { setPhoneCountry(c.code); setPhoneCountryOpen(false); }}
                           className={`w-full text-left px-3 py-2 text-xs hover:bg-ush-pinkLight flex items-center gap-2 ${phoneCountry === c.code ? 'font-bold text-ush-pink bg-ush-pinkLight' : 'text-neutral-700'}`}
                         >
-                          <span className="text-base leading-none">{c.flag}</span>
+                                <img src={c.flag} alt="" className="w-5 h-auto rounded-sm" />
                           <span className="font-bold">{c.code}</span>
                           <span className="text-neutral-500">{c.country}</span>
                         </button>
@@ -260,7 +260,7 @@ export const WholesaleInquiryForm: React.FC = () => {
                 />
               </div>
               <p className="text-[10px] text-neutral-400 mt-1">
-                {PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.flag} {PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.country} — se enviará como {phoneCountry} {formData.phone || 'tu número'}
+                {PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.country} — se enviará como {phoneCountry} {formData.phone || 'tu número'}
               </p>
             </div>
           </div>
