@@ -38,10 +38,10 @@ export const Benefits: React.FC = () => {
     <section data-editor-section="home-benefits" className="py-16 bg-neutral-50 border-b border-gray-100 animate-fadeInUp">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink mb-2">
+          <h2 data-field-key="benefitsEyebrow" className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink mb-2">
             {c.benefitsEyebrow || 'Beneficios Mayoristas'}
           </h2>
-          <p className="text-3xl font-extrabold text-neutral-900 tracking-tight">
+          <p data-field-key="benefitsSub" className="text-3xl font-extrabold text-neutral-900 tracking-tight">
             {c.benefitsSub || 'Ventajas competitivas para impulsar tu negocio'}
           </p>
           <div className="w-12 h-1 bg-ush-pink mx-auto mt-4 rounded-full" />
@@ -65,11 +65,11 @@ export const Benefits: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-neutral-900 mb-2">
+                  <h3 data-field-key={`benefitsCard${index + 1}Title`} className="text-lg font-bold text-neutral-900 mb-2">
                     {benefit.title}
                   </h3>
 
-                  <p className="text-sm text-neutral-600 font-light leading-relaxed">
+                  <p data-field-key={`benefitsCard${index + 1}Text`} className="text-sm text-neutral-600 font-light leading-relaxed">
                     {benefit.description}
                   </p>
                 </div>

@@ -30,7 +30,7 @@ export const Footer: React.FC = () => {
           {/* Brand Col - Official Logo */}
           <div data-editor-section="footer-brand" className="space-y-3">
             <Logo variant="light" size="md" />
-            <p className="text-xs text-white/80 leading-relaxed font-light">
+            <p data-field-key="footerDescription" className="text-xs text-white/80 leading-relaxed font-light">
               {c.footerDescription || 'Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.'}
             </p>
             {/* Social Icons */}
@@ -119,19 +119,19 @@ export const Footer: React.FC = () => {
 
             {/* Business hours */}
             <div data-editor-section="footer-hours" className="bg-white/10 border border-white/20 p-3 text-xs">
-              <p className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 {c.footerHoursTitle || 'Horario de Atención'}</p>
-              <p className="text-white/90 font-light">Lun – Vie: <span className="font-bold">{c.footerHoursWeek || '8:00 AM – 5:30 PM'}</span></p>
-              <p className="text-white/60 text-[10px] mt-1">{c.footerHoursNote || 'Sábados, domingos y festivos no hay atención.'}</p>
+              <p data-field-key="footerHoursTitle" className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 {c.footerHoursTitle || 'Horario de Atención'}</p>
+              <p className="text-white/90 font-light">Lun – Vie: <span data-field-key="footerHoursWeek" className="font-bold">{c.footerHoursWeek || '8:00 AM – 5:30 PM'}</span></p>
+              <p data-field-key="footerHoursNote" className="text-white/60 text-[10px] mt-1">{c.footerHoursNote || 'Sábados, domingos y festivos no hay atención.'}</p>
             </div>
           </div>
 
           {/* Wholesale Notice */}
           <div data-editor-section="footer-notice" className="bg-white/10 p-6 border border-white/20 backdrop-blur-sm flex flex-col justify-between">
             <div>
-              <h5 className="text-xs font-bold uppercase tracking-wider text-white mb-2">
+              <h5 data-field-key="footerNoticeTitle" className="text-xs font-bold uppercase tracking-wider text-white mb-2">
                 {c.footerNoticeTitle || 'Atención a Mayoristas'}
               </h5>
-              <p className="text-[11px] text-white/80 leading-normal font-light mb-3">
+              <p data-field-key="footerNoticeText" className="text-[11px] text-white/80 leading-normal font-light mb-3">
                 {c.footerNoticeText || 'Escala de precios especiales aplicable a partir de 12 unidades combinadas por pedido. Envío gratis incluido.'}
               </p>
               <ul className="space-y-1.5 text-[11px] text-white/80 font-light">
@@ -144,7 +144,7 @@ export const Footer: React.FC = () => {
               href="/contacto"
               className="mt-5 bg-white text-[#c06579] hover:bg-white/90 text-[10px] font-black uppercase tracking-widest py-2.5 px-4 text-center transition-colors"
             >
-              {c.footerCtaText || 'Pedir Asesoría'}
+              <span data-field-key="footerCtaText">{c.footerCtaText || 'Pedir Asesoría'}</span>
             </Link>
           </div>
         </div>

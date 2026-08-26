@@ -46,11 +46,11 @@ export const OutletSection: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 relative">
         {/* Section Header — estilo Talitha */}
         <div data-editor-section="outlet-header" className="text-center mb-10">
-          <span className="text-[11px] font-sans-ui font-semibold uppercase tracking-[0.35em] text-[#c49a6c]">
+          <span data-field-key="outletEyebrow" className="text-[11px] font-sans-ui font-semibold uppercase tracking-[0.35em] text-[#c49a6c]">
             {OUTLET.eyebrow}
           </span>
           <h2 className="font-serif-display text-4xl sm:text-5xl font-normal text-[#1b2333] tracking-tight mt-2">
-            {OUTLET.title} <em className="text-[#c49a6c]">{OUTLET.em}</em>
+            <span data-field-key="outletTitle">{OUTLET.title}</span> <em className="text-[#c49a6c]"><span data-field-key="outletEm">{OUTLET.em}</span></em>
           </h2>
           <div className="flex items-center justify-center gap-3 mt-4">
             <span className="h-px w-16 bg-[#c49a6c]/40" />
@@ -98,19 +98,19 @@ export const OutletSection: React.FC = () => {
               <div className="absolute inset-0 bg-black/10" />
             </div>
             <div className="p-6 flex flex-col flex-1">
-              <h3 className="font-serif-display text-2xl text-[#1b2333]">{OUTLET.name}</h3>
-              <p className="font-sans-ui text-[11px] font-bold uppercase tracking-widest text-[#c49a6c] mt-1">
+              <h3 data-field-key="outletName" className="font-serif-display text-2xl text-[#1b2333]">{OUTLET.name}</h3>
+              <p data-field-key="outletTag" className="font-sans-ui text-[11px] font-bold uppercase tracking-widest text-[#c49a6c] mt-1">
                 {OUTLET.tag}
               </p>
 
               <div className="mt-5 space-y-3 font-sans-ui text-sm text-neutral-700">
                 <div className="flex items-start gap-3">
                   <MapPin size={18} className="text-[#c49a6c] flex-shrink-0 mt-0.5" />
-                  <span>{OUTLET.address}</span>
+                  <span data-field-key="outletAddress">{OUTLET.address}</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <Clock size={18} className="text-[#c49a6c] flex-shrink-0 mt-0.5" />
-                  <span>{OUTLET.schedule}</span>
+                  <span data-field-key="outletSchedule">{OUTLET.schedule}</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <Store size={18} className="text-[#c49a6c] flex-shrink-0 mt-0.5" />
@@ -125,7 +125,7 @@ export const OutletSection: React.FC = () => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-[#1b2333] text-white font-sans-ui text-[11px] font-bold uppercase tracking-widest px-5 py-3 hover:bg-[#c49a6c] transition-colors"
                 >
-                  {OUTLET.buttonMap} <ArrowUpRight size={14} />
+                  <span data-field-key="outletButtonMap">{OUTLET.buttonMap}</span> <ArrowUpRight size={14} />
                 </a>
                 <a
                   href={OUTLET_FINAL.whatsapp}
@@ -133,7 +133,7 @@ export const OutletSection: React.FC = () => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-transparent border border-[#1b2333] text-[#1b2333] font-sans-ui text-[11px] font-bold uppercase tracking-widest px-5 py-3 hover:border-[#c49a6c] hover:text-[#c49a6c] transition-colors"
                 >
-                  {OUTLET.buttonVisit}
+                  <span data-field-key="outletButtonVisit">{OUTLET.buttonVisit}</span>
                 </a>
               </div>
             </div>
@@ -152,14 +152,14 @@ export const OutletSection: React.FC = () => {
               <div data-editor-section="outlet-hours" className="mt-6 bg-[#FDF8F4] border border-[#e8d9c8] p-6">
                 <div className="flex items-center justify-between font-sans-ui">
                   <span className="text-sm font-semibold text-neutral-800 uppercase tracking-wider">Apertura</span>
-                  <span className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.open}</span>
+                  <span data-field-key="outletOpen" className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.open}</span>
                 </div>
                 <div className="my-4 border-t border-dashed border-[#c49a6c]/40" />
                 <div className="flex items-center justify-between font-sans-ui">
                   <span className="text-sm font-semibold text-neutral-800 uppercase tracking-wider">Cierre</span>
-                  <span className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.close}</span>
+                  <span data-field-key="outletClose" className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.close}</span>
                 </div>
-                <p className="font-sans-ui text-[11px] text-neutral-500 mt-4">
+                <p data-field-key="outletScheduleNote" className="font-sans-ui text-[11px] text-neutral-500 mt-4">
                   {OUTLET.scheduleNote}
                 </p>
               </div>

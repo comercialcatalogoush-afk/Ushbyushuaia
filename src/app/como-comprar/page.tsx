@@ -42,13 +42,13 @@ export default async function ComoComprarPage() {
       {/* Header Banner */}
       <div data-editor-section="cc-header" className="bg-neutral-50 border-b border-gray-200 text-neutral-900 py-16 px-4">
         <div className="max-w-4xl mx-auto text-center space-y-4">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink">
+          <span data-field-key="ccEyebrow" className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink">
             {c.ccEyebrow}
           </span>
-          <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-neutral-900">
+          <h1 data-field-key="ccTitle" className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-neutral-900">
             {c.ccTitle}
           </h1>
-          <p className="text-sm text-neutral-600 max-w-2xl mx-auto font-light leading-relaxed">
+          <p data-field-key="ccIntro" className="text-sm text-neutral-600 max-w-2xl mx-auto font-light leading-relaxed">
             {c.ccIntro}
           </p>
         </div>
@@ -60,10 +60,10 @@ export default async function ComoComprarPage() {
       {/* Step by Step Process */}
       <div data-editor-section="cc-process" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-2xl font-bold uppercase tracking-tight text-neutral-900">
+          <h2 data-field-key="ccProcessTitle" className="text-2xl font-bold uppercase tracking-tight text-neutral-900">
             {c.ccProcessTitle}
           </h2>
-          <p className="text-xs text-neutral-500 mt-1 uppercase tracking-wider">
+          <p data-field-key="ccProcessSub" className="text-xs text-neutral-500 mt-1 uppercase tracking-wider">
             {c.ccProcessSub}
           </p>
         </div>
@@ -74,10 +74,10 @@ export default async function ComoComprarPage() {
               <span className="text-4xl font-black text-ush-pink/30 absolute top-4 right-4">
                 {step.num}
               </span>
-              <h3 className="text-base font-bold text-neutral-900 mb-2 pr-8 uppercase">
+              <h3 data-field-key={`ccStep${idx + 1}Title`} className="text-base font-bold text-neutral-900 mb-2 pr-8 uppercase">
                 {step.title}
               </h3>
-              <p className="text-xs text-neutral-600 font-light leading-relaxed">
+              <p data-field-key={`ccStep${idx + 1}Text`} className="text-xs text-neutral-600 font-light leading-relaxed">
                 {step.desc}
               </p>
             </div>
@@ -89,7 +89,7 @@ export default async function ComoComprarPage() {
             href={c.ccCtaLink}
             className="inline-flex items-center gap-2 bg-[#1b2333] hover:bg-ush-pink text-white font-bold px-8 py-4 text-xs uppercase tracking-widest transition-colors shadow-md"
           >
-            <span>{c.ccCtaText}</span>
+            <span data-field-key="ccCtaText">{c.ccCtaText}</span>
             <ArrowRight size={16} />
           </Link>
         </div>

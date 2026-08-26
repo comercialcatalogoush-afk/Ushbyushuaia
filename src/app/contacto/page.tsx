@@ -24,13 +24,13 @@ export default function ContactoPage() {
         
         {/* Header */}
         <div data-editor-section="ct-header" className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-neutral-500 block mb-1">
+          <span data-field-key="ctEyebrow" className="text-xs font-bold uppercase tracking-[0.25em] text-neutral-500 block mb-1">
             {c.ctEyebrow}
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-900 uppercase tracking-tight">
+          <h1 data-field-key="ctTitle" className="text-3xl sm:text-4xl font-extrabold text-neutral-900 uppercase tracking-tight">
             {c.ctTitle}
           </h1>
-          <p className="text-sm text-neutral-600 mt-2 font-light">
+          <p data-field-key="ctIntro" className="text-sm text-neutral-600 mt-2 font-light">
             {c.ctIntro}
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function ContactoPage() {
           {/* Contact Details Column */}
           <div data-editor-section="ct-info" className="space-y-6 lg:col-span-1">
             <div className="bg-white p-6 border border-gray-200 shadow-sm space-y-4">
-              <h3 className="text-base font-bold uppercase tracking-wider text-neutral-900 border-b border-gray-100 pb-3">
+              <h3 data-field-key="ctInfoTitle" className="text-base font-bold uppercase tracking-wider text-neutral-900 border-b border-gray-100 pb-3">
                 {c.ctInfoTitle}
               </h3>
 
@@ -76,9 +76,9 @@ export default function ContactoPage() {
             <div data-editor-section="ct-whatsapp" className="bg-emerald-900 text-white p-6 shadow-md space-y-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="text-emerald-400" size={20} />
-                <h4 className="text-sm font-bold uppercase tracking-wider">{c.ctWhatsappTitle}</h4>
+                <h4 data-field-key="ctWhatsappTitle" className="text-sm font-bold uppercase tracking-wider">{c.ctWhatsappTitle}</h4>
               </div>
-              <p className="text-xs text-emerald-100 font-light leading-relaxed">
+              <p data-field-key="ctWhatsappText" className="text-xs text-emerald-100 font-light leading-relaxed">
                 {c.ctWhatsappText}
               </p>
               <a

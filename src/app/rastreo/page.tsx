@@ -213,16 +213,16 @@ export default function RastreoPage() {
             <Box size={28} className="text-ush-pink" />
           </div>
           <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-            {c.trTitle} <span className="text-ush-pink">{c.trTitleEm}</span>
+            <span data-field-key="trTitle">{c.trTitle}</span> <span className="text-ush-pink"><span data-field-key="trTitleEm">{c.trTitleEm}</span></span>
           </h1>
-          <p className="text-sm text-ush-pinkDark font-medium mt-2 max-w-lg mx-auto">
+          <p data-field-key="trIntro" className="text-sm text-ush-pinkDark font-medium mt-2 max-w-lg mx-auto">
             {c.trIntro}
           </p>
         </div>
 
         {/* Search Box de marca */}
         <form data-editor-section="tr-form" onSubmit={handleSubmit} className="bg-white p-6 border-t-4 border-[#d88193] shadow-lg">
-          <label className="block text-xs font-black uppercase tracking-wider text-ush-navy mb-2">
+          <label data-field-key="trLabel" className="block text-xs font-black uppercase tracking-wider text-ush-navy mb-2">
             {c.trLabel} *
           </label>
           <div className="flex flex-col sm:flex-row gap-3">

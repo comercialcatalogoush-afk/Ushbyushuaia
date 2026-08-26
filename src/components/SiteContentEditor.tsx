@@ -919,10 +919,14 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       style.textContent = `
         [data-editor-section] { cursor: pointer; transition: outline 0.2s ease; }
         [data-editor-section]:hover { outline: 2px dashed #d88193; outline-offset: 2px; }
+        [data-field-key] { cursor: text !important; }
+        [data-field-key]:hover { outline: 1px dashed #10b981 !important; outline-offset: 1px !important; }
         [contenteditable="true"] { outline: 2px solid #10b981 !important; outline-offset: 3px !important; background: rgba(255,255,255,0.85) !important; color: #1b2333 !important; border-radius: 4px; padding: 2px 4px; }
       `;
       doc.head.appendChild(style);
     }
+
+    const EDITABLE_TAGS = ['H1','H2','H3','H4','H5','H6','P','SPAN','A','BUTTON','LI','DIV','STRONG','EM','B','I','SMALL','LABEL','TD','TH','FIGCAPTION','CITE','Q'];
 
     const onClickOrDbl = (e: Event) => {
       const target = e.target as HTMLElement;
@@ -932,52 +936,42 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       const secId = sectionEl.getAttribute('data-editor-section') || '';
       selectSection(secId);
 
-      // In-line text editing
-      if (inlineEditEnabled && ['H1', 'H2', 'H3', 'P', 'SPAN', 'BUTTON', 'A'].includes(target.tagName)) {
-        target.contentEditable = 'true';
-        target.focus();
+      if (!inlineEditEnabled) return;
+      if (!EDITABLE_TAGS.includes(target.tagName)) return;
+      if (target.contentEditable === 'true') return;
 
-        // Guarda el texto original en un atributo para poder identificar el
-        // campo correspondiente del schema cuando se termine la edición.
-        // Antes nadie establecía este atributo y la edición inline nunca guardaba.
-        if (!target.hasAttribute('data-original-val')) {
-          target.setAttribute('data-original-val', target.innerText.trim());
+      let fieldKey = target.getAttribute('data-field-key')
+        || (target.closest('[data-field-key]') as HTMLElement | null)?.getAttribute('data-field-key');
+
+      if (!fieldKey) return;
+
+      const origText = target.innerText.trim();
+      target.setAttribute('data-original-val', origText);
+      target.setAttribute('data-field-key-resolved', fieldKey);
+      target.contentEditable = 'true';
+      target.focus();
+
+      const selectAll = () => {
+        const range = doc.createRange();
+        range.selectNodeContents(target);
+        const sel = doc.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+        target.removeEventListener('focus', selectAll);
+      };
+      target.addEventListener('focus', selectAll);
+
+      const onBlur = () => {
+        target.contentEditable = 'false';
+        const newText = target.innerText.trim();
+        const resolvedKey = target.getAttribute('data-field-key-resolved');
+        target.removeAttribute('data-field-key-resolved');
+        if (resolvedKey && newText !== origText) {
+          handleChange(resolvedKey, newText);
         }
-
-        const onBlur = () => {
-          target.contentEditable = 'false';
-          const newText = target.innerText.trim();
-          const currentSchema = PAGE_SCHEMAS.find((s) => s.id === pageId);
-          if (currentSchema) {
-            const matchedField = currentSchema.fields.find(
-              (f) => values[f.key] === target.getAttribute('data-original-val') || f.default === target.getAttribute('data-original-val')
-            );
-            if (matchedField) {
-              handleChange(matchedField.key, newText);
-            }
-          }
-          target.removeEventListener('blur', onBlur);
-        };
-        target.addEventListener('blur', onBlur);
-      }
-
-      // In-line image click: identifica el campo de imagen correspondiente en
-      // lugar de sobrescribir siempre heroImage.
-      if (target.tagName === 'IMG') {
-        const src = target.getAttribute('src') || '';
-        if (src) {
-          const currentSchema = PAGE_SCHEMAS.find((s) => s.id === pageId);
-          let fieldKey: string | null = null;
-          if (currentSchema) {
-            const imgFields = currentSchema.fields.filter((f) => f.type === 'image');
-            const matched = imgFields.find((f) => values[f.key] === src || f.default === src);
-            fieldKey = (matched || imgFields[0])?.key || null;
-          }
-          if (fieldKey) {
-            handleOpenCropperForField(src, fieldKey);
-          }
-        }
-      }
+        target.removeEventListener('blur', onBlur);
+      };
+      target.addEventListener('blur', onBlur);
     };
 
     doc.addEventListener('click', onClickOrDbl, true);

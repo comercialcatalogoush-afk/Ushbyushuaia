@@ -148,13 +148,13 @@ export default async function PoliticasPage() {
           <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-900 font-bold uppercase tracking-wider mb-4 transition-colors">
             <ArrowLeft size={14} /> Volver al Inicio
           </Link>
-          <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193] mb-1.5">
+          <span data-field-key="plEyebrow" className="block text-[10px] font-bold uppercase tracking-[0.3em] text-[#d88193] mb-1.5">
             {c.plEyebrow}
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900">
+          <h1 data-field-key="plTitle" className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-neutral-900">
             {c.plTitle}
           </h1>
-          <p className="mt-2.5 text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto font-light leading-relaxed">
+          <p data-field-key="plIntro" className="mt-2.5 text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto font-light leading-relaxed">
             {c.plIntro}
           </p>
         </div>

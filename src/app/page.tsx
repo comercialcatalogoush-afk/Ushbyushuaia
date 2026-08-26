@@ -40,12 +40,12 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {trustBar.map(({ icon: Icon, label, sub }, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 animate-fadeInUp" style={{ animationDelay: `${i * 0.1}s` }}>
+              <div key={i} className="flex flex-col items-center gap-2 animate-fadeInUp" style={{ animationDelay: `${i * 100}ms` }}>
                 <div className="w-10 h-10 rounded-full bg-rose-50 text-ush-pink flex items-center justify-center">
                   <Icon size={20} />
                 </div>
-                <p className="text-xs font-black uppercase tracking-wide text-neutral-900">{label}</p>
-                <p className="text-[10px] text-neutral-500 font-light">{sub}</p>
+                <p data-field-key={`trust${i + 1}Label`} className="text-xs font-black uppercase tracking-wide text-neutral-900">{label}</p>
+                <p data-field-key={`trust${i + 1}Sub`} className="text-[10px] text-neutral-500 font-light">{sub}</p>
               </div>
             ))}
           </div>
@@ -55,14 +55,14 @@ export default async function HomePage() {
       {/* Policies CTA Banner */}
       <section data-editor-section="home-policies" className="reveal bg-ush-pinkLight border-y border-rose-100 py-10">
         <div className="max-w-4xl mx-auto px-4 text-center space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-ush-pink">{c.policiesEyebrow}</p>
-          <h3 className="text-xl font-black uppercase text-ush-navy">{c.policiesTitle}</h3>
-          <p className="text-xs text-neutral-600 font-light max-w-lg mx-auto leading-relaxed">
+          <p data-field-key="policiesEyebrow" className="text-[10px] font-bold uppercase tracking-[0.3em] text-ush-pink">{c.policiesEyebrow}</p>
+          <h3 data-field-key="policiesTitle" className="text-xl font-black uppercase text-ush-navy">{c.policiesTitle}</h3>
+          <p data-field-key="policiesText" className="text-xs text-neutral-600 font-light max-w-lg mx-auto leading-relaxed">
             {c.policiesText}
           </p>
           <Link href={c.policiesButtonLink}
             className="inline-flex items-center gap-2 bg-ush-navy text-white text-xs font-bold uppercase tracking-widest px-6 py-3 hover:bg-ush-pink transition-colors mt-2">
-            {c.policiesButtonText}
+            <span data-field-key="policiesButtonText">{c.policiesButtonText}</span>
           </Link>
         </div>
       </section>
@@ -73,13 +73,13 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
             <div className="space-y-6 animate-fadeInLeft">
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink">
+              <span data-field-key="distEyebrow" className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink">
                 {c.distEyebrow}
               </span>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase leading-tight text-neutral-900">
+              <h2 data-field-key="distTitle" className="text-3xl sm:text-4xl font-black tracking-tight uppercase leading-tight text-neutral-900">
                 {c.distTitle}
               </h2>
-              <p className="text-sm text-neutral-600 font-light leading-relaxed">
+              <p data-field-key="distText" className="text-sm text-neutral-600 font-light leading-relaxed">
                 {c.distText}
               </p>
 
@@ -87,15 +87,15 @@ export default async function HomePage() {
                 <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 shadow-sm">
                   <Truck size={22} className="text-ush-pink flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="text-xs font-bold uppercase text-neutral-900">{c.distFeat1Title}</h3>
-                    <p className="text-[11px] text-neutral-500 font-light">{c.distFeat1Text}</p>
+                    <h3 data-field-key="distFeat1Title" className="text-xs font-bold uppercase text-neutral-900">{c.distFeat1Title}</h3>
+                    <p data-field-key="distFeat1Text" className="text-[11px] text-neutral-500 font-light">{c.distFeat1Text}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-white border border-gray-200 shadow-sm">
                   <Award size={22} className="text-ush-pink flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="text-xs font-bold uppercase text-neutral-900">{c.distFeat2Title}</h3>
-                    <p className="text-[11px] text-neutral-500 font-light">{c.distFeat2Text}</p>
+                    <h3 data-field-key="distFeat2Title" className="text-xs font-bold uppercase text-neutral-900">{c.distFeat2Title}</h3>
+                    <p data-field-key="distFeat2Text" className="text-[11px] text-neutral-500 font-light">{c.distFeat2Text}</p>
                   </div>
                 </div>
               </div>

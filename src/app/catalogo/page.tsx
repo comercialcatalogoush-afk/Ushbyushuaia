@@ -30,14 +30,13 @@ export default async function CatalogoPage() {
             <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
             Volver al Inicio
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-ush-navy">
+          <h1 data-field-key="catTitle" className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-ush-navy">
             {(() => {
               const full = (c.catTitle || 'Catálogo Completo').trim();
               const em = (c.catTitleEm || '').trim();
               const words = full.split(/\s+/);
               let base = full;
               let emWord = em;
-              // Evita duplicados: si la palabra destacada ya es la última del título, no se repite
               if (em && words.length > 1 && words[words.length - 1].toLowerCase() === em.toLowerCase()) {
                 base = words.slice(0, -1).join(' ');
                 emWord = em;
@@ -45,12 +44,12 @@ export default async function CatalogoPage() {
               return (
                 <>
                   {base}
-                  {emWord && <span className="text-ush-pink"> {emWord}</span>}
+                  {emWord && <span data-field-key="catTitleEm" className="text-ush-pink"> {emWord}</span>}
                 </>
               );
             })()}
           </h1>
-          <p className="text-xs text-neutral-600 font-light mt-1 max-w-2xl">
+          <p data-field-key="catIntro" className="text-xs text-neutral-600 font-light mt-1 max-w-2xl">
             {c.catIntro}
           </p>
         </div>

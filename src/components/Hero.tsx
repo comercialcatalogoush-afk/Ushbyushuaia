@@ -50,13 +50,14 @@ export const Hero: React.FC = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/40 text-xs font-bold uppercase tracking-widest text-white shadow-sm">
             <Sparkles size={14} className="animate-pulse text-amber-200" />
-            <span>{badge}</span>
+            <span data-field-key="heroBadge">{badge}</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-none uppercase drop-shadow-md">
-            {headline1} <br />
+            <span data-field-key="heroHeadline1">{headline1}</span> <br />
             <span
+              data-field-key="heroHeadline2"
               className="text-transparent bg-clip-text"
               style={{ backgroundImage: `linear-gradient(to right, ${g1}, ${g2}, ${g3})` }}
             >
@@ -65,7 +66,7 @@ export const Hero: React.FC = () => {
           </h1>
 
           {subtitle && (
-            <p className="text-sm sm:text-base text-white/90 font-light max-w-lg leading-relaxed">
+            <p data-field-key="heroSubtitle" className="text-sm sm:text-base text-white/90 font-light max-w-lg leading-relaxed">
               {subtitle}
             </p>
           )}
@@ -76,7 +77,7 @@ export const Hero: React.FC = () => {
               href={cta1Link}
               className="inline-flex items-center justify-center gap-3 bg-white text-ush-navyDark font-black px-8 py-4 rounded-none shadow-xl tracking-widest text-xs uppercase group hover:bg-neutral-100 transition-all"
             >
-              <span>{cta1Text}</span>
+              <span data-field-key="heroCta1Text">{cta1Text}</span>
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform text-ush-pink" />
             </Link>
 
@@ -85,7 +86,7 @@ export const Hero: React.FC = () => {
               className="inline-flex items-center justify-center gap-2 border-2 border-white text-white font-extrabold px-6 py-4 rounded-none hover:bg-white/10 text-xs uppercase tracking-widest transition-all backdrop-blur-sm shadow-md"
             >
               <ShieldCheck size={18} />
-              <span>{cta2Text}</span>
+              <span data-field-key="heroCta2Text">{cta2Text}</span>
             </Link>
           </div>
 
