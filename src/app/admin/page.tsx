@@ -193,9 +193,14 @@ export default function AdminCatalogPage() {
 
   const loadOrders = async () => {
     setLoadingOrders(true);
-    const data = await fetchOrdersAdmin();
-    setOrders(data);
-    setLoadingOrders(false);
+    try {
+      const data = await fetchOrdersAdmin();
+      setOrders(data);
+    } catch (e) {
+      console.error('Error loading orders:', e);
+    } finally {
+      setLoadingOrders(false);
+    }
   };
 
   const loadClients = async () => {
@@ -819,7 +824,7 @@ export default function AdminCatalogPage() {
                                       {client.phone}
                                     </span>
                                     <a
-                                      href={`https://wa.me/${client.phone.replace(/\D/g, '')}`}
+                                      href={`https://wa.me/57${client.phone?.replace(/\D/g, '').replace(/^57/, '') || ''}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       title="Abrir WhatsApp"
@@ -1021,7 +1026,10 @@ export default function AdminCatalogPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            const rand = 'Ush' + Math.floor(100000 + Math.random() * 900000) + '!';
+                            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+                            let rand = 'Ush';
+                            for (let i = 0; i < 8; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
+                            rand += '!';
                             setNewPasswordVal(rand);
                           }}
                           className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider text-[#d88193] hover:underline"
@@ -1267,8 +1275,15 @@ export default function AdminCatalogPage() {
               </div>
 
               {orderMsg && (
-                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
-                  <CheckCircle size={16} className="text-emerald-600" /> {orderMsg}
+                <div className={`mt-4 p-4 text-xs font-bold flex items-center gap-2 ${
+                  orderMsg.startsWith('Error')
+                    ? 'bg-red-50 border border-red-200 text-red-900'
+                    : 'bg-emerald-50 border border-emerald-200 text-emerald-900'
+                }`}>
+                  {orderMsg.startsWith('Error')
+                    ? <AlertTriangle size={16} className="text-red-600" />
+                    : <CheckCircle size={16} className="text-emerald-600" />
+                  } {orderMsg}
                 </div>
               )}
 

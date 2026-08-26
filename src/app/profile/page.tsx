@@ -141,14 +141,14 @@ export default function ProfilePage() {
     setLoading(true);
 
     try {
-      // 1. Notifica y registra la solicitud en el backend
+      // Notifica y registra la solicitud en el backend (fire-and-forget).
+      // El envío real del email de recuperación lo gestiona Supabase Auth.
       fetch('/api/auth/recovery-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       }).catch(() => {});
 
-      // 2. Ejecuta el restablecimiento seguro de Supabase Auth
       const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: `${window.location.origin}/profile`,
       });

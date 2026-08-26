@@ -84,7 +84,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       if (existingIdx > -1) {
         const updated = [...prev];
-        updated[existingIdx] = { ...updated[existingIdx], quantity: updated[existingIdx].quantity + quantity };
+        const maxQty = selectedSize ? ((product.stock_by_size || {})[selectedSize] ?? Infinity) : Infinity;
+        const newQty = Math.min(updated[existingIdx].quantity + quantity, maxQty);
+        updated[existingIdx] = { ...updated[existingIdx], quantity: newQty };
         return updated;
       }
 
@@ -108,7 +110,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, 5000);
       }
 
-      return [...prev, { product, selectedSize, selectedColor, quantity }];
+      // Stock cap: if size selected, don't exceed available stock for that size
+      const maxQty = selectedSize ? ((product.stock_by_size || {})[selectedSize] ?? Infinity) : Infinity;
+      const cappedQty = Math.min(quantity, maxQty);
+      return [...prev, { product, selectedSize, selectedColor, quantity: cappedQty }];
     });
     setIsCartOpen(true);
     gtagEvent('add_to_cart', {
@@ -137,8 +142,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setItems((prev) => {
       if (index < 0 || index >= prev.length) return prev;
+      const item = prev[index];
+      const maxQty = item.selectedSize ? ((item.product.stock_by_size || {})[item.selectedSize] ?? Infinity) : Infinity;
+      const cappedQty = Math.min(quantity, maxQty);
       const updated = [...prev];
-      updated[index] = { ...updated[index], quantity };
+      updated[index] = { ...updated[index], quantity: cappedQty };
       return updated;
     });
   };

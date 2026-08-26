@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 // Solo el admin (sesión real de Supabase) puede purgar el caché.
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   const auth = req.headers.get('authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) {

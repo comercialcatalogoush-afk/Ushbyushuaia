@@ -109,7 +109,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0) return;
+    if (items.length === 0 || loading) return;
 
     // Mínimo mayorista: 8 unidades. Debajo de eso se sugiere la tienda retail.
     if (totalUnits < MIN_ORDER_UNITS) {
@@ -129,8 +129,10 @@ export default function CheckoutPage() {
     const rawPhone = (formData.phone || '').trim();
     const countryDigits = (phoneCountry || '').replace(/\D/g, '');
     const phoneDigits = rawPhone.replace(/\D/g, '');
+    // Strip leading zero after country code (e.g. +57 0300... → +57 300...)
     const hasLocalCode = countryDigits && phoneDigits.startsWith(countryDigits) && phoneDigits.length > countryDigits.length;
-    const localNumber = hasLocalCode ? phoneDigits.slice(countryDigits.length) : phoneDigits;
+    let localNumber = hasLocalCode ? phoneDigits.slice(countryDigits.length) : phoneDigits;
+    if (localNumber.startsWith('0')) localNumber = localNumber.replace(/^0+/, '');
     const customerPhone = rawPhone.startsWith('+') ? rawPhone : (localNumber ? `${phoneCountry} ${localNumber}` : rawPhone);
 
     const orderPayload = {
@@ -217,7 +219,7 @@ export default function CheckoutPage() {
     ).join('\n');
 
     const completedUnits = (completedOrder.items || []).reduce((s: number, it: any) => s + (it.quantity || 0), 0);
-    const isWholesale = completedUnits >= 12;
+    const isWholesale = completedUnits >= 8;
     const isEscala8 = completedUnits >= 8 && completedUnits <= 11;
 
     const whatsappMsg = encodeURIComponent(
@@ -239,7 +241,7 @@ export default function CheckoutPage() {
         ? `🏷️ *Descuento${completedOrder.coupon_code ? ` (${completedOrder.coupon_code})` : ''}:* -${formatCOP(completedOrder.discount)}\n`
         : '') +
       `💰 *TOTAL:* ${formatCOP(completedOrder.total)}\n` +
-      `🚚 *Envío:* ${isWholesale ? '✅ GRATIS (12+ unidades)' : '⚠️ Asume el cliente'}\n` +
+      `🚚 *Envío:* ${isWholesale ? '✅ GRATIS (8+ unidades)' : '⚠️ Asume el cliente'}\n` +
       `💳 *Tarifa:* ${isWholesale ? 'Mayorista (precio mayorista)' : isEscala8 ? 'Mayorista 8–11 uds (20% de descuento)' : 'Detal (sin descuento mayorista)'}\n` +
       (completedOrder.payment_method === 'addi' ? `\n⚠️ *Nota Addi:* El costo de transacción por Addi es asumido por el cliente.\n` : '') +
       `───────────────────────\n` +
@@ -274,7 +276,7 @@ export default function CheckoutPage() {
             )}
             <p><span className="font-bold">Total a pagar:</span> {formatCOP(completedOrder.total)}</p>
             <p className="pt-1 text-ush-pink font-bold border-t border-gray-200">
-              {isWholesale ? '🎉 Tarifa Mayorista (precio mayorista 12+ uds) + ENVÍO GRATIS' : isEscala8 ? '✓ Tarifa Mayorista 8–11 uds: 20% de descuento aplicado (el cliente asume el envío).' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}
+              {isWholesale ? '🎉 Tarifa Mayorista (precio mayorista 8+ uds) + ENVÍO GRATIS' : isEscala8 ? '✓ Tarifa Mayorista 8–11 uds: 20% de descuento aplicado (el cliente asume el envío).' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}
             </p>
             {completedOrder.payment_method === 'addi' && (
               <p className="text-amber-700 text-[11px] font-semibold flex items-center gap-1 pt-1">
@@ -564,6 +566,8 @@ export default function CheckoutPage() {
                       <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
                         Ciudad / Municipio *
                       </label>
+                      {/* Hidden input for form required validation */}
+                      <input type="text" required value={formData.city} tabIndex={-1} aria-hidden="true" className="absolute opacity-0 w-0 h-0 pointer-events-none" />
                       {(() => {
                         const citiesForDep = formData.department
                           ? COLOMBIA_MUNICIPALITIES[formData.department] || []
@@ -780,7 +784,7 @@ export default function CheckoutPage() {
               {isWholesaleTier ? (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold space-y-1">
                   <p className="flex items-center gap-1 font-bold">
-                    <Sparkles size={14} /> Precio Mayorista Aplicado (12+ uds)
+                    <Sparkles size={14} /> Precio Mayorista Aplicado (8+ uds)
                   </p>
                   <p className="flex items-center gap-1 text-[11px] text-emerald-700">
                     <Truck size={14} /> <strong>¡Envío Gratis Incluido!</strong>

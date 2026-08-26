@@ -314,10 +314,29 @@ export async function submitWholesaleLead(lead: WholesaleLead) {
 
 export async function submitOrder(orderData: any): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
+    // Server-side safety: force status to 'pending' so the client can never
+    // bypass the confirm/cancel workflow or create pre-confirmed orders.
+    const safePayload = {
+      ...orderData,
+      status: 'pending',
+      customer_name: String(orderData.customer_name || '').trim(),
+      customer_doc: String(orderData.customer_doc || '').trim(),
+      customer_phone: String(orderData.customer_phone || '').trim(),
+      city: String(orderData.city || '').trim(),
+    };
+
+    // Reject orders with missing critical fields before hitting the DB.
+    if (!safePayload.customer_name || !safePayload.customer_doc || !safePayload.city) {
+      return { success: false, error: 'Faltan campos obligatorios: nombre, documento o ciudad.' };
+    }
+    if (!Array.isArray(safePayload.items) || safePayload.items.length === 0) {
+      return { success: false, error: 'El pedido debe contener al menos un producto.' };
+    }
+
     // IMPORTANTE: NO usar .select() aquí. PostgREST convierte .select() en
     // "Prefer: return=representation", que la política RLS de orders rechaza
     // con 42501. Sin ese header el INSERT funciona (201).
-    const { data, error } = await supabase.from('orders').insert([orderData]);
+    const { data, error } = await supabase.from('orders').insert([safePayload]);
     if (error) {
       return { success: false, error: error.message };
     }
@@ -515,7 +534,7 @@ export function triggerRevalidate() {
         .then(({ data }) => {
           const token = data.session?.access_token;
           if (!token) return;
-          fetch('/api/revalidate', { headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+          fetch('/api/revalidate', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
         })
         .catch(() => {});
     }

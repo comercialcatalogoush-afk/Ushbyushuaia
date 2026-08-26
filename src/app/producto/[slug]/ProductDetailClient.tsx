@@ -624,7 +624,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
         (imageUrl ? `📸 Foto: ${imageUrl}\n` : '') +
         `\n¿Te gusta? Escríbeme y te tomo el pedido.`;
 
-      const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
 
       return (
         <div
