@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Save, CheckCircle, ChevronRight, ChevronDown, Monitor, Tablet, Smartphone,
+  Save, CheckCircle, ChevronRight, ChevronDown, ChevronUp, Monitor, Tablet, Smartphone,
   LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
   Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star, Copy,
   ChevronLeft, GripVertical, History as HistoryIcon, Sparkles, CheckCircle2,
-  MousePointerClick, Edit3, SlidersHorizontal, Layers, Crop, Flame, Tag, ArrowLeftRight, Video
+  MousePointerClick, Edit3, SlidersHorizontal, Layers, Crop, Flame, Tag, ArrowLeftRight, Video,
+  Heading1, Heading2, AlignLeft, AlignCenter, AlignRight, Bold as BoldIcon, Italic as ItalicIcon
 } from 'lucide-react';
 import {
   PAGE_SCHEMAS,
@@ -274,6 +275,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   // ── Modo Edición In-line ──
   const [inlineEditEnabled, setInlineEditEnabled] = useState(true);
 
+  // ── Reordenar / Ocultar Secciones ──
+  const [sectionOrders, setSectionOrders] = useState<Record<string, string[]>>({});
+  const [sectionHidden, setSectionHidden] = useState<Record<string, string[]>>({});
+
+  // ── Breadcrumb ──
+  const [activeSectionLabel, setActiveSectionLabel] = useState<string>('');
+
   // ── Historial de Revisiones ──
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [revisions, setRevisions] = useState<RevisionEntry[]>([]);
@@ -373,6 +381,85 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     getCategoriesOrder().then(setCategoriesList);
   }, []);
+
+  // ── Carga de orden/visibilidad de secciones ──
+  useEffect(() => {
+    try {
+      const ord = localStorage.getItem('ush_section_order');
+      if (ord) setSectionOrders(JSON.parse(ord));
+      const hid = localStorage.getItem('ush_section_hidden');
+      if (hid) setSectionHidden(JSON.parse(hid));
+    } catch (_) {}
+  }, []);
+
+  const persistSectionSettings = (orders: Record<string, string[]>, hidden: Record<string, string[]>) => {
+    try {
+      localStorage.setItem('ush_section_order', JSON.stringify(orders));
+      localStorage.setItem('ush_section_hidden', JSON.stringify(hidden));
+    } catch (_) {}
+  };
+
+  const sectionIdsForPage = (pid: string): string[] => {
+    return Object.entries(SECTION_MAP)
+      .filter(([, m]) => m.pageId === pid)
+      .map(([sec]) => sec);
+  };
+
+  const orderedSections = (pid: string): string[] => {
+    const all = sectionIdsForPage(pid);
+    const order = sectionOrders[pid] || [];
+    if (order.length === 0) return all;
+    const ordered = order.filter((s) => all.includes(s));
+    const rest = all.filter((s) => !order.includes(s));
+    return [...ordered, ...rest];
+  };
+
+  const isSectionHidden = (pid: string, sec: string): boolean => {
+    return (sectionHidden[pid] || []).includes(sec);
+  };
+
+  const moveSectionUp = (pid: string, sec: string) => {
+    const ordered = orderedSections(pid);
+    const idx = ordered.indexOf(sec);
+    if (idx <= 0) return;
+    const next = [...ordered];
+    const [m] = next.splice(idx, 1);
+    next.splice(idx - 1, 0, m);
+    setSectionOrders((o) => {
+      const n = { ...o, [pid]: next };
+      persistSectionSettings(n, sectionHidden);
+      return n;
+    });
+    setNonce((n) => n + 1);
+  };
+
+  const moveSectionDown = (pid: string, sec: string) => {
+    const ordered = orderedSections(pid);
+    const idx = ordered.indexOf(sec);
+    if (idx < 0 || idx >= ordered.length - 1) return;
+    const next = [...ordered];
+    const [m] = next.splice(idx, 1);
+    next.splice(idx + 1, 0, m);
+    setSectionOrders((o) => {
+      const n = { ...o, [pid]: next };
+      persistSectionSettings(n, sectionHidden);
+      return n;
+    });
+    setNonce((n) => n + 1);
+  };
+
+  const toggleSectionVisible = (pid: string, sec: string) => {
+    setSectionHidden((h) => {
+      const cur = h[pid] || [];
+      const next = {
+        ...h,
+        [pid]: cur.includes(sec) ? cur.filter((s) => s !== sec) : [...cur, sec],
+      };
+      persistSectionSettings(sectionOrders, next);
+      return next;
+    });
+    setNonce((n) => n + 1);
+  };
 
   // Productos: carga, selección y guardado
   const loadProducts = async () => {
@@ -928,13 +1015,144 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
     const EDITABLE_TAGS = ['H1','H2','H3','H4','H5','H6','P','SPAN','A','BUTTON','LI','DIV','STRONG','EM','B','I','SMALL','LABEL','TD','TH','FIGCAPTION','CITE','Q'];
 
+    // Aplica orden y visibilidad de secciones guardadas
+    const applySectionLayout = () => {
+      const sections = Array.from(doc.querySelectorAll<HTMLElement>('[data-editor-section]'));
+      // 1) Ocultar secciones marcadas
+      sections.forEach((el) => {
+        const sec = el.getAttribute('data-editor-section') || '';
+        const hidden = isSectionHidden(pageId, sec);
+        el.style.display = hidden ? 'none' : '';
+        el.setAttribute('data-hidden', hidden ? '1' : '');
+
+        // Estilos avanzados por sección (#8 fondo, #9 tipografía, #10 espaciado)
+        const bg = values[`__sec_${sec}_bg`];
+        const padTop = values[`__sec_${sec}_padTop`];
+        const padBottom = values[`__sec_${sec}_padBottom`];
+        const fontSize = values[`__sec_${sec}_fontSize`];
+        if (bg) el.style.backgroundColor = bg;
+        if (padTop) el.style.paddingTop = `${padTop}px`;
+        if (padBottom) el.style.paddingBottom = `${padBottom}px`;
+        if (fontSize) el.style.fontSize = `${fontSize}px`;
+
+        // Texto con alineación por sección
+        const align = values[`__sec_${sec}_align`];
+        if (align) el.style.textAlign = align;
+      });
+      // 2) Reordenar por orden personalizado guardado
+      const order = orderedSections(pageId);
+      if (order.length > 1) {
+        const parentMap = new Map<HTMLElement, { parent: HTMLElement; next: Node | null }>();
+        sections.forEach((el) => {
+          parentMap.set(el, { parent: el.parentElement as HTMLElement, next: el.nextSibling });
+        });
+        order.forEach((sec) => {
+          const el = doc.querySelector<HTMLElement>(`[data-editor-section="${sec}"]`);
+          const info = el ? parentMap.get(el) : null;
+          if (el && info && el.parentElement !== info.parent) return;
+          if (el && info) {
+            el.parentElement?.appendChild(el);
+          }
+        });
+      }
+    };
+    applySectionLayout();
+
+    // ── Toolbar flotante de formato de texto ──
+    const createToolbar = (): HTMLElement => {
+      let tb = doc.getElementById('ush-format-toolbar') as HTMLElement | null;
+      if (!tb) {
+        tb = doc.createElement('div');
+        tb.id = 'ush-format-toolbar';
+        tb.style.cssText = 'position:fixed;z-index:99999;display:none;background:#1b2333;color:#fff;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);padding:4px 6px;gap:2px;font:11px/1 -apple-system,sans-serif;align-items:center;';
+        const btns: [string, string, string][] = [
+          ['B', 'bold', 'Negrita'],
+          ['I', 'italic', 'Cursiva'],
+          ['S', 'strikeThrough', 'Tachado'],
+          ['H1', 'formatBlock', 'Título 1'],
+          ['H2', 'formatBlock', 'Título 2'],
+          ['P', 'formatBlock', 'Párrafo'],
+          ['⟷', 'justifyLeft', 'Izquierda'],
+          ['⟵⟶', 'justifyCenter', 'Centro'],
+          ['⟶⟵', 'justifyRight', 'Derecha'],
+        ];
+        btns.forEach(([label, cmd, tip]) => {
+          const b = doc.createElement('button');
+          b.textContent = label;
+          b.title = tip;
+          b.style.cssText = 'background:transparent;border:0;color:#fff;font-weight:700;padding:3px 6px;border-radius:4px;cursor:pointer;';
+          b.onmouseenter = () => (b.style.background = 'rgba(255,255,255,.15)');
+          b.onmouseleave = () => (b.style.background = 'transparent');
+          b.addEventListener('mousedown', (ev) => {
+            ev.preventDefault();
+            doc.execCommand(cmd as any, false, cmd === 'formatBlock' ? (label === 'H1' ? 'H1' : label === 'H2' ? 'H2' : 'P') : undefined);
+          });
+          tb!.appendChild(b);
+        });
+        const fsize = doc.createElement('input');
+        fsize.type = 'number';
+        (fsize as any).min = 12;
+        (fsize as any).max = 60;
+        fsize.value = '16';
+        fsize.title = 'Tamaño de fuente';
+        fsize.style.cssText = 'width:44px;background:#fff;color:#1b2333;border:0;border-radius:4px;padding:2px 4px;font-size:11px;';
+        fsize.addEventListener('change', () => {
+          doc.execCommand('fontSize', false, '7');
+          const sels = doc.getSelection();
+          if (sels && sels.rangeCount) {
+            const span = sels.getRangeAt(0).commonAncestorContainer.parentElement;
+            if (span) (span as HTMLElement).style.fontSize = `${fsize.value}px`;
+          }
+        });
+        tb.appendChild(fsize);
+        doc.body.appendChild(tb);
+      }
+      return tb;
+    };
+    const toolbar = createToolbar();
+
+    const positionToolbar = (target: HTMLElement) => {
+      const rect = target.getBoundingClientRect();
+      toolbar.style.display = 'flex';
+      toolbar.style.top = `${Math.max(rect.top - 40, 8)}px`;
+      toolbar.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - 120, 4), (doc.defaultView?.innerWidth || 800) - 250)}px`;
+    };
+
+    // ── Click en imágenes: permite enfocar inspector de imagen ──
+    const openImageForField = (img: HTMLElement) => {
+      const fieldKeyEl = img.closest('[data-field-key]') as HTMLElement | null;
+      const sectionEl = img.closest('[data-editor-section]') as HTMLElement | null;
+      if (sectionEl) selectSection(sectionEl.getAttribute('data-editor-section') || '');
+      if (fieldKeyEl) {
+        const fk = fieldKeyEl.getAttribute('data-field-key');
+        if (fk) {
+          const map = (window as any).__ushFieldScroll as Record<string, string> | undefined;
+          void map;
+          const schemaF = PAGE_SCHEMAS.find((s) => s.id === pageId)?.fields.find((f) => f.key === fk);
+          if (schemaF && schemaF.type === 'image') {
+            // Enfocar el inspector
+            groupId && setGroupId(groupId);
+            document.getElementById(`field-${fk}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+    };
+
     const onClickOrDbl = (e: Event) => {
       const target = e.target as HTMLElement;
       const sectionEl = target?.closest?.('[data-editor-section]') as HTMLElement | null;
       if (!sectionEl) return;
 
       const secId = sectionEl.getAttribute('data-editor-section') || '';
+      const secMap = SECTION_MAP[secId];
+      setActiveSectionLabel(secMap ? secMap.group : secId);
       selectSection(secId);
+
+      // Click en imagen → resaltar campo de imagen en inspector
+      if (target.tagName === 'IMG') {
+        openImageForField(target);
+        return;
+      }
 
       if (!inlineEditEnabled) return;
       if (!EDITABLE_TAGS.includes(target.tagName)) return;
@@ -950,6 +1168,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       target.setAttribute('data-field-key-resolved', fieldKey);
       target.contentEditable = 'true';
       target.focus();
+      positionToolbar(target);
 
       const selectAll = () => {
         const range = doc.createRange();
@@ -970,6 +1189,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           handleChange(resolvedKey, newText);
         }
         target.removeEventListener('blur', onBlur);
+        toolbar.style.display = 'none';
       };
       target.addEventListener('blur', onBlur);
     };
@@ -1141,7 +1361,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 mode === 'theme' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Palette size={12} /> Diseño (Wix)
+              <Palette size={12} /> Diseño Global
             </button>
           </div>
 
@@ -1165,17 +1385,52 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
                     {isActive && (
                       <div className="ml-3 pl-3 border-l border-white/10 pb-2">
-                        {sGroups.map((g) => (
-                          <button
-                            key={g.group}
-                            onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
-                            className={`w-full text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
-                              !productsMode && activeGroup?.group === g.group ? 'bg-[#d88193]/20 text-[#f9c9d2]' : 'text-neutral-500 hover:text-white'
-                            }`}
-                          >
-                            {g.group}
-                          </button>
-                        ))}
+                        {sGroups.map((g) => {
+                          const sec = sectionForGroup(s.id, g.group);
+                          const secHidden = sec ? isSectionHidden(s.id, sec) : false;
+                          return (
+                            <div key={g.group} className="group flex items-center">
+                              <button
+                                onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
+                                className={`flex-1 text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
+                                  !productsMode && activeGroup?.group === g.group
+                                    ? (secHidden ? 'bg-[#d88193]/20 text-[#f9c9d2] line-through opacity-60' : 'bg-[#d88193]/20 text-[#f9c9d2]')
+                                    : (secHidden ? 'text-neutral-600 line-through' : 'text-neutral-500 hover:text-white')
+                                }`}
+                              >
+                                <span className="flex items-center gap-1.5">
+                                  {g.group}
+                                  {secHidden && <EyeOff size={9} className="text-neutral-500" />}
+                                </span>
+                              </button>
+                              {sec && (
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+                                  <button
+                                    onClick={() => moveSectionUp(s.id, sec)}
+                                    title="Mover sección arriba"
+                                    className="p-0.5 text-neutral-500 hover:text-white"
+                                  >
+                                    <ChevronUp size={11} />
+                                  </button>
+                                  <button
+                                    onClick={() => moveSectionDown(s.id, sec)}
+                                    title="Mover sección abajo"
+                                    className="p-0.5 text-neutral-500 hover:text-white"
+                                  >
+                                    <ChevronDown size={11} />
+                                  </button>
+                                  <button
+                                    onClick={() => toggleSectionVisible(s.id, sec)}
+                                    title={secHidden ? 'Mostrar sección' : 'Ocultar sección'}
+                                    className={`p-0.5 ${secHidden ? 'text-amber-400' : 'text-neutral-500 hover:text-amber-300'}`}
+                                  >
+                                    {secHidden ? <Eye size={11} /> : <EyeOff size={11} />}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
 
                         {/* Gestor de productos: solo en la página Catálogo */}
                         {s.id === 'catalogo' && (
@@ -1219,7 +1474,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         {productsMode ? (
           <div className="flex-1 min-w-0 bg-[#eef0f3] overflow-auto">
             {selectedId && productDraft ? (
-              /* ── VISUAL PRODUCT EDITOR (WIX STYLE) ── */
+              /* ── VISUAL PRODUCT EDITOR ── */
               <div className="max-w-5xl mx-auto p-6 space-y-4">
                 <div className="flex items-center justify-between bg-white px-4 py-3 rounded-xl border border-neutral-200 shadow-sm">
                   <button
@@ -1632,7 +1887,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           <div className="px-5 py-4 border-b border-neutral-100 flex-shrink-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">
               {mode === 'theme' ? <Palette size={12} /> : productsMode ? <Package size={12} /> : <LayoutTemplate size={12} />}
-              {mode === 'theme' ? 'Propiedades globales' : productsMode ? (selectedId ? 'Inspector de prenda (Wix)' : 'Gestor de productos') : 'Propiedades de sección'}
+              {mode === 'theme' ? 'Propiedades globales' : productsMode ? (selectedId ? 'Inspector de prenda' : 'Gestor de productos') : 'Propiedades de sección'}
             </div>
             <h3 className="text-sm font-black uppercase tracking-tight text-[#1b2333] mt-1 truncate">
               {mode === 'theme'
@@ -1641,6 +1896,19 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                 ? (selectedId && productDraft ? (productDraft.name || 'Prenda') : 'Catálogo')
                 : (activeGroup?.group || 'General')}
             </h3>
+            {mode === 'content' && !productsMode && (
+              <div className="flex items-center gap-1 mt-1.5 text-[9px] font-semibold text-neutral-400 flex-wrap">
+                <span className="uppercase tracking-wider">{schema?.label || 'Página'}</span>
+                <ChevronRight size={9} className="text-neutral-300" />
+                <span className="uppercase tracking-wider text-[#d88193]">{activeGroup?.group || 'General'}</span>
+                {activeSectionLabel && activeSectionLabel !== activeGroup?.group && (
+                  <>
+                    <ChevronRight size={9} className="text-neutral-300" />
+                    <span className="text-neutral-400">{activeSectionLabel}</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -2108,6 +2376,99 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     />
                   </div>
                 ))}
+
+                {/* Apariencia de sección (#8 fondo, #9 tipografía, #10 espaciado) */}
+                {(() => {
+                  const sec = sectionForGroup(pageId, activeGroup?.group || '');
+                  if (!sec) return null;
+                  const prefix = `__sec_${sec}_`;
+                  const controls: { key: string; label: string; type: 'color' | 'number' | 'select' }[] = [
+                    { key: 'bg', label: 'Color de fondo de la sección', type: 'color' },
+                    { key: 'padTop', label: 'Espaciado superior (px)', type: 'number' },
+                    { key: 'padBottom', label: 'Espaciado inferior (px)', type: 'number' },
+                    { key: 'fontSize', label: 'Tamaño de fuente base (px)', type: 'number' },
+                    { key: 'align', label: 'Alineación del texto', type: 'select' },
+                  ];
+                  return (
+                    <section className="border border-neutral-200 rounded-lg overflow-hidden mt-5">
+                      <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500 flex items-center justify-between">
+                        <span>Apariencia de la sección</span>
+                        <Layers size={11} className="text-[#d88193]" />
+                      </header>
+                      <div className="p-3 space-y-3">
+                        {controls.map((c) => {
+                          const val = values[prefix + c.key] || '';
+                          if (c.type === 'color') {
+                            return (
+                              <div key={c.key}>
+                                <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-600 mb-1">{c.label}</label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={/^#[0-9a-fA-F]{6}$/.test(val) ? val : '#ffffff'}
+                                    onChange={(e) => handleChange(prefix + c.key, e.target.value)}
+                                    className="w-10 h-8 border border-neutral-200 cursor-pointer bg-white p-0.5 rounded"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={val}
+                                    onChange={(e) => handleChange(prefix + c.key, e.target.value)}
+                                    className="flex-1 border border-neutral-200 px-2.5 py-1 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
+                                  />
+                                  {val && (
+                                    <button onClick={() => handleChange(prefix + c.key, '')} title="Limpiar" className="text-neutral-400 hover:text-red-500">
+                                      <X size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                          if (c.type === 'select') {
+                            return (
+                              <div key={c.key}>
+                                <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-600 mb-1">{c.label}</label>
+                                <select
+                                  value={val}
+                                  onChange={(e) => handleChange(prefix + c.key, e.target.value)}
+                                  className="w-full bg-white border border-neutral-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:border-[#d88193] rounded"
+                                >
+                                  <option value="">(Por defecto)</option>
+                                  <option value="left">Izquierda</option>
+                                  <option value="center">Centro</option>
+                                  <option value="right">Derecha</option>
+                                </select>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={c.key}>
+                              <label className="block text-[9px] font-bold uppercase tracking-wider text-neutral-600 mb-1">{c.label}</label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={300}
+                                  value={val}
+                                  onChange={(e) => handleChange(prefix + c.key, e.target.value)}
+                                  className="flex-1 border border-neutral-200 px-3 py-1.5 text-xs font-mono focus:outline-none focus:border-[#d88193] rounded"
+                                />
+                                {val && (
+                                  <button onClick={() => handleChange(prefix + c.key, '')} title="Limpiar" className="text-neutral-400 hover:text-red-500">
+                                    <X size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <p className="text-[9px] text-neutral-400">
+                          Se aplica en vivo a la sección "{activeGroup?.group}". Guarda y publica para que los usuarios lo vean.
+                        </p>
+                      </div>
+                    </section>
+                  );
+                })()}
               </div>
             )}
           </div>

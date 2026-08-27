@@ -2,26 +2,31 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
-import { getPageContentServer } from '@/lib/siteContent';
+import { getPageContentServer, sectionStyleFromContent } from '@/lib/siteContent';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export const metadata: Metadata = {
-  title: 'Catálogo Completo | Ush By Ushuaia',
-  description: 'Catálogo mayorista completo de USH BY USHUAIA. Filtra por categoría y fit: jeans, pantalones, shorts y faldas en mezclilla rígida.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const c = await getPageContentServer('catalogo');
+  const title = c.seoTitle?.trim() ? c.seoTitle.trim() : 'Catálogo Completo | Ush By Ushuaia';
+  return {
+    title,
+    description: c.seoDescription?.trim() || 'Catálogo mayorista completo de USH BY USHUAIA. Filtra por categoría y fit: jeans, pantalones, shorts y faldas en mezclilla rígida.',
+  };
+}
 
 export default async function CatalogoPage() {
   const allProducts = await fetchProductsFromSupabase({ slim: true });
   const publicProducts = allProducts.filter(p => !p.hidden && isCompleteProduct(p));
   const c = await getPageContentServer('catalogo');
+  const headerStyle = sectionStyleFromContent('cat-header', c);
 
   return (
     <div className="bg-white min-h-screen">
-      <div data-editor-section="cat-header" className="bg-ush-pinkLight border-b border-rose-100">
+      <div data-editor-section="cat-header" style={headerStyle} className="bg-ush-pinkLight border-b border-rose-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           <Link
             href="/"

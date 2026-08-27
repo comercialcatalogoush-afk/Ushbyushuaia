@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import {
   mergeContent,
   getPageContentClient,
@@ -42,6 +43,22 @@ export function usePageContent(pageId: string): ContentValues {
   }, [pageId]);
 
   return content;
+}
+
+export function useSectionStyle(sectionId: string, content: ContentValues): CSSProperties {
+  const prefix = `__sec_${sectionId}_`;
+  const style: CSSProperties = {};
+  const bg = content[prefix + 'bg'];
+  const padTop = content[prefix + 'padTop'];
+  const padBottom = content[prefix + 'padBottom'];
+  const fontSize = content[prefix + 'fontSize'];
+  const align = content[prefix + 'align'];
+  if (bg) style.backgroundColor = bg;
+  if (padTop) style.paddingTop = `${padTop}px`;
+  if (padBottom) style.paddingBottom = `${padBottom}px`;
+  if (fontSize) style.fontSize = `${fontSize}px`;
+  if (align) style.textAlign = align as CSSProperties['textAlign'];
+  return style;
 }
 
 export function useSiteTheme(): SiteTheme {

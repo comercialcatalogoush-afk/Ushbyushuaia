@@ -4,10 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Sparkles, ShieldCheck } from 'lucide-react';
-import { usePageContent } from '@/lib/siteContentHooks';
+import { usePageContent, useSectionStyle } from '@/lib/siteContentHooks';
 
 export const Hero: React.FC = () => {
   const c = usePageContent('home');
+  const secStyle = useSectionStyle('home-hero', c);
 
   const headline1 = c.heroHeadline1 || 'No cambiamos,';
   const headline2 = c.heroHeadline2 || 'EVOLUCIONAMOS';
@@ -25,7 +26,7 @@ export const Hero: React.FC = () => {
   const cta2Link = c.heroCta2Link || '/contacto';
 
   return (
-    <section data-editor-section="home-hero" className="relative bg-[#d88193] text-white overflow-hidden min-h-[580px] flex items-center">
+    <section data-editor-section="home-hero" style={secStyle} className="relative bg-[#d88193] text-white overflow-hidden min-h-[580px] flex items-center">
 
       {/* Official Cover Image Background */}
       <div className="absolute inset-0 z-0">

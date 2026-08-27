@@ -1,18 +1,23 @@
 import React from 'react';
 import Link from 'next/link';
 import { Benefits } from '@/components/Benefits';
-import { getPageContentServer } from '@/lib/siteContent';
+import { getPageContentServer, sectionStyleFromContent } from '@/lib/siteContent';
 import { CheckCircle2, HelpCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export const revalidate = 86400;
 
-export const metadata = {
-  title: 'Beneficios Mayoristas | Ush By Ushuaia',
-  description: 'Conoce los beneficios exclusivos para comerciantes y distribuidores. Precios especiales por volumen: 20% de 8 a 11 unidades y precio mayorista desde 12 unidades.',
-};
+export async function generateMetadata() {
+  const c = await getPageContentServer('como-comprar');
+  return {
+    title: c.seoTitle?.trim() || 'Beneficios Mayoristas | Ush By Ushuaia',
+    description: c.seoDescription?.trim() || 'Conoce los beneficios exclusivos para comerciantes y distribuidores. Precios especiales por volumen: 20% de 8 a 11 unidades y precio mayorista desde 12 unidades.',
+  };
+}
 
 export default async function ComoComprarPage() {
   const c = await getPageContentServer('como-comprar');
+  const headerStyle = sectionStyleFromContent('cc-header', c);
+  const processStyle = sectionStyleFromContent('cc-process', c);
 
   const steps = [
     {
@@ -40,7 +45,7 @@ export default async function ComoComprarPage() {
   return (
     <div className="py-12 bg-white space-y-16">
       {/* Header Banner */}
-      <div data-editor-section="cc-header" className="bg-neutral-50 border-b border-gray-200 text-neutral-900 py-16 px-4">
+      <div data-editor-section="cc-header" style={headerStyle} className="bg-neutral-50 border-b border-gray-200 text-neutral-900 py-16 px-4">
         <div className="max-w-4xl mx-auto text-center space-y-4">
           <span data-field-key="ccEyebrow" className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink">
             {c.ccEyebrow}
@@ -58,7 +63,7 @@ export default async function ComoComprarPage() {
       <Benefits />
 
       {/* Step by Step Process */}
-      <div data-editor-section="cc-process" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div data-editor-section="cc-process" style={processStyle} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 data-field-key="ccProcessTitle" className="text-2xl font-bold uppercase tracking-tight text-neutral-900">
             {c.ccProcessTitle}

@@ -4,11 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { WholesaleInquiryForm } from '@/components/WholesaleInquiryForm';
 import { Mail, MapPin, Phone, Clock, MessageSquare } from 'lucide-react';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
-import { usePageContent } from '@/lib/siteContentHooks';
+import { usePageContent, useSectionStyle } from '@/lib/siteContentHooks';
 
 export default function ContactoPage() {
   const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
   const c = usePageContent('contacto');
+  const secHeader = useSectionStyle('ct-header', c);
+  const secInfo = useSectionStyle('ct-info', c);
+  const secWhatsapp = useSectionStyle('ct-whatsapp', c);
 
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsapp);
@@ -18,12 +21,12 @@ export default function ContactoPage() {
 
   return (
     <div className="py-12 bg-neutral-50 min-h-screen">
-      <title>Contacto | Ush By Ushuaia</title>
-      <meta name="description" content="Contáctanos para solicitar información mayorista, precios por volumen, asesoría comercial o despachos. WhatsApp directo con asesores USH BY USHUAIA." />
+      <title>{c.seoTitle?.trim() || 'Contacto | Ush By Ushuaia'}</title>
+      <meta name="description" content={c.seoDescription?.trim() || 'Contáctanos para solicitar información mayorista, precios por volumen, asesoría comercial o despachos. WhatsApp directo con asesores USH BY USHUAIA.'} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div data-editor-section="ct-header" className="text-center max-w-3xl mx-auto mb-12">
+        <div data-editor-section="ct-header" style={secHeader} className="text-center max-w-3xl mx-auto mb-12">
           <span data-field-key="ctEyebrow" className="text-xs font-bold uppercase tracking-[0.25em] text-neutral-500 block mb-1">
             {c.ctEyebrow}
           </span>
@@ -38,7 +41,7 @@ export default function ContactoPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
           {/* Contact Details Column */}
-          <div data-editor-section="ct-info" className="space-y-6 lg:col-span-1">
+          <div data-editor-section="ct-info" style={secInfo} className="space-y-6 lg:col-span-1">
             <div className="bg-white p-6 border border-gray-200 shadow-sm space-y-4">
               <h3 data-field-key="ctInfoTitle" className="text-base font-bold uppercase tracking-wider text-neutral-900 border-b border-gray-100 pb-3">
                 {c.ctInfoTitle}
@@ -73,7 +76,7 @@ export default function ContactoPage() {
             </div>
 
             {/* Direct WhatsApp Callout */}
-            <div data-editor-section="ct-whatsapp" className="bg-emerald-900 text-white p-6 shadow-md space-y-3">
+            <div data-editor-section="ct-whatsapp" style={secWhatsapp} className="bg-emerald-900 text-white p-6 shadow-md space-y-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="text-emerald-400" size={20} />
                 <h4 data-field-key="ctWhatsappTitle" className="text-sm font-bold uppercase tracking-wider">{c.ctWhatsappTitle}</h4>

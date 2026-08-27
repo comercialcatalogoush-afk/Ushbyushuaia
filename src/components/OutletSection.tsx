@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Store, ArrowUpRight, Video } from 'lucide-react';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
-import { usePageContent } from '@/lib/siteContentHooks';
+import { usePageContent, useSectionStyle } from '@/lib/siteContentHooks';
 import { formatVideoUrl } from '@/lib/videoUtils';
 
 export const OutletSection: React.FC = () => {
   const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
   const c = usePageContent('outlet');
+  const secStyle = useSectionStyle('outlet-card', c);
 
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsapp);
@@ -38,7 +39,7 @@ export const OutletSection: React.FC = () => {
   // antes se metía cruda en <video> y un enlace de Drive/YouTube daba cuadro negro.
   const outletVideo = formatVideoUrl(OUTLET.videoUrl);
   return (
-    <section id="outlet" data-editor-section="outlet-card" className="scroll-mt-20 bg-[#FDF8F4] border-y border-[#e8d9c8] overflow-hidden relative">
+    <section id="outlet" data-editor-section="outlet-card" style={secStyle} className="scroll-mt-20 bg-[#FDF8F4] border-y border-[#e8d9c8] overflow-hidden relative">
       {/* Decorative */}
       <div className="pointer-events-none absolute -top-16 -right-16 w-64 h-64 bg-[#c49a6c]/10 rounded-full blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -left-16 w-72 h-72 bg-[#d88193]/10 rounded-full blur-3xl" />

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Search, Package, MapPin, Truck, CheckCircle2, ArrowLeft, Loader2, AlertTriangle, Clock, FileText, RefreshCw, Navigation, Box } from 'lucide-react';
-import { usePageContent } from '@/lib/siteContentHooks';
+import { usePageContent, useSectionStyle } from '@/lib/siteContentHooks';
 
 // Formato real del API de Coordinadora (guía existente)
 interface CoordEvent {
@@ -110,6 +110,9 @@ const CARRIERS = [
 
 export default function RastreoPage() {
   const c = usePageContent('rastreo');
+  const secHeader = useSectionStyle('tr-header', c);
+  const secForm = useSectionStyle('tr-form', c);
+  const secHelp = useSectionStyle('tr-help', c);
   const [guia, setGuia] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<NormalizedTracking | null>(null);
@@ -196,8 +199,8 @@ export default function RastreoPage() {
 
   return (
     <div className="py-12 bg-ush-pinkLight min-h-screen">
-      <title>Rastrear mi Pedido | Ush By Ushuaia</title>
-      <meta name="description" content="Consulta el estado y la guía de tu pedido mayorista USH BY USHUAIA. Seguimiento de envíos a toda Colombia." />
+      <title>{c.seoTitle?.trim() || 'Rastrear mi Pedido | Ush By Ushuaia'}</title>
+      <meta name="description" content={c.seoDescription?.trim() || 'Consulta el estado y la guía de tu pedido mayorista USH BY USHUAIA. Seguimiento de envíos a toda Colombia.'} />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
@@ -208,7 +211,7 @@ export default function RastreoPage() {
         </Link>
 
         {/* Header de marca */}
-        <div data-editor-section="tr-header" className="text-center mb-8">
+        <div data-editor-section="tr-header" style={secHeader} className="text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-ush-navy text-white flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-[#d88193]">
             <Box size={28} className="text-ush-pink" />
           </div>
@@ -221,7 +224,7 @@ export default function RastreoPage() {
         </div>
 
         {/* Search Box de marca */}
-        <form data-editor-section="tr-form" onSubmit={handleSubmit} className="bg-white p-6 border-t-4 border-[#d88193] shadow-lg">
+        <form data-editor-section="tr-form" style={secForm} onSubmit={handleSubmit} className="bg-white p-6 border-t-4 border-[#d88193] shadow-lg">
           <label data-field-key="trLabel" className="block text-xs font-black uppercase tracking-wider text-ush-navy mb-2">
             {c.trLabel} *
           </label>
@@ -395,7 +398,7 @@ export default function RastreoPage() {
         )}
 
         {/* Ayuda */}
-        <div data-editor-section="tr-help" className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+        <div data-editor-section="tr-help" style={secHelp} className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
           <div className="bg-white p-4 border-t-4 border-ush-navy shadow-sm">
             <Package size={20} className="mx-auto text-[#d88193] mb-2" />
             <p className="text-[11px] font-black text-ush-navy uppercase tracking-wide">{c.trHelp1Title}</p>

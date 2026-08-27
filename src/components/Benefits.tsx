@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { Tag, TrendingDown, Layers, Headphones } from 'lucide-react';
-import { usePageContent } from '@/lib/siteContentHooks';
+import { usePageContent, useSectionStyle } from '@/lib/siteContentHooks';
 
 export const Benefits: React.FC = () => {
   const c = usePageContent('home');
+  const secStyle = useSectionStyle('home-benefits', c);
 
   const wholesaleBenefits = [
     {
@@ -35,7 +36,7 @@ export const Benefits: React.FC = () => {
   ];
 
   return (
-    <section data-editor-section="home-benefits" className="py-16 bg-neutral-50 border-b border-gray-100 animate-fadeInUp">
+    <section data-editor-section="home-benefits" style={secStyle} className="py-16 bg-neutral-50 border-b border-gray-100 animate-fadeInUp">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 data-field-key="benefitsEyebrow" className="text-xs font-bold uppercase tracking-[0.25em] text-ush-pink mb-2">

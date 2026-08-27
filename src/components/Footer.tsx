@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Logo } from './Logo';
 import { Mail, MapPin, Phone, Instagram, Facebook, Shield, FileText, MessageCircle, Truck } from 'lucide-react';
 import { getWhatsAppNumber, subscribeWhatsApp, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
-import { usePageContent } from '@/lib/siteContentHooks';
+import { usePageContent, useSectionStyle } from '@/lib/siteContentHooks';
 
 // TikTok icon (not in lucide)
 const TikTokIcon = () => (
@@ -17,6 +17,9 @@ const TikTokIcon = () => (
 export const Footer: React.FC = () => {
   const [whatsapp, setWhatsapp] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
   const c = usePageContent('footer');
+  const secStyleBrand = useSectionStyle('footer-brand', c);
+  const secStyleHours = useSectionStyle('footer-hours', c);
+  const secStyleNotice = useSectionStyle('footer-notice', c);
 
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsapp);
@@ -28,7 +31,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
 
           {/* Brand Col - Official Logo */}
-          <div data-editor-section="footer-brand" className="space-y-3">
+          <div data-editor-section="footer-brand" style={secStyleBrand} className="space-y-3">
             <Logo variant="light" size="md" />
             <p data-field-key="footerDescription" className="text-xs text-white/80 leading-relaxed font-light">
               {c.footerDescription || 'Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.'}
@@ -118,7 +121,7 @@ export const Footer: React.FC = () => {
             </ul>
 
             {/* Business hours */}
-            <div data-editor-section="footer-hours" className="bg-white/10 border border-white/20 p-3 text-xs">
+            <div data-editor-section="footer-hours" style={secStyleHours} className="bg-white/10 border border-white/20 p-3 text-xs">
               <p data-field-key="footerHoursTitle" className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 {c.footerHoursTitle || 'Horario de Atención'}</p>
               <p className="text-white/90 font-light">Lun – Vie: <span data-field-key="footerHoursWeek" className="font-bold">{c.footerHoursWeek || '8:00 AM – 5:30 PM'}</span></p>
               <p data-field-key="footerHoursNote" className="text-white/60 text-[10px] mt-1">{c.footerHoursNote || 'Sábados, domingos y festivos no hay atención.'}</p>
@@ -126,7 +129,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Wholesale Notice */}
-          <div data-editor-section="footer-notice" className="bg-white/10 p-6 border border-white/20 backdrop-blur-sm flex flex-col justify-between">
+          <div data-editor-section="footer-notice" style={secStyleNotice} className="bg-white/10 p-6 border border-white/20 backdrop-blur-sm flex flex-col justify-between">
             <div>
               <h5 data-field-key="footerNoticeTitle" className="text-xs font-bold uppercase tracking-wider text-white mb-2">
                 {c.footerNoticeTitle || 'Atención a Mayoristas'}

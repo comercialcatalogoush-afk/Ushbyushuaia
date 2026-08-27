@@ -1,4 +1,5 @@
 import { supabase, triggerRevalidate } from './supabase';
+import type { CSSProperties } from 'react';
 
 // ============================================================
 // CMS LIGERO DE CONTENIDO (tipo Wix)
@@ -35,9 +36,21 @@ const THEME_CACHE_KEY = 'ush_theme_cache';
 export const CONTENT_EVENT = 'ush_content_updated';
 export const THEME_EVENT = 'ush_theme_updated';
 
+// ── CAMPOS SEO POR DEFECTO (metadatos por página) ────────────
+export const SEO_FIELDS: FieldDef[] = [
+  { key: 'seoTitle', label: 'Título SEO (<title>)', type: 'text', group: 'SEO / Metadatos', default: '', placeholder: 'Título de la pestaña del navegador (50-60 caracteres)' },
+  { key: 'seoDescription', label: 'Meta descripción', type: 'textarea', group: 'SEO / Metadatos', default: '', placeholder: 'Descripción para Google y redes sociales (150-160 caracteres)' },
+];
+
+export function addSeoFields(fields: FieldDef[]): FieldDef[] {
+  const hasSeo = fields.some((f) => f.group === 'SEO / Metadatos');
+  if (hasSeo) return fields;
+  return [...fields, ...SEO_FIELDS];
+}
+
 // ── ESQUEMAS DE CONTENIDO POR PÁGINA ────────────────────────
 
-export const PAGE_SCHEMAS: PageSchema[] = [
+export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
   {
     id: 'home',
     label: 'Inicio',
@@ -241,9 +254,12 @@ export const PAGE_SCHEMAS: PageSchema[] = [
       { key: 'footerHoursNote', label: 'Horario — nota', type: 'text', group: 'Contacto', default: 'Sábados, domingos y festivos no hay atención.' },
     ],
   },
-];
+]);
+function buildSchemasWithSeo(raw: PageSchema[]): PageSchema[] {
+  return raw.map((s) => ({ ...s, fields: addSeoFields(s.fields) }));
+}
 
-// ── TEMA GLOBAL (colores de marca, tipografía y estilo Wix) ──
+// ── TEMA GLOBAL (colores de marca, tipografía y estilo) ──
 export interface SiteTheme {
   pink: string;
   pinkDark: string;
@@ -327,7 +343,6 @@ export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
   }
   return null;
 }
-
 // Valores finales para una página: guardado (nube/caché) + defaults
 export function mergeContent(pageId: string, stored: ContentValues | null): ContentValues {
   const schema = PAGE_SCHEMAS.find((s) => s.id === pageId);
@@ -343,6 +358,24 @@ export function mergeContent(pageId: string, stored: ContentValues | null): Cont
     }
   }
   return out;
+}
+
+// Estilo CSS por sección (fondo, espaciado, tipografía, alineación) — seguro para
+// componentes de servidor. Usa claves __sec_<seccion>_* guardadas por el editor.
+export function sectionStyleFromContent(sectionId: string, content: ContentValues): CSSProperties {
+  const prefix = `__sec_${sectionId}_`;
+  const style: CSSProperties = {};
+  const bg = content[prefix + 'bg'];
+  const padTop = content[prefix + 'padTop'];
+  const padBottom = content[prefix + 'padBottom'];
+  const fontSize = content[prefix + 'fontSize'];
+  const align = content[prefix + 'align'];
+  if (bg) style.backgroundColor = bg;
+  if (padTop) style.paddingTop = `${padTop}px`;
+  if (padBottom) style.paddingBottom = `${padBottom}px`;
+  if (fontSize) style.fontSize = `${fontSize}px`;
+  if (align) style.textAlign = align as CSSProperties['textAlign'];
+  return style;
 }
 
 // Lectura para SERVER components (Next server-side)
