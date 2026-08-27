@@ -316,13 +316,27 @@ export async function submitOrder(orderData: any): Promise<{ success: boolean; d
   try {
     // Server-side safety: force status to 'pending' so the client can never
     // bypass the confirm/cancel workflow or create pre-confirmed orders.
+    // IMPORTANTE: la tabla `orders` no tiene columnas subtotal_before_discount,
+    // discount ni coupon_code, por lo que enviarlas hace que PostgREST rechace el
+    // INSERT con PGRST204. Aquí solo incluimos las columnas que existen para que
+    // el pedido se registre correctamente (el total neto y el detalle por ítem ya
+    // reflejan el descuento aplicado).
     const safePayload = {
-      ...orderData,
-      status: 'pending',
+      id: orderData.id,
+      order_date: orderData.order_date,
       customer_name: String(orderData.customer_name || '').trim(),
       customer_doc: String(orderData.customer_doc || '').trim(),
+      customer_email: orderData.customer_email,
       customer_phone: String(orderData.customer_phone || '').trim(),
+      shipping_address: orderData.shipping_address,
       city: String(orderData.city || '').trim(),
+      department: orderData.department,
+      payment_method: orderData.payment_method,
+      total: orderData.total,
+      items: orderData.items,
+      is_wholesale: orderData.is_wholesale,
+      notes: orderData.notes,
+      status: 'pending',
     };
 
     // Reject orders with missing critical fields before hitting the DB.
