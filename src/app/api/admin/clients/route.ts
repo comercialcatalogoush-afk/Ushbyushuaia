@@ -479,9 +479,9 @@ export async function POST(req: Request) {
 
       // 4. Quitar al cliente de los registros de site_config (claves asignadas,
       //    solicitudes de reset y avisos de nuevo registro).
-      await removeFromSiteConfigList(normalizedEmail, 'client_password_records');
-      await removeFromSiteConfigList(normalizedEmail, 'new_user_registrations');
-      await removeFromSiteConfigList(normalizedEmail, 'password_reset_requests');
+      await removeFromSiteConfigList(adminSupabase, normalizedEmail, 'client_password_records');
+      await removeFromSiteConfigList(adminSupabase, normalizedEmail, 'new_user_registrations');
+      await removeFromSiteConfigList(adminSupabase, normalizedEmail, 'password_reset_requests');
 
       return NextResponse.json({
         success: true,
@@ -519,11 +519,11 @@ async function clearPendingReset(email: string) {
 }
 
 // Elimina un email de una lista JSON guardada en site_config, soportando tanto
-// listas (array de objetos con .email) como mapas clave->objeto. Usa el cliente
-// de servicio para poder escribir sobre site_config aunque el admin esté logueado.
-async function removeFromSiteConfigList(email: string, key: string) {
+// listas (array de objetos con .email) como mapas clave->objeto. Se le pasa el
+// cliente de servicio (bypass RLS) para poder escribir sobre site_config.
+async function removeFromSiteConfigList(client: any, email: string, key: string) {
   try {
-    const { data: configRow } = await supabase
+    const { data: configRow } = await client
       .from('site_config')
       .select('value')
       .eq('key', key)
@@ -536,7 +536,7 @@ async function removeFromSiteConfigList(email: string, key: string) {
       const filtered = parsed.filter((item: any) => (item.email || '').toLowerCase() !== email.toLowerCase());
       changed = filtered.length !== parsed.length;
       if (changed) {
-        await supabase.from('site_config').upsert({
+        await client.from('site_config').upsert({
           key,
           value: JSON.stringify(filtered),
           updated_at: new Date().toISOString(),
@@ -546,7 +546,7 @@ async function removeFromSiteConfigList(email: string, key: string) {
       const mapped = Object.keys(parsed).some((k) => k.toLowerCase() === email.toLowerCase());
       if (mapped) {
         const { [Object.keys(parsed).find((k) => k.toLowerCase() === email.toLowerCase())!]: _, ...rest } = parsed;
-        await supabase.from('site_config').upsert({
+        await client.from('site_config').upsert({
           key,
           value: JSON.stringify(rest),
           updated_at: new Date().toISOString(),

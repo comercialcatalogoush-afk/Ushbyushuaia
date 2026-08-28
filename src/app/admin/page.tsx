@@ -1113,9 +1113,14 @@ export default function AdminCatalogPage() {
                           setDeleteSubmitting(true);
                           setClientActionFeedback(null);
                           try {
+                            const { data: sess } = await supabase.auth.getSession();
+                            const token = sess.session?.access_token;
                             const res = await fetch('/api/admin/clients', {
                               method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
+                              headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${token}`,
+                              },
                               body: JSON.stringify({ email: deleteModalClient.email, action: 'delete_user' }),
                             });
                             const body = await res.json();
