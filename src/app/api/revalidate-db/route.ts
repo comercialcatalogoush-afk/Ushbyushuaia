@@ -5,8 +5,13 @@ import { supabase } from '@/lib/supabase';
 // Purga el caché cuando la base de datos cambia por fuera del panel admin
 // (scripts SQL, ediciones externas, etc.). Un trigger en Supabase llama esta
 // ruta tras cada cambio en `products` y `site_config`.
-// El secreto vive en la tabla site_config (key: revalidate_secret) para no
-// hardcodearlo en el repo ni requerir variables de entorno en Vercel.
+//
+// SEGURIDAD: el secreto DEBE configurarse como variable de entorno del
+// servidor (REVALIDATE_SECRET en Vercel). Históricamente vivía en la tabla
+// pública `site_config`, que es legible por cualquier visitante anónimo, lo
+// que permitía forzar purgas de caché de forma no autorizada. Con la variable
+// de entorno definida, el valor de `site_config` se IGNORA por completo, de
+// modo que el secreto expuesto deja de tener efecto.
 
 const PATHS_TO_REVALIDATE = [
   '/',
@@ -19,8 +24,15 @@ const PATHS_TO_REVALIDATE = [
 let cachedSecret: { value: string; at: number } | null = null;
 
 async function getExpectedSecret(): Promise<string> {
-  // Caché corto en memoria: evita una lectura extra por cada evento sin
-  // quedarse pegado a un valor viejo más de 30 segundos.
+  const envSecret = process.env.REVALIDATE_SECRET;
+  if (envSecret) {
+    // Prioridad total a la variable de entorno: si no coincide, se rechaza.
+    return envSecret;
+  }
+
+  // Fallback (solo temporal, mientras no exista la variable): lectura desde
+  // site_config para no romper el trigger de Supabase existente. Al definir
+  // REVALIDATE_SECRET en el servidor esta rama deja de usarse.
   if (cachedSecret && Date.now() - cachedSecret.at < 30_000) {
     return cachedSecret.value;
   }

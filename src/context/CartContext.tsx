@@ -77,6 +77,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const addToCart = (product: Product, selectedSize?: string, selectedColor?: string, quantity = 1) => {
+    // Si se eligió una talla agotada, no agregar y avisar al usuario.
+    if (selectedSize) {
+      const stock = (product.stock_by_size || {})[selectedSize];
+      if (stock === 0) {
+        const toastId = `toast-stock-${Date.now()}`;
+        const msg = `La talla ${selectedSize} de ${product.name} está agotada. Elige otra talla.`;
+        setToasts((prev) => [...prev, { id: toastId, message: msg, type: 'warning' }]);
+        setTimeout(() => {
+          setToasts((t) => t.filter((n) => n.id !== toastId));
+        }, 5000);
+        return;
+      }
+    }
     setItems((prev) => {
       // Exact match → just increment quantity
       const existingIdx = prev.findIndex(
@@ -220,7 +233,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const updated = prev.map((item) => {
               const freshP = fresh.find((p) => p.id === item.product.id);
               if (!freshP) return item;
-              if (freshP.suggested_price === item.product.suggested_price && freshP.price === item.product.price) return item;
+              // Actualiza el ítem si cambió precio, stock por talla o estado
+              // (in_stock/hidden), para que el carrito refleje la vigencia real.
+              const p = item.product;
+              const stockChanged = JSON.stringify(freshP.stock_by_size || {}) !== JSON.stringify(p.stock_by_size || {});
+              const stateChanged = freshP.in_stock !== p.in_stock || freshP.hidden !== p.hidden;
+              if (
+                freshP.suggested_price === p.suggested_price &&
+                freshP.price === p.price &&
+                !stockChanged &&
+                !stateChanged
+              ) {
+                return item;
+              }
               changed = true;
               return { ...item, product: freshP };
             });

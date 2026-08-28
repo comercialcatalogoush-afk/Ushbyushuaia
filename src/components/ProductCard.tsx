@@ -46,6 +46,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
   // Solo está agotado si el admin lo marca explícitamente como fuera de stock
   const soldOut = product.in_stock === false;
+  // Talla seleccionada agotada: stock igual a 0 para esa talla concreta
+  const selectedSizeStock = (product.stock_by_size || {})[selectedSize];
+  const sizeSoldOut = soldOut || selectedSizeStock === 0;
 
   const suggestedPrice = product.suggested_price || product.compare_price || 49900;
   const wholesalePrice = product.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
@@ -55,6 +58,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (sizeSoldOut) return;
     const imgEl = (e.currentTarget.closest('.group') as HTMLElement)?.querySelector('img');
     if (imgEl) animateFlyToCart(imgEl as HTMLElement);
     const productColor = product.color || undefined;
@@ -271,15 +275,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
             <div className="flex flex-wrap gap-1">
               {availableSizes.map((size) => {
+                const sizeStock = (product.stock_by_size || {})[size];
+                const sizeOut = soldOut || sizeStock === 0;
                 return (
                   <button
                     key={size}
                     type="button"
                     onClick={() => handleSizeChange(size)}
-                    disabled={soldOut}
+                    disabled={sizeOut}
+                    title={sizeOut ? (soldOut ? 'Producto agotado' : 'Talla agotada') : `Talla ${size}`}
                     className={`relative text-[11px] w-7 h-7 font-bold border transition-all flex items-center justify-center ${
                       selectedSize === size
                         ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
+                        : sizeOut
+                        ? 'border-gray-200 text-gray-300 bg-neutral-100 line-through cursor-not-allowed'
                         : 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
                     }`}
                   >
@@ -324,16 +333,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          disabled={soldOut}
+          disabled={sizeSoldOut}
           className={`mt-4 w-full py-3 px-4 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-200 ${
-            soldOut
+            sizeSoldOut
               ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
               : addedAnimation
               ? 'bg-emerald-600 text-white'
               : 'bg-ush-navy text-white hover:bg-ush-pink active:scale-[0.98]'
           }`}
         >
-          {soldOut ? (
+          {sizeSoldOut ? (
             <>Agotado</>
           ) : addedAnimation ? (
             <>

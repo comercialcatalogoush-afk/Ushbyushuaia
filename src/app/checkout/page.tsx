@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { submitOrder, publishOrderChange } from '@/lib/supabase';
@@ -54,6 +54,10 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Guardia síncrona contra doble envío: `loading` (estado React) tarda un
+  // render en propagarse, así que un segundo clic rápido podría re-enviar y
+  // crear un pedido duplicado. Este ref se bloquea al instante.
+  const submittingRef = useRef(false);
   const [cityQuery, setCityQuery] = useState('');
   const [cityOpen, setCityOpen] = useState(false);
   const [phoneCountry, setPhoneCountry] = useState<string>('+57');
@@ -109,7 +113,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0 || loading) return;
+    if (items.length === 0 || loading || submittingRef.current) return;
 
     // Mínimo mayorista: 8 unidades. Debajo de eso se sugiere la tienda retail.
     if (totalUnits < MIN_ORDER_UNITS) {
@@ -119,6 +123,7 @@ export default function CheckoutPage() {
     }
 
     setLoading(true);
+    submittingRef.current = true;
     setErrorMessage(null);
 
     const orderId = generateOrderId();
@@ -178,6 +183,7 @@ export default function CheckoutPage() {
     }
 
     setLoading(false);
+    submittingRef.current = false;
 
     if (!orderSaved) {
       setErrorMessage('No se pudo registrar tu pedido en la base de datos. Tu carrito se mantiene intacto. Vuelve a intentarlo o contáctanos por WhatsApp para tramitarlo.');
@@ -219,7 +225,9 @@ export default function CheckoutPage() {
     ).join('\n');
 
     const completedUnits = (completedOrder.items || []).reduce((s: number, it: any) => s + (it.quantity || 0), 0);
-    const isWholesale = completedUnits >= 8;
+    // Envío gratis solo desde 12 unidades (tarifa mayorista completa). En la
+    // escala 8–11 se aplica el 20% de descuento pero el envío lo asume el cliente.
+    const isWholesale = completedUnits >= 12;
     const isEscala8 = completedUnits >= 8 && completedUnits <= 11;
 
     const whatsappMsg = encodeURIComponent(
@@ -241,7 +249,7 @@ export default function CheckoutPage() {
         ? `🏷️ *Descuento${completedOrder.coupon_code ? ` (${completedOrder.coupon_code})` : ''}:* -${formatCOP(completedOrder.discount)}\n`
         : '') +
       `💰 *TOTAL:* ${formatCOP(completedOrder.total)}\n` +
-      `🚚 *Envío:* ${isWholesale ? '✅ GRATIS (8+ unidades)' : '⚠️ Asume el cliente'}\n` +
+      `🚚 *Envío:* ${isWholesale ? '✅ GRATIS (12+ unidades)' : isEscala8 ? '⚠️ Asume el cliente (escala 8–11, envío gratis desde 12 uds)' : '⚠️ Asume el cliente'}\n` +
       `💳 *Tarifa:* ${isWholesale ? 'Mayorista (precio mayorista)' : isEscala8 ? 'Mayorista 8–11 uds (20% de descuento)' : 'Detal (sin descuento mayorista)'}\n` +
       (completedOrder.payment_method === 'addi' ? `\n⚠️ *Nota Addi:* El costo de transacción por Addi es asumido por el cliente.\n` : '') +
       `───────────────────────\n` +
@@ -276,7 +284,7 @@ export default function CheckoutPage() {
             )}
             <p><span className="font-bold">Total a pagar:</span> {formatCOP(completedOrder.total)}</p>
             <p className="pt-1 text-ush-pink font-bold border-t border-gray-200">
-              {isWholesale ? '🎉 Tarifa Mayorista (precio mayorista 8+ uds) + ENVÍO GRATIS' : isEscala8 ? '✓ Tarifa Mayorista 8–11 uds: 20% de descuento aplicado (el cliente asume el envío).' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}
+              {isWholesale ? '🎉 Tarifa Mayorista (12+ uds) + ENVÍO GRATIS' : isEscala8 ? '✓ Tarifa Mayorista 8–11 uds: 20% de descuento aplicado (el cliente asume el envío).' : '⚠️ Sin descuento mayorista (menos de 8 unidades) - El cliente asume el costo de envío.'}
             </p>
             {completedOrder.payment_method === 'addi' && (
               <p className="text-amber-700 text-[11px] font-semibold flex items-center gap-1 pt-1">
