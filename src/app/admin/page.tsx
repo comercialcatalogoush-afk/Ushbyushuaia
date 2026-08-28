@@ -52,6 +52,8 @@ export default function AdminCatalogPage() {
   const [newPasswordVal, setNewPasswordVal] = useState('');
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [clientActionFeedback, setClientActionFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [deleteModalClient, setDeleteModalClient] = useState<any | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   // ── Alerta de nuevo registro en tiempo real ──
   // Se activa cuando llega un broadcast 'user-registered' desde Supabase.
@@ -901,6 +903,13 @@ export default function AdminCatalogPage() {
                                   >
                                     <Key size={11} /> Asignar Clave
                                   </button>
+                                  <button
+                                    onClick={() => setDeleteModalClient(client)}
+                                    title="Eliminar usuario y todos sus datos"
+                                    className="px-2.5 py-1.5 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
+                                  >
+                                    <Trash2 size={11} /> Eliminar
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -1070,6 +1079,74 @@ export default function AdminCatalogPage() {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* ── MODAL: CONFIRMAR ELIMINACIÓN DE USUARIO ── */}
+            {deleteModalClient && (
+              <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white max-w-md w-full rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+                  <div className="bg-red-600 text-white p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Trash2 size={18} />
+                      <h3 className="text-base font-black uppercase tracking-wide">Eliminar usuario</h3>
+                    </div>
+                    <button onClick={() => setDeleteModalClient(null)} className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-md">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-start gap-3 bg-red-50 border border-red-200 p-3 rounded-md">
+                      <AlertTriangle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-700 leading-relaxed">
+                        Esta acción <strong>es permanente</strong> e irreversible. Se eliminará de Supabase la cuenta{' '}
+                        <strong className="break-all">{deleteModalClient.email}</strong> junto con sus{' '}
+                        {deleteModalClient.orders_count > 0 ? `${deleteModalClient.orders_count} pedido(s)` : 'pedidos'} y solicitudes de contacto.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={async () => {
+                          if (deleteSubmitting) return;
+                          setDeleteSubmitting(true);
+                          setClientActionFeedback(null);
+                          try {
+                            const res = await fetch('/api/admin/clients', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ email: deleteModalClient.email, action: 'delete_user' }),
+                            });
+                            const body = await res.json();
+                            setClientActionFeedback({
+                              type: res.ok ? 'success' : 'error',
+                              msg: body.message || body.error || 'Error al eliminar el usuario',
+                            });
+                            if (res.ok) {
+                              setDeleteModalClient(null);
+                              loadClients();
+                            }
+                          } catch (e) {
+                            setClientActionFeedback({ type: 'error', msg: 'Error de conexión al eliminar el usuario.' });
+                          } finally {
+                            setDeleteSubmitting(false);
+                          }
+                        }}
+                        disabled={deleteSubmitting}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                      >
+                        {deleteSubmitting ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                        {deleteSubmitting ? 'Eliminando…' : 'Sí, eliminar definitivamente'}
+                      </button>
+                      <button
+                        onClick={() => setDeleteModalClient(null)}
+                        className="w-full border border-gray-300 hover:bg-gray-50 text-neutral-700 font-bold py-2.5 text-xs uppercase tracking-wider transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

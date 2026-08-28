@@ -21,6 +21,17 @@ async function verifyAdmin(req: Request) {
   }
 }
 
+// Cliente con rol de servicio (bypasa RLS): necesario para administrar
+// usuarios de auth y borrar datos del cliente (orders/leads/site_config).
+function getAdminSupabase() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
+  if (!serviceRoleKey) return null;
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
@@ -405,6 +416,79 @@ export async function POST(req: Request) {
       });
     }
 
+    if (action === 'delete_user') {
+      // Nunca se puede eliminar la cuenta del administrador del sistema.
+      if (normalizedEmail === ADMIN_EMAIL) {
+        return NextResponse.json({ error: 'No se puede eliminar la cuenta del administrador.' }, { status: 400 });
+      }
+
+      const adminSupabase = getAdminSupabase();
+      if (!adminSupabase) {
+        return NextResponse.json(
+          { error: 'SUPABASE_SERVICE_ROLE_KEY no configurada. Configúrala en las variables de entorno para poder eliminar usuarios.' },
+          { status: 500 }
+        );
+      }
+
+      // 1. Localizar el usuario en auth.users por email (paginado).
+      let targetUser: any = null;
+      for (let page = 1; page <= 20 && !targetUser; page++) {
+        const { data: usersData, error: listErr } = await adminSupabase.auth.admin.listUsers({ page, perPage: 200 });
+        if (listErr || !usersData?.users?.length) break;
+        targetUser = usersData.users.find((u) => u.email?.toLowerCase() === normalizedEmail);
+        if (usersData.users.length < 200) break;
+      }
+
+      if (!targetUser) {
+        return NextResponse.json({ error: 'No se encontró ningún usuario registrado con ese correo.' }, { status: 404 });
+      }
+
+      // 2. Eliminar la cuenta de Supabase Auth (borra el usuario y sus datos de auth).
+      const { error: deleteAuthErr } = await adminSupabase.auth.admin.deleteUser(targetUser.id);
+      if (deleteAuthErr) {
+        return NextResponse.json({ error: `No se pudo eliminar el usuario en Supabase: ${deleteAuthErr.message}` }, { status: 500 });
+      }
+
+      // 3. Limpiar los datos asociados del cliente (bypass RLS vía service role).
+      let deletedOrders = 0;
+      let deletedLeads = 0;
+      const { data: ordersData } = await adminSupabase
+        .from('orders')
+        .select('id')
+        .or(`customer_email.eq.${normalizedEmail},email.eq.${normalizedEmail}`);
+      if (Array.isArray(ordersData) && ordersData.length) {
+        const ids = ordersData.map((o) => o.id);
+        const { data: delOrders } = await adminSupabase.from('orders').delete().in('id', ids);
+        deletedOrders = ids.length;
+      }
+
+      // Filtrar a su vez en price_history por los pedidos borrados (si existe la tabla y columnas)
+      try {
+        await adminSupabase.from('price_history').delete().or(`customer_email.eq.${normalizedEmail}`);
+      } catch (_) {}
+
+      const { data: leadsData } = await adminSupabase
+        .from('wholesale_leads')
+        .select('id')
+        .eq('email', normalizedEmail);
+      if (Array.isArray(leadsData) && leadsData.length) {
+        const leadIds = leadsData.map((l) => l.id);
+        await adminSupabase.from('wholesale_leads').delete().in('id', leadIds);
+        deletedLeads = leadIds.length;
+      }
+
+      // 4. Quitar al cliente de los registros de site_config (claves asignadas,
+      //    solicitudes de reset y avisos de nuevo registro).
+      await removeFromSiteConfigList(normalizedEmail, 'client_password_records');
+      await removeFromSiteConfigList(normalizedEmail, 'new_user_registrations');
+      await removeFromSiteConfigList(normalizedEmail, 'password_reset_requests');
+
+      return NextResponse.json({
+        success: true,
+        message: `Usuario ${normalizedEmail} eliminado correctamente. Se borró su cuenta, ${deletedOrders} pedido(s) y ${deletedLeads} solicitud(es) de contacto de Supabase.`,
+      });
+    }
+
     return NextResponse.json({ error: 'Acción no soportada' }, { status: 400 });
   } catch (err: any) {
     console.error('API clients POST error:', err);
@@ -427,6 +511,44 @@ async function clearPendingReset(email: string) {
         await supabase.from('site_config').upsert({
           key: 'password_reset_requests',
           value: JSON.stringify(filtered),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+  } catch (_) {}
+}
+
+// Elimina un email de una lista JSON guardada en site_config, soportando tanto
+// listas (array de objetos con .email) como mapas clave->objeto. Usa el cliente
+// de servicio para poder escribir sobre site_config aunque el admin esté logueado.
+async function removeFromSiteConfigList(email: string, key: string) {
+  try {
+    const { data: configRow } = await supabase
+      .from('site_config')
+      .select('value')
+      .eq('key', key)
+      .maybeSingle();
+    if (!configRow?.value) return;
+    const parsed = JSON.parse(configRow.value);
+    let changed = false;
+
+    if (Array.isArray(parsed)) {
+      const filtered = parsed.filter((item: any) => (item.email || '').toLowerCase() !== email.toLowerCase());
+      changed = filtered.length !== parsed.length;
+      if (changed) {
+        await supabase.from('site_config').upsert({
+          key,
+          value: JSON.stringify(filtered),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    } else if (parsed && typeof parsed === 'object') {
+      const mapped = Object.keys(parsed).some((k) => k.toLowerCase() === email.toLowerCase());
+      if (mapped) {
+        const { [Object.keys(parsed).find((k) => k.toLowerCase() === email.toLowerCase())!]: _, ...rest } = parsed;
+        await supabase.from('site_config').upsert({
+          key,
+          value: JSON.stringify(rest),
           updated_at: new Date().toISOString(),
         });
       }
