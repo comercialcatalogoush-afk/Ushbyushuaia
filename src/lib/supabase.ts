@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Product, WholesaleLead } from '@/types';
 import { INITIAL_PRODUCTS } from '@/data/products';
+import { getGoogleDriveImageUrl } from './drive';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_kOqjv3pdiOQoIp0AHKXWeg_H61J-N2g';
@@ -62,10 +63,23 @@ export function saveLocalProductsOverride(products: Product[]) {
   }
 }
 
-const mapProductRow = (item: any): Product => ({
+function normalizeProductName(value: unknown): string {
+  // Corrección de un typo que estaba publicado en la referencia 556291.
+  return String(value || '').replace(/\bShort\s+lardo\b/gi, 'Short largo');
+}
+
+const mapProductRow = (item: any): Product => {
+  const name = normalizeProductName(item.name);
+  const rawImages = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
+  // Los enlaces de Drive se convierten en referencias CDN externas; nunca se
+  // descarga ni se copia el archivo a Supabase o al despliegue.
+  const images = rawImages
+    .filter((image: unknown): image is string => typeof image === 'string' && image.trim() !== '')
+    .map((image: string) => getGoogleDriveImageUrl(image));
+  return {
   id: item.id,
-  name: item.name,
-  reference: item.reference || item.name.replace(/ref:?/i, '').trim(),
+  name,
+  reference: item.reference || name.replace(/ref:?/i, '').trim(),
   slug: item.slug,
   suggested_price: item.suggested_price ? Number(item.suggested_price) : Number(item.compare_price || item.price || 49900),
   price: Number(item.price),
@@ -81,12 +95,13 @@ const mapProductRow = (item: any): Product => ({
   in_stock: item.in_stock !== false,
   hidden: item.hidden === true || item.status === 'draft',
   options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options || []),
-  images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
+  images,
   tags: Array.isArray(item.tags) ? item.tags : [],
   category: item.category || '',
   color: item.color || '',
   category_id: item.category_id
-});
+  };
+};
 
 // Merge Supabase rows with INITIAL_PRODUCTS so the full 90-ref catalog always shows
 function mergeWithInitial(supabaseProducts: Product[]): Product[] {

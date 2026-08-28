@@ -123,7 +123,15 @@ export default function RastreoPage() {
 
   const consultar = useCallback(async (numero: string, isAutoRefresh = false) => {
     const clean = numero.trim().replace(/\s+/g, '');
-    if (!clean) return;
+    if (!/^\d{11}$/.test(clean)) {
+      if (isAutoRefresh) setRefreshing(false);
+      else {
+        setLoading(false);
+        setError('Ingresa una guía válida de 11 dígitos.');
+        setResult(null);
+      }
+      return;
+    }
     if (isAutoRefresh) setRefreshing(true); else { setLoading(true); setError(null); setResult(null); }
 
     try {
@@ -234,8 +242,13 @@ export default function RastreoPage() {
               <input
                 type="text"
                 required
+                inputMode="numeric"
+                minLength={11}
+                maxLength={11}
+                pattern="[0-9]{11}"
+                autoComplete="off"
                 value={guia}
-                onChange={(e) => setGuia(e.target.value)}
+                onChange={(e) => setGuia(e.target.value.replace(/\D/g, '').slice(0, 11))}
                 placeholder={c.trPlaceholder || CARRIERS[0].placeholder}
                 className="w-full border border-gray-300 pl-9 pr-3 py-3 text-sm text-neutral-900 focus:outline-none focus:border-[#d88193] focus:ring-1 focus:ring-[#d88193]/20"
               />

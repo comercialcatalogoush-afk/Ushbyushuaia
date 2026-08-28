@@ -32,10 +32,18 @@ export const WholesaleInquiryForm: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    // Validación de campos obligatorios: la ciudad es un botón custom (no un
-    // input con required), así que antes se podían enviar leads sin municipio.
-    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) {
-      setError('Por favor completa nombre, correo y teléfono.');
+    // La ciudad se selecciona con un control personalizado y por eso también
+    // debe validarse aquí, además de la validación nativa del navegador.
+    if (
+      !formData.date ||
+      !formData.doc_type ||
+      !formData.doc_number.trim() ||
+      !formData.name.trim() ||
+      !formData.email.trim() ||
+      !formData.phone.trim() ||
+      !formData.address.trim()
+    ) {
+      setError('Completa todos los campos obligatorios antes de enviar.');
       return;
     }
     if (!formData.department || !formData.city) {
@@ -133,6 +141,7 @@ export const WholesaleInquiryForm: React.FC = () => {
                 Tipo Doc. *
               </label>
               <select
+                required
                 value={formData.doc_type}
                 onChange={(e) => setFormData({ ...formData, doc_type: e.target.value })}
                 className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"
@@ -319,6 +328,10 @@ export const WholesaleInquiryForm: React.FC = () => {
                   <>
                     <button
                       type="button"
+                      role="combobox"
+                      aria-expanded={cityOpen}
+                      aria-required="true"
+                      aria-invalid={!formData.city}
                       onClick={() => setCityOpen((o) => !o)}
                       className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white flex items-center justify-between"
                     >
@@ -327,6 +340,16 @@ export const WholesaleInquiryForm: React.FC = () => {
                       </span>
                       <ChevronDown size={14} className="text-neutral-400" />
                     </button>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      readOnly
+                      required
+                      tabIndex={-1}
+                      aria-label="Ciudad / Municipio"
+                      className="sr-only"
+                    />
 
                     {cityOpen && formData.department && (
                       <div className="absolute z-30 mt-1 w-full bg-white border border-gray-300 shadow-xl">

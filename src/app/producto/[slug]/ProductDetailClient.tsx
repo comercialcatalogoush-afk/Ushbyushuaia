@@ -161,7 +161,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                           : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-300'
                       }`}
                     >
-                      <Image src={img} alt={`Vista ${idx + 1}`} fill sizes="80px" quality={90} className="object-cover" />
+                      <Image src={img} alt={`Vista ${idx + 1}`} fill unoptimized={img.startsWith('http://') || img.startsWith('https://')} sizes="80px" quality={90} className="object-cover" />
                     </button>
                   ))}
 
@@ -203,6 +203,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     alt={currentProduct.name}
                     fill
                     priority
+                    unoptimized={selectedImage.startsWith('http://') || selectedImage.startsWith('https://')}
                     quality={100}
                     sizes="(max-width: 1024px) 90vw, 40vw"
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
@@ -594,6 +595,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               alt={currentProduct.name}
               width={1000}
               height={1333}
+              unoptimized={(currentProduct.images[zoomIndex] || currentProduct.images[0] || '').startsWith('http://') || (currentProduct.images[zoomIndex] || currentProduct.images[0] || '').startsWith('https://')}
               quality={100}
               sizes="90vw"
               className="object-contain max-w-[90vw] max-h-[85vh] w-auto h-auto shadow-lg"
@@ -656,7 +658,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               <div className="flex gap-3 items-center p-3 bg-neutral-50 rounded-lg border border-neutral-200">
                 <div className="w-14 h-16 relative bg-neutral-200 rounded overflow-hidden flex-shrink-0">
                   {imageUrl && (
-                    <Image src={imageUrl} alt={currentProduct.name} fill sizes="64px" className="object-cover" />
+                    <Image src={imageUrl} alt={currentProduct.name} fill unoptimized={imageUrl.startsWith('http://') || imageUrl.startsWith('https://')} sizes="64px" className="object-cover" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
