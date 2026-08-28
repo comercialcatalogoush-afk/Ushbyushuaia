@@ -14,7 +14,7 @@ import {
   RefreshCw, ShoppingBag, LayoutTemplate, XCircle,
   FileSpreadsheet, FileText, Users, KeyRound, Mail,
   Phone, MapPin, Calendar, DollarSign, CheckCircle2,
-  ExternalLink, MessageSquare, Eye, Copy, Search,
+  ExternalLink, MessageSquare, Eye, EyeOff, Copy, Search,
   AlertTriangle,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -50,8 +50,10 @@ export default function AdminCatalogPage() {
   const [selectedClientOrders, setSelectedClientOrders] = useState<any | null>(null);
   const [assignModalClient, setAssignModalClient] = useState<any | null>(null);
   const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [clientActionFeedback, setClientActionFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [clientLoadError, setClientLoadError] = useState<string | null>(null);
   const [deleteModalClient, setDeleteModalClient] = useState<any | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
@@ -78,6 +80,14 @@ export default function AdminCatalogPage() {
   const [backupLoading, setBackupLoading] = useState(false);
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
+
+  type AdminTab = 'orders' | 'clients' | 'history' | 'backup';
+  const [editorReturnTab, setEditorReturnTab] = useState<AdminTab>('orders');
+
+  const openSiteEditor = () => {
+    if (activeTab !== 'site') setEditorReturnTab(activeTab);
+    setActiveTab('site');
+  };
 
   const { formatCOP } = useCart();
 
@@ -208,22 +218,21 @@ export default function AdminCatalogPage() {
   const loadClients = async () => {
     setLoadingClients(true);
     setClientActionFeedback(null);
+    setClientLoadError(null);
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
-      if (token) {
-        const res = await fetch('/api/admin/clients', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const body = await res.json();
-          if (Array.isArray(body.clients)) {
-            setClients(body.clients);
-          }
-        }
-      }
-    } catch (e) {
+      if (!token) throw new Error('La sesión de administrador no está disponible. Vuelve a ingresar.');
+      const res = await fetch('/api/admin/clients', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `No se pudo cargar el directorio (${res.status}).`);
+      if (!Array.isArray(body.clients)) throw new Error('La respuesta del directorio no tiene un formato válido.');
+      setClients(body.clients);
+    } catch (e: any) {
       console.error('Error loading clients:', e);
+      setClientLoadError(e?.message || 'No se pudo actualizar el directorio de clientes.');
     } finally {
       setLoadingClients(false);
     }
@@ -254,6 +263,7 @@ export default function AdminCatalogPage() {
         setClientActionFeedback({ type: 'success', msg: body.message });
         setAssignModalClient(null);
         setNewPasswordVal('');
+        setShowNewPassword(false);
         loadClients();
       } else {
         setClientActionFeedback({ type: 'error', msg: body.error || 'No se pudo asignar la contraseña' });
@@ -611,6 +621,7 @@ export default function AdminCatalogPage() {
         </div>
 
         {/* Tabs Bar: el catálogo se gestiona íntegramente en el Editor del sitio */}
+        {activeTab !== 'site' && (
         <div className="flex items-center gap-2 border-b border-gray-200 bg-white p-2 mb-6 shadow-sm overflow-x-auto">
           <button
             onClick={() => { setActiveTab('orders'); loadOrders(); }}
@@ -659,14 +670,13 @@ export default function AdminCatalogPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('site')}
-            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-              activeTab === 'site' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
-            }`}
+            onClick={openSiteEditor}
+            className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 text-neutral-600 hover:bg-neutral-100"
           >
             <LayoutTemplate size={14} className="text-[#d88193]" /> Editor del sitio (Catálogo)
           </button>
         </div>
+        )}
 
         {/* Feedback Alert for Client Actions */}
         {clientActionFeedback && (
@@ -688,6 +698,15 @@ export default function AdminCatalogPage() {
         {/* ── TAB: CLIENTES Y GESTIÓN DE CUENTAS ── */}
         {activeTab === 'clients' && (
           <div className="space-y-6">
+            {clientLoadError && (
+              <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-start gap-2" role="alert">
+                <AlertTriangle size={16} className="text-amber-600 flex-shrink-0" />
+                <span>
+                  No se pudo actualizar el directorio: {clientLoadError}
+                  {clients.length > 0 ? ' Se conserva la información anterior.' : ' Intenta refrescar la lista.'}
+                </span>
+              </div>
+            )}
             {/* Header & KPI Summary */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white p-5 border border-gray-200 shadow-sm flex items-center justify-between">
@@ -898,6 +917,7 @@ export default function AdminCatalogPage() {
                                     onClick={() => {
                                       setAssignModalClient(client);
                                       setNewPasswordVal('');
+                                      setShowNewPassword(false);
                                     }}
                                     className="px-2.5 py-1.5 bg-[#1b2333] hover:bg-[#d88193] text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors"
                                   >
@@ -1010,7 +1030,11 @@ export default function AdminCatalogPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => setAssignModalClient(null)}
+                      onClick={() => {
+                        setAssignModalClient(null);
+                        setNewPasswordVal('');
+                        setShowNewPassword(false);
+                      }}
                       className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded-md"
                     >
                       <X size={18} />
@@ -1024,13 +1048,14 @@ export default function AdminCatalogPage() {
                       </label>
                       <div className="relative">
                         <input
-                          type="text"
+                          type={showNewPassword ? 'text' : 'password'}
                           required
                           minLength={6}
+                          autoComplete="new-password"
                           value={newPasswordVal}
                           onChange={(e) => setNewPasswordVal(e.target.value)}
                           placeholder="Ingresa la nueva clave (mín. 6 caracteres)"
-                          className="w-full border border-gray-300 p-3 pr-24 text-xs font-mono text-neutral-900 focus:outline-none focus:border-[#d88193]"
+                          className="w-full border border-gray-300 p-3 pr-44 text-xs font-mono text-neutral-900 focus:outline-none focus:border-[#d88193]"
                         />
                         <button
                           type="button"
@@ -1041,9 +1066,18 @@ export default function AdminCatalogPage() {
                             rand += '!';
                             setNewPasswordVal(rand);
                           }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider text-[#d88193] hover:underline"
+                          className="absolute right-20 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider text-[#d88193] hover:underline"
                         >
                           Generar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword((visible) => !visible)}
+                          aria-label={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          title={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-[#d88193]"
+                        >
+                          {showNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
                       </div>
                       <p className="text-[10px] text-neutral-400 mt-1">
@@ -1072,6 +1106,8 @@ export default function AdminCatalogPage() {
                         onClick={() => {
                           handleSendResetEmail(assignModalClient);
                           setAssignModalClient(null);
+                          setNewPasswordVal('');
+                          setShowNewPassword(false);
                         }}
                         className="w-full border border-gray-300 hover:border-[#d88193] hover:bg-gray-50 text-neutral-700 font-bold py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
                       >
@@ -1219,11 +1255,11 @@ export default function AdminCatalogPage() {
                 <div>
                   <h2 className="text-base font-black uppercase text-[#1b2333] tracking-wide flex items-center gap-2">
                     <History size={16} className="text-[#d88193]" />
-                    Respaldo Mensual Automático
+                    Recordatorio Mensual de Respaldo
                   </h2>
                   <p className="text-xs text-neutral-500 mt-1 max-w-xl">
-                    Para no saturar el plan gratuito de Supabase, cada <strong>último viernes del mes a las 3:30 PM</strong> debes
-                    exportar el respaldo y vaciar las tablas de datos transaccionales.
+                    Para no saturar el plan gratuito de Supabase, recibirás un recordatorio cada <strong>último viernes del mes a las 3:30 PM</strong>.
+                    La exportación y la limpieza de datos se realizan manualmente desde este panel.
                   </p>
                 </div>
                 <button
@@ -1237,7 +1273,7 @@ export default function AdminCatalogPage() {
 
               <div className="mt-4 p-4 bg-neutral-50 border border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Próximo respaldo</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Próximo recordatorio</p>
                   <p className="text-sm font-black text-ush-navy mt-1 capitalize">{formatReminder(backupReminder)}</p>
                 </div>
                 <div>
@@ -1255,7 +1291,7 @@ export default function AdminCatalogPage() {
               </div>
               {backupCountdown.overdue && (
                 <p className="mt-2 text-xs font-bold text-red-600">
-                  ⚠️ ¡Ya pasó la fecha! Exporta el respaldo y vacía los datos lo antes posible.
+                  ⚠️ ¡Ya pasó la fecha del recordatorio! Exporta el respaldo y vacía los datos lo antes posible.
                 </p>
               )}
             </div>
@@ -1512,7 +1548,7 @@ export default function AdminCatalogPage() {
                         </div>
 
                         {items.length > 0 && (
-                          <div className="mt-3 border border-gray-200 bg-white overflow-hidden">
+                          <div className="mt-3 border border-gray-200 bg-white overflow-x-auto">
                             <table className="w-full text-left text-xs">
                               <thead className="bg-neutral-50 text-neutral-500 uppercase tracking-wider text-[10px]">
                                 <tr>
@@ -1573,7 +1609,7 @@ export default function AdminCatalogPage() {
 
         {/* ── TAB 7: EDITOR DEL SITIO WEB (tipo Wix) ── */}
         {activeTab === 'site' && (
-          <SiteContentEditor onExit={() => setActiveTab('orders')} />
+          <SiteContentEditor onExit={() => setActiveTab(editorReturnTab)} />
         )}
 
       </div>

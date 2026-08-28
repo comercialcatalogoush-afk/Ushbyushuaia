@@ -884,15 +884,24 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setTimeout(() => setDraftSaved(false), 2500);
     // Persistencia real en la nube: "Guardar" antes solo escribía el borrador
     // local y los cambios (p. ej. videos) nunca llegaban al sitio público.
+    const cloudSaves: Promise<{ success: boolean; error?: string }>[] = [];
     if (contentLoadedRef.current && pageId) {
-      savePageContent(pageId, values)
-        .then((r) => { if (!r.success) console.error('savePageContent:', r.error); })
-        .catch(() => {});
+      cloudSaves.push(savePageContent(pageId, values));
     }
     if ((themeLoadedRef.current || themeDirtyRef.current) && contentLoadedRef.current) {
-      saveTheme(theme)
-        .then((r) => { if (!r.success) console.error('saveTheme:', r.error); })
-        .catch(() => {});
+      cloudSaves.push(saveTheme(theme));
+    }
+    if (cloudSaves.length > 0) {
+      Promise.all(cloudSaves)
+        .then((results) => {
+          if (results.every((r) => r.success)) {
+            // Sincroniza el cambio guardado con otras pestañas/dispositivos.
+            publishCatalogChange();
+          } else {
+            results.filter((r) => !r.success).forEach((r) => console.error('save content:', r.error));
+          }
+        })
+        .catch((error) => console.error('save content:', error));
     }
   };
   flushRef.current = flushDraft;

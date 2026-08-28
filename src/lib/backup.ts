@@ -31,8 +31,7 @@ async function fetchTable(table: string, orderCol?: string): Promise<any[]> {
       if (orderCol) q = q.order(orderCol, { ascending: false });
       const { data, error } = await q;
       if (error) {
-        console.warn(`backup: no se pudo leer ${table}`, error.message);
-        break;
+        throw new Error(`No se pudo leer ${table}: ${error.message}`);
       }
       const rows = data || [];
       all.push(...rows);
@@ -40,8 +39,9 @@ async function fetchTable(table: string, orderCol?: string): Promise<any[]> {
       from += BACKUP_PAGE_SIZE;
     }
     return all;
-  } catch (_) {
-    return [];
+  } catch (error: any) {
+    if (error instanceof Error) throw error;
+    throw new Error(`No se pudo leer ${table}: ${error?.message || 'error desconocido'}`);
   }
 }
 
