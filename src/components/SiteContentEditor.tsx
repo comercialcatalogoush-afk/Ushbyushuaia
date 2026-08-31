@@ -1391,127 +1391,112 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       <div className="flex flex-1 min-h-0 relative">
         {/* Left: Pages + Categories manager */}
         <aside className="w-56 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
-          <div className="p-2 border-b border-white/5 grid grid-cols-2 gap-1">
-            <button
-              onClick={() => { setMode('content'); setProductsMode(false); closeProduct(); }}
-              className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
-                mode === 'content' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <FileText size={12} /> Páginas
-            </button>
+          <div className="px-3 py-3 border-b border-white/10">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white">
+              <LayoutTemplate size={13} className="text-[#d88193]" />
+              Editor del sitio
+            </div>
+            <p className="mt-1 text-[9px] leading-relaxed text-neutral-500">
+              Administra páginas, catálogo y diseño global desde un mismo lugar.
+            </p>
+          </div>
+
+          <div className="p-2 border-b border-white/5">
             <button
               onClick={() => { setMode('theme'); setProductsMode(false); closeProduct(); setDirty(sectionLayoutDirtyRef.current); setSaved(false); }}
-              className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
-                mode === 'theme' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              className={`w-full flex items-center gap-2 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
+                mode === 'theme' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-300 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Palette size={12} /> Diseño Global
+              <Palette size={13} />
+              <span className="flex-1 text-left">Diseño global</span>
+              {mode === 'theme' && <CheckCircle2 size={12} />}
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto py-2">
-            {mode === 'content' ? (
-              PAGE_SCHEMAS.map((s) => {
-                const isActive = mode === 'content' && pageId === s.id;
-                const sGroups = groupFields(s.fields);
-                return (
-                  <div key={s.id}>
-                    <button
-                      onClick={() => selectPage(s.id)}
-                      className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
-                        isActive ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
-                      <span className="flex-1 truncate">{s.label}</span>
-                      {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
-                    </button>
+            <div className="px-4 pb-1 pt-1 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-600">Páginas</div>
+            {PAGE_SCHEMAS.map((s) => {
+              const isActive = mode === 'content' && pageId === s.id;
+              const sGroups = groupFields(s.fields);
+              return (
+                <div key={s.id}>
+                  <button
+                    onClick={() => selectPage(s.id)}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
+                      isActive ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
+                    <span className="flex-1 truncate">{s.label}</span>
+                    {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
+                  </button>
 
-                    {isActive && (
-                      <div className="ml-3 pl-3 border-l border-white/10 pb-2">
-                        {sGroups.map((g) => {
-                          const sec = sectionForGroup(s.id, g.group);
-                          const secHidden = sec ? isSectionHidden(s.id, sec) : false;
-                          return (
-                            <div key={g.group} className="group flex items-center">
-                              <button
-                                onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
-                                className={`flex-1 text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
-                                  !productsMode && activeGroup?.group === g.group
-                                    ? (secHidden ? 'bg-[#d88193]/20 text-[#f9c9d2] line-through opacity-60' : 'bg-[#d88193]/20 text-[#f9c9d2]')
-                                    : (secHidden ? 'text-neutral-600 line-through' : 'text-neutral-500 hover:text-white')
-                                }`}
-                              >
-                                <span className="flex items-center gap-1.5">
-                                  {g.group}
-                                  {secHidden && <EyeOff size={9} className="text-neutral-500" />}
-                                </span>
-                              </button>
-                              {sec && (
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
-                                  <button
-                                    onClick={() => moveSectionUp(s.id, sec)}
-                                    title="Mover sección arriba"
-                                    className="p-0.5 text-neutral-500 hover:text-white"
-                                  >
-                                    <ChevronUp size={11} />
-                                  </button>
-                                  <button
-                                    onClick={() => moveSectionDown(s.id, sec)}
-                                    title="Mover sección abajo"
-                                    className="p-0.5 text-neutral-500 hover:text-white"
-                                  >
-                                    <ChevronDown size={11} />
-                                  </button>
-                                  <button
-                                    onClick={() => toggleSectionVisible(s.id, sec)}
-                                    title={secHidden ? 'Mostrar sección' : 'Ocultar sección'}
-                                    className={`p-0.5 ${secHidden ? 'text-amber-400' : 'text-neutral-500 hover:text-amber-300'}`}
-                                  >
-                                    {secHidden ? <Eye size={11} /> : <EyeOff size={11} />}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                  {isActive && (
+                    <div className="ml-3 pl-3 border-l border-white/10 pb-2">
+                      {sGroups.map((g) => {
+                        const sec = sectionForGroup(s.id, g.group);
+                        const secHidden = sec ? isSectionHidden(s.id, sec) : false;
+                        return (
+                          <div key={g.group} className="group flex items-center">
+                            <button
+                              onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
+                              className={`flex-1 text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
+                                !productsMode && activeGroup?.group === g.group
+                                  ? (secHidden ? 'bg-[#d88193]/20 text-[#f9c9d2] line-through opacity-60' : 'bg-[#d88193]/20 text-[#f9c9d2]')
+                                  : (secHidden ? 'text-neutral-600 line-through' : 'text-neutral-500 hover:text-white')
+                              }`}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                {g.group}
+                                {secHidden && <EyeOff size={9} className="text-neutral-500" />}
+                              </span>
+                            </button>
+                            {sec && (
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+                                <button
+                                  onClick={() => moveSectionUp(s.id, sec)}
+                                  title="Mover sección arriba"
+                                  className="p-0.5 text-neutral-500 hover:text-white"
+                                >
+                                  <ChevronUp size={11} />
+                                </button>
+                                <button
+                                  onClick={() => moveSectionDown(s.id, sec)}
+                                  title="Mover sección abajo"
+                                  className="p-0.5 text-neutral-500 hover:text-white"
+                                >
+                                  <ChevronDown size={11} />
+                                </button>
+                                <button
+                                  onClick={() => toggleSectionVisible(s.id, sec)}
+                                  title={secHidden ? 'Mostrar sección' : 'Ocultar sección'}
+                                  className={`p-0.5 ${secHidden ? 'text-amber-400' : 'text-neutral-500 hover:text-amber-300'}`}
+                                >
+                                  {secHidden ? <Eye size={11} /> : <EyeOff size={11} />}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
 
-                        {/* Gestor de productos: solo en la página Catálogo */}
-                        {s.id === 'catalogo' && (
-                          <button
-                            onClick={() => { setMode('content'); setProductsMode(true); }}
-                            className={`w-full flex items-center gap-1.5 px-3 py-1.5 mt-1 text-[10px] font-bold uppercase tracking-wider rounded-l ${
-                              productsMode ? 'bg-[#d88193] text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            <Package size={11} /> Catálogo de Prendas
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-4 space-y-3">
-                <button
-                  onClick={() => setMode('content')}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-white/10 hover:bg-white/15 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition-colors"
-                >
-                  <ArrowLeft size={13} /> Volver a Páginas
-                </button>
-                <div className="p-3 bg-white/5 rounded-lg border border-white/5 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white">
-                    <Sparkles size={14} className="text-[#d88193]" />
-                    Estilos Globales del Sitio
-                  </div>
-                  <p className="text-[10px] text-neutral-400 leading-relaxed">
-                    Edita tipografías de Google Fonts, estilos de botones redondeados, colores de marca y franja superior en el panel lateral derecho.
-                  </p>
+                      {/* Gestor de productos: solo en la página Catálogo */}
+                      {s.id === 'catalogo' && (
+                        <button
+                          onClick={() => { setMode('content'); setProductsMode(true); }}
+                          className={`w-full flex items-center gap-1.5 px-3 py-1.5 mt-1 text-[10px] font-bold uppercase tracking-wider rounded-l ${
+                            productsMode ? 'bg-[#d88193] text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <Package size={11} /> Catálogo de Prendas
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })}
           </div>
         </aside>
 
