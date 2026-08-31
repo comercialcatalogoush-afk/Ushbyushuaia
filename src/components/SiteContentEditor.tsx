@@ -20,6 +20,9 @@ import {
   getPageContentClient,
   savePageContent,
   saveTheme,
+  getSectionLayoutClient,
+  saveSectionLayout,
+  SectionLayout,
   fetchThemeFromRemote,
   saveCategoriesOrder,
   getCategoriesOrder,
@@ -350,6 +353,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const contentLoadedRef = useRef(false);
   const themeLoadedRef = useRef(false);
   const themeDirtyRef = useRef(false);
+  const sectionLayoutLoadedRef = useRef(false);
+  const sectionLayoutDirtyRef = useRef(false);
   const loadTokenRef = useRef(0);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -382,22 +387,33 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     getCategoriesOrder().then(setCategoriesList);
   }, []);
 
-  // ── Carga de orden/visibilidad de secciones ──
+  // ── Carga remota de orden/visibilidad de secciones ──
   useEffect(() => {
-    try {
-      const ord = localStorage.getItem('ush_section_order');
-      if (ord) setSectionOrders(JSON.parse(ord));
-      const hid = localStorage.getItem('ush_section_hidden');
-      if (hid) setSectionHidden(JSON.parse(hid));
-    } catch (_) {}
+    let cancelled = false;
+    sectionLayoutLoadedRef.current = false;
+    getSectionLayoutClient().then((layout) => {
+      if (cancelled) return;
+      setSectionOrders(layout.orders);
+      setSectionHidden(layout.hidden);
+      sectionLayoutLoadedRef.current = true;
+      sectionLayoutDirtyRef.current = false;
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const persistSectionSettings = (orders: Record<string, string[]>, hidden: Record<string, string[]>) => {
     try {
+      // Caché local para que el editor conserve el borrador si la conexión
+      // falla. La publicación oficial se hace con saveSectionLayout().
       localStorage.setItem('ush_section_order', JSON.stringify(orders));
       localStorage.setItem('ush_section_hidden', JSON.stringify(hidden));
     } catch (_) {}
   };
+
+  const currentSectionLayout = (): SectionLayout => ({
+    orders: sectionOrders,
+    hidden: sectionHidden,
+  });
 
   const sectionIdsForPage = (pid: string): string[] => {
     return Object.entries(SECTION_MAP)
@@ -430,6 +446,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       persistSectionSettings(n, sectionHidden);
       return n;
     });
+    sectionLayoutDirtyRef.current = true;
+    setDirty(true);
     setNonce((n) => n + 1);
   };
 
@@ -445,6 +463,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       persistSectionSettings(n, sectionHidden);
       return n;
     });
+    sectionLayoutDirtyRef.current = true;
+    setDirty(true);
     setNonce((n) => n + 1);
   };
 
@@ -458,6 +478,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       persistSectionSettings(sectionOrders, next);
       return next;
     });
+    sectionLayoutDirtyRef.current = true;
+    setDirty(true);
     setNonce((n) => n + 1);
   };
 
@@ -875,7 +897,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   undoRef.current = handleUndo;
   redoRef.current = handleRedo;
 
-  const flushDraft = () => {
+  const flushDraft = async () => {
     try { localStorage.setItem('ush_content_' + pageId, JSON.stringify(values)); } catch (e) {}
     try { localStorage.setItem('ush_theme_cache', JSON.stringify(theme)); } catch (e) {}
     window.dispatchEvent(new Event(CONTENT_EVENT));
@@ -891,17 +913,22 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     if ((themeLoadedRef.current || themeDirtyRef.current) && contentLoadedRef.current) {
       cloudSaves.push(saveTheme(theme));
     }
+    if (sectionLayoutLoadedRef.current && sectionLayoutDirtyRef.current) {
+      cloudSaves.push(saveSectionLayout(currentSectionLayout()));
+    }
     if (cloudSaves.length > 0) {
-      Promise.all(cloudSaves)
-        .then((results) => {
-          if (results.every((r) => r.success)) {
-            // Sincroniza el cambio guardado con otras pestañas/dispositivos.
-            publishCatalogChange();
-          } else {
-            results.filter((r) => !r.success).forEach((r) => console.error('save content:', r.error));
-          }
-        })
-        .catch((error) => console.error('save content:', error));
+      try {
+        const results = await Promise.all(cloudSaves);
+        if (results.every((r) => r.success)) {
+          sectionLayoutDirtyRef.current = false;
+          // Sincroniza el cambio guardado con otras pestañas/dispositivos.
+          publishCatalogChange();
+        } else {
+          results.filter((r) => !r.success).forEach((r) => console.error('save content:', r.error));
+        }
+      } catch (error) {
+        console.error('save content:', error);
+      }
     }
   };
   flushRef.current = flushDraft;
@@ -951,14 +978,18 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         ? saveTheme(theme)
         : Promise.resolve({ success: true } as { success: boolean; error?: string }),
     ]);
+    const resLayout = sectionLayoutLoadedRef.current
+      ? await saveSectionLayout(currentSectionLayout())
+      : { success: false, error: 'La estructura de secciones aún se está cargando' };
     setSaving(false);
-    const res = resContent.success && resTheme.success
+    const res = resContent.success && resTheme.success && resLayout.success
       ? { success: true }
-      : { success: false, error: resContent.error || resTheme.error };
+      : { success: false, error: resContent.error || resTheme.error || resLayout.error };
     if (res.success) {
       setSaved(true);
       setDirty(false);
       themeDirtyRef.current = false;
+      sectionLayoutDirtyRef.current = false;
       publishCatalogChange();
       setNonce((n) => n + 1);
       setTimeout(() => setSaved(false), 4000);
@@ -970,7 +1001,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const selectPage = (id: string) => {
     setPageId(id);
     setMode('content');
-    setDirty(false);
+    setDirty(sectionLayoutDirtyRef.current);
     setSaved(false);
     setProductsMode(false);
     closeProduct();
@@ -1051,17 +1082,22 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       // 2) Reordenar por orden personalizado guardado
       const order = orderedSections(pageId);
       if (order.length > 1) {
-        const parentMap = new Map<HTMLElement, { parent: HTMLElement; next: Node | null }>();
-        sections.forEach((el) => {
-          parentMap.set(el, { parent: el.parentElement as HTMLElement, next: el.nextSibling });
+        const rank = new Map(order.map((id, index) => [id, index]));
+        const byParent = new Map<HTMLElement, HTMLElement[]>();
+        sections.filter((el) => rank.has(el.getAttribute('data-editor-section') || '')).forEach((el) => {
+          const parent = el.parentElement;
+          if (!parent) return;
+          byParent.set(parent, [...(byParent.get(parent) || []), el]);
         });
-        order.forEach((sec) => {
-          const el = doc.querySelector<HTMLElement>(`[data-editor-section="${sec}"]`);
-          const info = el ? parentMap.get(el) : null;
-          if (el && info && el.parentElement !== info.parent) return;
-          if (el && info) {
-            el.parentElement?.appendChild(el);
-          }
+        byParent.forEach((siblings) => {
+          const sorted = [...siblings].sort((a, b) =>
+            (rank.get(a.getAttribute('data-editor-section') || '') ?? 0)
+            - (rank.get(b.getAttribute('data-editor-section') || '') ?? 0)
+          );
+          const children = Array.from(siblings[0].parentElement?.children || []) as HTMLElement[];
+          const slots = children.filter((child) => siblings.includes(child));
+          const replacement = new Map(slots.map((slot, index) => [slot, sorted[index]]));
+          children.forEach((child) => child.parentElement?.appendChild(replacement.get(child) || child));
         });
       }
     };
@@ -1365,7 +1401,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
               <FileText size={12} /> Páginas
             </button>
             <button
-              onClick={() => { setMode('theme'); setProductsMode(false); closeProduct(); setDirty(false); setSaved(false); }}
+              onClick={() => { setMode('theme'); setProductsMode(false); closeProduct(); setDirty(sectionLayoutDirtyRef.current); setSaved(false); }}
               className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
                 mode === 'theme' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
               }`}

@@ -8,6 +8,7 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { ToastContainer } from '@/components/ToastContainer';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { SectionLayoutSync } from '@/components/SectionLayoutSync';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-R91RRDYKM1';
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className="flex flex-col min-h-screen">
         <CartProvider>
           <ThemeProvider>
+            <SectionLayoutSync />
             <Header />
             <CartDrawer />
             <ToastContainer />

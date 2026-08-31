@@ -36,6 +36,97 @@ const THEME_CACHE_KEY = 'ush_theme_cache';
 export const CONTENT_EVENT = 'ush_content_updated';
 export const THEME_EVENT = 'ush_theme_updated';
 
+// ── ESTRUCTURA PUBLICADA DE SECCIONES ───────────────────────
+// El editor puede guardar el orden y la visibilidad como un único documento
+// remoto. localStorage solo funciona como respaldo visual si no hay conexión;
+// nunca es la fuente oficial para otros dispositivos.
+export interface SectionLayout {
+  orders: Record<string, string[]>;
+  hidden: Record<string, string[]>;
+}
+
+export const DEFAULT_SECTION_LAYOUT: SectionLayout = { orders: {}, hidden: {} };
+export const SECTION_LAYOUT_EVENT = 'ush_section_layout_updated';
+const SECTION_LAYOUT_KEY = 'section_layout';
+const SECTION_LAYOUT_CACHE_KEY = 'ush_section_layout_cache';
+
+// Mapa compartido para que el sincronizador público sepa a qué página pertenece
+// cada bloque que tiene data-editor-section.
+export const SECTION_PAGE_MAP: Record<string, string> = {
+  'home-hero': 'home', 'home-benefits': 'home', 'home-trust': 'home',
+  'home-policies': 'home', 'home-distribuidores': 'home',
+  'outlet-header': 'outlet', 'outlet-card': 'outlet', 'outlet-buttons': 'outlet', 'outlet-hours': 'outlet',
+  'cc-header': 'como-comprar', 'cc-process': 'como-comprar',
+  'ct-header': 'contacto', 'ct-info': 'contacto', 'ct-whatsapp': 'contacto',
+  'tr-header': 'rastreo', 'tr-form': 'rastreo', 'tr-help': 'rastreo',
+  'cat-header': 'catalogo', 'pl-header': 'politicas', 'pl-ship': 'politicas',
+  'pl-data': 'politicas', 'pl-channels': 'politicas',
+  'footer-brand': 'footer', 'footer-hours': 'footer', 'footer-notice': 'footer',
+};
+
+function parseSectionLayout(value: unknown): SectionLayout | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<SectionLayout>;
+  const orders = candidate.orders && typeof candidate.orders === 'object' ? candidate.orders : {};
+  const hidden = candidate.hidden && typeof candidate.hidden === 'object' ? candidate.hidden : {};
+  const clean = (input: Record<string, unknown>) => Object.fromEntries(
+    Object.entries(input).filter(([, ids]) => Array.isArray(ids)).map(([page, ids]) => [
+      page,
+      (ids as unknown[]).filter((id): id is string => typeof id === 'string'),
+    ])
+  );
+  return { orders: clean(orders as Record<string, unknown>), hidden: clean(hidden as Record<string, unknown>) };
+}
+
+export async function getSectionLayoutClient(): Promise<SectionLayout> {
+  let cached: SectionLayout | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(SECTION_LAYOUT_CACHE_KEY);
+      if (raw) cached = parseSectionLayout(JSON.parse(raw));
+    } catch (_) {}
+  }
+
+  try {
+    const response = await fetch('/api/site-layout', { cache: 'no-store' });
+    if (response.ok) {
+      const remote = parseSectionLayout(await response.json());
+      if (remote) {
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(SECTION_LAYOUT_CACHE_KEY, JSON.stringify(remote)); } catch (_) {}
+        }
+        return remote;
+      }
+    }
+  } catch (_) {}
+  return cached || DEFAULT_SECTION_LAYOUT;
+}
+
+export async function saveSectionLayout(layout: SectionLayout): Promise<{ success: boolean; error?: string }> {
+  try {
+    const normalized = parseSectionLayout(layout) || DEFAULT_SECTION_LAYOUT;
+    const { error } = await supabase.from('site_config').upsert(
+      { key: SECTION_LAYOUT_KEY, value: JSON.stringify(normalized), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    if (error) return { success: false, error: error.message };
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(SECTION_LAYOUT_CACHE_KEY, JSON.stringify(normalized)); } catch (_) {}
+      window.dispatchEvent(new Event(SECTION_LAYOUT_EVENT));
+    }
+    triggerRevalidate();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'No se pudo guardar la estructura de la página' };
+  }
+}
+
+export function subscribeSectionLayout(cb: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener(SECTION_LAYOUT_EVENT, cb);
+  return () => window.removeEventListener(SECTION_LAYOUT_EVENT, cb);
+}
+
 // ── CAMPOS SEO POR DEFECTO (metadatos por página) ────────────
 export const SEO_FIELDS: FieldDef[] = [
   { key: 'seoTitle', label: 'Título SEO (<title>)', type: 'text', group: 'SEO / Metadatos', default: '', placeholder: 'Título de la pestaña del navegador (50-60 caracteres)' },
