@@ -9,6 +9,7 @@ import { ToastContainer } from '@/components/ToastContainer';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SectionLayoutSync } from '@/components/SectionLayoutSync';
+import { CustomerBenefitsBanner } from '@/components/CustomerBenefitsBanner';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-R91RRDYKM1';
@@ -45,6 +46,7 @@ export default function RootLayout({
             <CartDrawer />
             <ToastContainer />
             <ScrollReveal />
+            <CustomerBenefitsBanner />
             <main className="flex-grow">{children}</main>
             <Footer />
           </ThemeProvider>

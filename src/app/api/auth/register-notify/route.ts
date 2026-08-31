@@ -23,10 +23,11 @@ function isRateLimited(key: string): boolean {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { email, name = '' } = body;
+    let { email, name = '', marketingOptIn = false } = body;
 
     email = typeof email === 'string' ? email.trim() : '';
     name = String(name || '').slice(0, 120);
+    marketingOptIn = marketingOptIn === true;
 
     if (!email || !email.includes('@') || email.length > 254) {
       return NextResponse.json({ error: 'Correo electrónico no válido' }, { status: 400 });
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
           email: normalizedEmail,
           name: name || 'Cliente Nuevo',
           registered_at: now,
+          marketing_opt_in: marketingOptIn,
           status: 'new',
         });
         // Rolling de 100 registros
