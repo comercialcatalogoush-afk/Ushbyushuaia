@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { CartItem, Product } from '@/types';
 import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon, WHOLESALE_FALLBACK } from '@/lib/pricing';
 import { subscribeCatalogChanges } from '@/lib/supabase';
+import type { CatalogSyncPayload } from '@/lib/supabase';
 import { gtagEvent } from '@/lib/analytics';
 
 export interface ToastNotification {
@@ -219,11 +220,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (typeof window === 'undefined') return () => {};
     let fetchSeq = 0;
-    const refreshPrices = () => {
-      // Se sirve desde el cache del edge de Vercel (/api/catalog con s-maxage=60),
-      // no se consulta Supabase por cada cliente ante cada broadcast.
+    const refreshPrices = (payload?: CatalogSyncPayload) => {
+      // Se sirve desde el cache del edge de Vercel. En un broadcast de cambios
+      // se añade el mismo timestamp para que todas las pestañas salten la
+      // respuesta anterior y reciban el stock/precio recién publicado.
       const seq = ++fetchSeq;
-      fetch('/api/catalog')
+      const syncQuery = payload?.ts ? `?sync=${encodeURIComponent(String(payload.ts))}` : '';
+      fetch(`/api/catalog${syncQuery}`, {
+        cache: 'no-store',
+        headers: payload?.ts ? { 'Cache-Control': 'no-cache' } : undefined,
+      })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
         .then((fresh: Product[]) => {
           if (seq !== fetchSeq) return;

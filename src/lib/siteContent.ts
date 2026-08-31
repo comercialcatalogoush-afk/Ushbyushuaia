@@ -82,7 +82,7 @@ function parseSectionLayout(value: unknown): SectionLayout | null {
   return { orders: clean(orders as Record<string, unknown>), hidden: clean(hidden as Record<string, unknown>) };
 }
 
-export async function getSectionLayoutClient(): Promise<SectionLayout> {
+export async function getSectionLayoutClient(cacheBust?: number): Promise<SectionLayout> {
   let cached: SectionLayout | null = null;
   if (typeof window !== 'undefined') {
     try {
@@ -92,7 +92,11 @@ export async function getSectionLayoutClient(): Promise<SectionLayout> {
   }
 
   try {
-    const response = await fetch('/api/site-layout', { cache: 'no-store' });
+    const syncQuery = cacheBust ? `?sync=${encodeURIComponent(String(cacheBust))}` : '';
+    const response = await fetch(`/api/site-layout${syncQuery}`, {
+      cache: 'no-store',
+      headers: cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+    });
     if (response.ok) {
       const remote = parseSectionLayout(await response.json());
       if (remote) {
@@ -465,7 +469,21 @@ async function upsertConfigValue(key: string, value: unknown): Promise<{ success
   }
 }
 
-export async function fetchContentFromRemote(pageId: string): Promise<ContentValues | null> {
+export async function fetchContentFromRemote(pageId: string, cacheBust?: number): Promise<ContentValues | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const syncQuery = cacheBust ? `&sync=${encodeURIComponent(String(cacheBust))}` : '';
+      const response = await fetch(`/api/site-content?page=${encodeURIComponent(pageId)}${syncQuery}`, {
+        cache: 'no-store',
+        headers: cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+      });
+      if (response.ok) {
+        const parsed = await response.json();
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (_) {}
+    return null;
+  }
   try {
     const { data, error } = await supabase
       .from('site_config')
@@ -493,7 +511,7 @@ export async function fetchDraftContentFromRemote(pageId: string): Promise<Conte
   }
 }
 
-export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
+export async function fetchThemeFromRemote(cacheBust?: number): Promise<SiteTheme | null> {
   // En el editor del admin se prioriza el borrador local para preview en vivo.
   const editorLive = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ush_editor_live') === '1';
   if (editorLive && typeof localStorage !== 'undefined') {
@@ -501,6 +519,20 @@ export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
       const cached = localStorage.getItem(DRAFT_THEME_CACHE_KEY);
       if (cached) return { ...DEFAULT_THEME, ...JSON.parse(cached) };
     } catch (e) {}
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const syncQuery = cacheBust ? `?sync=${encodeURIComponent(String(cacheBust))}` : '';
+      const response = await fetch(`/api/site-theme${syncQuery}`, {
+        cache: 'no-store',
+        headers: cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+      });
+      if (response.ok) {
+        const parsed = await response.json();
+        if (parsed && typeof parsed === 'object') return { ...DEFAULT_THEME, ...parsed };
+      }
+    } catch (_) {}
+    return null;
   }
   try {
     const { data, error } = await supabase
@@ -587,7 +619,7 @@ export async function getThemeServer(): Promise<SiteTheme> {
 }
 
 // Lectura para CLIENT components (con caché local)
-export async function getPageContentClient(pageId: string): Promise<ContentValues> {
+export async function getPageContentClient(pageId: string, cacheBust?: number): Promise<ContentValues> {
   let stored: ContentValues | null = null;
   if (typeof window !== 'undefined') {
     try {
@@ -604,7 +636,7 @@ export async function getPageContentClient(pageId: string): Promise<ContentValue
       if (draft) stored = JSON.parse(draft);
     } catch (_) {}
   } else {
-    const remote = await fetchContentFromRemote(pageId);
+    const remote = await fetchContentFromRemote(pageId, cacheBust);
     if (remote) {
       stored = remote;
       if (typeof window !== 'undefined') {

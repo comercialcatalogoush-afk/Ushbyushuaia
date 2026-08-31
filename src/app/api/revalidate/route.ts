@@ -34,6 +34,8 @@ export async function POST(req: Request) {
     revalidatePath('/api/top-sellers');
     revalidatePath('/api/site-config');
     revalidatePath('/api/site-layout');
+    revalidatePath('/api/site-content');
+    revalidatePath('/api/site-theme');
     return NextResponse.json({ revalidated: true });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'error' }, { status: 500 });

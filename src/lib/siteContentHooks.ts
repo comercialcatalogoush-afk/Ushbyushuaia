@@ -12,6 +12,7 @@ import {
   THEME_EVENT,
 } from './siteContent';
 import { subscribeCatalogChanges } from './supabase';
+import type { CatalogSyncPayload } from './supabase';
 import type { ContentValues, SiteTheme } from './siteContent';
 
 export function usePageContent(pageId: string): ContentValues {
@@ -19,8 +20,8 @@ export function usePageContent(pageId: string): ContentValues {
 
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      const values = await getPageContentClient(pageId);
+    const load = async (payload?: CatalogSyncPayload) => {
+      const values = await getPageContentClient(pageId, payload?.ts);
       if (!cancelled) setContent(values);
     };
     load();
@@ -82,8 +83,8 @@ export function useSiteTheme(): SiteTheme {
       }
     } catch (_) {}
 
-    const load = async () => {
-      const t = await fetchThemeFromRemote();
+    const load = async (payload?: CatalogSyncPayload) => {
+      const t = await fetchThemeFromRemote(payload?.ts);
       if (cancelled || !t) {
         // Si falla la red NO se pisa el tema ya aplicado (caché o default):
         // antes se forzaba DEFAULT y la UI quedaba desincronizada del hook.

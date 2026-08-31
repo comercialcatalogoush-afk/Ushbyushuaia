@@ -10,6 +10,7 @@ import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { subscribeCatalogChanges } from '@/lib/supabase';
+import type { CatalogSyncPayload } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
 import { WHOLESALE_FALLBACK } from '@/lib/pricing';
 import { gtagEvent } from '@/lib/analytics';
@@ -82,10 +83,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   // Realtime: si el admin confirma un pago (o edita el producto), el stock y
   // los datos se actualizan al instante desde Supabase.
   React.useEffect(() => {
-    const unsubscribe = subscribeCatalogChanges(() => {
-      // Se sirve desde el cache del edge de Vercel (/api/catalog?slug=...),
-      // no se consulta Supabase por cada cliente ante cada broadcast.
-      fetch(`/api/catalog?slug=${encodeURIComponent(currentProduct.slug)}`)
+    const unsubscribe = subscribeCatalogChanges((payload?: CatalogSyncPayload) => {
+      // El timestamp del broadcast evita que el detalle conserve el stock o
+      // precio anterior del CDN después de una publicación del admin.
+      const syncQuery = payload?.ts ? `&sync=${encodeURIComponent(String(payload.ts))}` : '';
+      fetch(`/api/catalog?slug=${encodeURIComponent(currentProduct.slug)}${syncQuery}`, {
+        cache: 'no-store',
+        headers: payload?.ts ? { 'Cache-Control': 'no-cache' } : undefined,
+      })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
         .then((fresh: Product) => {
           if (fresh) {

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { getSectionLayoutClient, SECTION_PAGE_MAP, subscribeSectionLayout } from '@/lib/siteContent';
 import { subscribeCatalogChanges } from '@/lib/supabase';
+import type { CatalogSyncPayload } from '@/lib/supabase';
 
 function applySectionLayout(layout: { orders: Record<string, string[]>; hidden: Record<string, string[]> }) {
   if (typeof document === 'undefined') return;
@@ -52,8 +53,8 @@ function applySectionLayout(layout: { orders: Record<string, string[]>; hidden: 
 export function SectionLayoutSync() {
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      const layout = await getSectionLayoutClient();
+    const load = async (payload?: CatalogSyncPayload) => {
+      const layout = await getSectionLayoutClient(payload?.ts);
       if (!cancelled) applySectionLayout(layout);
     };
 

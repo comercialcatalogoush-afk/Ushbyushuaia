@@ -536,6 +536,10 @@ export async function cancelOrderAndRestoreStock(
 // ── REALTIME: broadcast de cambios (gratis, sin SQL) ────────────────
 const SYNC_CHANNEL = 'ush-catalog-sync';
 
+export interface CatalogSyncPayload {
+  ts?: number;
+}
+
 function sendBroadcast(event: string) {
   if (typeof window === 'undefined') return;
   try {
@@ -590,18 +594,18 @@ export function publishUserRegistered() {
 }
 
 export function subscribeCatalogChanges(
-  cb: () => void,
+  cb: (payload?: CatalogSyncPayload) => void,
   onUserRegistered?: (payload?: { email?: string; name?: string }) => void
 ): () => void {
   if (typeof window === 'undefined') return () => {};
   try {
     const ch = supabase.channel(SYNC_CHANNEL);
     ch
-      .on('broadcast', { event: 'catalog-changed' }, () => cb())
-      .on('broadcast', { event: 'order-changed' }, () => cb())
+      .on('broadcast', { event: 'catalog-changed' }, ({ payload }) => cb(payload as CatalogSyncPayload))
+      .on('broadcast', { event: 'order-changed' }, ({ payload }) => cb(payload as CatalogSyncPayload))
       .on('broadcast', { event: 'user-registered' }, ({ payload }) => {
         // Refresca la lista de clientes del admin
-        cb();
+        cb(payload as CatalogSyncPayload);
         // Si el admin pasó un callback dedicado, lo ejecuta con los datos del nuevo usuario
         if (onUserRegistered) onUserRegistered(payload as { email?: string; name?: string });
       })

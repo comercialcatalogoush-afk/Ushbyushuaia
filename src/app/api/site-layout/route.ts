@@ -8,9 +8,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const CACHE_CONTROL = 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400';
+const NO_STORE = 'no-store';
 const EMPTY_LAYOUT = { orders: {}, hidden: {} };
 
 export async function GET() {
+  let readFailed = false;
   try {
     const { data, error } = await supabase
       .from('site_config')
@@ -18,6 +20,7 @@ export async function GET() {
       .eq('key', 'section_layout')
       .maybeSingle();
 
+    if (error) readFailed = true;
     if (!error && data?.value) {
       try {
         const parsed = JSON.parse(data.value);
@@ -28,9 +31,12 @@ export async function GET() {
         }
       } catch (_) {}
     }
-  } catch (_) {}
+  } catch (_) { readFailed = true; }
 
   return NextResponse.json(EMPTY_LAYOUT, {
-    headers: { 'Cache-Control': CACHE_CONTROL, 'CDN-Cache-Control': CACHE_CONTROL },
+    headers: {
+      'Cache-Control': readFailed ? NO_STORE : CACHE_CONTROL,
+      'CDN-Cache-Control': readFailed ? NO_STORE : CACHE_CONTROL,
+    },
   });
 }
