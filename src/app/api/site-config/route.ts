@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const CACHE_CONTROL = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0';
+// El navegador siempre valida la versión; Vercel puede reutilizar la respuesta
+// durante cinco minutos y revalidarla en segundo plano.
+const CACHE_CONTROL = 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400';
 const DEFAULT_WHATSAPP_NUMBER = '573011393902';
 
 export async function GET() {
@@ -19,5 +21,7 @@ export async function GET() {
       .maybeSingle();
     if (!error && data?.value) whatsapp = String(data.value);
   } catch {}
-  return NextResponse.json({ whatsapp }, { headers: { 'Cache-Control': CACHE_CONTROL } });
+  return NextResponse.json({ whatsapp }, {
+    headers: { 'Cache-Control': CACHE_CONTROL, 'CDN-Cache-Control': CACHE_CONTROL },
+  });
 }
