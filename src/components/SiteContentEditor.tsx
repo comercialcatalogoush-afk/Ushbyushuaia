@@ -17,13 +17,19 @@ import {
   SiteTheme,
   ContentValues,
   FieldDef,
-  getPageContentClient,
-  savePageContent,
-  saveTheme,
-  getSectionLayoutClient,
-  saveSectionLayout,
+  getPageContentForEditor,
+  savePageContentDraft,
+  publishPageContent,
+  clearPageContentDraft,
+  saveThemeDraft,
+  publishTheme,
+  clearThemeDraft,
+  getThemeForEditor,
+  getSectionLayoutForEditor,
+  saveSectionLayoutDraft,
+  publishSectionLayout,
+  clearSectionLayoutDraft,
   SectionLayout,
-  fetchThemeFromRemote,
   saveCategoriesOrder,
   getCategoriesOrder,
   saveCatalogProductsOrder,
@@ -365,17 +371,26 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const groups = schema ? groupFields(schema.fields) : [];
   const activeGroup = groups.find((g) => g.group === groupId) || groups[0];
 
+  // El preview dentro del iframe puede leer el borrador local sin convertirlo
+  // en contenido público. Las visitas normales nunca activan este indicador.
+  useEffect(() => {
+    try { sessionStorage.setItem('ush_editor_live', '1'); } catch (_) {}
+    return () => {
+      try { sessionStorage.removeItem('ush_editor_live'); } catch (_) {}
+    };
+  }, []);
+
   // Carga inicial de contenido (con guarda anti-carrera al cambiar de página)
   useEffect(() => {
     const token = ++loadTokenRef.current;
     contentLoadedRef.current = false;
-    getPageContentClient(pageId).then((data) => {
+    getPageContentForEditor(pageId).then((data) => {
       if (token !== loadTokenRef.current) return;
       setValues(data);
       contentLoadedRef.current = true;
     });
-    fetchThemeFromRemote().then((t) => {
-      if (t && token === loadTokenRef.current) {
+    getThemeForEditor().then((t) => {
+      if (token === loadTokenRef.current) {
         setTheme(t);
         themeLoadedRef.current = true;
       }
@@ -391,7 +406,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     let cancelled = false;
     sectionLayoutLoadedRef.current = false;
-    getSectionLayoutClient().then((layout) => {
+    getSectionLayoutForEditor().then((layout) => {
       if (cancelled) return;
       setSectionOrders(layout.orders);
       setSectionHidden(layout.hidden);
@@ -404,7 +419,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const persistSectionSettings = (orders: Record<string, string[]>, hidden: Record<string, string[]>) => {
     try {
       // Caché local para que el editor conserve el borrador si la conexión
-      // falla. La publicación oficial se hace con saveSectionLayout().
+      // falla. La publicación oficial se hace con publishSectionLayout().
       localStorage.setItem('ush_section_order', JSON.stringify(orders));
       localStorage.setItem('ush_section_hidden', JSON.stringify(hidden));
     } catch (_) {}
@@ -828,12 +843,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     }
   };
 
-  // Sync state changes with localStorage & debounce live preview
+  // Sync state changes con el borrador local para que el preview se actualice
+  // sin contaminar la caché pública antes de publicar.
   useEffect(() => {
     if (!dirty || mode !== 'content') return;
-    const timer = setTimeout(() => {
+            const timer = setTimeout(() => {
       try {
-        localStorage.setItem('ush_content_' + pageId, JSON.stringify(values));
+        localStorage.setItem('ush_draft_content_' + pageId, JSON.stringify(values));
       } catch (e) {}
       window.dispatchEvent(new Event(CONTENT_EVENT));
     }, 250);
@@ -844,7 +860,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     if (!dirty || mode !== 'theme') return;
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem('ush_theme_cache', JSON.stringify(theme));
+        localStorage.setItem('ush_draft_theme_cache', JSON.stringify(theme));
       } catch (e) {}
       window.dispatchEvent(new Event(THEME_EVENT));
     }, 200);
@@ -898,31 +914,28 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   redoRef.current = handleRedo;
 
   const flushDraft = async () => {
-    try { localStorage.setItem('ush_content_' + pageId, JSON.stringify(values)); } catch (e) {}
-    try { localStorage.setItem('ush_theme_cache', JSON.stringify(theme)); } catch (e) {}
+    try { localStorage.setItem('ush_draft_content_' + pageId, JSON.stringify(values)); } catch (e) {}
+    try { localStorage.setItem('ush_draft_theme_cache', JSON.stringify(theme)); } catch (e) {}
     window.dispatchEvent(new Event(CONTENT_EVENT));
     window.dispatchEvent(new Event(THEME_EVENT));
-    setDraftSaved(true);
-    setTimeout(() => setDraftSaved(false), 2500);
-    // Persistencia real en la nube: "Guardar" antes solo escribía el borrador
-    // local y los cambios (p. ej. videos) nunca llegaban al sitio público.
+    // Guardar conserva el trabajo en un espacio privado. No se publica ni se
+    // purga la caché pública hasta que el administrador confirme la publicación.
     const cloudSaves: Promise<{ success: boolean; error?: string }>[] = [];
     if (contentLoadedRef.current && pageId) {
-      cloudSaves.push(savePageContent(pageId, values));
+      cloudSaves.push(savePageContentDraft(pageId, values));
     }
     if ((themeLoadedRef.current || themeDirtyRef.current) && contentLoadedRef.current) {
-      cloudSaves.push(saveTheme(theme));
+      cloudSaves.push(saveThemeDraft(theme));
     }
     if (sectionLayoutLoadedRef.current && sectionLayoutDirtyRef.current) {
-      cloudSaves.push(saveSectionLayout(currentSectionLayout()));
+      cloudSaves.push(saveSectionLayoutDraft(currentSectionLayout()));
     }
     if (cloudSaves.length > 0) {
       try {
         const results = await Promise.all(cloudSaves);
         if (results.every((r) => r.success)) {
-          sectionLayoutDirtyRef.current = false;
-          // Sincroniza el cambio guardado con otras pestañas/dispositivos.
-          publishCatalogChange();
+          setDraftSaved(true);
+          setTimeout(() => setDraftSaved(false), 2500);
         } else {
           results.filter((r) => !r.success).forEach((r) => console.error('save content:', r.error));
         }
@@ -970,22 +983,23 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       return;
     }
     setSaving(true);
-    // Publica SIEMPRE ambos modos: antes, publicar en "Páginas" descartaba
-    // cambios de tema pendientes (y viceversa) al compartir el flag dirty.
+    // Publica el estado actual en las claves públicas solo después de que el
+    // administrador ha pulsado expresamente este botón.
     const [resContent, resTheme] = await Promise.all([
-      savePageContent(pageId, values),
+      publishPageContent(pageId, values),
       (themeLoadedRef.current || themeDirtyRef.current)
-        ? saveTheme(theme)
+        ? publishTheme(theme)
         : Promise.resolve({ success: true } as { success: boolean; error?: string }),
     ]);
     const resLayout = sectionLayoutLoadedRef.current
-      ? await saveSectionLayout(currentSectionLayout())
+      ? await publishSectionLayout(currentSectionLayout())
       : { success: false, error: 'La estructura de secciones aún se está cargando' };
     setSaving(false);
     const res = resContent.success && resTheme.success && resLayout.success
       ? { success: true }
       : { success: false, error: resContent.error || resTheme.error || resLayout.error };
     if (res.success) {
+      await Promise.all([clearPageContentDraft(pageId), clearThemeDraft(), clearSectionLayoutDraft()]);
       setSaved(true);
       setDirty(false);
       themeDirtyRef.current = false;
@@ -1356,6 +1370,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </a>
 
           <div className="flex items-center gap-2 pl-2 border-l border-white/15">
+            {draftSaved && (
+              <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-sky-300">
+                <CheckCircle2 size={12} /> Borrador guardado
+              </span>
+            )}
             {dirty ? (
               <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
@@ -1369,11 +1388,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
             <button
               onClick={flushDraft}
-              title="Guardar en la nube y en este navegador (Ctrl+S)"
+              title="Guardar borrador en la nube (Ctrl+S)"
               className="hidden sm:flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded shadow"
             >
               <FileClock size={13} />
-              Guardar
+              Guardar borrador
             </button>
             <button
               onClick={handlePublish}

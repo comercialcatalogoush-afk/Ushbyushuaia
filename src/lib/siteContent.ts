@@ -31,7 +31,9 @@ export type ContentValues = Record<string, string>;
 
 // ── GUARDADO LOCAL (caché del navegador) ────────────────────
 const CONTENT_CACHE_PREFIX = 'ush_content_';
+const DRAFT_CONTENT_CACHE_PREFIX = 'ush_draft_content_';
 const THEME_CACHE_KEY = 'ush_theme_cache';
+const DRAFT_THEME_CACHE_KEY = 'ush_draft_theme_cache';
 
 export const CONTENT_EVENT = 'ush_content_updated';
 export const THEME_EVENT = 'ush_theme_updated';
@@ -48,7 +50,9 @@ export interface SectionLayout {
 export const DEFAULT_SECTION_LAYOUT: SectionLayout = { orders: {}, hidden: {} };
 export const SECTION_LAYOUT_EVENT = 'ush_section_layout_updated';
 const SECTION_LAYOUT_KEY = 'section_layout';
+const DRAFT_SECTION_LAYOUT_KEY = 'draft_section_layout';
 const SECTION_LAYOUT_CACHE_KEY = 'ush_section_layout_cache';
+const DRAFT_SECTION_LAYOUT_CACHE_KEY = 'ush_draft_section_layout_cache';
 
 // Mapa compartido para que el sincronizador público sepa a qué página pertenece
 // cada bloque que tiene data-editor-section.
@@ -118,6 +122,49 @@ export async function saveSectionLayout(layout: SectionLayout): Promise<{ succes
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message || 'No se pudo guardar la estructura de la página' };
+  }
+}
+
+export async function getSectionLayoutForEditor(): Promise<SectionLayout> {
+  const published = await getSectionLayoutClient();
+  let draft: SectionLayout | null = null;
+  const raw = await fetchConfigValue(DRAFT_SECTION_LAYOUT_KEY);
+  if (raw) {
+    try { draft = parseSectionLayout(JSON.parse(raw)); } catch (_) {}
+  }
+  if (draft) {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(DRAFT_SECTION_LAYOUT_CACHE_KEY, JSON.stringify(draft)); } catch (_) {}
+    }
+    return draft;
+  }
+  return published;
+}
+
+export async function saveSectionLayoutDraft(layout: SectionLayout): Promise<{ success: boolean; error?: string }> {
+  const normalized = parseSectionLayout(layout) || DEFAULT_SECTION_LAYOUT;
+  const result = await upsertConfigValue(DRAFT_SECTION_LAYOUT_KEY, normalized);
+  if (!result.success) return result;
+  if (typeof window !== 'undefined') {
+    try { localStorage.setItem(DRAFT_SECTION_LAYOUT_CACHE_KEY, JSON.stringify(normalized)); } catch (_) {}
+    window.dispatchEvent(new Event(SECTION_LAYOUT_EVENT));
+  }
+  return result;
+}
+
+export async function publishSectionLayout(layout: SectionLayout): Promise<{ success: boolean; error?: string }> {
+  const normalized = parseSectionLayout(layout) || DEFAULT_SECTION_LAYOUT;
+  const result = await upsertConfigValue(SECTION_LAYOUT_KEY, normalized);
+  if (result.success && typeof window !== 'undefined') {
+    try { localStorage.setItem(SECTION_LAYOUT_CACHE_KEY, JSON.stringify(normalized)); } catch (_) {}
+  }
+  return result;
+}
+
+export async function clearSectionLayoutDraft(): Promise<void> {
+  try { await supabase.from('site_config').delete().eq('key', DRAFT_SECTION_LAYOUT_KEY); } catch (_) {}
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(DRAFT_SECTION_LAYOUT_CACHE_KEY); } catch (_) {}
   }
 }
 
@@ -392,6 +439,31 @@ export const DEFAULT_THEME: SiteTheme = {
 // ── LECTURA / ESCRITURA EN Supabase ─────────────────────────
 
 const contentKey = (pageId: string) => `page_${pageId}`;
+const draftContentKey = (pageId: string) => `draft_page_${pageId}`;
+
+async function fetchConfigValue(key: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('site_config')
+      .select('value')
+      .eq('key', key)
+      .maybeSingle();
+    if (!error && data?.value) return String(data.value);
+  } catch (_) {}
+  return null;
+}
+
+async function upsertConfigValue(key: string, value: unknown): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('site_config').upsert(
+      { key, value: JSON.stringify(value), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    return error ? { success: false, error: error.message } : { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'No se pudo guardar la configuración' };
+  }
+}
 
 export async function fetchContentFromRemote(pageId: string): Promise<ContentValues | null> {
   try {
@@ -410,12 +482,23 @@ export async function fetchContentFromRemote(pageId: string): Promise<ContentVal
   return null;
 }
 
+export async function fetchDraftContentFromRemote(pageId: string): Promise<ContentValues | null> {
+  const raw = await fetchConfigValue(draftContentKey(pageId));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
   // En el editor del admin se prioriza el borrador local para preview en vivo.
   const editorLive = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ush_editor_live') === '1';
   if (editorLive && typeof localStorage !== 'undefined') {
     try {
-      const cached = localStorage.getItem(THEME_CACHE_KEY);
+      const cached = localStorage.getItem(DRAFT_THEME_CACHE_KEY);
       if (cached) return { ...DEFAULT_THEME, ...JSON.parse(cached) };
     } catch (e) {}
   }
@@ -433,6 +516,29 @@ export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
     console.error('Error fetching theme', e);
   }
   return null;
+}
+
+export async function fetchDraftThemeFromRemote(): Promise<SiteTheme | null> {
+  const raw = await fetchConfigValue('draft_theme');
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? { ...DEFAULT_THEME, ...parsed } : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+export async function getThemeForEditor(): Promise<SiteTheme> {
+  const published = await fetchThemeFromRemote();
+  const draft = await fetchDraftThemeFromRemote();
+  if (draft) {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(DRAFT_THEME_CACHE_KEY, JSON.stringify(draft)); } catch (_) {}
+    }
+    return draft;
+  }
+  return published || DEFAULT_THEME;
 }
 // Valores finales para una página: guardado (nube/caché) + defaults
 export function mergeContent(pageId: string, stored: ContentValues | null): ContentValues {
@@ -492,7 +598,12 @@ export async function getPageContentClient(pageId: string): Promise<ContentValue
   // En el editor del admin (sesión "live") se prioriza el borrador local para
   // que el preview refleje los cambios sin publicar.
   const editorLive = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ush_editor_live') === '1';
-  if (!editorLive) {
+  if (editorLive && typeof window !== 'undefined') {
+    try {
+      const draft = localStorage.getItem(DRAFT_CONTENT_CACHE_PREFIX + pageId);
+      if (draft) stored = JSON.parse(draft);
+    } catch (_) {}
+  } else {
     const remote = await fetchContentFromRemote(pageId);
     if (remote) {
       stored = remote;
@@ -502,6 +613,19 @@ export async function getPageContentClient(pageId: string): Promise<ContentValue
     }
   }
   return mergeContent(pageId, stored);
+}
+
+export async function getPageContentForEditor(pageId: string): Promise<ContentValues> {
+  const publishedRemote = await fetchContentFromRemote(pageId);
+  const published = mergeContent(pageId, publishedRemote);
+  const draft = await fetchDraftContentFromRemote(pageId);
+  if (draft) {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(DRAFT_CONTENT_CACHE_PREFIX + pageId, JSON.stringify(draft)); } catch (_) {}
+    }
+    return mergeContent(pageId, draft);
+  }
+  return published;
 }
 
 // Guardado desde el panel admin (requiere sesión autenticada)
@@ -524,6 +648,31 @@ export async function savePageContent(pageId: string, values: ContentValues): Pr
   }
 }
 
+export async function savePageContentDraft(pageId: string, values: ContentValues): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue(draftContentKey(pageId), values);
+  if (!result.success) return result;
+  if (typeof window !== 'undefined') {
+    try { localStorage.setItem(DRAFT_CONTENT_CACHE_PREFIX + pageId, JSON.stringify(values)); } catch (_) {}
+    window.dispatchEvent(new Event(CONTENT_EVENT));
+  }
+  return result;
+}
+
+export async function publishPageContent(pageId: string, values: ContentValues): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue(contentKey(pageId), values);
+  if (result.success && typeof window !== 'undefined') {
+    try { localStorage.setItem(CONTENT_CACHE_PREFIX + pageId, JSON.stringify(values)); } catch (_) {}
+  }
+  return result;
+}
+
+export async function clearPageContentDraft(pageId: string): Promise<void> {
+  try { await supabase.from('site_config').delete().eq('key', draftContentKey(pageId)); } catch (_) {}
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(DRAFT_CONTENT_CACHE_PREFIX + pageId); } catch (_) {}
+  }
+}
+
 export async function saveTheme(theme: SiteTheme): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase.from('site_config').upsert(
@@ -540,6 +689,31 @@ export async function saveTheme(theme: SiteTheme): Promise<{ success: boolean; e
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message };
+  }
+}
+
+export async function saveThemeDraft(theme: SiteTheme): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue('draft_theme', theme);
+  if (!result.success) return result;
+  if (typeof window !== 'undefined') {
+    try { localStorage.setItem(DRAFT_THEME_CACHE_KEY, JSON.stringify(theme)); } catch (_) {}
+    window.dispatchEvent(new Event(THEME_EVENT));
+  }
+  return result;
+}
+
+export async function publishTheme(theme: SiteTheme): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue('theme', theme);
+  if (result.success && typeof window !== 'undefined') {
+    try { localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme)); } catch (_) {}
+  }
+  return result;
+}
+
+export async function clearThemeDraft(): Promise<void> {
+  try { await supabase.from('site_config').delete().eq('key', 'draft_theme'); } catch (_) {}
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(DRAFT_THEME_CACHE_KEY); } catch (_) {}
   }
 }
 
