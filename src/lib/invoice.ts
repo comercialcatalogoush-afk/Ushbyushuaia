@@ -18,6 +18,7 @@ const PINK: [number, number, number] = [216, 129, 147];
 const GRAY: [number, number, number] = [110, 116, 130];
 const LIGHT: [number, number, number] = [245, 245, 247];
 const GRID: [number, number, number] = [229, 229, 232];
+const PALE_PINK: [number, number, number] = [253, 242, 244];
 
 // ── Logo (cacheado como dataURL) ──
 let logoCache: string | null = null;
@@ -99,6 +100,24 @@ function fmtDate(order: any): string {
     : d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
+function clipText(doc: jsPDF, value: unknown, maxWidth: number): string {
+  const text = String(value || '—').replace(/\s+/g, ' ').trim();
+  if (!text) return '—';
+  const lines = doc.splitTextToSize(text, maxWidth) as string[];
+  return lines[0] || '—';
+}
+
+function drawInvoiceFooter(doc: jsPDF, page: number, totalPages: number) {
+  doc.setDrawColor(...GRID);
+  doc.setLineWidth(0.25);
+  doc.line(14, 283, 196, 283);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(...GRAY);
+  doc.text('USH BY USHUAIA · Documento generado electrónicamente', 14, 289);
+  doc.text(`Página ${page} de ${totalPages}`, 196, 289, { align: 'right' });
+}
+
 // ── Genera el PDF de la factura ──
 export async function generateInvoicePdf(
   order: any,
@@ -110,32 +129,34 @@ export async function generateInvoicePdf(
     const W = 210 - M * 2; // 182mm útiles
     const rows = buildRows(order, products);
 
-    // ══ ENCABEZADO: logo + datos empresa ══
+    // ══ ENCABEZADO: franja de marca + logo + datos empresa ══
+    doc.setFillColor(...PALE_PINK);
+    doc.rect(0, 0, 210, 4, 'F');
     const logo = await loadLogo();
     let headerBottom = 30;
     if (logo) {
       try {
         const dim = doc.getImageProperties(logo);
         const maxW = 42;
-        const maxH = 20;
+        const maxH = 19;
         let w = maxW;
         let h = (w * dim.height) / dim.width;
         if (h > maxH) { h = maxH; w = (h * dim.width) / dim.height; }
-        doc.addImage(logo, 'JPEG', M, 11, w, h);
+        doc.addImage(logo, 'JPEG', M, 9, w, h);
       } catch (_) {}
     }
     doc.setTextColor(...NAVY);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text(COMPANY.name, 196, 16, { align: 'right' });
+    doc.text(COMPANY.name, 196, 15, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...GRAY);
     doc.setFontSize(7.5);
-    doc.text(COMPANY.tagline, 196, 21, { align: 'right' });
-    doc.text(COMPANY.web, 196, 25, { align: 'right' });
-    doc.text(COMPANY.email, 196, 29, { align: 'right' });
-    doc.text(COMPANY.address, 196, 33, { align: 'right' });
-    headerBottom = Math.max(headerBottom, 37);
+    doc.text(COMPANY.tagline, 196, 20, { align: 'right' });
+    doc.text(COMPANY.web, 196, 24, { align: 'right' });
+    doc.text(COMPANY.email, 196, 28, { align: 'right' });
+    doc.text(COMPANY.address, 196, 32, { align: 'right' });
+    headerBottom = Math.max(headerBottom, 36);
 
     // Línea rosa separadora
     doc.setDrawColor(...PINK);
@@ -148,12 +169,18 @@ export async function generateInvoicePdf(
     doc.setFontSize(17);
     doc.setTextColor(...NAVY);
     doc.text('FACTURA DE VENTA', M, y);
+    doc.setFillColor(...PALE_PINK);
+    doc.roundedRect(M + W - 59, y - 9, 59, 10, 2, 2, 'F');
+    doc.setFontSize(7.2);
+    doc.setTextColor(...PINK);
+    doc.text('PEDIDO', M + W - 55, y - 3.5);
     doc.setFontSize(9.5);
-    doc.text(`Pedido No. ${order.id}`, M + W, y - 3, { align: 'right' });
+    doc.setTextColor(...NAVY);
+    doc.text(String(order.id || '—'), M + W - 4, y - 3.5, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(...GRAY);
-    doc.text(`Fecha: ${fmtDate(order)}`, M + W, y + 1.5, { align: 'right' });
+    doc.text(`Fecha: ${fmtDate(order)}`, M + W, y + 4.5, { align: 'right' });
 
     // ══ DATOS DEL CLIENTE ══
     y += 6;
@@ -171,9 +198,9 @@ export async function generateInvoicePdf(
       doc.setTextColor(...GRAY);
       doc.text(label.toUpperCase(), x, ly);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.6);
+      doc.setFontSize(8.2);
       doc.setTextColor(...NAVY);
-      doc.text(String(value || '—'), x, ly + 4);
+      doc.text(clipText(doc, value, 76), x, ly + 4);
     };
     labelVal('Cliente', order.customer_name, M + 4, y + 6);
     labelVal('Documento', order.customer_doc, M + 4, y + 13.5);
@@ -185,13 +212,13 @@ export async function generateInvoicePdf(
 
     // ══ TABLA DE REFERENCIAS ══
     const cols = [
-      { key: 'ref', label: 'REF', w: 24, align: 'left' as const },
-      { key: 'units', label: 'UNIDADES', w: 17, align: 'center' as const },
-      { key: 'sizes', label: 'TALLAS', w: 31, align: 'center' as const },
-      { key: 'ecom', label: 'PRECIO E-COMMERCE\nIVA INCL', w: 28, align: 'right' as const },
-      { key: 'may', label: 'PRECIO MAYORISTA\nIVA INCL', w: 28, align: 'right' as const },
-      { key: 'pct', label: '% DSCTO', w: 17, align: 'center' as const },
-      { key: 'tot', label: 'TOTAL', w: 37, align: 'right' as const },
+      { key: 'ref', label: 'REF', w: 20, align: 'left' as const },
+      { key: 'name', label: 'PRENDA', w: 45, align: 'left' as const },
+      { key: 'sizes', label: 'TALLAS', w: 24, align: 'center' as const },
+      { key: 'units', label: 'UNID.', w: 15, align: 'center' as const },
+      { key: 'may', label: 'PRECIO\nUNITARIO', w: 28, align: 'right' as const },
+      { key: 'pct', label: 'DSCTO.', w: 17, align: 'center' as const },
+      { key: 'tot', label: 'TOTAL', w: 33, align: 'right' as const },
     ];
     const headH = 11;
 
@@ -199,7 +226,7 @@ export async function generateInvoicePdf(
       doc.setFillColor(...NAVY);
       doc.rect(M, yy, W, headH, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.4);
+      doc.setFontSize(6.2);
       doc.setTextColor(255, 255, 255);
       let x = M;
       for (const c of cols) {
@@ -220,8 +247,8 @@ export async function generateInvoicePdf(
 
     let zebra = false;
     for (const r of rows) {
-      if (y + 10 > 240) { doc.addPage(); y = drawTableHead(16); }
-      const rowH = 9;
+      if (y + 12 > 240) { doc.addPage(); y = drawTableHead(16); }
+      const rowH = 11;
       if (zebra) {
         doc.setFillColor(250, 250, 251);
         doc.rect(M, y, W, rowH, 'F');
@@ -249,16 +276,16 @@ export async function generateInvoicePdf(
         doc.setTextColor(...(opts.color || NAVY));
         doc.text(text, cx, y + rowH / 2 + 1.2, { align: c.align });
       };
-      cell(r.ref, 0, { bold: true, size: 8.2 });
-      cell(String(r.units), 1);
-      cell(r.sizes.join('-') || '—', 2, { size: 7.6 });
-      cell(r.ecommercePrice > 0 ? fmtCOP(r.ecommercePrice) : '—', 3);
-      cell(fmtCOP(r.wholesalePrice), 4);
+      cell(r.ref, 0, { bold: true, size: 7.8 });
+      cell(clipText(doc, r.name, cols[1].w - 4), 1, { size: 7.4 });
+      cell(r.sizes.join('-') || '—', 2, { size: 7.3 });
+      cell(String(r.units), 3);
+      cell(fmtCOP(r.wholesalePrice), 4, { size: 7.4 });
       const pct = r.ecommercePrice > 0 && r.wholesalePrice < r.ecommercePrice
         ? ((1 - r.wholesalePrice / r.ecommercePrice) * 100).toFixed(2) + '%'
         : '0%';
-      cell(pct, 5, { color: PINK, bold: true, size: 7.8 });
-      cell(fmtCOP(r.total), 6, { bold: true });
+        cell(pct, 5, { color: PINK, bold: true, size: 7.8 });
+      cell(fmtCOP(r.total), 6, { bold: true, size: 7.6 });
       y += rowH;
     }
 
@@ -304,7 +331,7 @@ export async function generateInvoicePdf(
     // ══ AGRADECIMIENTO ══
     if (y + 30 > 250) { doc.addPage(); y = 20; }
     const th = 25;
-    doc.setFillColor(253, 242, 244);
+    doc.setFillColor(...PALE_PINK);
     doc.roundedRect(M, y, W, th, 2, 2, 'F');
     doc.setFillColor(...PINK);
     doc.roundedRect(M, y, 2.4, th, 1.2, 1.2, 'F');
@@ -333,7 +360,7 @@ export async function generateInvoicePdf(
     doc.text('POLÍTICAS Y CONDICIONES', M + 5.5, y);
     y += 5.5;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.3);
+    doc.setFontSize(6.1);
     doc.setTextColor(...GRAY);
     const polItems = [
       'Precios con IVA incluido. Los valores facturados corresponden al precio mayorista según la cantidad adquirida.',
@@ -350,10 +377,11 @@ export async function generateInvoicePdf(
       y += 3.2 + wrapped.length * 2.7;
     }
     doc.setFontSize(5.8);
-    doc.text(
-      `Documento generado electrónicamente el ${new Date().toLocaleDateString('es-CO')} — ${COMPANY.web}`,
-      M + W, 290, { align: 'right' }
-    );
+    const totalPages = doc.getNumberOfPages();
+    for (let page = 1; page <= totalPages; page++) {
+      doc.setPage(page);
+      drawInvoiceFooter(doc, page, totalPages);
+    }
 
     const blob = doc.output('blob');
     return { blob, fileName: `Factura-${order.id}.pdf` };
