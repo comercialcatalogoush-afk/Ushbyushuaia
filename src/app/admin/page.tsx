@@ -60,6 +60,7 @@ function getLast15DaysSales(orders: any[]): { orders: number; units: number; rev
     const date = rawDate ? new Date(rawDate).getTime() : NaN;
     if (!Number.isFinite(date) || date < cutoff) continue;
     confirmedOrders += 1;
+    let orderItemsRevenue = 0;
 
     for (const item of Array.isArray(order.items) ? order.items : []) {
       const units = Math.max(0, Number(item.quantity) || 0);
@@ -77,13 +78,16 @@ function getLast15DaysSales(orders: any[]): { orders: number; units: number; rev
       const size = String(item.size || 'Única');
       current.name = current.name || String(item.name || 'Prenda sin nombre');
       current.units += units;
-      current.revenue += units * Math.max(0, Number(item.unit_price) || 0);
+      const itemRevenue = units * Math.max(0, Number(item.unit_price) || 0);
+      current.revenue += itemRevenue;
       current.colors.set(color, (current.colors.get(color) || 0) + units);
       current.sizes.set(size, (current.sizes.get(size) || 0) + units);
       references.set(reference, current);
       totalUnits += units;
-      revenue += units * Math.max(0, Number(item.unit_price) || 0);
+      orderItemsRevenue += itemRevenue;
     }
+    const finalOrderTotal = Number(order.total);
+    revenue += Number.isFinite(finalOrderTotal) ? Math.max(0, finalOrderTotal) : orderItemsRevenue;
   }
 
   const sortBreakdown = (entries: Map<string, number>): SalesBreakdown[] => Array.from(entries.entries())
