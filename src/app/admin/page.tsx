@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { fetchAllProductsAdmin, supabase, fetchPriceHistory, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange } from '@/lib/supabase';
@@ -15,7 +15,7 @@ import {
   FileSpreadsheet, FileText, Users, KeyRound, Mail,
   Phone, MapPin, Calendar, DollarSign, CheckCircle2,
   ExternalLink, MessageSquare, Eye, EyeOff, Copy, Search,
-  AlertTriangle,
+  AlertTriangle, Trophy, Palette, Ruler, CalendarDays,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
@@ -29,6 +29,81 @@ const DEFAULT_COLORS = [
   'Negro', 'Blanco', 'Ivory', 'Crudo', 'Kaki', 'Mocca', 'Baby Blue', 'Oliva',
   'Café', 'Mostaza', 'Vino', 'Burdeos'
 ];
+
+type SalesBreakdown = { label: string; units: number };
+type SalesRanking = {
+  reference: string;
+  name: string;
+  units: number;
+  revenue: number;
+  colors: SalesBreakdown[];
+  sizes: SalesBreakdown[];
+};
+
+function getLast15DaysSales(orders: any[]): { orders: number; units: number; revenue: number; ranking: SalesRanking[] } {
+  const cutoff = Date.now() - 15 * 24 * 60 * 60 * 1000;
+  const references = new Map<string, {
+    reference: string;
+    name: string;
+    units: number;
+    revenue: number;
+    colors: Map<string, number>;
+    sizes: Map<string, number>;
+  }>();
+  let confirmedOrders = 0;
+  let totalUnits = 0;
+  let revenue = 0;
+
+  for (const order of Array.isArray(orders) ? orders : []) {
+    if (order?.status !== 'confirmed') continue;
+    const rawDate = order.created_at || order.order_date;
+    const date = rawDate ? new Date(rawDate).getTime() : NaN;
+    if (!Number.isFinite(date) || date < cutoff) continue;
+    confirmedOrders += 1;
+
+    for (const item of Array.isArray(order.items) ? order.items : []) {
+      const units = Math.max(0, Number(item.quantity) || 0);
+      if (!units) continue;
+      const reference = String(item.reference || item.product_id || 'Sin referencia');
+      const current = references.get(reference) || {
+        reference,
+        name: String(item.name || 'Prenda sin nombre'),
+        units: 0,
+        revenue: 0,
+        colors: new Map<string, number>(),
+        sizes: new Map<string, number>(),
+      };
+      const color = String(item.color || 'Sin color');
+      const size = String(item.size || 'Única');
+      current.name = current.name || String(item.name || 'Prenda sin nombre');
+      current.units += units;
+      current.revenue += units * Math.max(0, Number(item.unit_price) || 0);
+      current.colors.set(color, (current.colors.get(color) || 0) + units);
+      current.sizes.set(size, (current.sizes.get(size) || 0) + units);
+      references.set(reference, current);
+      totalUnits += units;
+      revenue += units * Math.max(0, Number(item.unit_price) || 0);
+    }
+  }
+
+  const sortBreakdown = (entries: Map<string, number>): SalesBreakdown[] => Array.from(entries.entries())
+    .map(([label, units]) => ({ label, units }))
+    .sort((a, b) => b.units - a.units || a.label.localeCompare(b.label, 'es'))
+    .slice(0, 4);
+  const ranking = Array.from(references.values())
+    .map((item) => ({
+      reference: item.reference,
+      name: item.name,
+      units: item.units,
+      revenue: item.revenue,
+      colors: sortBreakdown(item.colors),
+      sizes: sortBreakdown(item.sizes),
+    }))
+    .sort((a, b) => b.units - a.units || b.revenue - a.revenue || a.reference.localeCompare(b.reference))
+    .slice(0, 8);
+
+  return { orders: confirmedOrders, units: totalUnits, revenue, ranking };
+}
 
 export default function AdminCatalogPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -73,6 +148,8 @@ export default function AdminCatalogPage() {
   const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
   const [orderStatusFilter, setOrderStatusFilter] = useState<'todos' | 'pending' | 'confirmed' | 'canceled'>('todos');
   const [orderMsg, setOrderMsg] = useState<string | null>(null);
+
+  const sales15 = useMemo(() => getLast15DaysSales(orders), [orders]);
 
   // ── Respaldos / Limpieza mensual ──
   const [backupReminder, setBackupReminder] = useState<Date>(() => getNextBackupReminder());
@@ -1442,6 +1519,98 @@ export default function AdminCatalogPage() {
                   </button>
                 </div>
               )}
+
+              {/* Rotación de ventas confirmadas: se calcula con los pedidos ya cargados */}
+              <section className="mt-6 border border-[#d88193]/30 bg-[#fffafb]" aria-labelledby="sales-15-title">
+                <div className="border-b border-[#d88193]/20 px-4 py-4 sm:px-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 id="sales-15-title" className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-[#1b2333]">
+                        <Trophy size={16} className="text-[#d88193]" />
+                        Rotación de ventas · últimos 15 días
+                      </h3>
+                      <p className="mt-1 text-[11px] text-neutral-500">
+                        Solo incluye pedidos confirmados. Se actualiza al refrescar pedidos o cuando llega un cambio en tiempo real.
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 border border-[#d88193]/25 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#d88193]">
+                      <CalendarDays size={12} /> 15 días móviles
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 border-b border-[#d88193]/20 p-4 sm:grid-cols-3 sm:p-5">
+                  <div className="bg-white p-3 shadow-sm ring-1 ring-black/5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Pedidos confirmados</p>
+                    <p className="mt-1 text-2xl font-black text-[#1b2333]">{sales15.orders}</p>
+                  </div>
+                  <div className="bg-white p-3 shadow-sm ring-1 ring-black/5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Unidades vendidas</p>
+                    <p className="mt-1 text-2xl font-black text-[#1b2333]">{sales15.units}</p>
+                  </div>
+                  <div className="bg-white p-3 shadow-sm ring-1 ring-black/5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Venta registrada</p>
+                    <p className="mt-1 text-xl font-black text-[#d88193]">{formatCOP(sales15.revenue)}</p>
+                  </div>
+                </div>
+
+                {sales15.ranking.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-xs text-neutral-500">
+                    Aún no hay ventas confirmadas dentro de los últimos 15 días.
+                  </div>
+                ) : (
+                  <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.1fr_1.9fr]">
+                    <div className="border border-[#d88193]/25 bg-white p-4 shadow-sm">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#d88193]">#1 más vendida</p>
+                      <div className="mt-2 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-base font-black text-[#1b2333]">{sales15.ranking[0].reference}</p>
+                          <p className="mt-0.5 text-xs leading-relaxed text-neutral-600">{sales15.ranking[0].name}</p>
+                        </div>
+                        <span className="whitespace-nowrap bg-[#1b2333] px-2.5 py-1 text-xs font-black text-white">
+                          {sales15.ranking[0].units} uds
+                        </span>
+                      </div>
+                      <div className="mt-4 grid gap-3 border-t border-neutral-100 pt-3 sm:grid-cols-2">
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500"><Palette size={12} /> Colores</p>
+                          <div className="mt-1 space-y-1 text-xs text-[#1b2333]">
+                            {sales15.ranking[0].colors.map((entry) => <p key={entry.label}><strong>{entry.label}</strong> · {entry.units} uds</p>)}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500"><Ruler size={12} /> Tallas</p>
+                          <div className="mt-1 space-y-1 text-xs text-[#1b2333]">
+                            {sales15.ranking[0].sizes.map((entry) => <p key={entry.label}><strong>{entry.label}</strong> · {entry.units} uds</p>)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Referencias siguientes</p>
+                        <p className="text-[10px] text-neutral-400">unidades</p>
+                      </div>
+                      <div className="divide-y divide-neutral-100 border border-neutral-200 bg-white">
+                        {sales15.ranking.slice(1).map((entry, index) => (
+                          <div key={entry.reference} className="grid grid-cols-[28px_1fr_auto] items-center gap-2 px-3 py-2.5 sm:grid-cols-[34px_1fr_90px_auto]">
+                            <span className="text-sm font-black text-[#d88193]">#{index + 2}</span>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-black text-[#1b2333]">{entry.reference} · {entry.name}</p>
+                              <p className="mt-0.5 truncate text-[10px] text-neutral-500">
+                                Colores: {entry.colors.map((color) => `${color.label} (${color.units})`).join(', ')} · Tallas: {entry.sizes.map((size) => `${size.label} (${size.units})`).join(', ')}
+                              </p>
+                            </div>
+                            <span className="hidden text-right text-[10px] text-neutral-500 sm:block">{formatCOP(entry.revenue)}</span>
+                            <span className="whitespace-nowrap text-xs font-black text-[#1b2333]">{entry.units} uds</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
 
               {/* Filtro de estados de pedido */}
               <div className="mt-5 flex flex-wrap items-center gap-2">
