@@ -224,7 +224,7 @@ export default function RastreoPage() {
             <Box size={28} className="text-ush-pink" />
           </div>
           <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-            <span data-field-key="trTitle">{c.trTitle}</span> <span className="text-ush-pink"><span data-field-key="trTitleEm">{c.trTitleEm}</span></span>
+            <span data-field-key="trTitle">{c.trTitle}</span>{c.trTitleEm && c.trTitleEm !== c.trTitle ? <span className="text-ush-pink"> <span data-field-key="trTitleEm">{c.trTitleEm}</span></span> : null}
           </h1>
           <p data-field-key="trIntro" className="text-sm text-ush-pinkDark font-medium mt-2 max-w-lg mx-auto">
             {c.trIntro}

@@ -6,8 +6,9 @@ import { getPageContentServer, sectionStyleFromContent } from '@/lib/siteContent
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { ArrowLeft } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Los cambios del admin llaman a /api/revalidate, por lo que el catálogo puede
+// usar ISR sin perder la actualización inmediata después de publicar.
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await getPageContentServer('catalogo');

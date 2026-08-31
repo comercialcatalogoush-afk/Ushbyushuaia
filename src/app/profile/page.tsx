@@ -223,6 +223,7 @@ export default function ProfilePage() {
   if (user && !isRecovery) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-16">
+        <title>Mi Cuenta | Ush By Ushuaia</title>
         <div className="w-full max-w-md bg-white shadow-xl border border-gray-200 overflow-hidden animate-fadeIn text-center">
           <div className="bg-[#d88193] text-white p-8">
             {user.user_metadata?.avatar_url ? (
