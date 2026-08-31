@@ -82,11 +82,15 @@ export function LookbookPdfEditor({ products, onClose }: { products: Product[]; 
         </div>
       </section>`).join('');
 
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+    // No usar `noopener` aquí: Chrome puede devolver `null` aunque haya
+    // abierto la pestaña, dejando un about:blank sin contenido. Separamos
+    // el vínculo después de obtener la referencia a la ventana.
+    const printWindow = window.open('', '_blank');
     if (!printWindow) {
       setNotice('El navegador bloqueó la ventana. Permite ventanas emergentes para generar el PDF.');
       return;
     }
+    printWindow.opener = null;
     printWindow.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8" /><title>CATÁLOGO LOOKBOOK EDITORIAL 2026</title><style>
       @page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;color:#1b2333;font-family:Arial,Helvetica,sans-serif;background:#fff}.cover{padding:18mm 4mm 12mm;border-bottom:2px solid #d88193;margin-bottom:8mm}.eyebrow{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#d88193;font-weight:700}.cover h1{font-size:29px;line-height:1.05;margin:8px 0 5px;text-transform:uppercase}.cover p{font-size:11px;color:#6b7280;margin:0}.group{break-before:page}.group:first-of-type{break-before:auto}.group-heading{display:flex;align-items:baseline;gap:8px;border-bottom:1px solid #e5e7eb;padding-bottom:5px;margin-bottom:8mm}.group-heading span{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#d88193;font-weight:700}.group-heading h2{font-size:18px;text-transform:uppercase;margin:0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7mm 5mm}.card{break-inside:avoid;border:1px solid #ececec;background:#fff}.card img,.no-image{display:block;width:100%;height:74mm;object-fit:cover;background:#f5f5f5}.no-image{display:flex;align-items:center;justify-content:center;color:#d88193;font-size:22px;font-weight:800}.card-body{padding:7px 8px 9px}.ref{font-size:7px;letter-spacing:1px;color:#d88193;font-weight:700;margin:0 0 3px}.card h3{font-size:10px;text-transform:uppercase;margin:0;line-height:1.25}.fit{font-size:8px;color:#6b7280;margin:4px 0 0}.price{font-size:11px;font-weight:800;margin:6px 0 0}.footer{font-size:8px;color:#9ca3af;margin-top:10mm;text-align:center}@media print{.footer{position:fixed;bottom:0;left:0;right:0}.cover{break-after:page}}
     </style></head><body><header class="cover"><div class="eyebrow">USH BY USHUAIA · MAYORISTAS</div><h1>Catálogo lookbook editorial 2026</h1><p>${escapeHtml(filteredProducts.length)} referencias · ${escapeHtml(priceMode === 'ecommerce' ? 'Precios ecommerce' : priceMode === 'custom' ? 'Precios personalizados' : 'Sin precios')} · ${escapeHtml(printedAt)}</p></header>${groupsHtml}<p class="footer">USH BY USHUAIA · Catálogo digital · Las imágenes se cargan desde sus URLs externas</p><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),700))</script></body></html>`);
@@ -117,4 +121,3 @@ export function LookbookPdfEditor({ products, onClose }: { products: Product[]; 
     </div>
   </div>;
 }
-
