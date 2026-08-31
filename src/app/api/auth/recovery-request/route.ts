@@ -1,29 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// Orígenes permitidos para el redirectTo del email de recuperación.
-// Usar el header Origin sin validar permite open-redirect / robo del token
-// de reset (un atacante llama a la API con Origin: https://evil.com y el
-// enlace del correo apunta a su dominio).
-const ALLOWED_ORIGINS = new Set([
-  'https://ushbyushuaia-catalogo-mayorista.vercel.app',
-  'http://localhost:3000',
-]);
-const DEFAULT_ORIGIN = 'https://ushbyushuaia-catalogo-mayorista.vercel.app';
-
-function safeOrigin(req: Request): string {
-  const originHeader = req.headers.get('origin') || '';
-  if (!originHeader) return DEFAULT_ORIGIN;
-  try {
-    // Se acepta el Origin solo si está en la allowlist o apunta al mismo host
-    // que atiende la petición (cubre dominios propios/previews de Vercel).
-    const reqHost = new URL(req.url).host;
-    const originHost = new URL(originHeader).host;
-    if (ALLOWED_ORIGINS.has(originHeader) || originHost === reqHost) return originHeader;
-  } catch (_) {}
-  return DEFAULT_ORIGIN;
-}
-
 // Rate limit básico en memoria: máx. 5 solicitudes por hora por IP.
 // Mitiga email-bombing desde el endpoint público.
 const RATE_LIMIT_MAX = 5;
@@ -61,18 +38,10 @@ export async function POST(req: Request) {
     }
 
     const normalizedEmail = email.toLowerCase();
-    const origin = safeOrigin(req);
 
-    // 1. Trigger Supabase Auth reset password email (100% automated & free)
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-      redirectTo: `${origin}/profile`,
-    });
-
-    if (resetErr) {
-      console.warn('Supabase resetPasswordForEmail notice:', resetErr.message);
-    }
-
-    // 2. Record request in database (site_config) so admin sees it in the panel
+    // Supabase Auth sends the actual reset email from the client flow. This
+    // endpoint only records the request so the admin can see it, avoiding a
+    // duplicate email when the form calls both paths.
     try {
       const { data: configRow } = await supabase
         .from('site_config')
@@ -118,7 +87,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Te hemos enviado un enlace a ${normalizedEmail} para restablecer tu contraseña. Revisa tu bandeja de entrada o spam.`,
+      message: `Solicitud registrada para ${normalizedEmail}. El enlace de recuperación se gestiona desde Supabase Auth.`,
     });
   } catch (err: any) {
     console.error('Recovery request error:', err);

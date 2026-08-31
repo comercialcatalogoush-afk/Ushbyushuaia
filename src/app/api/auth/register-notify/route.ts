@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
+import { sendBrevoEmail, upsertBrevoContact } from '@/lib/brevo';
+import { welcomeEmail } from '@/lib/brevoTemplates';
 
 // Notifica al admin en tiempo real cuando un nuevo usuario se registra.
 // Guarda el registro en site_config y emite un broadcast al canal ush-catalog-sync.
@@ -96,6 +98,22 @@ export async function POST(req: Request) {
         message: `Registro ya conocido para ${normalizedEmail}`,
         duplicate: true,
       });
+    }
+
+    // Marketing is strictly opt-in. Auth confirmation emails remain managed by
+    // Supabase, while Brevo handles only the optional welcome communication.
+    if (marketingOptIn) {
+      const catalogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ushbyushuaia-catalogo-mayorista.vercel.app/catalogo';
+      await Promise.allSettled([
+        upsertBrevoContact({ email: normalizedEmail, name, marketingOptIn: true }),
+        sendBrevoEmail({
+          to: { email: normalizedEmail, name: name || 'Cliente' },
+          subject: 'Tu cuenta mayorista ya está lista | USH BY USHUAIA',
+          htmlContent: welcomeEmail(name, catalogUrl),
+          textContent: `Hola ${name || 'cliente'}, tu cuenta mayorista ya está lista. Explora el catálogo: ${catalogUrl}`,
+          tags: ['welcome', 'customer-account'],
+        }),
+      ]);
     }
 
     try {
