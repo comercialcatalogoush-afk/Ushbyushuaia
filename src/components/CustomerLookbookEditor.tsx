@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Download, FileText, LayoutList, Search, X } from 'lucide-react';
 import { Product } from '@/types';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
-import { generateLookbookPdf, getLookbookPrice, LookbookConfig, LookbookGroupMode, LookbookPriceMode } from '@/lib/lookbookPdf';
+import { generateLookbookPdf, getAvailableProductSizes, getLookbookPrice, getLookbookProductName, LookbookConfig, LookbookGroupMode, LookbookPriceMode } from '@/lib/lookbookPdf';
 
 function groupProducts(products: Product[], groupMode: LookbookGroupMode) {
   const groups = new Map<string, Product[]>();
@@ -33,6 +33,8 @@ export function CustomerLookbookEditor({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [priceMode, setPriceMode] = useState<LookbookPriceMode>(config?.customerPriceMode === 'blank' ? 'blank' : 'ecommerce');
   const [groupMode, setGroupMode] = useState<LookbookGroupMode>(config?.groupMode || 'category');
+  const [customPrices, setCustomPrices] = useState<Record<string, string>>({});
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string[]>>({});
   const [category, setCategory] = useState('all');
   const [fit, setFit] = useState('all');
   const [search, setSearch] = useState('');
@@ -44,6 +46,20 @@ export function CustomerLookbookEditor({
       ? publicProducts.filter((product) => config.selectedProductIds.includes(product.id)).map((product) => product.id)
       : publicProducts.map((product) => product.id);
     setSelectedIds(new Set(publishedIds));
+    setCustomPrices((current) => {
+      const next = { ...current };
+      publicProducts.forEach((product) => {
+        if (next[product.id] === undefined) next[product.id] = String(product.suggested_price || product.price || '');
+      });
+      return next;
+    });
+    setSelectedSizes((current) => {
+      const next = { ...current };
+      publicProducts.forEach((product) => {
+        if (next[product.id] === undefined) next[product.id] = getAvailableProductSizes(product);
+      });
+      return next;
+    });
   }, [config, publicProducts]);
 
   const categories = useMemo(() => Array.from(new Set(publicProducts.map((product) => product.category).filter((value): value is string => Boolean(value)))).sort((a, b) => a.localeCompare(b, 'es')), [publicProducts]);
@@ -88,6 +104,8 @@ export function CustomerLookbookEditor({
       const result = await generateLookbookPdf(selectedProducts, {
         priceMode,
         groupMode,
+        customPrices,
+        selectedSizes,
         onProgress: (completed, total) => setMessage(`Preparando catálogo: ${completed} de ${total}...`),
       });
       const url = URL.createObjectURL(result.blob);
@@ -123,7 +141,7 @@ export function CustomerLookbookEditor({
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-neutral-500">Mostrar precios</p>
               <div className="grid gap-2">
-                {([['ecommerce', 'Con precios'], ['blank', 'Sin precios']] as Array<[LookbookPriceMode, string]>).map(([value, label]) => <button key={value} type="button" onClick={() => setPriceMode(value)} className={`rounded-lg border px-3 py-2 text-left text-[11px] font-bold transition ${priceMode === value ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#d88193]'}`}>{label}</button>)}
+                {([['ecommerce', 'Precios ecommerce'], ['custom', 'Precios personalizados'], ['blank', 'Sin precios']] as Array<[LookbookPriceMode, string]>).map(([value, label]) => <button key={value} type="button" onClick={() => setPriceMode(value)} className={`rounded-lg border px-3 py-2 text-left text-[11px] font-bold transition ${priceMode === value ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#d88193]'}`}>{label}</button>)}
               </div>
             </div>
             <div>
@@ -141,6 +159,7 @@ export function CustomerLookbookEditor({
             <div className="border-t border-neutral-200 pt-3">
               <p className="text-sm font-black text-[#1b2333]">{selectedProducts.length} seleccionadas</p>
               <p className="mt-1 text-[10px] leading-relaxed text-neutral-500">La edición publicada por USH aparece preseleccionada. Puedes ajustarla antes de descargarla.</p>
+              {priceMode === 'custom' && <p className="mt-2 rounded-lg bg-[#fff1f4] p-2 text-[10px] leading-relaxed text-[#b5586c]">En cada referencia puedes editar el precio que quieres mostrar y escoger únicamente las tallas que tienes disponibles para vender.</p>}
               <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => selectVisible(true)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600 hover:border-[#d88193]">Incluir visibles</button><button type="button" onClick={() => selectVisible(false)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600 hover:border-[#d88193]">Quitar visibles</button></div>
             </div>
             <button type="button" onClick={download} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#d88193] px-3 py-3 text-[10px] font-black uppercase tracking-wide text-white hover:bg-[#c06579] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{busy ? 'Preparando...' : 'Descargar mi PDF'}</button>
@@ -149,7 +168,7 @@ export function CustomerLookbookEditor({
 
           <main className="min-h-0 overflow-y-auto p-4 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3 border-b border-neutral-200 pb-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-[#d88193]">Vista de selección</p><p className="mt-1 text-xs text-neutral-500">{filteredProducts.length} referencias visibles de {publicProducts.length}</p></div><FileText size={20} className="text-[#d88193]" /></div>
-            <div className="space-y-6">{previewGroups.map(([group, groupProducts]) => <section key={group}><h3 className="mb-2 border-b border-neutral-200 pb-2 text-xs font-black uppercase tracking-wider text-[#d88193]">{group}</h3><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{groupProducts.map((product) => <label key={product.id} className={`flex cursor-pointer gap-2 rounded-lg border p-2 transition ${selectedIds.has(product.id) ? 'border-[#d88193] bg-[#fff8f9]' : 'border-neutral-100 bg-neutral-50 opacity-60'}`}><input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleProduct(product.id)} aria-label={`Incluir referencia ${product.reference}`} className="mt-1 h-4 w-4 shrink-0 accent-[#d88193]" /><div className="h-20 w-14 shrink-0 overflow-hidden bg-neutral-200"><img src={getGoogleDriveImageUrl(product.images?.[0] || '')} alt="" className="h-full w-full object-cover" /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase text-[#1b2333]">{product.reference}</p><p className="line-clamp-2 text-[10px] leading-tight text-neutral-600">{product.name}</p><p className="mt-1 text-[9px] text-neutral-400">{product.fit || 'Sin fit'}</p><p className="mt-1 text-[10px] font-bold text-[#d88193]">{getLookbookPrice(product, priceMode) || 'Sin precio'}</p></div></label>)}</div></section>)}{previewGroups.length === 0 && <p className="py-16 text-center text-xs text-neutral-500">No encontramos referencias con esos filtros.</p>}</div>
+            <div className="space-y-6">{previewGroups.map(([group, groupProducts]) => <section key={group}><h3 className="mb-2 border-b border-neutral-200 pb-2 text-xs font-black uppercase tracking-wider text-[#d88193]">{group}</h3><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{groupProducts.map((product) => { const selected = selectedIds.has(product.id); const sizes = getAvailableProductSizes(product); return <div key={product.id} className={`flex gap-2 rounded-lg border p-2 transition ${selected ? 'border-[#d88193] bg-[#fff8f9]' : 'border-neutral-100 bg-neutral-50 opacity-60'}`}><input type="checkbox" checked={selected} onChange={() => toggleProduct(product.id)} aria-label={`Incluir referencia ${product.reference}`} className="mt-1 h-4 w-4 shrink-0 accent-[#d88193]" /><div className="h-20 w-14 shrink-0 overflow-hidden bg-neutral-200"><img src={getGoogleDriveImageUrl(product.images?.[0] || '')} alt="" className="h-full w-full object-cover" /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase text-[#1b2333]">{product.reference}</p><p className={`text-[10px] leading-tight text-neutral-600 ${priceMode === 'custom' ? 'font-semibold uppercase text-[#1b2333]' : 'line-clamp-2'}`}>{priceMode === 'custom' ? getLookbookProductName(product) : product.name}</p>{priceMode === 'custom' ? <><label className="mt-2 block text-[9px] font-bold uppercase tracking-wide text-neutral-500">Precio para tus clientes<input type="number" min="0" step="100" value={customPrices[product.id] || ''} onChange={(event) => setCustomPrices((current) => ({ ...current, [product.id]: event.target.value }))} onClick={(event) => event.stopPropagation()} className="mt-1 w-full rounded border border-neutral-200 bg-white px-2 py-1 text-[10px] text-[#1b2333] outline-none focus:border-[#d88193]" placeholder="Ej. 129900" /></label><div className="mt-2"><p className="text-[9px] font-bold uppercase tracking-wide text-neutral-500">Tallas para vender</p><div className="mt-1 flex flex-wrap gap-1">{sizes.length ? sizes.map((size) => { const checked = (selectedSizes[product.id] || []).includes(size); return <label key={size} className={`cursor-pointer rounded border px-1.5 py-1 text-[9px] font-bold ${checked ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-400'}`}><input type="checkbox" checked={checked} onChange={() => setSelectedSizes((current) => { const currentSizes = current[product.id] || []; const nextSizes = currentSizes.includes(size) ? currentSizes.filter((value) => value !== size) : [...currentSizes, size]; return { ...current, [product.id]: nextSizes }; })} className="sr-only" />{size}</label>; }) : <span className="text-[9px] text-neutral-400">No hay tallas registradas</span>}</div></div></> : <><p className="mt-1 text-[9px] text-neutral-400">{product.fit || 'Sin fit'}</p><p className="mt-1 text-[10px] font-bold text-[#d88193]">{getLookbookPrice(product, priceMode) || 'Sin precio'}</p></>}</div></div>; })}</div></section>)}{previewGroups.length === 0 && <p className="py-16 text-center text-xs text-neutral-500">No encontramos referencias con esos filtros.</p>}</div>
           </main>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { Product } from '@/types';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
+import { abbreviateProductName } from '@/lib/productName';
 
 export type LookbookGroupMode = 'category' | 'fit';
 export type LookbookPriceMode = 'ecommerce' | 'custom' | 'blank';
@@ -19,6 +20,24 @@ export const DEFAULT_LOOKBOOK_CONFIG: LookbookConfig = {
 };
 
 const money = (value: number) => `$ ${new Intl.NumberFormat('es-CO').format(Math.round(value || 0))}`;
+
+export function getAvailableProductSizes(product: Product) {
+  const stockEntries = Object.entries(product.stock_by_size || {});
+  const stockSizes = stockEntries
+    .filter(([, quantity]) => Number(quantity) > 0)
+    .map(([size]) => size);
+  if (stockEntries.length) {
+    return stockSizes.sort((a, b) => {
+      const numericDifference = Number(a) - Number(b);
+      return Number.isNaN(numericDifference) ? a.localeCompare(b, 'es') : numericDifference;
+    });
+  }
+  return product.options?.find((option) => /talla/i.test(option.key))?.values || [];
+}
+
+export function getLookbookProductName(product: Product) {
+  return abbreviateProductName({ name: product.name, category: product.category, fit: product.fit }).short || 'Prenda';
+}
 
 export function getLookbookPrice(product: Product, mode: LookbookPriceMode, customPrices: Record<string, string> = {}) {
   if (mode === 'blank') return '';
@@ -125,6 +144,7 @@ export async function generateLookbookPdf(
     priceMode: LookbookPriceMode;
     groupMode: LookbookGroupMode;
     customPrices?: Record<string, string>;
+    selectedSizes?: Record<string, string[]>;
     onProgress?: (completed: number, total: number) => void;
   }
 ): Promise<{ blob: Blob; fileName: string; failedImages: string[]; pageCount: number }> {
@@ -168,28 +188,28 @@ export async function generateLookbookPdf(
   doc.setTextColor(215, 219, 228);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.text('EDICION MAYORISTA', pageWidth - margin, 26, { align: 'right' });
-  doc.text('2026', pageWidth - margin, 36, { align: 'right' });
+  doc.text('EDICION MAYORISTA', pageWidth - margin, 25, { align: 'right' });
+  doc.text('2026', pageWidth - margin, 35, { align: 'right' });
   doc.setDrawColor(216, 129, 147);
   doc.setLineWidth(0.5);
-  doc.line(pageWidth - 46, 42, pageWidth - margin, 42);
+  doc.line(pageWidth - 46, 41, pageWidth - margin, 41);
 
-  doc.setTextColor(243, 179, 192);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.text('USH BY USHUAIA - MAYORISTAS', margin, 75);
   doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(29);
-  doc.text('CATALOGO', margin, 103);
+  doc.text('CATÁLOGO', margin, 76);
   doc.setTextColor(243, 179, 192);
   doc.setFontSize(25);
-  doc.text('LOOKBOOK', margin, 126);
+  doc.text('LOOKBOOK', margin, 99);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(17);
-  doc.text('2026', margin, 141);
+  doc.text('2026', margin, 114);
+  doc.setTextColor(243, 179, 192);
+  doc.setFontSize(8.5);
+  doc.text('USH BY USHUAIA - MAYORISTAS', margin, 137);
   doc.setDrawColor(216, 129, 147);
   doc.setLineWidth(1);
-  doc.line(margin, 154, margin + 56, 154);
+  doc.line(margin, 148, margin + 56, 148);
 
   doc.setFillColor(35, 44, 63);
   doc.roundedRect(margin, 171, contentWidth, 40, 2, 2, 'F');
@@ -257,11 +277,20 @@ export async function generateLookbookPdf(
         doc.text(`REF. ${String(product.reference || product.id)}`, x + 3, y + 50);
         doc.setTextColor(27, 35, 51);
         doc.setFontSize(8.2);
-        doc.text(clipPdfText(doc, product.name, cardWidth - 6, 2).map((line) => line.toUpperCase()), x + 3, y + 56);
-        doc.setTextColor(110, 116, 130);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.text(product.fit ? clipPdfText(doc, product.fit, cardWidth - 6, 1) : ' ', x + 3, y + 63);
+        const productName = options.priceMode === 'custom' ? getLookbookProductName(product) : product.name;
+        doc.text(clipPdfText(doc, productName, cardWidth - 6, options.priceMode === 'custom' ? 1 : 2).map((line) => line.toUpperCase()), x + 3, y + 56);
+        if (options.priceMode === 'custom') {
+          doc.setTextColor(110, 116, 130);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.8);
+          const sizes = options.selectedSizes?.[product.id] || getAvailableProductSizes(product);
+          doc.text(`TALLAS: ${sizes.join(' · ') || 'POR DEFINIR'}`, x + 3, y + 62);
+        } else {
+          doc.setTextColor(110, 116, 130);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.text(product.fit ? clipPdfText(doc, product.fit, cardWidth - 6, 1) : ' ', x + 3, y + 63);
+        }
         const price = getLookbookPrice(product, options.priceMode, options.customPrices);
         if (price) {
           doc.setTextColor(27, 35, 51);
