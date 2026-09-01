@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { submitOrder, publishOrderChange } from '@/lib/supabase';
-import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone, ArrowUpRight } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone, ArrowUpRight, FileDown, Loader2 } from 'lucide-react';
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
@@ -53,6 +53,9 @@ export default function CheckoutPage() {
   });
   const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [invoiceFileName, setInvoiceFileName] = useState('Factura-USH-BY-USHUAIA.pdf');
+  const [invoiceState, setInvoiceState] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Guardia síncrona contra doble envío: `loading` (estado React) tarda un
   // render en propagarse, así que un segundo clic rápido podría re-enviar y
@@ -68,6 +71,40 @@ export default function CheckoutPage() {
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsappNumber);
   }, []);
+
+  // La factura se genera en el navegador después de registrar el pedido.
+  // No se sube a Supabase Storage: el enlace vive solo durante esta sesión.
+  useEffect(() => {
+    if (!completedOrder) return;
+    let cancelled = false;
+    let generatedUrl: string | null = null;
+    setInvoiceState('generating');
+    setInvoiceUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+
+    import('@/lib/invoice').then(({ generateInvoicePdf }) => generateInvoicePdf(completedOrder, INITIAL_PRODUCTS))
+      .then(({ blob, fileName }) => {
+        if (cancelled) return;
+        if (!blob) {
+          setInvoiceState('error');
+          return;
+        }
+        generatedUrl = URL.createObjectURL(blob);
+        setInvoiceUrl(generatedUrl);
+        setInvoiceFileName(fileName || `Factura-${completedOrder.id}.pdf`);
+        setInvoiceState('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setInvoiceState('error');
+      });
+
+    return () => {
+      cancelled = true;
+      if (generatedUrl) URL.revokeObjectURL(generatedUrl);
+    };
+  }, [completedOrder]);
 
   // GA4: inicio del checkout (una vez, con el resumen del carrito)
   useEffect(() => {
@@ -193,6 +230,14 @@ export default function CheckoutPage() {
     setCompletedOrder({ ...orderPayload, id: orderId });
     clearCart();
 
+    // El correo transaccional no bloquea la confirmación ni el WhatsApp.
+    // El endpoint consulta el pedido guardado y nunca recibe claves Brevo.
+    void fetch('/api/order-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    }).catch(() => {});
+
     gtagEvent('purchase', {
       transaction_id: orderId,
       currency: 'COP',
@@ -294,6 +339,22 @@ export default function CheckoutPage() {
           </div>
 
           <div className="pt-2 space-y-3">
+            {invoiceState === 'ready' && invoiceUrl ? (
+              <a
+                href={invoiceUrl}
+                download={invoiceFileName}
+                className="w-full border border-ush-navy bg-white text-ush-navy hover:bg-ush-navy hover:text-white font-bold py-3 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
+              >
+                <FileDown size={17} />
+                <span>Descargar factura PDF</span>
+              </a>
+            ) : (
+              <div className="w-full border border-neutral-200 bg-neutral-50 text-neutral-500 font-bold py-3 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                {invoiceState === 'error' ? <FileDown size={17} /> : <Loader2 size={17} className="animate-spin" />}
+                <span>{invoiceState === 'error' ? 'Factura no disponible: solicítala a tu asesor' : 'Generando factura PDF…'}</span>
+              </div>
+            )}
+
             <a
               href={`https://wa.me/${whatsappNumber}?text=${whatsappMsg}`}
               target="_blank"

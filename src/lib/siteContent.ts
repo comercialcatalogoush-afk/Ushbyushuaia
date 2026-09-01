@@ -31,10 +31,152 @@ export type ContentValues = Record<string, string>;
 
 // ── GUARDADO LOCAL (caché del navegador) ────────────────────
 const CONTENT_CACHE_PREFIX = 'ush_content_';
+const DRAFT_CONTENT_CACHE_PREFIX = 'ush_draft_content_';
 const THEME_CACHE_KEY = 'ush_theme_cache';
+const DRAFT_THEME_CACHE_KEY = 'ush_draft_theme_cache';
 
 export const CONTENT_EVENT = 'ush_content_updated';
 export const THEME_EVENT = 'ush_theme_updated';
+
+// ── ESTRUCTURA PUBLICADA DE SECCIONES ───────────────────────
+// El editor puede guardar el orden y la visibilidad como un único documento
+// remoto. localStorage solo funciona como respaldo visual si no hay conexión;
+// nunca es la fuente oficial para otros dispositivos.
+export interface SectionLayout {
+  orders: Record<string, string[]>;
+  hidden: Record<string, string[]>;
+}
+
+export const DEFAULT_SECTION_LAYOUT: SectionLayout = { orders: {}, hidden: {} };
+export const SECTION_LAYOUT_EVENT = 'ush_section_layout_updated';
+const SECTION_LAYOUT_KEY = 'section_layout';
+const DRAFT_SECTION_LAYOUT_KEY = 'draft_section_layout';
+const SECTION_LAYOUT_CACHE_KEY = 'ush_section_layout_cache';
+const DRAFT_SECTION_LAYOUT_CACHE_KEY = 'ush_draft_section_layout_cache';
+
+// Mapa compartido para que el sincronizador público sepa a qué página pertenece
+// cada bloque que tiene data-editor-section.
+export const SECTION_PAGE_MAP: Record<string, string> = {
+  'home-hero': 'home', 'home-benefits': 'home', 'home-trust': 'home',
+  'home-policies': 'home', 'home-distribuidores': 'home',
+  'outlet-header': 'outlet', 'outlet-card': 'outlet', 'outlet-buttons': 'outlet', 'outlet-hours': 'outlet',
+  'cc-header': 'como-comprar', 'cc-process': 'como-comprar',
+  'ct-header': 'contacto', 'ct-info': 'contacto', 'ct-whatsapp': 'contacto',
+  'tr-header': 'rastreo', 'tr-form': 'rastreo', 'tr-help': 'rastreo',
+  'cat-header': 'catalogo', 'pl-header': 'politicas', 'pl-ship': 'politicas',
+  'pl-data': 'politicas', 'pl-channels': 'politicas',
+  'footer-brand': 'footer', 'footer-hours': 'footer', 'footer-notice': 'footer',
+};
+
+function parseSectionLayout(value: unknown): SectionLayout | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<SectionLayout>;
+  const orders = candidate.orders && typeof candidate.orders === 'object' ? candidate.orders : {};
+  const hidden = candidate.hidden && typeof candidate.hidden === 'object' ? candidate.hidden : {};
+  const clean = (input: Record<string, unknown>) => Object.fromEntries(
+    Object.entries(input).filter(([, ids]) => Array.isArray(ids)).map(([page, ids]) => [
+      page,
+      (ids as unknown[]).filter((id): id is string => typeof id === 'string'),
+    ])
+  );
+  return { orders: clean(orders as Record<string, unknown>), hidden: clean(hidden as Record<string, unknown>) };
+}
+
+export async function getSectionLayoutClient(cacheBust?: number): Promise<SectionLayout> {
+  let cached: SectionLayout | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(SECTION_LAYOUT_CACHE_KEY);
+      if (raw) cached = parseSectionLayout(JSON.parse(raw));
+    } catch (_) {}
+  }
+
+  try {
+    const syncQuery = cacheBust ? `?sync=${encodeURIComponent(String(cacheBust))}` : '';
+    const response = await fetch(`/api/site-layout${syncQuery}`, {
+      cache: 'no-store',
+      headers: cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+    });
+    if (response.ok) {
+      const remote = parseSectionLayout(await response.json());
+      if (remote) {
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(SECTION_LAYOUT_CACHE_KEY, JSON.stringify(remote)); } catch (_) {}
+        }
+        return remote;
+      }
+    }
+  } catch (_) {}
+  return cached || DEFAULT_SECTION_LAYOUT;
+}
+
+export async function saveSectionLayout(layout: SectionLayout): Promise<{ success: boolean; error?: string }> {
+  try {
+    const normalized = parseSectionLayout(layout) || DEFAULT_SECTION_LAYOUT;
+    const { error } = await supabase.from('site_config').upsert(
+      { key: SECTION_LAYOUT_KEY, value: JSON.stringify(normalized), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    if (error) return { success: false, error: error.message };
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(SECTION_LAYOUT_CACHE_KEY, JSON.stringify(normalized)); } catch (_) {}
+      window.dispatchEvent(new Event(SECTION_LAYOUT_EVENT));
+    }
+    triggerRevalidate();
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'No se pudo guardar la estructura de la página' };
+  }
+}
+
+export async function getSectionLayoutForEditor(): Promise<SectionLayout> {
+  const published = await getSectionLayoutClient();
+  let draft: SectionLayout | null = null;
+  const raw = await fetchConfigValue(DRAFT_SECTION_LAYOUT_KEY);
+  if (raw) {
+    try { draft = parseSectionLayout(JSON.parse(raw)); } catch (_) {}
+  }
+  if (draft) {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(DRAFT_SECTION_LAYOUT_CACHE_KEY, JSON.stringify(draft)); } catch (_) {}
+    }
+    return draft;
+  }
+  return published;
+}
+
+export async function saveSectionLayoutDraft(layout: SectionLayout): Promise<{ success: boolean; error?: string }> {
+  const normalized = parseSectionLayout(layout) || DEFAULT_SECTION_LAYOUT;
+  const result = await upsertConfigValue(DRAFT_SECTION_LAYOUT_KEY, normalized);
+  if (!result.success) return result;
+  if (typeof window !== 'undefined') {
+    try { localStorage.setItem(DRAFT_SECTION_LAYOUT_CACHE_KEY, JSON.stringify(normalized)); } catch (_) {}
+    window.dispatchEvent(new Event(SECTION_LAYOUT_EVENT));
+  }
+  return result;
+}
+
+export async function publishSectionLayout(layout: SectionLayout): Promise<{ success: boolean; error?: string }> {
+  const normalized = parseSectionLayout(layout) || DEFAULT_SECTION_LAYOUT;
+  const result = await upsertConfigValue(SECTION_LAYOUT_KEY, normalized);
+  if (result.success && typeof window !== 'undefined') {
+    try { localStorage.setItem(SECTION_LAYOUT_CACHE_KEY, JSON.stringify(normalized)); } catch (_) {}
+  }
+  return result;
+}
+
+export async function clearSectionLayoutDraft(): Promise<void> {
+  try { await supabase.from('site_config').delete().eq('key', DRAFT_SECTION_LAYOUT_KEY); } catch (_) {}
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(DRAFT_SECTION_LAYOUT_CACHE_KEY); } catch (_) {}
+  }
+}
+
+export function subscribeSectionLayout(cb: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener(SECTION_LAYOUT_EVENT, cb);
+  return () => window.removeEventListener(SECTION_LAYOUT_EVENT, cb);
+}
 
 // ── CAMPOS SEO POR DEFECTO (metadatos por página) ────────────
 export const SEO_FIELDS: FieldDef[] = [
@@ -118,7 +260,7 @@ export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
     description: 'Sección de ubicación, horarios y contacto del punto de venta.',
     fields: [
       { key: 'outletEyebrow', label: 'Etiqueta superior', type: 'text', group: 'Encabezado', default: 'Visítanos' },
-      { key: 'outletTitle', label: 'Título', type: 'text', group: 'Encabezado', default: 'Nuestro Outlet' },
+      { key: 'outletTitle', label: 'Título', type: 'text', group: 'Encabezado', default: 'Nuestro' },
       { key: 'outletEm', label: 'Palabra destacada', type: 'text', group: 'Encabezado', default: 'Outlet' },
       { key: 'outletName', label: 'Nombre del punto', type: 'text', group: 'Tarjeta principal', default: 'Outlet USH BY USHUAIA' },
       { key: 'outletTag', label: 'Etiqueta del punto', type: 'text', group: 'Tarjeta principal', default: 'Principal · Atención Mayorista' },
@@ -166,10 +308,10 @@ export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
       { key: 'ctTitle', label: 'Título principal', type: 'text', group: 'Encabezado', default: 'Ponte en Contacto con Nosotros' },
       { key: 'ctIntro', label: 'Párrafo introductorio', type: 'textarea', group: 'Encabezado', default: 'Estamos listos para resolver tus inquietudes y guiarte en el pedido de tus referencias.' },
       { key: 'ctInfoTitle', label: 'Título de datos', type: 'text', group: 'Datos oficiales', default: 'Información Oficial' },
-      { key: 'ctEmail', label: 'Correo electrónico', type: 'text', group: 'Datos oficiales', default: 'info@ushbyushuaia.com.co' },
+      { key: 'ctEmail', label: 'Correo electrónico', type: 'text', group: 'Datos oficiales', default: 'comercialmayoristas@ushuaiajeans.com.co' },
       { key: 'ctLocation', label: 'Ubicación', type: 'text', group: 'Datos oficiales', default: 'Itagüí, Antioquia - Colombia' },
-      { key: 'ctSchedule1', label: 'Horario semana', type: 'text', group: 'Datos oficiales', default: 'Lunes a Viernes: 8:00 AM - 6:00 PM' },
-      { key: 'ctSchedule2', label: 'Horario sábado', type: 'text', group: 'Datos oficiales', default: 'Sábados: 8:00 AM - 1:00 PM' },
+      { key: 'ctSchedule1', label: 'Horario semana', type: 'text', group: 'Datos oficiales', default: 'Lunes a Viernes: 8:00 AM – 5:30 PM' },
+      { key: 'ctSchedule2', label: 'Nota de horario', type: 'text', group: 'Datos oficiales', default: 'Sábados, domingos y festivos no hay atención.' },
       { key: 'ctWhatsappTitle', label: 'Título WhatsApp', type: 'text', group: 'WhatsApp', default: 'Atención WhatsApp' },
       { key: 'ctWhatsappText', label: 'Descripción WhatsApp', type: 'textarea', group: 'WhatsApp', default: 'Respuesta inmediata para pedidos urgentes y confirmación de stock.' },
       { key: 'ctWhatsappButton', label: 'Botón — texto', type: 'text', group: 'WhatsApp', default: 'Abrir WhatsApp' },
@@ -301,8 +443,47 @@ export const DEFAULT_THEME: SiteTheme = {
 // ── LECTURA / ESCRITURA EN Supabase ─────────────────────────
 
 const contentKey = (pageId: string) => `page_${pageId}`;
+const draftContentKey = (pageId: string) => `draft_page_${pageId}`;
 
-export async function fetchContentFromRemote(pageId: string): Promise<ContentValues | null> {
+async function fetchConfigValue(key: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('site_config')
+      .select('value')
+      .eq('key', key)
+      .maybeSingle();
+    if (!error && data?.value) return String(data.value);
+  } catch (_) {}
+  return null;
+}
+
+async function upsertConfigValue(key: string, value: unknown): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('site_config').upsert(
+      { key, value: JSON.stringify(value), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    return error ? { success: false, error: error.message } : { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'No se pudo guardar la configuración' };
+  }
+}
+
+export async function fetchContentFromRemote(pageId: string, cacheBust?: number): Promise<ContentValues | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const syncQuery = cacheBust ? `&sync=${encodeURIComponent(String(cacheBust))}` : '';
+      const response = await fetch(`/api/site-content?page=${encodeURIComponent(pageId)}${syncQuery}`, {
+        cache: 'no-store',
+        headers: cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+      });
+      if (response.ok) {
+        const parsed = await response.json();
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (_) {}
+    return null;
+  }
   try {
     const { data, error } = await supabase
       .from('site_config')
@@ -319,14 +500,39 @@ export async function fetchContentFromRemote(pageId: string): Promise<ContentVal
   return null;
 }
 
-export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
+export async function fetchDraftContentFromRemote(pageId: string): Promise<ContentValues | null> {
+  const raw = await fetchConfigValue(draftContentKey(pageId));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+export async function fetchThemeFromRemote(cacheBust?: number): Promise<SiteTheme | null> {
   // En el editor del admin se prioriza el borrador local para preview en vivo.
   const editorLive = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ush_editor_live') === '1';
   if (editorLive && typeof localStorage !== 'undefined') {
     try {
-      const cached = localStorage.getItem(THEME_CACHE_KEY);
+      const cached = localStorage.getItem(DRAFT_THEME_CACHE_KEY);
       if (cached) return { ...DEFAULT_THEME, ...JSON.parse(cached) };
     } catch (e) {}
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const syncQuery = cacheBust ? `?sync=${encodeURIComponent(String(cacheBust))}` : '';
+      const response = await fetch(`/api/site-theme${syncQuery}`, {
+        cache: 'no-store',
+        headers: cacheBust ? { 'Cache-Control': 'no-cache' } : undefined,
+      });
+      if (response.ok) {
+        const parsed = await response.json();
+        if (parsed && typeof parsed === 'object') return { ...DEFAULT_THEME, ...parsed };
+      }
+    } catch (_) {}
+    return null;
   }
   try {
     const { data, error } = await supabase
@@ -342,6 +548,29 @@ export async function fetchThemeFromRemote(): Promise<SiteTheme | null> {
     console.error('Error fetching theme', e);
   }
   return null;
+}
+
+export async function fetchDraftThemeFromRemote(): Promise<SiteTheme | null> {
+  const raw = await fetchConfigValue('draft_theme');
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? { ...DEFAULT_THEME, ...parsed } : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+export async function getThemeForEditor(): Promise<SiteTheme> {
+  const published = await fetchThemeFromRemote();
+  const draft = await fetchDraftThemeFromRemote();
+  if (draft) {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(DRAFT_THEME_CACHE_KEY, JSON.stringify(draft)); } catch (_) {}
+    }
+    return draft;
+  }
+  return published || DEFAULT_THEME;
 }
 // Valores finales para una página: guardado (nube/caché) + defaults
 export function mergeContent(pageId: string, stored: ContentValues | null): ContentValues {
@@ -390,7 +619,7 @@ export async function getThemeServer(): Promise<SiteTheme> {
 }
 
 // Lectura para CLIENT components (con caché local)
-export async function getPageContentClient(pageId: string): Promise<ContentValues> {
+export async function getPageContentClient(pageId: string, cacheBust?: number): Promise<ContentValues> {
   let stored: ContentValues | null = null;
   if (typeof window !== 'undefined') {
     try {
@@ -401,8 +630,13 @@ export async function getPageContentClient(pageId: string): Promise<ContentValue
   // En el editor del admin (sesión "live") se prioriza el borrador local para
   // que el preview refleje los cambios sin publicar.
   const editorLive = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('ush_editor_live') === '1';
-  if (!editorLive) {
-    const remote = await fetchContentFromRemote(pageId);
+  if (editorLive && typeof window !== 'undefined') {
+    try {
+      const draft = localStorage.getItem(DRAFT_CONTENT_CACHE_PREFIX + pageId);
+      if (draft) stored = JSON.parse(draft);
+    } catch (_) {}
+  } else {
+    const remote = await fetchContentFromRemote(pageId, cacheBust);
     if (remote) {
       stored = remote;
       if (typeof window !== 'undefined') {
@@ -411,6 +645,19 @@ export async function getPageContentClient(pageId: string): Promise<ContentValue
     }
   }
   return mergeContent(pageId, stored);
+}
+
+export async function getPageContentForEditor(pageId: string): Promise<ContentValues> {
+  const publishedRemote = await fetchContentFromRemote(pageId);
+  const published = mergeContent(pageId, publishedRemote);
+  const draft = await fetchDraftContentFromRemote(pageId);
+  if (draft) {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem(DRAFT_CONTENT_CACHE_PREFIX + pageId, JSON.stringify(draft)); } catch (_) {}
+    }
+    return mergeContent(pageId, draft);
+  }
+  return published;
 }
 
 // Guardado desde el panel admin (requiere sesión autenticada)
@@ -433,6 +680,31 @@ export async function savePageContent(pageId: string, values: ContentValues): Pr
   }
 }
 
+export async function savePageContentDraft(pageId: string, values: ContentValues): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue(draftContentKey(pageId), values);
+  if (!result.success) return result;
+  if (typeof window !== 'undefined') {
+    try { localStorage.setItem(DRAFT_CONTENT_CACHE_PREFIX + pageId, JSON.stringify(values)); } catch (_) {}
+    window.dispatchEvent(new Event(CONTENT_EVENT));
+  }
+  return result;
+}
+
+export async function publishPageContent(pageId: string, values: ContentValues): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue(contentKey(pageId), values);
+  if (result.success && typeof window !== 'undefined') {
+    try { localStorage.setItem(CONTENT_CACHE_PREFIX + pageId, JSON.stringify(values)); } catch (_) {}
+  }
+  return result;
+}
+
+export async function clearPageContentDraft(pageId: string): Promise<void> {
+  try { await supabase.from('site_config').delete().eq('key', draftContentKey(pageId)); } catch (_) {}
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(DRAFT_CONTENT_CACHE_PREFIX + pageId); } catch (_) {}
+  }
+}
+
 export async function saveTheme(theme: SiteTheme): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase.from('site_config').upsert(
@@ -449,6 +721,31 @@ export async function saveTheme(theme: SiteTheme): Promise<{ success: boolean; e
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message };
+  }
+}
+
+export async function saveThemeDraft(theme: SiteTheme): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue('draft_theme', theme);
+  if (!result.success) return result;
+  if (typeof window !== 'undefined') {
+    try { localStorage.setItem(DRAFT_THEME_CACHE_KEY, JSON.stringify(theme)); } catch (_) {}
+    window.dispatchEvent(new Event(THEME_EVENT));
+  }
+  return result;
+}
+
+export async function publishTheme(theme: SiteTheme): Promise<{ success: boolean; error?: string }> {
+  const result = await upsertConfigValue('theme', theme);
+  if (result.success && typeof window !== 'undefined') {
+    try { localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme)); } catch (_) {}
+  }
+  return result;
+}
+
+export async function clearThemeDraft(): Promise<void> {
+  try { await supabase.from('site_config').delete().eq('key', 'draft_theme'); } catch (_) {}
+  if (typeof window !== 'undefined') {
+    try { localStorage.removeItem(DRAFT_THEME_CACHE_KEY); } catch (_) {}
   }
 }
 

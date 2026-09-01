@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Product, WholesaleLead } from '@/types';
 import { INITIAL_PRODUCTS } from '@/data/products';
+import { getGoogleDriveImageUrl } from './drive';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_kOqjv3pdiOQoIp0AHKXWeg_H61J-N2g';
@@ -10,10 +11,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const PRODUCTS_STORAGE_KEY = 'ush_products_override_v6';
 
 // Perfil LIGERO para listados/carrito: evita `select('*')` y no baja los campos
-// pesados (full_description, video_url, options, tags, color) que inflan el egress.
+// pesados (full_description, options, tags, color) que inflan el egress.
+// video_url se incluye porque es solo una referencia externa necesaria para
+// la biblioteca audiovisual; el archivo nunca atraviesa Supabase.
 // `description` y `stock_by_size` se conservan porque el filtrado público y el
 // stock por talla los necesitan.
-export const PRODUCT_LIST_COLUMNS = `id,reference,slug,name,price,suggested_price,compare_price,ribbon,fit,is_best_seller,images,category,category_id,hidden,in_stock,status,description,stock_by_size`;
+export const PRODUCT_LIST_COLUMNS = `id,reference,slug,name,price,suggested_price,compare_price,ribbon,fit,is_best_seller,images,category,category_id,hidden,in_stock,status,description,stock_by_size,video_url`;
 
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;
@@ -62,10 +65,23 @@ export function saveLocalProductsOverride(products: Product[]) {
   }
 }
 
-const mapProductRow = (item: any): Product => ({
+function normalizeProductName(value: unknown): string {
+  // Corrección de un typo que estaba publicado en la referencia 556291.
+  return String(value || '').replace(/\bShort\s+lardo\b/gi, 'Short largo');
+}
+
+const mapProductRow = (item: any): Product => {
+  const name = normalizeProductName(item.name);
+  const rawImages = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
+  // Los enlaces de Drive se convierten en referencias CDN externas; nunca se
+  // descarga ni se copia el archivo a Supabase o al despliegue.
+  const images = rawImages
+    .filter((image: unknown): image is string => typeof image === 'string' && image.trim() !== '')
+    .map((image: string) => getGoogleDriveImageUrl(image));
+  return {
   id: item.id,
-  name: item.name,
-  reference: item.reference || item.name.replace(/ref:?/i, '').trim(),
+  name,
+  reference: item.reference || name.replace(/ref:?/i, '').trim(),
   slug: item.slug,
   suggested_price: item.suggested_price ? Number(item.suggested_price) : Number(item.compare_price || item.price || 49900),
   price: Number(item.price),
@@ -81,12 +97,13 @@ const mapProductRow = (item: any): Product => ({
   in_stock: item.in_stock !== false,
   hidden: item.hidden === true || item.status === 'draft',
   options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options || []),
-  images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
+  images,
   tags: Array.isArray(item.tags) ? item.tags : [],
   category: item.category || '',
   color: item.color || '',
   category_id: item.category_id
-});
+  };
+};
 
 // Merge Supabase rows with INITIAL_PRODUCTS so the full 90-ref catalog always shows
 function mergeWithInitial(supabaseProducts: Product[]): Product[] {
@@ -521,6 +538,10 @@ export async function cancelOrderAndRestoreStock(
 // ── REALTIME: broadcast de cambios (gratis, sin SQL) ────────────────
 const SYNC_CHANNEL = 'ush-catalog-sync';
 
+export interface CatalogSyncPayload {
+  ts?: number;
+}
+
 function sendBroadcast(event: string) {
   if (typeof window === 'undefined') return;
   try {
@@ -575,18 +596,18 @@ export function publishUserRegistered() {
 }
 
 export function subscribeCatalogChanges(
-  cb: () => void,
+  cb: (payload?: CatalogSyncPayload) => void,
   onUserRegistered?: (payload?: { email?: string; name?: string }) => void
 ): () => void {
   if (typeof window === 'undefined') return () => {};
   try {
     const ch = supabase.channel(SYNC_CHANNEL);
     ch
-      .on('broadcast', { event: 'catalog-changed' }, () => cb())
-      .on('broadcast', { event: 'order-changed' }, () => cb())
+      .on('broadcast', { event: 'catalog-changed' }, ({ payload }) => cb(payload as CatalogSyncPayload))
+      .on('broadcast', { event: 'order-changed' }, ({ payload }) => cb(payload as CatalogSyncPayload))
       .on('broadcast', { event: 'user-registered' }, ({ payload }) => {
         // Refresca la lista de clientes del admin
-        cb();
+        cb(payload as CatalogSyncPayload);
         // Si el admin pasó un callback dedicado, lo ejecuta con los datos del nuevo usuario
         if (onUserRegistered) onUserRegistered(payload as { email?: string; name?: string });
       })

@@ -123,7 +123,15 @@ export default function RastreoPage() {
 
   const consultar = useCallback(async (numero: string, isAutoRefresh = false) => {
     const clean = numero.trim().replace(/\s+/g, '');
-    if (!clean) return;
+    if (!/^\d{11}$/.test(clean)) {
+      if (isAutoRefresh) setRefreshing(false);
+      else {
+        setLoading(false);
+        setError('Ingresa una guía válida de 11 dígitos.');
+        setResult(null);
+      }
+      return;
+    }
     if (isAutoRefresh) setRefreshing(true); else { setLoading(true); setError(null); setResult(null); }
 
     try {
@@ -216,7 +224,7 @@ export default function RastreoPage() {
             <Box size={28} className="text-ush-pink" />
           </div>
           <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-            <span data-field-key="trTitle">{c.trTitle}</span> <span className="text-ush-pink"><span data-field-key="trTitleEm">{c.trTitleEm}</span></span>
+            <span data-field-key="trTitle">{c.trTitle}</span>{c.trTitleEm && c.trTitleEm !== c.trTitle ? <span className="text-ush-pink"> <span data-field-key="trTitleEm">{c.trTitleEm}</span></span> : null}
           </h1>
           <p data-field-key="trIntro" className="text-sm text-ush-pinkDark font-medium mt-2 max-w-lg mx-auto">
             {c.trIntro}
@@ -234,8 +242,13 @@ export default function RastreoPage() {
               <input
                 type="text"
                 required
+                inputMode="numeric"
+                minLength={11}
+                maxLength={11}
+                pattern="[0-9]{11}"
+                autoComplete="off"
                 value={guia}
-                onChange={(e) => setGuia(e.target.value)}
+                onChange={(e) => setGuia(e.target.value.replace(/\D/g, '').slice(0, 11))}
                 placeholder={c.trPlaceholder || CARRIERS[0].placeholder}
                 className="w-full border border-gray-300 pl-9 pr-3 py-3 text-sm text-neutral-900 focus:outline-none focus:border-[#d88193] focus:ring-1 focus:ring-[#d88193]/20"
               />

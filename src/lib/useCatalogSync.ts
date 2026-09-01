@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Product } from '@/types';
 import { subscribeCatalogChanges } from '@/lib/supabase';
+import type { CatalogSyncPayload } from '@/lib/supabase';
 
 // Mantiene el catálogo del sitio sincronizado con lo que guarda el admin:
 //  1. Trae datos frescos de /api/catalog (edge de Vercel) AL ABRIR la página,
@@ -16,10 +17,16 @@ export function useCatalogSync(initialProducts: Product[]): Product[] {
     let active = true;
     let lastFetch = 0;
 
-    const refresh = () => {
+    const refresh = (payload?: CatalogSyncPayload) => {
       lastFetch = Date.now();
-      // Edge de Vercel; no consulta Supabase por cada cliente.
-      fetch('/api/catalog', { cache: 'no-store' })
+      // En una actualización emitida por el admin se usa el timestamp común
+      // del broadcast: todas las pestañas saltan el objeto viejo del CDN y
+      // comparten la misma respuesta fresca en el Edge.
+      const syncQuery = payload?.ts ? `?sync=${encodeURIComponent(String(payload.ts))}` : '';
+      fetch(`/api/catalog${syncQuery}`, {
+        cache: 'no-store',
+        headers: payload?.ts ? { 'Cache-Control': 'no-cache' } : undefined,
+      })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
         .then((fresh: Product[]) => {
           if (active) setProducts(fresh);

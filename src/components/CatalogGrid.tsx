@@ -100,10 +100,13 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     };
   }, [syncedProducts]);
 
-  // Reset pagination when data changes
+  // Reset pagination only when the visible query changes. The catalog is
+  // refreshed from the edge after mounting and on realtime updates; resetting
+  // here on every data-array replacement made "Cargar más" jump back to the
+  // first page while the shopper was browsing.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [displayProducts]);
+  }, [activeCategory, activeFit, searchQuery, sortBy]);
 
   // Public grid: only complete products (photo + title + detailed description)
   const visibleProducts = displayProducts.filter((p) => isCompleteProduct(p));

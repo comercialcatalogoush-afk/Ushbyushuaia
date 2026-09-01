@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { fetchAllProductsAdmin, supabase, fetchPriceHistory, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange } from '@/lib/supabase';
@@ -14,11 +14,12 @@ import {
   RefreshCw, ShoppingBag, LayoutTemplate, XCircle,
   FileSpreadsheet, FileText, Users, KeyRound, Mail,
   Phone, MapPin, Calendar, DollarSign, CheckCircle2,
-  ExternalLink, MessageSquare, Eye, Copy, Search,
-  AlertTriangle,
+  ExternalLink, MessageSquare, Eye, EyeOff, Copy, Search,
+  AlertTriangle, Trophy, Palette, Ruler, CalendarDays,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
+import { LookbookPdfEditor } from '@/components/LookbookPdfEditor';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 const DEFAULT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
@@ -30,6 +31,85 @@ const DEFAULT_COLORS = [
   'Café', 'Mostaza', 'Vino', 'Burdeos'
 ];
 
+type SalesBreakdown = { label: string; units: number };
+type SalesRanking = {
+  reference: string;
+  name: string;
+  units: number;
+  revenue: number;
+  colors: SalesBreakdown[];
+  sizes: SalesBreakdown[];
+};
+
+function getLast15DaysSales(orders: any[]): { orders: number; units: number; revenue: number; ranking: SalesRanking[] } {
+  const cutoff = Date.now() - 15 * 24 * 60 * 60 * 1000;
+  const references = new Map<string, {
+    reference: string;
+    name: string;
+    units: number;
+    revenue: number;
+    colors: Map<string, number>;
+    sizes: Map<string, number>;
+  }>();
+  let confirmedOrders = 0;
+  let totalUnits = 0;
+  let revenue = 0;
+
+  for (const order of Array.isArray(orders) ? orders : []) {
+    if (order?.status !== 'confirmed') continue;
+    const rawDate = order.created_at || order.order_date;
+    const date = rawDate ? new Date(rawDate).getTime() : NaN;
+    if (!Number.isFinite(date) || date < cutoff) continue;
+    confirmedOrders += 1;
+    let orderItemsRevenue = 0;
+
+    for (const item of Array.isArray(order.items) ? order.items : []) {
+      const units = Math.max(0, Number(item.quantity) || 0);
+      if (!units) continue;
+      const reference = String(item.reference || item.product_id || 'Sin referencia');
+      const current = references.get(reference) || {
+        reference,
+        name: String(item.name || 'Prenda sin nombre'),
+        units: 0,
+        revenue: 0,
+        colors: new Map<string, number>(),
+        sizes: new Map<string, number>(),
+      };
+      const color = String(item.color || 'Sin color');
+      const size = String(item.size || 'Única');
+      current.name = current.name || String(item.name || 'Prenda sin nombre');
+      current.units += units;
+      const itemRevenue = units * Math.max(0, Number(item.unit_price) || 0);
+      current.revenue += itemRevenue;
+      current.colors.set(color, (current.colors.get(color) || 0) + units);
+      current.sizes.set(size, (current.sizes.get(size) || 0) + units);
+      references.set(reference, current);
+      totalUnits += units;
+      orderItemsRevenue += itemRevenue;
+    }
+    const finalOrderTotal = Number(order.total);
+    revenue += Number.isFinite(finalOrderTotal) ? Math.max(0, finalOrderTotal) : orderItemsRevenue;
+  }
+
+  const sortBreakdown = (entries: Map<string, number>): SalesBreakdown[] => Array.from(entries.entries())
+    .map(([label, units]) => ({ label, units }))
+    .sort((a, b) => b.units - a.units || a.label.localeCompare(b.label, 'es'))
+    .slice(0, 4);
+  const ranking = Array.from(references.values())
+    .map((item) => ({
+      reference: item.reference,
+      name: item.name,
+      units: item.units,
+      revenue: item.revenue,
+      colors: sortBreakdown(item.colors),
+      sizes: sortBreakdown(item.sizes),
+    }))
+    .sort((a, b) => b.units - a.units || b.revenue - a.revenue || a.reference.localeCompare(b.reference))
+    .slice(0, 8);
+
+  return { orders: confirmedOrders, units: totalUnits, revenue, ranking };
+}
+
 export default function AdminCatalogPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasNonAdminSession, setHasNonAdminSession] = useState(false);
@@ -40,6 +120,7 @@ export default function AdminCatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'clients' | 'history' | 'backup' | 'site'>('orders');
+  const [showLookbookEditor, setShowLookbookEditor] = useState(false);
   const [invoiceBusyId, setInvoiceBusyId] = useState<string | null>(null);
   const [invoiceReady, setInvoiceReady] = useState<{ orderId: string; url: string } | null>(null);
 
@@ -50,8 +131,10 @@ export default function AdminCatalogPage() {
   const [selectedClientOrders, setSelectedClientOrders] = useState<any | null>(null);
   const [assignModalClient, setAssignModalClient] = useState<any | null>(null);
   const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [clientActionFeedback, setClientActionFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [clientLoadError, setClientLoadError] = useState<string | null>(null);
   const [deleteModalClient, setDeleteModalClient] = useState<any | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
@@ -72,12 +155,22 @@ export default function AdminCatalogPage() {
   const [orderStatusFilter, setOrderStatusFilter] = useState<'todos' | 'pending' | 'confirmed' | 'canceled'>('todos');
   const [orderMsg, setOrderMsg] = useState<string | null>(null);
 
+  const sales15 = useMemo(() => getLast15DaysSales(orders), [orders]);
+
   // ── Respaldos / Limpieza mensual ──
   const [backupReminder, setBackupReminder] = useState<Date>(() => getNextBackupReminder());
   const [backupCountdown, setBackupCountdown] = useState(getReminderCountdown(getNextBackupReminder()));
   const [backupLoading, setBackupLoading] = useState(false);
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
+
+  type AdminTab = 'orders' | 'clients' | 'history' | 'backup';
+  const [editorReturnTab, setEditorReturnTab] = useState<AdminTab>('orders');
+
+  const openSiteEditor = () => {
+    if (activeTab !== 'site') setEditorReturnTab(activeTab);
+    setActiveTab('site');
+  };
 
   const { formatCOP } = useCart();
 
@@ -208,22 +301,21 @@ export default function AdminCatalogPage() {
   const loadClients = async () => {
     setLoadingClients(true);
     setClientActionFeedback(null);
+    setClientLoadError(null);
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
-      if (token) {
-        const res = await fetch('/api/admin/clients', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const body = await res.json();
-          if (Array.isArray(body.clients)) {
-            setClients(body.clients);
-          }
-        }
-      }
-    } catch (e) {
+      if (!token) throw new Error('La sesión de administrador no está disponible. Vuelve a ingresar.');
+      const res = await fetch('/api/admin/clients', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `No se pudo cargar el directorio (${res.status}).`);
+      if (!Array.isArray(body.clients)) throw new Error('La respuesta del directorio no tiene un formato válido.');
+      setClients(body.clients);
+    } catch (e: any) {
       console.error('Error loading clients:', e);
+      setClientLoadError(e?.message || 'No se pudo actualizar el directorio de clientes.');
     } finally {
       setLoadingClients(false);
     }
@@ -254,6 +346,7 @@ export default function AdminCatalogPage() {
         setClientActionFeedback({ type: 'success', msg: body.message });
         setAssignModalClient(null);
         setNewPasswordVal('');
+        setShowNewPassword(false);
         loadClients();
       } else {
         setClientActionFeedback({ type: 'error', msg: body.error || 'No se pudo asignar la contraseña' });
@@ -620,6 +713,7 @@ export default function AdminCatalogPage() {
         </div>
 
         {/* Tabs Bar: el catálogo se gestiona íntegramente en el Editor del sitio */}
+        {activeTab !== 'site' && (
         <div className="flex items-center gap-2 border-b border-gray-200 bg-white p-2 mb-6 shadow-sm overflow-x-auto">
           <button
             onClick={() => { setActiveTab('orders'); loadOrders(); }}
@@ -668,14 +762,19 @@ export default function AdminCatalogPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('site')}
-            className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-              activeTab === 'site' ? 'bg-[#1b2333] text-white shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'
-            }`}
+            onClick={openSiteEditor}
+            className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 text-neutral-600 hover:bg-neutral-100"
           >
             <LayoutTemplate size={14} className="text-[#d88193]" /> Editor del sitio (Catálogo)
           </button>
+          <button
+            onClick={() => setShowLookbookEditor(true)}
+            className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 text-neutral-600 hover:bg-neutral-100"
+          >
+            <FileText size={14} className="text-[#d88193]" /> Catálogo PDF
+          </button>
         </div>
+        )}
 
         {/* Feedback Alert for Client Actions */}
         {clientActionFeedback && (
@@ -697,6 +796,15 @@ export default function AdminCatalogPage() {
         {/* ── TAB: CLIENTES Y GESTIÓN DE CUENTAS ── */}
         {activeTab === 'clients' && (
           <div className="space-y-6">
+            {clientLoadError && (
+              <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-start gap-2" role="alert">
+                <AlertTriangle size={16} className="text-amber-600 flex-shrink-0" />
+                <span>
+                  No se pudo actualizar el directorio: {clientLoadError}
+                  {clients.length > 0 ? ' Se conserva la información anterior.' : ' Intenta refrescar la lista.'}
+                </span>
+              </div>
+            )}
             {/* Header & KPI Summary */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white p-5 border border-gray-200 shadow-sm flex items-center justify-between">
@@ -907,6 +1015,7 @@ export default function AdminCatalogPage() {
                                     onClick={() => {
                                       setAssignModalClient(client);
                                       setNewPasswordVal('');
+                                      setShowNewPassword(false);
                                     }}
                                     className="px-2.5 py-1.5 bg-[#1b2333] hover:bg-[#d88193] text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors"
                                   >
@@ -1019,7 +1128,11 @@ export default function AdminCatalogPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => setAssignModalClient(null)}
+                      onClick={() => {
+                        setAssignModalClient(null);
+                        setNewPasswordVal('');
+                        setShowNewPassword(false);
+                      }}
                       className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/10 rounded-md"
                     >
                       <X size={18} />
@@ -1033,13 +1146,14 @@ export default function AdminCatalogPage() {
                       </label>
                       <div className="relative">
                         <input
-                          type="text"
+                          type={showNewPassword ? 'text' : 'password'}
                           required
                           minLength={6}
+                          autoComplete="new-password"
                           value={newPasswordVal}
                           onChange={(e) => setNewPasswordVal(e.target.value)}
                           placeholder="Ingresa la nueva clave (mín. 6 caracteres)"
-                          className="w-full border border-gray-300 p-3 pr-24 text-xs font-mono text-neutral-900 focus:outline-none focus:border-[#d88193]"
+                          className="w-full border border-gray-300 p-3 pr-44 text-xs font-mono text-neutral-900 focus:outline-none focus:border-[#d88193]"
                         />
                         <button
                           type="button"
@@ -1050,9 +1164,18 @@ export default function AdminCatalogPage() {
                             rand += '!';
                             setNewPasswordVal(rand);
                           }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider text-[#d88193] hover:underline"
+                          className="absolute right-20 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider text-[#d88193] hover:underline"
                         >
                           Generar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword((visible) => !visible)}
+                          aria-label={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          title={showNewPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-[#d88193]"
+                        >
+                          {showNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
                       </div>
                       <p className="text-[10px] text-neutral-400 mt-1">
@@ -1081,6 +1204,8 @@ export default function AdminCatalogPage() {
                         onClick={() => {
                           handleSendResetEmail(assignModalClient);
                           setAssignModalClient(null);
+                          setNewPasswordVal('');
+                          setShowNewPassword(false);
                         }}
                         className="w-full border border-gray-300 hover:border-[#d88193] hover:bg-gray-50 text-neutral-700 font-bold py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
                       >
@@ -1228,11 +1353,11 @@ export default function AdminCatalogPage() {
                 <div>
                   <h2 className="text-base font-black uppercase text-[#1b2333] tracking-wide flex items-center gap-2">
                     <History size={16} className="text-[#d88193]" />
-                    Respaldo Mensual Automático
+                    Recordatorio Mensual de Respaldo
                   </h2>
                   <p className="text-xs text-neutral-500 mt-1 max-w-xl">
-                    Para no saturar el plan gratuito de Supabase, cada <strong>último viernes del mes a las 3:30 PM</strong> debes
-                    exportar el respaldo y vaciar las tablas de datos transaccionales.
+                    Para no saturar el plan gratuito de Supabase, recibirás un recordatorio cada <strong>último viernes del mes a las 3:30 PM</strong>.
+                    La exportación y la limpieza de datos se realizan manualmente desde este panel.
                   </p>
                 </div>
                 <button
@@ -1246,7 +1371,7 @@ export default function AdminCatalogPage() {
 
               <div className="mt-4 p-4 bg-neutral-50 border border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Próximo respaldo</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Próximo recordatorio</p>
                   <p className="text-sm font-black text-ush-navy mt-1 capitalize">{formatReminder(backupReminder)}</p>
                 </div>
                 <div>
@@ -1264,7 +1389,7 @@ export default function AdminCatalogPage() {
               </div>
               {backupCountdown.overdue && (
                 <p className="mt-2 text-xs font-bold text-red-600">
-                  ⚠️ ¡Ya pasó la fecha! Exporta el respaldo y vacía los datos lo antes posible.
+                  ⚠️ ¡Ya pasó la fecha del recordatorio! Exporta el respaldo y vacía los datos lo antes posible.
                 </p>
               )}
             </div>
@@ -1416,6 +1541,98 @@ export default function AdminCatalogPage() {
                 </div>
               )}
 
+              {/* Rotación de ventas confirmadas: se calcula con los pedidos ya cargados */}
+              <section className="mt-6 border border-[#d88193]/30 bg-[#fffafb]" aria-labelledby="sales-15-title">
+                <div className="border-b border-[#d88193]/20 px-4 py-4 sm:px-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 id="sales-15-title" className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-[#1b2333]">
+                        <Trophy size={16} className="text-[#d88193]" />
+                        Rotación de ventas · últimos 15 días
+                      </h3>
+                      <p className="mt-1 text-[11px] text-neutral-500">
+                        Solo incluye pedidos confirmados. Se actualiza al refrescar pedidos o cuando llega un cambio en tiempo real.
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 border border-[#d88193]/25 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#d88193]">
+                      <CalendarDays size={12} /> 15 días móviles
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 border-b border-[#d88193]/20 p-4 sm:grid-cols-3 sm:p-5">
+                  <div className="bg-white p-3 shadow-sm ring-1 ring-black/5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Pedidos confirmados</p>
+                    <p className="mt-1 text-2xl font-black text-[#1b2333]">{sales15.orders}</p>
+                  </div>
+                  <div className="bg-white p-3 shadow-sm ring-1 ring-black/5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Unidades vendidas</p>
+                    <p className="mt-1 text-2xl font-black text-[#1b2333]">{sales15.units}</p>
+                  </div>
+                  <div className="bg-white p-3 shadow-sm ring-1 ring-black/5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Venta registrada</p>
+                    <p className="mt-1 text-xl font-black text-[#d88193]">{formatCOP(sales15.revenue)}</p>
+                  </div>
+                </div>
+
+                {sales15.ranking.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-xs text-neutral-500">
+                    Aún no hay ventas confirmadas dentro de los últimos 15 días.
+                  </div>
+                ) : (
+                  <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.1fr_1.9fr]">
+                    <div className="border border-[#d88193]/25 bg-white p-4 shadow-sm">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#d88193]">#1 más vendida</p>
+                      <div className="mt-2 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-base font-black text-[#1b2333]">{sales15.ranking[0].reference}</p>
+                          <p className="mt-0.5 text-xs leading-relaxed text-neutral-600">{sales15.ranking[0].name}</p>
+                        </div>
+                        <span className="whitespace-nowrap bg-[#1b2333] px-2.5 py-1 text-xs font-black text-white">
+                          {sales15.ranking[0].units} uds
+                        </span>
+                      </div>
+                      <div className="mt-4 grid gap-3 border-t border-neutral-100 pt-3 sm:grid-cols-2">
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500"><Palette size={12} /> Colores</p>
+                          <div className="mt-1 space-y-1 text-xs text-[#1b2333]">
+                            {sales15.ranking[0].colors.map((entry) => <p key={entry.label}><strong>{entry.label}</strong> · {entry.units} uds</p>)}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500"><Ruler size={12} /> Tallas</p>
+                          <div className="mt-1 space-y-1 text-xs text-[#1b2333]">
+                            {sales15.ranking[0].sizes.map((entry) => <p key={entry.label}><strong>{entry.label}</strong> · {entry.units} uds</p>)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Referencias siguientes</p>
+                        <p className="text-[10px] text-neutral-400">unidades</p>
+                      </div>
+                      <div className="divide-y divide-neutral-100 border border-neutral-200 bg-white">
+                        {sales15.ranking.slice(1).map((entry, index) => (
+                          <div key={entry.reference} className="grid grid-cols-[28px_1fr_auto] items-center gap-2 px-3 py-2.5 sm:grid-cols-[34px_1fr_90px_auto]">
+                            <span className="text-sm font-black text-[#d88193]">#{index + 2}</span>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-black text-[#1b2333]">{entry.reference} · {entry.name}</p>
+                              <p className="mt-0.5 truncate text-[10px] text-neutral-500">
+                                Colores: {entry.colors.map((color) => `${color.label} (${color.units})`).join(', ')} · Tallas: {entry.sizes.map((size) => `${size.label} (${size.units})`).join(', ')}
+                              </p>
+                            </div>
+                            <span className="hidden text-right text-[10px] text-neutral-500 sm:block">{formatCOP(entry.revenue)}</span>
+                            <span className="whitespace-nowrap text-xs font-black text-[#1b2333]">{entry.units} uds</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+
               {/* Filtro de estados de pedido */}
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 {([
@@ -1521,7 +1738,7 @@ export default function AdminCatalogPage() {
                         </div>
 
                         {items.length > 0 && (
-                          <div className="mt-3 border border-gray-200 bg-white overflow-hidden">
+                          <div className="mt-3 border border-gray-200 bg-white overflow-x-auto">
                             <table className="w-full text-left text-xs">
                               <thead className="bg-neutral-50 text-neutral-500 uppercase tracking-wider text-[10px]">
                                 <tr>
@@ -1582,7 +1799,11 @@ export default function AdminCatalogPage() {
 
         {/* ── TAB 7: EDITOR DEL SITIO WEB (tipo Wix) ── */}
         {activeTab === 'site' && (
-          <SiteContentEditor onExit={() => setActiveTab('orders')} />
+          <SiteContentEditor onExit={() => setActiveTab(editorReturnTab)} />
+        )}
+
+        {showLookbookEditor && (
+          <LookbookPdfEditor products={products} onClose={() => setShowLookbookEditor(false)} />
         )}
 
       </div>

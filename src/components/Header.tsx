@@ -12,6 +12,9 @@ import { Logo } from './Logo';
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileMujerOpen, setIsMobileMujerOpen] = useState(false);
+  const [isMobileJeansOpen, setIsMobileJeansOpen] = useState(false);
+  const [isMobilePantalonesOpen, setIsMobilePantalonesOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -46,6 +49,13 @@ export const Header: React.FC = () => {
     setSearchQuery('');
   };
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    setIsMobileMujerOpen(false);
+    setIsMobileJeansOpen(false);
+    setIsMobilePantalonesOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
       
@@ -67,7 +77,7 @@ export const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <div className="flex items-center lg:hidden">
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => isMobileMenuOpen ? closeMobileMenu() : setIsMobileMenuOpen(true)}
               className="p-2 text-neutral-800 hover:text-ush-pink focus:outline-none"
               aria-label="Menú principal"
             >
@@ -314,54 +324,159 @@ export const Header: React.FC = () => {
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-6 space-y-3">
           <Link
             href="/"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             INICIO
           </Link>
           <Link
             href="/catalogo"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             CATÁLOGO
           </Link>
-          <Link
-            href="/catalogo"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
-          >
-            MUJER — JEANS / PANTALONES / CARGOS / SHORTS / FALDAS
-          </Link>
+          <div className="border-b border-gray-50">
+            <button
+              type="button"
+              onClick={() => setIsMobileMujerOpen((open) => !open)}
+              className="w-full flex items-center justify-between text-left text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2"
+              aria-expanded={isMobileMujerOpen}
+              aria-controls="mobile-mujer-menu"
+            >
+              <span>MUJER</span>
+              <ChevronDown
+                size={18}
+                className={`text-[#d88193] transition-transform ${isMobileMujerOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isMobileMujerOpen && (
+              <div id="mobile-mujer-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="Categorías de Mujer">
+                <Link
+                  href="/catalogo"
+                  onClick={closeMobileMenu}
+                  className="block text-xs font-bold uppercase tracking-wider text-[#d88193] py-2"
+                >
+                  VER TODO
+                </Link>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Link
+                      href="/catalogo?categoria=Jeans"
+                      onClick={closeMobileMenu}
+                      className="flex-1 text-xs font-bold uppercase tracking-wider text-neutral-700 py-2"
+                    >
+                      JEANS
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setIsMobileJeansOpen((open) => !open)}
+                      className="p-2 text-neutral-500"
+                      aria-label={`${isMobileJeansOpen ? 'Ocultar' : 'Mostrar'} cortes de Jeans`}
+                      aria-expanded={isMobileJeansOpen}
+                    >
+                      <ChevronRight size={15} className={`transition-transform ${isMobileJeansOpen ? 'rotate-90' : ''}`} />
+                    </button>
+                  </div>
+                  {isMobileJeansOpen && (
+                    <div className="pl-4 border-l border-rose-100 space-y-1">
+                      {jeansFits.map((fit) => (
+                        <Link
+                          key={fit}
+                          href={`/catalogo?categoria=Jeans&fit=${encodeURIComponent(fit)}`}
+                          onClick={closeMobileMenu}
+                          className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-500 py-1.5"
+                        >
+                          {fit}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Link
+                      href="/catalogo?categoria=Pantalones"
+                      onClick={closeMobileMenu}
+                      className="flex-1 text-xs font-bold uppercase tracking-wider text-neutral-700 py-2"
+                    >
+                      PANTALONES
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setIsMobilePantalonesOpen((open) => !open)}
+                      className="p-2 text-neutral-500"
+                      aria-label={`${isMobilePantalonesOpen ? 'Ocultar' : 'Mostrar'} cortes de Pantalones`}
+                      aria-expanded={isMobilePantalonesOpen}
+                    >
+                      <ChevronRight size={15} className={`transition-transform ${isMobilePantalonesOpen ? 'rotate-90' : ''}`} />
+                    </button>
+                  </div>
+                  {isMobilePantalonesOpen && (
+                    <div className="pl-4 border-l border-rose-100 space-y-1">
+                      {pantalonesFits.map((fit) => (
+                        <Link
+                          key={fit}
+                          href={`/catalogo?categoria=Pantalones&fit=${encodeURIComponent(fit)}`}
+                          onClick={closeMobileMenu}
+                          className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-500 py-1.5"
+                        >
+                          {fit}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {[
+                  ['CARGOS', '/catalogo?categoria=Cargos'],
+                  ['SHORTS', '/catalogo?categoria=Shorts'],
+                  ['FALDAS', '/catalogo?categoria=Faldas'],
+                ].map(([label, href]) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    onClick={closeMobileMenu}
+                    className="block text-xs font-bold uppercase tracking-wider text-neutral-700 py-2"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           <button
-            onClick={() => { setIsMobileMenuOpen(false); setComingSoonSection('TEENS'); }}
+            onClick={() => { closeMobileMenu(); setComingSoonSection('TEENS'); }}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"
           >
             TEENS <Sparkles size={13} className="text-[#d88193]" />
           </button>
           <button
-            onClick={() => { setIsMobileMenuOpen(false); setComingSoonSection('HOMBRES'); }}
+            onClick={() => { closeMobileMenu(); setComingSoonSection('HOMBRES'); }}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"
           >
             HOMBRES <Sparkles size={13} className="text-[#d88193]" />
           </button>
           <Link
             href="/como-comprar"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             BENEFICIOS MAYORISTAS
           </Link>
           <Link
             href="/rastreo"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             RASTREAR PEDIDO
           </Link>
           <Link
             href="/contacto"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             CONTACTO
@@ -369,7 +484,7 @@ export const Header: React.FC = () => {
           <div className="pt-2 flex items-center justify-between text-xs text-neutral-600">
             <Link
               href="/profile"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeMobileMenu}
               className="flex items-center gap-2 text-ush-navy font-bold uppercase"
             >
               <User size={18} /> Iniciar Sesión / Mi Cuenta

@@ -19,6 +19,10 @@ const PATHS_TO_REVALIDATE = [
   '/producto/[slug]',
   '/api/catalog',
   '/api/top-sellers',
+  '/api/site-config',
+  '/api/site-layout',
+  '/api/site-content',
+  '/api/site-theme',
 ];
 
 let cachedSecret: { value: string; at: number } | null = null;

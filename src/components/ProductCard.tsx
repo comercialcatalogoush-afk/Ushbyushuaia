@@ -83,6 +83,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               src={mainImage}
               alt={product.name}
               fill
+              unoptimized={mainImage.startsWith('http://') || mainImage.startsWith('https://')}
               sizes={sizes || "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
               quality={100}
               className="object-cover object-center"
@@ -165,6 +166,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               src={mainImage}
               alt={product.name}
               fill
+              unoptimized={mainImage.startsWith('http://') || mainImage.startsWith('https://')}
               sizes={sizes || "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
               quality={100}
               className={`object-cover object-center ${imageAnimation || 'transition-transform duration-700 ease-out group-hover:scale-105'}`}

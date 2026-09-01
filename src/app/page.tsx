@@ -9,8 +9,9 @@ import { Truck, Award, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR corto: el admin purga estas rutas al publicar, mientras las visitas
+// normales reutilizan la página y reducen consultas a Supabase/Vercel.
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await getPageContentServer('home');

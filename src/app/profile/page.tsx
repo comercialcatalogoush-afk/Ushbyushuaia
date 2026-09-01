@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, KeyRound, LogOut, ShieldCheck, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { CustomerAccountBenefits } from '@/components/CustomerAccountBenefits';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 
@@ -41,12 +42,23 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [user, setUser] = useState<any>(null);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [returnTo, setReturnTo] = useState('/');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (window.location.hash.includes('type=recovery')) {
       setIsRecovery(true);
       setMode('newpass');
+    }
+    const params = new URLSearchParams(window.location.search);
+    const requestedMode = params.get('mode');
+    if (requestedMode === 'register' || requestedMode === 'recover' || requestedMode === 'login') {
+      setMode(requestedMode);
+    }
+    const requestedReturnTo = params.get('returnTo');
+    if (requestedReturnTo && requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//')) {
+      setReturnTo(requestedReturnTo);
     }
 
     const sync = (session: any) => {
@@ -67,7 +79,7 @@ export default function ProfilePage() {
         fetch('/api/auth/register-notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: u.email.trim().toLowerCase(), name: fullName }),
+          body: JSON.stringify({ email: u.email.trim().toLowerCase(), name: fullName, marketingOptIn: !!u.user_metadata?.marketing_opt_in }),
         }).catch(() => {});
       }
     };
@@ -102,7 +114,7 @@ export default function ProfilePage() {
     if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
     setSuccess('✅ ¡Bienvenido! Iniciaste sesión correctamente.');
     const isAdmin = data.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-    setTimeout(() => { window.location.href = isAdmin ? '/admin' : '/'; }, 1200);
+    setTimeout(() => { window.location.href = isAdmin ? '/admin' : returnTo; }, 1200);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -114,7 +126,7 @@ export default function ProfilePage() {
     const { data, error: err } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } },
+      options: { data: { full_name: name, marketing_opt_in: marketingOptIn, marketing_consent_at: marketingOptIn ? new Date().toISOString() : null } },
     });
     if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
 
@@ -122,12 +134,12 @@ export default function ProfilePage() {
     fetch('/api/auth/register-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim().toLowerCase(), name }),
+      body: JSON.stringify({ email: email.trim().toLowerCase(), name, marketingOptIn }),
     }).catch(() => {});
 
     if (data.session) {
       setSuccess('✅ ¡Cuenta creada! Ya iniciaste sesión.');
-      setTimeout(() => { window.location.href = '/'; }, 1200);
+      setTimeout(() => { window.location.href = returnTo; }, 1200);
     } else {
       setSuccess(`✅ Te enviamos un correo de confirmación a ${email}. Revísalo para activar tu cuenta.`);
       setLoading(false);
@@ -211,6 +223,7 @@ export default function ProfilePage() {
   if (user && !isRecovery) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-16">
+        <title>Mi Cuenta | Ush By Ushuaia</title>
         <div className="w-full max-w-md bg-white shadow-xl border border-gray-200 overflow-hidden animate-fadeIn text-center">
           <div className="bg-[#d88193] text-white p-8">
             {user.user_metadata?.avatar_url ? (
@@ -232,6 +245,7 @@ export default function ProfilePage() {
                 <Settings size={16} /> Ir al Panel de Administrador
               </a>
             )}
+            {!isAdminUser && <CustomerAccountBenefits user={user} />}
             <button onClick={handleLogout}
               className="flex items-center justify-center gap-2 w-full border border-gray-300 text-neutral-600 font-bold py-3 text-xs uppercase tracking-wider hover:bg-gray-50 transition-colors">
               <LogOut size={15} /> Cerrar Sesión
@@ -365,6 +379,10 @@ export default function ProfilePage() {
                   </button>
                 </div>
               </div>
+              <label className="flex items-start gap-2 text-[11px] leading-relaxed text-neutral-500">
+                <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} className="mt-0.5 accent-[#d88193]" />
+                <span>Acepto recibir novedades del catálogo, reposiciones y contenidos mayoristas por correo. Podré retirarme cuando quiera.</span>
+              </label>
               <button type="submit" disabled={loading}
                 className="w-full bg-[#d88193] hover:bg-[#c06579] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
                 <ArrowRight size={16} />{loading ? 'Creando cuenta...' : 'Crear Mi Cuenta'}

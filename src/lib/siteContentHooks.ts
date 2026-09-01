@@ -11,6 +11,8 @@ import {
   CONTENT_EVENT,
   THEME_EVENT,
 } from './siteContent';
+import { subscribeCatalogChanges } from './supabase';
+import type { CatalogSyncPayload } from './supabase';
 import type { ContentValues, SiteTheme } from './siteContent';
 
 export function usePageContent(pageId: string): ContentValues {
@@ -18,11 +20,12 @@ export function usePageContent(pageId: string): ContentValues {
 
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      const values = await getPageContentClient(pageId);
+    const load = async (payload?: CatalogSyncPayload) => {
+      const values = await getPageContentClient(pageId, payload?.ts);
       if (!cancelled) setContent(values);
     };
     load();
+    const unsubscribe = subscribeCatalogChanges(load);
 
     const handler = () => { load(); };
     const onStorage = (e: StorageEvent) => {
@@ -39,6 +42,7 @@ export function usePageContent(pageId: string): ContentValues {
       window.removeEventListener('ush_catalog_updated', handler);
       window.removeEventListener('ush_products_updated', handler);
       window.removeEventListener('storage', onStorage);
+      unsubscribe();
     };
   }, [pageId]);
 
@@ -79,8 +83,8 @@ export function useSiteTheme(): SiteTheme {
       }
     } catch (_) {}
 
-    const load = async () => {
-      const t = await fetchThemeFromRemote();
+    const load = async (payload?: CatalogSyncPayload) => {
+      const t = await fetchThemeFromRemote(payload?.ts);
       if (cancelled || !t) {
         // Si falla la red NO se pisa el tema ya aplicado (caché o default):
         // antes se forzaba DEFAULT y la UI quedaba desincronizada del hook.
@@ -90,6 +94,7 @@ export function useSiteTheme(): SiteTheme {
       applyTheme(t);
     };
     load();
+    const unsubscribe = subscribeCatalogChanges(load);
 
     const handler = () => { load(); };
     const onStorage = (e: StorageEvent) => {
@@ -101,6 +106,7 @@ export function useSiteTheme(): SiteTheme {
       cancelled = true;
       window.removeEventListener(THEME_EVENT, handler);
       window.removeEventListener('storage', onStorage);
+      unsubscribe();
     };
   }, []);
 

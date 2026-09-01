@@ -3,17 +3,20 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, Share2, MessageCircle, ZoomIn, X, ChevronLeft, ChevronRight, ZoomOut, Copy } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, Share2, MessageCircle, ZoomIn, X, ChevronLeft, ChevronRight, ZoomOut, Copy, BellRing } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 import { subscribeCatalogChanges } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import type { CatalogSyncPayload } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
 import { WHOLESALE_FALLBACK } from '@/lib/pricing';
 import { gtagEvent } from '@/lib/analytics';
 import { formatVideoUrl } from '@/lib/videoUtils';
+import { addCustomerWatch } from '@/lib/customerBenefits';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -44,6 +47,8 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   const [quantity, setQuantity] = useState<number>(1);
   const [added, setAdded] = useState(false);
+  const [watchSaved, setWatchSaved] = useState(false);
+  const [watchLoading, setWatchLoading] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
 
@@ -82,10 +87,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   // Realtime: si el admin confirma un pago (o edita el producto), el stock y
   // los datos se actualizan al instante desde Supabase.
   React.useEffect(() => {
-    const unsubscribe = subscribeCatalogChanges(() => {
-      // Se sirve desde el cache del edge de Vercel (/api/catalog?slug=...),
-      // no se consulta Supabase por cada cliente ante cada broadcast.
-      fetch(`/api/catalog?slug=${encodeURIComponent(currentProduct.slug)}`)
+    const unsubscribe = subscribeCatalogChanges((payload?: CatalogSyncPayload) => {
+      // El timestamp del broadcast evita que el detalle conserve el stock o
+      // precio anterior del CDN después de una publicación del admin.
+      const syncQuery = payload?.ts ? `&sync=${encodeURIComponent(String(payload.ts))}` : '';
+      fetch(`/api/catalog?slug=${encodeURIComponent(currentProduct.slug)}${syncQuery}`, {
+        cache: 'no-store',
+        headers: payload?.ts ? { 'Cache-Control': 'no-cache' } : undefined,
+      })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
         .then((fresh: Product) => {
           if (fresh) {
@@ -122,6 +131,32 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     addToCart(currentProduct, selectedSize, selectedColor || undefined, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleWatchAvailability = async () => {
+    setWatchLoading(true);
+    setWatchSaved(false);
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      setWatchLoading(false);
+      window.location.href = `/profile?mode=register&returnTo=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
+    try {
+      await addCustomerWatch({
+        productId: currentProduct.id,
+        reference: currentProduct.reference,
+        name: currentProduct.name,
+        color: selectedColor || undefined,
+        size: selectedSize || undefined,
+      });
+      setWatchSaved(true);
+    } catch (_) {
+      // The account page shows the actionable error if Auth is temporarily unavailable.
+    } finally {
+      setWatchLoading(false);
+    }
   };
 
   return (
@@ -161,7 +196,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                           : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-300'
                       }`}
                     >
-                      <Image src={img} alt={`Vista ${idx + 1}`} fill sizes="80px" quality={90} className="object-cover" />
+                      <Image src={img} alt={`Vista ${idx + 1}`} fill unoptimized={img.startsWith('http://') || img.startsWith('https://')} sizes="80px" quality={90} className="object-cover" />
                     </button>
                   ))}
 
@@ -203,6 +238,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     alt={currentProduct.name}
                     fill
                     priority
+                    unoptimized={selectedImage.startsWith('http://') || selectedImage.startsWith('https://')}
                     quality={100}
                     sizes="(max-width: 1024px) 90vw, 40vw"
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
@@ -408,6 +444,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             {/* Add to Cart CTA */}
             <div className="pt-4 space-y-3">
               <button
+                type="button"
+                onClick={handleWatchAvailability}
+                disabled={watchLoading}
+                className={`w-full border py-3 px-4 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${watchSaved ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-[#d88193]/50 text-ush-pink hover:bg-[#fff5f7]'}`}
+              >
+                <BellRing size={16} /> {watchLoading ? 'Guardando...' : watchSaved ? 'Alerta guardada' : 'Avisarme de esta talla y color'}
+              </button>
+              <button
                 onClick={handleAddToCart}
                 disabled={soldOut}
                 className={`w-full py-4 px-6 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all duration-200 shadow-md ${
@@ -594,6 +638,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               alt={currentProduct.name}
               width={1000}
               height={1333}
+              unoptimized={(currentProduct.images[zoomIndex] || currentProduct.images[0] || '').startsWith('http://') || (currentProduct.images[zoomIndex] || currentProduct.images[0] || '').startsWith('https://')}
               quality={100}
               sizes="90vw"
               className="object-contain max-w-[90vw] max-h-[85vh] w-auto h-auto shadow-lg"
@@ -656,7 +701,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               <div className="flex gap-3 items-center p-3 bg-neutral-50 rounded-lg border border-neutral-200">
                 <div className="w-14 h-16 relative bg-neutral-200 rounded overflow-hidden flex-shrink-0">
                   {imageUrl && (
-                    <Image src={imageUrl} alt={currentProduct.name} fill sizes="64px" className="object-cover" />
+                    <Image src={imageUrl} alt={currentProduct.name} fill unoptimized={imageUrl.startsWith('http://') || imageUrl.startsWith('https://')} sizes="64px" className="object-cover" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">

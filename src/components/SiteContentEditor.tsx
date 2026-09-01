@@ -17,10 +17,19 @@ import {
   SiteTheme,
   ContentValues,
   FieldDef,
-  getPageContentClient,
-  savePageContent,
-  saveTheme,
-  fetchThemeFromRemote,
+  getPageContentForEditor,
+  savePageContentDraft,
+  publishPageContent,
+  clearPageContentDraft,
+  saveThemeDraft,
+  publishTheme,
+  clearThemeDraft,
+  getThemeForEditor,
+  getSectionLayoutForEditor,
+  saveSectionLayoutDraft,
+  publishSectionLayout,
+  clearSectionLayoutDraft,
+  SectionLayout,
   saveCategoriesOrder,
   getCategoriesOrder,
   saveCatalogProductsOrder,
@@ -350,6 +359,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const contentLoadedRef = useRef(false);
   const themeLoadedRef = useRef(false);
   const themeDirtyRef = useRef(false);
+  const sectionLayoutLoadedRef = useRef(false);
+  const sectionLayoutDirtyRef = useRef(false);
   const loadTokenRef = useRef(0);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -360,17 +371,26 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const groups = schema ? groupFields(schema.fields) : [];
   const activeGroup = groups.find((g) => g.group === groupId) || groups[0];
 
+  // El preview dentro del iframe puede leer el borrador local sin convertirlo
+  // en contenido público. Las visitas normales nunca activan este indicador.
+  useEffect(() => {
+    try { sessionStorage.setItem('ush_editor_live', '1'); } catch (_) {}
+    return () => {
+      try { sessionStorage.removeItem('ush_editor_live'); } catch (_) {}
+    };
+  }, []);
+
   // Carga inicial de contenido (con guarda anti-carrera al cambiar de página)
   useEffect(() => {
     const token = ++loadTokenRef.current;
     contentLoadedRef.current = false;
-    getPageContentClient(pageId).then((data) => {
+    getPageContentForEditor(pageId).then((data) => {
       if (token !== loadTokenRef.current) return;
       setValues(data);
       contentLoadedRef.current = true;
     });
-    fetchThemeFromRemote().then((t) => {
-      if (t && token === loadTokenRef.current) {
+    getThemeForEditor().then((t) => {
+      if (token === loadTokenRef.current) {
         setTheme(t);
         themeLoadedRef.current = true;
       }
@@ -382,22 +402,33 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     getCategoriesOrder().then(setCategoriesList);
   }, []);
 
-  // ── Carga de orden/visibilidad de secciones ──
+  // ── Carga remota de orden/visibilidad de secciones ──
   useEffect(() => {
-    try {
-      const ord = localStorage.getItem('ush_section_order');
-      if (ord) setSectionOrders(JSON.parse(ord));
-      const hid = localStorage.getItem('ush_section_hidden');
-      if (hid) setSectionHidden(JSON.parse(hid));
-    } catch (_) {}
+    let cancelled = false;
+    sectionLayoutLoadedRef.current = false;
+    getSectionLayoutForEditor().then((layout) => {
+      if (cancelled) return;
+      setSectionOrders(layout.orders);
+      setSectionHidden(layout.hidden);
+      sectionLayoutLoadedRef.current = true;
+      sectionLayoutDirtyRef.current = false;
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const persistSectionSettings = (orders: Record<string, string[]>, hidden: Record<string, string[]>) => {
     try {
+      // Caché local para que el editor conserve el borrador si la conexión
+      // falla. La publicación oficial se hace con publishSectionLayout().
       localStorage.setItem('ush_section_order', JSON.stringify(orders));
       localStorage.setItem('ush_section_hidden', JSON.stringify(hidden));
     } catch (_) {}
   };
+
+  const currentSectionLayout = (): SectionLayout => ({
+    orders: sectionOrders,
+    hidden: sectionHidden,
+  });
 
   const sectionIdsForPage = (pid: string): string[] => {
     return Object.entries(SECTION_MAP)
@@ -430,6 +461,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       persistSectionSettings(n, sectionHidden);
       return n;
     });
+    sectionLayoutDirtyRef.current = true;
+    setDirty(true);
     setNonce((n) => n + 1);
   };
 
@@ -445,6 +478,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       persistSectionSettings(n, sectionHidden);
       return n;
     });
+    sectionLayoutDirtyRef.current = true;
+    setDirty(true);
     setNonce((n) => n + 1);
   };
 
@@ -458,6 +493,8 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       persistSectionSettings(sectionOrders, next);
       return next;
     });
+    sectionLayoutDirtyRef.current = true;
+    setDirty(true);
     setNonce((n) => n + 1);
   };
 
@@ -806,12 +843,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     }
   };
 
-  // Sync state changes with localStorage & debounce live preview
+  // Sync state changes con el borrador local para que el preview se actualice
+  // sin contaminar la caché pública antes de publicar.
   useEffect(() => {
     if (!dirty || mode !== 'content') return;
-    const timer = setTimeout(() => {
+            const timer = setTimeout(() => {
       try {
-        localStorage.setItem('ush_content_' + pageId, JSON.stringify(values));
+        localStorage.setItem('ush_draft_content_' + pageId, JSON.stringify(values));
       } catch (e) {}
       window.dispatchEvent(new Event(CONTENT_EVENT));
     }, 250);
@@ -822,7 +860,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     if (!dirty || mode !== 'theme') return;
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem('ush_theme_cache', JSON.stringify(theme));
+        localStorage.setItem('ush_draft_theme_cache', JSON.stringify(theme));
       } catch (e) {}
       window.dispatchEvent(new Event(THEME_EVENT));
     }, 200);
@@ -875,24 +913,35 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   undoRef.current = handleUndo;
   redoRef.current = handleRedo;
 
-  const flushDraft = () => {
-    try { localStorage.setItem('ush_content_' + pageId, JSON.stringify(values)); } catch (e) {}
-    try { localStorage.setItem('ush_theme_cache', JSON.stringify(theme)); } catch (e) {}
+  const flushDraft = async () => {
+    try { localStorage.setItem('ush_draft_content_' + pageId, JSON.stringify(values)); } catch (e) {}
+    try { localStorage.setItem('ush_draft_theme_cache', JSON.stringify(theme)); } catch (e) {}
     window.dispatchEvent(new Event(CONTENT_EVENT));
     window.dispatchEvent(new Event(THEME_EVENT));
-    setDraftSaved(true);
-    setTimeout(() => setDraftSaved(false), 2500);
-    // Persistencia real en la nube: "Guardar" antes solo escribía el borrador
-    // local y los cambios (p. ej. videos) nunca llegaban al sitio público.
+    // Guardar conserva el trabajo en un espacio privado. No se publica ni se
+    // purga la caché pública hasta que el administrador confirme la publicación.
+    const cloudSaves: Promise<{ success: boolean; error?: string }>[] = [];
     if (contentLoadedRef.current && pageId) {
-      savePageContent(pageId, values)
-        .then((r) => { if (!r.success) console.error('savePageContent:', r.error); })
-        .catch(() => {});
+      cloudSaves.push(savePageContentDraft(pageId, values));
     }
     if ((themeLoadedRef.current || themeDirtyRef.current) && contentLoadedRef.current) {
-      saveTheme(theme)
-        .then((r) => { if (!r.success) console.error('saveTheme:', r.error); })
-        .catch(() => {});
+      cloudSaves.push(saveThemeDraft(theme));
+    }
+    if (sectionLayoutLoadedRef.current && sectionLayoutDirtyRef.current) {
+      cloudSaves.push(saveSectionLayoutDraft(currentSectionLayout()));
+    }
+    if (cloudSaves.length > 0) {
+      try {
+        const results = await Promise.all(cloudSaves);
+        if (results.every((r) => r.success)) {
+          setDraftSaved(true);
+          setTimeout(() => setDraftSaved(false), 2500);
+        } else {
+          results.filter((r) => !r.success).forEach((r) => console.error('save content:', r.error));
+        }
+      } catch (error) {
+        console.error('save content:', error);
+      }
     }
   };
   flushRef.current = flushDraft;
@@ -934,22 +983,27 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       return;
     }
     setSaving(true);
-    // Publica SIEMPRE ambos modos: antes, publicar en "Páginas" descartaba
-    // cambios de tema pendientes (y viceversa) al compartir el flag dirty.
+    // Publica el estado actual en las claves públicas solo después de que el
+    // administrador ha pulsado expresamente este botón.
     const [resContent, resTheme] = await Promise.all([
-      savePageContent(pageId, values),
+      publishPageContent(pageId, values),
       (themeLoadedRef.current || themeDirtyRef.current)
-        ? saveTheme(theme)
+        ? publishTheme(theme)
         : Promise.resolve({ success: true } as { success: boolean; error?: string }),
     ]);
+    const resLayout = sectionLayoutLoadedRef.current
+      ? await publishSectionLayout(currentSectionLayout())
+      : { success: false, error: 'La estructura de secciones aún se está cargando' };
     setSaving(false);
-    const res = resContent.success && resTheme.success
+    const res = resContent.success && resTheme.success && resLayout.success
       ? { success: true }
-      : { success: false, error: resContent.error || resTheme.error };
+      : { success: false, error: resContent.error || resTheme.error || resLayout.error };
     if (res.success) {
+      await Promise.all([clearPageContentDraft(pageId), clearThemeDraft(), clearSectionLayoutDraft()]);
       setSaved(true);
       setDirty(false);
       themeDirtyRef.current = false;
+      sectionLayoutDirtyRef.current = false;
       publishCatalogChange();
       setNonce((n) => n + 1);
       setTimeout(() => setSaved(false), 4000);
@@ -961,7 +1015,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const selectPage = (id: string) => {
     setPageId(id);
     setMode('content');
-    setDirty(false);
+    setDirty(sectionLayoutDirtyRef.current);
     setSaved(false);
     setProductsMode(false);
     closeProduct();
@@ -1042,17 +1096,22 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       // 2) Reordenar por orden personalizado guardado
       const order = orderedSections(pageId);
       if (order.length > 1) {
-        const parentMap = new Map<HTMLElement, { parent: HTMLElement; next: Node | null }>();
-        sections.forEach((el) => {
-          parentMap.set(el, { parent: el.parentElement as HTMLElement, next: el.nextSibling });
+        const rank = new Map(order.map((id, index) => [id, index]));
+        const byParent = new Map<HTMLElement, HTMLElement[]>();
+        sections.filter((el) => rank.has(el.getAttribute('data-editor-section') || '')).forEach((el) => {
+          const parent = el.parentElement;
+          if (!parent) return;
+          byParent.set(parent, [...(byParent.get(parent) || []), el]);
         });
-        order.forEach((sec) => {
-          const el = doc.querySelector<HTMLElement>(`[data-editor-section="${sec}"]`);
-          const info = el ? parentMap.get(el) : null;
-          if (el && info && el.parentElement !== info.parent) return;
-          if (el && info) {
-            el.parentElement?.appendChild(el);
-          }
+        byParent.forEach((siblings) => {
+          const sorted = [...siblings].sort((a, b) =>
+            (rank.get(a.getAttribute('data-editor-section') || '') ?? 0)
+            - (rank.get(b.getAttribute('data-editor-section') || '') ?? 0)
+          );
+          const children = Array.from(siblings[0].parentElement?.children || []) as HTMLElement[];
+          const slots = children.filter((child) => siblings.includes(child));
+          const replacement = new Map(slots.map((slot, index) => [slot, sorted[index]]));
+          children.forEach((child) => child.parentElement?.appendChild(replacement.get(child) || child));
         });
       }
     };
@@ -1311,6 +1370,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
           </a>
 
           <div className="flex items-center gap-2 pl-2 border-l border-white/15">
+            {draftSaved && (
+              <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-sky-300">
+                <CheckCircle2 size={12} /> Borrador guardado
+              </span>
+            )}
             {dirty ? (
               <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
@@ -1324,11 +1388,11 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
             <button
               onClick={flushDraft}
-              title="Guardar en la nube y en este navegador (Ctrl+S)"
+              title="Guardar borrador en la nube (Ctrl+S)"
               className="hidden sm:flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest px-4 py-2.5 rounded shadow"
             >
               <FileClock size={13} />
-              Guardar
+              Guardar borrador
             </button>
             <button
               onClick={handlePublish}
@@ -1346,127 +1410,112 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
       <div className="flex flex-1 min-h-0 relative">
         {/* Left: Pages + Categories manager */}
         <aside className="w-56 bg-[#121824] text-white flex flex-col flex-shrink-0 min-h-0 border-r border-black/20">
-          <div className="p-2 border-b border-white/5 grid grid-cols-2 gap-1">
+          <div className="px-3 py-3 border-b border-white/10">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white">
+              <LayoutTemplate size={13} className="text-[#d88193]" />
+              Editor del sitio
+            </div>
+            <p className="mt-1 text-[9px] leading-relaxed text-neutral-500">
+              Administra páginas, catálogo y diseño global desde un mismo lugar.
+            </p>
+          </div>
+
+          <div className="p-2 border-b border-white/5">
             <button
-              onClick={() => { setMode('content'); setProductsMode(false); closeProduct(); }}
-              className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
-                mode === 'content' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              onClick={() => { setMode('theme'); setProductsMode(false); closeProduct(); setDirty(sectionLayoutDirtyRef.current); setSaved(false); }}
+              className={`w-full flex items-center gap-2 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
+                mode === 'theme' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-300 hover:text-white hover:bg-white/5'
               }`}
             >
-              <FileText size={12} /> Páginas
-            </button>
-            <button
-              onClick={() => { setMode('theme'); setProductsMode(false); closeProduct(); setDirty(false); setSaved(false); }}
-              className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-black uppercase tracking-wider rounded transition-all ${
-                mode === 'theme' ? 'bg-[#d88193] text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Palette size={12} /> Diseño Global
+              <Palette size={13} />
+              <span className="flex-1 text-left">Diseño global</span>
+              {mode === 'theme' && <CheckCircle2 size={12} />}
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto py-2">
-            {mode === 'content' ? (
-              PAGE_SCHEMAS.map((s) => {
-                const isActive = mode === 'content' && pageId === s.id;
-                const sGroups = groupFields(s.fields);
-                return (
-                  <div key={s.id}>
-                    <button
-                      onClick={() => selectPage(s.id)}
-                      className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
-                        isActive ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
-                      <span className="flex-1 truncate">{s.label}</span>
-                      {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
-                    </button>
+            <div className="px-4 pb-1 pt-1 text-[9px] font-black uppercase tracking-[0.25em] text-neutral-600">Páginas</div>
+            {PAGE_SCHEMAS.map((s) => {
+              const isActive = mode === 'content' && pageId === s.id;
+              const sGroups = groupFields(s.fields);
+              return (
+                <div key={s.id}>
+                  <button
+                    onClick={() => selectPage(s.id)}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-left transition-colors ${
+                      isActive ? 'bg-white/10 text-white border-l-2 border-[#d88193]' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <FileText size={13} className={isActive ? 'text-[#d88193]' : 'text-neutral-500'} />
+                    <span className="flex-1 truncate">{s.label}</span>
+                    {isActive ? <ChevronDown size={13} className="text-neutral-400" /> : <ChevronRight size={13} className="text-neutral-600" />}
+                  </button>
 
-                    {isActive && (
-                      <div className="ml-3 pl-3 border-l border-white/10 pb-2">
-                        {sGroups.map((g) => {
-                          const sec = sectionForGroup(s.id, g.group);
-                          const secHidden = sec ? isSectionHidden(s.id, sec) : false;
-                          return (
-                            <div key={g.group} className="group flex items-center">
-                              <button
-                                onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
-                                className={`flex-1 text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
-                                  !productsMode && activeGroup?.group === g.group
-                                    ? (secHidden ? 'bg-[#d88193]/20 text-[#f9c9d2] line-through opacity-60' : 'bg-[#d88193]/20 text-[#f9c9d2]')
-                                    : (secHidden ? 'text-neutral-600 line-through' : 'text-neutral-500 hover:text-white')
-                                }`}
-                              >
-                                <span className="flex items-center gap-1.5">
-                                  {g.group}
-                                  {secHidden && <EyeOff size={9} className="text-neutral-500" />}
-                                </span>
-                              </button>
-                              {sec && (
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
-                                  <button
-                                    onClick={() => moveSectionUp(s.id, sec)}
-                                    title="Mover sección arriba"
-                                    className="p-0.5 text-neutral-500 hover:text-white"
-                                  >
-                                    <ChevronUp size={11} />
-                                  </button>
-                                  <button
-                                    onClick={() => moveSectionDown(s.id, sec)}
-                                    title="Mover sección abajo"
-                                    className="p-0.5 text-neutral-500 hover:text-white"
-                                  >
-                                    <ChevronDown size={11} />
-                                  </button>
-                                  <button
-                                    onClick={() => toggleSectionVisible(s.id, sec)}
-                                    title={secHidden ? 'Mostrar sección' : 'Ocultar sección'}
-                                    className={`p-0.5 ${secHidden ? 'text-amber-400' : 'text-neutral-500 hover:text-amber-300'}`}
-                                  >
-                                    {secHidden ? <Eye size={11} /> : <EyeOff size={11} />}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                  {isActive && (
+                    <div className="ml-3 pl-3 border-l border-white/10 pb-2">
+                      {sGroups.map((g) => {
+                        const sec = sectionForGroup(s.id, g.group);
+                        const secHidden = sec ? isSectionHidden(s.id, sec) : false;
+                        return (
+                          <div key={g.group} className="group flex items-center">
+                            <button
+                              onClick={() => { setGroupId(g.group); setProductsMode(false); closeProduct(); }}
+                              className={`flex-1 text-left px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-l ${
+                                !productsMode && activeGroup?.group === g.group
+                                  ? (secHidden ? 'bg-[#d88193]/20 text-[#f9c9d2] line-through opacity-60' : 'bg-[#d88193]/20 text-[#f9c9d2]')
+                                  : (secHidden ? 'text-neutral-600 line-through' : 'text-neutral-500 hover:text-white')
+                              }`}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                {g.group}
+                                {secHidden && <EyeOff size={9} className="text-neutral-500" />}
+                              </span>
+                            </button>
+                            {sec && (
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+                                <button
+                                  onClick={() => moveSectionUp(s.id, sec)}
+                                  title="Mover sección arriba"
+                                  className="p-0.5 text-neutral-500 hover:text-white"
+                                >
+                                  <ChevronUp size={11} />
+                                </button>
+                                <button
+                                  onClick={() => moveSectionDown(s.id, sec)}
+                                  title="Mover sección abajo"
+                                  className="p-0.5 text-neutral-500 hover:text-white"
+                                >
+                                  <ChevronDown size={11} />
+                                </button>
+                                <button
+                                  onClick={() => toggleSectionVisible(s.id, sec)}
+                                  title={secHidden ? 'Mostrar sección' : 'Ocultar sección'}
+                                  className={`p-0.5 ${secHidden ? 'text-amber-400' : 'text-neutral-500 hover:text-amber-300'}`}
+                                >
+                                  {secHidden ? <Eye size={11} /> : <EyeOff size={11} />}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
 
-                        {/* Gestor de productos: solo en la página Catálogo */}
-                        {s.id === 'catalogo' && (
-                          <button
-                            onClick={() => { setMode('content'); setProductsMode(true); }}
-                            className={`w-full flex items-center gap-1.5 px-3 py-1.5 mt-1 text-[10px] font-bold uppercase tracking-wider rounded-l ${
-                              productsMode ? 'bg-[#d88193] text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            <Package size={11} /> Catálogo de Prendas
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-4 space-y-3">
-                <button
-                  onClick={() => setMode('content')}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-white/10 hover:bg-white/15 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition-colors"
-                >
-                  <ArrowLeft size={13} /> Volver a Páginas
-                </button>
-                <div className="p-3 bg-white/5 rounded-lg border border-white/5 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-white">
-                    <Sparkles size={14} className="text-[#d88193]" />
-                    Estilos Globales del Sitio
-                  </div>
-                  <p className="text-[10px] text-neutral-400 leading-relaxed">
-                    Edita tipografías de Google Fonts, estilos de botones redondeados, colores de marca y franja superior en el panel lateral derecho.
-                  </p>
+                      {/* Gestor de productos: solo en la página Catálogo */}
+                      {s.id === 'catalogo' && (
+                        <button
+                          onClick={() => { setMode('content'); setProductsMode(true); }}
+                          className={`w-full flex items-center gap-1.5 px-3 py-1.5 mt-1 text-[10px] font-bold uppercase tracking-wider rounded-l ${
+                            productsMode ? 'bg-[#d88193] text-white' : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <Package size={11} /> Catálogo de Prendas
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })}
           </div>
         </aside>
 
