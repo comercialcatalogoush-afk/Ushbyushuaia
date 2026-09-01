@@ -6,6 +6,8 @@ import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { CustomerWatch, getCustomerWatches, removeCustomerWatch } from '@/lib/customerBenefits';
+import { LookbookPdfDownload } from '@/components/LookbookPdfDownload';
+import { LookbookConfig } from '@/lib/lookbookPdf';
 
 interface CustomerOrder {
   id: string;
@@ -38,6 +40,7 @@ export function CustomerAccountBenefits({ user }: { user: any }) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [repeatingId, setRepeatingId] = useState('');
+  const [lookbookConfig, setLookbookConfig] = useState<LookbookConfig | null>(null);
 
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
   const productsByReference = useMemo(() => new Map(products.map((product) => [product.reference, product])), [products]);
@@ -66,13 +69,16 @@ export function CustomerAccountBenefits({ user }: { user: any }) {
       setLoadingOrders(false);
       return;
     }
-    const ordersResponse = await fetch('/api/account/orders', {
-      cache: 'no-store',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const authHeaders = { Authorization: `Bearer ${token}` };
+    const [ordersResponse, lookbookResponse] = await Promise.all([
+      fetch('/api/account/orders', { cache: 'no-store', headers: authHeaders }),
+      fetch('/api/lookbook-config', { cache: 'no-store', headers: authHeaders }),
+    ]);
     const ordersPayload = await ordersResponse.json().catch(() => ({}));
     if (!ordersResponse.ok) setError(ordersPayload.error || 'No se pudo cargar tu historial.');
     setOrders(Array.isArray(ordersPayload.orders) ? ordersPayload.orders : []);
+    const lookbookPayload = await lookbookResponse.json().catch(() => ({}));
+    if (lookbookResponse.ok) setLookbookConfig(lookbookPayload.config || null);
     setLoadingOrders(false);
   };
 
@@ -126,6 +132,8 @@ export function CustomerAccountBenefits({ user }: { user: any }) {
       {message && <div className="flex items-center gap-2 border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-700"><CheckCircle2 size={16} />{message}</div>}
       {error && <div className="border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</div>}
 
+      <LookbookPdfDownload products={products} config={lookbookConfig} />
+
       <section className="border border-neutral-200 bg-white p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -178,4 +186,3 @@ export function CustomerAccountBenefits({ user }: { user: any }) {
     </div>
   );
 }
-
