@@ -587,6 +587,15 @@ export default function AdminCatalogPage() {
             <Link href="/" className="text-xs text-neutral-300 hover:text-white flex items-center gap-1 font-medium">
               <ArrowLeft size={16} /> Ver Catálogo Público
             </Link>
+            <Link
+              href="/catalogo-digital"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5 bg-[#d88193] hover:bg-[#c06579] px-3 py-1.5 transition-colors"
+              title="Abrir el catálogo digital para seleccionar referencias y preparar el PDF."
+            >
+              <FileText size={14} /> Catálogo Digital
+            </Link>
             <button
               onClick={handleLogout}
               className="text-xs text-rose-300 hover:text-rose-100 flex items-center gap-1 font-bold ml-4 border-l border-neutral-700 pl-4"
