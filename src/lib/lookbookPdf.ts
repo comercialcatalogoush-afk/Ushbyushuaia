@@ -4,7 +4,7 @@ import { getGoogleDriveImageUrl } from '@/lib/drive';
 import { abbreviateProductName } from '@/lib/productName';
 
 export type LookbookGroupMode = 'category' | 'fit';
-export type LookbookPriceMode = 'ecommerce' | 'custom' | 'blank';
+export type LookbookPriceMode = 'wholesale' | 'ecommerce' | 'custom' | 'blank';
 
 export interface LookbookConfig {
   selectedProductIds: string[];
@@ -45,6 +45,7 @@ export function getLookbookPrice(product: Product, mode: LookbookPriceMode, cust
     const custom = Number(customPrices[product.id]);
     return custom > 0 ? money(custom) : '';
   }
+  if (mode === 'wholesale') return money(product.price || product.suggested_price || product.compare_price || 0);
   return money(product.suggested_price || product.compare_price || product.price || 0);
 }
 
@@ -224,7 +225,7 @@ export async function generateLookbookPdf(
   doc.setTextColor(243, 179, 192);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.text(options.priceMode === 'ecommerce' ? 'Precios ecommerce' : options.priceMode === 'custom' ? 'Precios personalizados' : 'Catalogo sin precios', margin + 7, 206);
+  doc.text(options.priceMode === 'ecommerce' ? 'Precios ecommerce' : options.priceMode === 'wholesale' ? 'Precios mayoristas' : options.priceMode === 'custom' ? 'Precios personalizados' : 'Catalogo sin precios', margin + 7, 206);
   doc.setTextColor(215, 219, 228);
   doc.setFontSize(9);
   doc.text('Moda, calidad y tendencia para tu boutique.', margin, 229);

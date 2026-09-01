@@ -1,24 +1,20 @@
 # Pendiente del catálogo PDF para mayoristas
 
-## Estado que queda guardado
+## Decisión tomada (2026-09-01)
 
-- La funcionalidad del catálogo digital para clientes vive en `src/app/catalogo-digital`, conservando el catálogo digital existente.
-- La funcionalidad previa de lookbook vive en `src/lib/lookbookPdf.ts` y los componentes de lookbook para cliente y administrador.
-- El acceso está restringido a usuarios con sesión y al administrador.
-- El cliente puede descargar el catálogo completo o únicamente las referencias seleccionadas.
-- La descarga exige confirmación previa y no usa la ventana de impresión del navegador.
-- Los modos disponibles son: precio mayorista, precio e-commerce, sin precios y precio modificable por referencia.
-- Las imágenes continúan usando las URLs existentes de Google Drive; no se suben fotos a Supabase Storage ni a Vercel.
-- La imagen se incrusta en el PDF generado localmente sin crear archivos permanentes ni buckets.
+- **Implementación definitiva: unificar las dos en una.** `src/app/catalogo-digital` es la
+  página del catálogo digital y **reutiliza el generador editorial** `generateLookbookPdf` de
+  `src/lib/lookbookPdf.ts` (el mismo de `LookbookPdfEditor`/admin y de `/contenido-audiovisual`).
+  Se eliminó el generador inline con jsPDF propio del digital.
+- Se añadió el modo `wholesale` (precio mayorista) al generador compartido para conservar los
+  cuatro modos del digital (mayorista, e-commerce, personalizado, sin precios).
+- Imágenes del digital: las `<Image>` ahora usan `unoptimized` para URLs externas porque el
+  optimizador de Vercel (`/_next/image`) devuelve HTTP 402 con las imágenes de Google Drive.
 
 ## Trabajo que falta
 
-1. Decidir qué implementación queda como la definitiva: `src/app/catalogo-digital` (nueva) o `src/lib/lookbookPdf.ts` (remoto), evitando duplicar funcionalidad.
-2. Rediseñar únicamente el generador PDF de la implementación final para que el archivo descargado se parezca al PDF de referencia `CATÁLOGO DIGITAL.pdf`.
-3. Usar formato horizontal 16:9, una referencia por página, composición editorial con fotografías y panel de información del producto.
-4. Mantener en ese diseño los datos dinámicos: referencias escogidas, nombre, categoría y el modo de precio confirmado.
-5. Probar visualmente una referencia, una selección y el catálogo completo; comprobar también los cuatro modos de precio.
-6. Verificar en producción con una cuenta registrada y con el administrador después del despliegue.
+1. Probar visualmente el PDF descargado del digital (completo, selección y los cuatro modos de precio).
+2. Verificar en producción con una cuenta registrada y con el administrador después del despliegue.
 
 ## Límites que se deben conservar
 

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/types';
 import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
+import { generateLookbookPdf, LookbookPriceMode } from '@/lib/lookbookPdf';
 import { Download, Share2, ChevronLeft, ChevronRight, Search, Grid3X3, BookOpen, ExternalLink } from 'lucide-react';
 
 const CATEGORIES = ['Todas', 'Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
@@ -48,29 +49,20 @@ function priceFor(product: Product, mode: PriceMode, customPrices: Record<string
   return formatCOP(product.price);
 }
 
-function getPdfImageUrl(url: string) {
-  // Reutiliza el optimizador de Next para evitar que Google Drive bloquee la
-  // lectura de la imagen por CORS durante la creación local del PDF.
-  if (typeof window !== 'undefined' && (url.startsWith('/') || url.startsWith('http://') || url.startsWith('https://'))) {
-    // 1080 y 75 son valores ya permitidos por la configuración de imágenes.
-    return window.location.origin + '/_next/image?url=' + encodeURIComponent(url) + '&w=1080&q=75';
-  }
-  return url;
-}
+const PRICE_MODE_TO_LOOKBOOK: Record<PriceMode, LookbookPriceMode> = {
+  wholesale: 'wholesale',
+  ecommerce: 'ecommerce',
+  custom: 'custom',
+  none: 'blank',
+};
 
-async function imageBlobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Imagen inválida'));
-    reader.onerror = () => reject(reader.error || new Error('No se pudo leer la imagen'));
-    reader.readAsDataURL(blob);
+function customPricesByProductId(products: Product[], customPrices: Record<string, string>) {
+  const byId: Record<string, string> = {};
+  products.forEach((product, ) => {
+    const value = customPrices[referenceOf(product)];
+    if (value) byId[product.id] = value;
   });
-}
-
-async function fetchPdfImage(url: string) {
-  const response = await fetch(getPdfImageUrl(url), { mode: 'cors', cache: 'force-cache' });
-  if (!response.ok) throw new Error('No se pudo cargar la imagen para el PDF');
-  return imageBlobToDataUrl(await response.blob());
+  return byId;
 }
 
 export function LookbookClient() {
@@ -89,7 +81,6 @@ export function LookbookClient() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
   const [downloadMessage, setDownloadMessage] = useState('');
-  const imageCache = useRef<Map<string, string | null>>(new Map());
 
   useEffect(() => {
     let mounted = true;
@@ -183,125 +174,21 @@ export function LookbookClient() {
   };
 
   const generatePdf = async (request: DownloadRequest) => {
-    const { jsPDF } = await import('jspdf');
-    const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-    const pageWidth = 210;
-    const marginX = 12;
-    const cardWidth = 58;
-    const cardHeight = 120;
-    const gapX = 6;
-    const gapY = 8;
-    const imageWidth = 54;
-    const imageHeight = 75;
-    const productsPerPage = 6;
-    const totalPages = Math.ceil(request.items.length / productsPerPage);
-    let failedImages = 0;
-
-    const drawHeader = (pageNumber: number) => {
-      doc.setFillColor(27, 35, 51);
-      doc.rect(0, 0, pageWidth, 24, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text('USH BY USHUAIA', marginX, 10);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.text('CATÁLOGO DIGITAL · ' + PRICE_MODE_LABELS[priceMode].toUpperCase(), marginX, 17);
-      doc.text(pageNumber + ' / ' + totalPages, pageWidth - marginX, 17, { align: 'right' });
-    };
-
-    const drawImagePlaceholder = (x: number, y: number) => {
-      doc.setFillColor(244, 240, 235);
-      doc.rect(x, y, imageWidth, imageHeight, 'F');
-      doc.setTextColor(160, 150, 140);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.text('Imagen no disponible', x + imageWidth / 2, y + imageHeight / 2, { align: 'center' });
-    };
-
-    for (let index = 0; index < request.items.length; index += 1) {
-      if (index % productsPerPage === 0) {
-        if (index > 0) doc.addPage();
-        drawHeader(Math.floor(index / productsPerPage) + 1);
-      }
-
-      const product = request.items[index];
-      const position = index % productsPerPage;
-      const column = position % 3;
-      const row = Math.floor(position / 3);
-      const cardX = marginX + column * (cardWidth + gapX);
-      const cardY = 30 + row * (cardHeight + gapY);
-
-      doc.setDrawColor(230, 222, 211);
-      doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 1, 1, 'S');
-
-      const imageX = cardX + 2;
-      const imageY = cardY + 2;
-      const imageUrl = product.images[0] || '';
-      let imageData = imageUrl ? imageCache.current.get(imageUrl) : null;
-      let imageLoaded = Boolean(imageData);
-
-      if (imageUrl && !imageCache.current.has(imageUrl)) {
-        try {
-          imageData = await fetchPdfImage(imageUrl);
-          imageCache.current.set(imageUrl, imageData);
-          imageLoaded = true;
-        } catch (_) {
-          imageCache.current.set(imageUrl, null);
-          failedImages += 1;
-        }
-      }
-
-      if (imageLoaded && imageData) {
-        try {
-          const format = imageData.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-          doc.addImage(imageData, format, imageX, imageY, imageWidth, imageHeight, undefined, 'FAST');
-        } catch (_) {
-          failedImages += 1;
-          drawImagePlaceholder(imageX, imageY);
-        }
-      } else {
-        drawImagePlaceholder(imageX, imageY);
-      }
-
-      doc.setTextColor(125, 117, 109);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.text('REF. #' + referenceOf(product), cardX + 2, cardY + 86);
-
-      doc.setTextColor(27, 35, 51);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.4);
-      const nameLines = doc.splitTextToSize(product.name, cardWidth - 4).slice(0, 2);
-      doc.text(nameLines, cardX + 2, cardY + 92);
-
-      if (product.category) {
-        doc.setTextColor(125, 117, 109);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6.5);
-        doc.text(product.category.toUpperCase(), cardX + 2, cardY + 101);
-      }
-
-      if (priceMode !== 'none') {
-        doc.setTextColor(216, 129, 147);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.text(PRICE_MODE_LABELS[priceMode].replace('Precios ', '') + ':', cardX + 2, cardY + 110);
-        doc.setTextColor(27, 35, 51);
-        doc.setFontSize(8);
-        doc.text(priceFor(product, priceMode, customPrices), cardX + 2, cardY + 116);
-      }
-
-      setDownloadProgress(index + 1);
-    }
-
-    doc.setProperties({
-      title: 'Catálogo Digital USH BY USHUAIA',
-      subject: PRICE_MODE_LABELS[priceMode],
-      author: 'USH BY USHUAIA',
+    const result = await generateLookbookPdf(request.items, {
+      priceMode: PRICE_MODE_TO_LOOKBOOK[priceMode],
+      groupMode: 'category',
+      customPrices: customPricesByProductId(request.items, customPrices),
+      onProgress: (completed, total) => setDownloadProgress(completed),
     });
-    doc.save('catalogo-digital-' + request.scope + '-' + priceMode + '-2026.pdf');
-    return failedImages;
+    const url = URL.createObjectURL(result.blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = result.fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return result.failedImages.length;
   };
 
   const confirmDownload = async () => {
@@ -533,6 +420,7 @@ export function LookbookClient() {
                       src={p.images[0]}
                       alt={p.name}
                       fill
+                      unoptimized={p.images[0].startsWith('http://') || p.images[0].startsWith('https://')}
                       sizes="(max-width: 768px) 50vw, 33vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
@@ -620,6 +508,7 @@ export function LookbookClient() {
                         src={p.images[0]}
                         alt={p.name}
                         fill
+                        unoptimized={p.images[0].startsWith('http://') || p.images[0].startsWith('https://')}
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
