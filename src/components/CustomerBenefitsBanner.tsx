@@ -12,7 +12,7 @@ export function CustomerBenefitsBanner() {
 
   useEffect(() => {
     let cancelled = false;
-    if (window.location.pathname === '/profile' || window.location.pathname.startsWith('/admin') || window.location.pathname === '/checkout') return;
+    if (window.location.pathname === '/profile' || window.location.pathname.startsWith('/admin') || window.location.pathname === '/checkout' || window.location.pathname === '/contenido-audiovisual') return;
 
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled || data.session) return;

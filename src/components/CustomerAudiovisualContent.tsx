@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Check, Download, Film, Image as ImageIcon, Loader2, Search, X } from 'lucide-react';
 import { Product } from '@/types';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
@@ -59,12 +60,15 @@ function groupProducts(products: Product[], group: 'category' | 'fit') {
   return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b, 'es'));
 }
 
-export function CustomerAudiovisualContent({ products }: { products: Product[] }) {
-  const [open, setOpen] = useState(false);
+export function CustomerAudiovisualContent({ products, fullPage = false }: { products: Product[]; fullPage?: boolean }) {
 
   const mediaProducts = products.filter((product) => !product.hidden && product.status !== 'draft' && (product.images?.length || product.video_url));
   const imageCount = mediaProducts.reduce((total, product) => total + (product.images?.length || 0), 0);
   const videoCount = mediaProducts.filter((product) => getVideoMedia(product.video_url)?.canDownload).length;
+
+  if (fullPage) {
+    return <AudiovisualEditor products={mediaProducts} onClose={() => window.history.back()} embedded />;
+  }
 
   return (
     <section className="border border-[#1b2333]/15 bg-[#1b2333] p-4 text-white shadow-sm sm:p-5">
@@ -77,13 +81,12 @@ export function CustomerAudiovisualContent({ products }: { products: Product[] }
           <p className="mt-2 text-[10px] font-semibold text-white/55">{mediaProducts.length} referencias con contenido · {imageCount} fotos · {videoCount} videos descargables</p>
         </div>
       </div>
-      <button type="button" onClick={() => setOpen(true)} disabled={!mediaProducts.length} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[#1b2333] transition hover:bg-[#f3b3c0] disabled:cursor-not-allowed disabled:opacity-50"><Film size={16} /> Abrir biblioteca audiovisual</button>
-      {open && <AudiovisualEditor products={mediaProducts} onClose={() => setOpen(false)} />}
+      <Link href="/contenido-audiovisual" className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-[#1b2333] transition hover:bg-[#f3b3c0] ${!mediaProducts.length ? 'pointer-events-none opacity-50' : ''}`} aria-disabled={!mediaProducts.length}><Film size={16} /> Abrir biblioteca audiovisual</Link>
     </section>
   );
 }
 
-function AudiovisualEditor({ products, onClose }: { products: Product[]; onClose: () => void }) {
+function AudiovisualEditor({ products, onClose, embedded = false }: { products: Product[]; onClose: () => void; embedded?: boolean }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(products.map((product) => product.id)));
   const [group, setGroup] = useState<'category' | 'fit'>('category');
   const [category, setCategory] = useState('all');
@@ -133,8 +136,8 @@ function AudiovisualEditor({ products, onClose }: { products: Product[]; onClose
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#111827]/80 p-2 sm:p-5" role="dialog" aria-modal="true" aria-label="Contenido audiovisual">
-      <div className="flex max-h-[96vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+    <div className={embedded ? 'w-full' : 'fixed inset-0 z-[70] flex items-center justify-center bg-[#111827]/80 p-2 sm:p-5'} role="dialog" aria-modal="true" aria-label="Contenido audiovisual">
+      <div className={`flex w-full flex-col overflow-hidden bg-white shadow-2xl ${embedded ? 'min-h-[720px] rounded-xl border border-neutral-200' : 'max-h-[96vh] max-w-6xl rounded-xl'}`}>
         <header className="flex items-start justify-between gap-4 bg-[#1b2333] px-4 py-4 text-white sm:px-6"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f3b3c0]">Biblioteca de contenido</p><h2 className="mt-1 text-lg font-black uppercase sm:text-xl">Contenido audiovisual</h2><p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/70">Selecciona referencias y descarga sus fotos o videos para compartir la colección en tus redes.</p></div><button type="button" onClick={onClose} disabled={busy} aria-label="Cerrar biblioteca" className="rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50"><X size={20} /></button></header>
         <div className="grid min-h-0 flex-1 lg:grid-cols-[250px_1fr]">
           <aside className="space-y-4 overflow-y-auto border-b border-neutral-200 bg-[#fafafa] p-4 lg:border-b-0 lg:border-r">
