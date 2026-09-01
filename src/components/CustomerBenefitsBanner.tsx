@@ -44,18 +44,18 @@ export function CustomerBenefitsBanner() {
           <BellRing size={21} />
         </div>
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-[#1b2333]">✨ Tu cuenta mayorista tiene más ventajas</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-neutral-600">Crea tu cuenta gratis y compra con más orden, rapidez y tranquilidad en cada reposición.</p>
+          <p className="text-xs font-black uppercase tracking-wider text-[#1b2333]">✨ Vende más con tu cuenta mayorista</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-neutral-600">Crea tu cuenta gratis y recibe herramientas para vender, organizar y reponer tu negocio con más confianza.</p>
           <div className="mt-2 grid gap-1 text-[10px] font-semibold leading-relaxed text-[#1b2333] sm:grid-cols-3 sm:gap-2">
-            <span>✓ Descarga el catálogo PDF</span>
-            <span>✓ Repite pedidos en un clic</span>
-            <span>✓ Recibe alertas de reposición</span>
+            <span>✓ Comparte tu catálogo PDF personalizado</span>
+            <span>✓ Repite pedidos desde tu historial</span>
+            <span>✓ Conoce primero referencias y promociones</span>
           </div>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:shrink-0">
         <Link href={`/profile?mode=register&returnTo=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/')}`} onClick={dismiss} className="inline-flex items-center gap-1.5 rounded-lg bg-[#d88193] px-3 py-2.5 text-[10px] font-black uppercase tracking-wide text-white hover:bg-[#c06579]">
-          <ClipboardList size={14} /> Activar beneficios gratis
+          <ClipboardList size={14} /> Crear mi cuenta gratis
         </Link>
         <button type="button" onClick={dismiss} className="rounded-lg border border-neutral-200 px-3 py-2.5 text-[10px] font-bold uppercase tracking-wide text-neutral-600 hover:bg-neutral-50">Continuar sin cuenta</button>
       </div>
