@@ -19,10 +19,12 @@ export function CustomerLookbookEditor({
   products,
   config,
   onClose,
+  embedded = false,
 }: {
   products: Product[];
   config: LookbookConfig | null;
   onClose: () => void;
+  embedded?: boolean;
 }) {
   const publicProducts = useMemo(
     () => products.filter((product) => !product.hidden && product.status !== 'draft'),
@@ -105,8 +107,8 @@ export function CustomerLookbookEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#111827]/75 p-2 sm:p-5" role="dialog" aria-modal="true" aria-label="Personalizar catálogo PDF">
-      <div className="flex max-h-[96vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+    <div className={embedded ? 'w-full' : 'fixed inset-0 z-[70] flex items-center justify-center bg-[#111827]/75 p-2 sm:p-5'} role="dialog" aria-modal="true" aria-label="Personalizar catálogo PDF">
+      <div className={`flex w-full flex-col overflow-hidden bg-white shadow-2xl ${embedded ? 'min-h-[720px] rounded-xl border border-neutral-200' : 'max-h-[96vh] max-w-6xl rounded-xl'}`}>
         <header className="flex items-start justify-between gap-4 bg-[#1b2333] px-4 py-4 text-white sm:px-6">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f3b3c0]">Beneficio de tu cuenta mayorista</p>
