@@ -11,10 +11,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const PRODUCTS_STORAGE_KEY = 'ush_products_override_v6';
 
 // Perfil LIGERO para listados/carrito: evita `select('*')` y no baja los campos
-// pesados (full_description, video_url, options, tags, color) que inflan el egress.
+// pesados (full_description, options, tags, color) que inflan el egress.
+// video_url se incluye porque es solo una referencia externa necesaria para
+// la biblioteca audiovisual; el archivo nunca atraviesa Supabase.
 // `description` y `stock_by_size` se conservan porque el filtrado público y el
 // stock por talla los necesitan.
-export const PRODUCT_LIST_COLUMNS = `id,reference,slug,name,price,suggested_price,compare_price,ribbon,fit,is_best_seller,images,category,category_id,hidden,in_stock,status,description,stock_by_size`;
+export const PRODUCT_LIST_COLUMNS = `id,reference,slug,name,price,suggested_price,compare_price,ribbon,fit,is_best_seller,images,category,category_id,hidden,in_stock,status,description,stock_by_size,video_url`;
 
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;

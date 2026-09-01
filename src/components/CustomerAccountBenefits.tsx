@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { CustomerWatch, getCustomerWatches, removeCustomerWatch } from '@/lib/customerBenefits';
 import { LookbookPdfDownload } from '@/components/LookbookPdfDownload';
+import { CustomerAudiovisualContent } from '@/components/CustomerAudiovisualContent';
 import { LookbookConfig } from '@/lib/lookbookPdf';
 
 interface CustomerOrder {
@@ -133,6 +134,7 @@ export function CustomerAccountBenefits({ user }: { user: any }) {
       {error && <div className="border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">{error}</div>}
 
       <LookbookPdfDownload products={products} config={lookbookConfig} />
+      <CustomerAudiovisualContent products={products} />
 
       <section className="border border-neutral-200 bg-white p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
