@@ -92,6 +92,9 @@ export function CustomerLookbookEditor({
     });
   };
 
+  const selectAllProducts = () => setSelectedIds(new Set(publicProducts.map((product) => product.id)));
+  const selectOnlyVisible = () => setSelectedIds(new Set(filteredProducts.map((product) => product.id)));
+
   const download = async () => {
     if (busy) return;
     if (!selectedProducts.length) {
@@ -160,7 +163,7 @@ export function CustomerLookbookEditor({
               <p className="text-sm font-black text-[#1b2333]">{selectedProducts.length} seleccionadas</p>
               <p className="mt-1 text-[10px] leading-relaxed text-neutral-500">La edición publicada por USH aparece preseleccionada. Puedes ajustarla antes de descargarla.</p>
               {priceMode === 'custom' && <p className="mt-2 rounded-lg bg-[#fff1f4] p-2 text-[10px] leading-relaxed text-[#b5586c]">En cada referencia puedes editar el precio que quieres mostrar y escoger únicamente las tallas que tienes disponibles para vender.</p>}
-              <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => selectVisible(true)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600 hover:border-[#d88193]">Incluir visibles</button><button type="button" onClick={() => selectVisible(false)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600 hover:border-[#d88193]">Quitar visibles</button></div>
+              <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={selectAllProducts} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600 hover:border-[#d88193]">Catálogo completo</button><button type="button" onClick={selectOnlyVisible} className="rounded-lg border border-[#d88193] bg-[#fff1f4] px-2 py-2 text-[9px] font-black uppercase text-[#b5586c] hover:bg-[#ffe7ed]">Solo visibles</button><button type="button" onClick={() => selectVisible(true)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600 hover:border-[#d88193]">Incluir visibles</button><button type="button" onClick={() => selectVisible(false)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600 hover:border-[#d88193]">Quitar visibles</button></div>
             </div>
             <button type="button" onClick={download} disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#d88193] px-3 py-3 text-[10px] font-black uppercase tracking-wide text-white hover:bg-[#c06579] disabled:cursor-not-allowed disabled:opacity-60"><Download size={15} />{busy ? 'Preparando...' : 'Descargar mi PDF'}</button>
             {message && <p className="text-[10px] leading-relaxed text-[#b5586c]">{message}</p>}
