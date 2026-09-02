@@ -39,6 +39,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({ isOpen, onClose 
               src="/images/guia-tallas.png"
               alt="Guía de Tallas Oficial USHUAIA - Tallas 6 a 14"
               fill
+              unoptimized
               className="object-contain"
             />
           </div>

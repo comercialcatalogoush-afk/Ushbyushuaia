@@ -34,6 +34,7 @@ export const Logo: React.FC<LogoProps> = ({ variant = 'dark', size = 'md', showI
             alt="USH BY USHUAIA"
             fill
             priority
+            unoptimized
             className="object-contain rounded-full"
           />
         </div>

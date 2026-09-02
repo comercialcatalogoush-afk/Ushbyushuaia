@@ -35,6 +35,7 @@ export const Hero: React.FC = () => {
           alt="Portada Oficial USH BY USHUAIA - Colombian Jeans"
           fill
           priority
+          unoptimized
           className="object-cover object-center lg:object-right scale-100"
         />
         <div
