@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     const name = String(order.customer_name || 'Cliente').split('/')[0].trim();
-    const catalogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ushbyushuaia-catalogo-mayorista.vercel.app/catalogo';
+    const catalogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ushbyushuaia.vercel.app/catalogo';
     const sent = await sendBrevoEmail({
       to: { email: order.customer_email.trim().toLowerCase(), name },
       subject: `Recibimos tu pedido #${orderId} | USH BY USHUAIA`,

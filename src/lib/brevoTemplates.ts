@@ -10,7 +10,7 @@ function esc(value: unknown) {
 const navy = '#1b2333';
 const pink = '#d88193';
 const pale = '#fff5f7';
-const defaultSiteUrl = 'https://ushbyushuaia-catalogo-mayorista.vercel.app';
+const defaultSiteUrl = 'https://ushbyushuaia.vercel.app';
 
 function emailLayout(input: { preheader: string; eyebrow: string; title: string; content: string; cta?: { label: string; url: string } }) {
   const cta = input.cta ? `<p style="margin:28px 0 8px;text-align:center"><a href="${esc(input.cta.url)}" style="background:${pink};border-radius:6px;color:#ffffff;display:inline-block;font-size:13px;font-weight:700;letter-spacing:.6px;padding:15px 24px;text-decoration:none;text-transform:uppercase">${esc(input.cta.label)}</a></p>` : '';

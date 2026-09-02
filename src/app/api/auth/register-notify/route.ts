@@ -103,7 +103,7 @@ export async function POST(req: Request) {
     // Marketing is strictly opt-in. Auth confirmation emails remain managed by
     // Supabase, while Brevo handles only the optional welcome communication.
     if (marketingOptIn) {
-      const catalogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ushbyushuaia-catalogo-mayorista.vercel.app/catalogo';
+      const catalogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ushbyushuaia.vercel.app/catalogo';
       await Promise.allSettled([
         upsertBrevoContact({ email: normalizedEmail, name, marketingOptIn: true }),
         sendBrevoEmail({

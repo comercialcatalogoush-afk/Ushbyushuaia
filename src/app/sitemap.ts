@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 
-const BASE = 'https://ushbyushuaia-catalogo-mayorista.vercel.app';
+const BASE = 'https://ushbyushuaia.vercel.app';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [

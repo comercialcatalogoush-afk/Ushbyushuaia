@@ -448,7 +448,7 @@ export function LookbookClient() {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      const url = `https://ushbyushuaia-catalogo-mayorista.vercel.app/producto/${p.slug}`;
+                      const url = `https://ushbyushuaia.vercel.app/producto/${p.slug}`;
                       const msg = `👗 *${p.name}* (Ref. #${p.reference})\n💲 Mayorista: ${formatCOP(p.price)}\n🔗 ${url}`;
                       if (navigator.share) {
                         navigator.share({ title: p.name, text: msg, url }).catch(() => {});
@@ -574,7 +574,7 @@ export function LookbookClient() {
             USH BY USHUAIA · Catálogo Digital 2026 · Pedidos mínimos 12 unidades · Envío gratis desde 12 uds
           </p>
           <p className="text-[10px] tracking-wider text-neutral-500 mt-1">
-            Itagüí, Antioquia, Colombia · ushbyushuaia-catalogo-mayorista.vercel.app
+            Itagüí, Antioquia, Colombia · ushbyushuaia.vercel.app
           </p>
         </div>
       </div>

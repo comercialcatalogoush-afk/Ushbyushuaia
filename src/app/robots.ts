@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const BASE = 'https://ushbyushuaia-catalogo-mayorista.vercel.app';
+const BASE = 'https://ushbyushuaia.vercel.app';
 
 export default function robots(): MetadataRoute.Robots {
   return {

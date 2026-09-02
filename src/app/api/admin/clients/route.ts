@@ -320,7 +320,7 @@ export async function POST(req: Request) {
       // Origin validado contra allowlist/mismo host (evita open redirect del enlace).
       const reqHost = new URL(req.url).host;
       const originHeader = req.headers.get('origin') || '';
-      let origin = 'https://ushbyushuaia-catalogo-mayorista.vercel.app';
+      let origin = 'https://ushbyushuaia.vercel.app';
       try {
         if (originHeader && new URL(originHeader).host === reqHost) origin = originHeader;
       } catch (_) {}
