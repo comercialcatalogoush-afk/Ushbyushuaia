@@ -4,6 +4,12 @@
 
 @import url('https://fonts.cdnfonts.com/css/avenir');
 
+/* Evita desbordamientos horizontales por marquees y decoraciones absolut.
+   Mantiene el scroll vertical y no rompe el layout. */
+html, body {
+  overflow-x: hidden;
+}
+
 /* ── Design tokens de marca (editables desde el panel admin) ── */
 :root {
   --ush-pink: #d88193;
