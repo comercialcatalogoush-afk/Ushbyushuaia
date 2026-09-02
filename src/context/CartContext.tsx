@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { CartItem, Product } from '@/types';
-import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon, WHOLESALE_FALLBACK } from '@/lib/pricing';
+import { getUnitPrice, isWholesale, getTierForUnits, PRICE_TIERS, validateCoupon, Coupon, WHOLESALE_FALLBACK, getSuggestedPrice } from '@/lib/pricing';
 import { subscribeCatalogChanges } from '@/lib/supabase';
 import type { CatalogSyncPayload } from '@/lib/supabase';
 import { gtagEvent } from '@/lib/analytics';
@@ -181,7 +181,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Calculate unit price for an item depending on total units (escala)
   const calculateItemUnitPrice = (item: CartItem) => {
-    const suggested = item.product.suggested_price || item.product.price || 49900;
+    const suggested = getSuggestedPrice(item.product);
     const wholesale = item.product.price || Math.round(suggested * WHOLESALE_FALLBACK);
     return getUnitPrice(suggested, wholesale, totalUnits);
   };

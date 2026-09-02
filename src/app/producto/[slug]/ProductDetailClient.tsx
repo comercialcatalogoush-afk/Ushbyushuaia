@@ -13,7 +13,7 @@ import { subscribeCatalogChanges } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import type { CatalogSyncPayload } from '@/lib/supabase';
 import { ProductCard } from '@/components/ProductCard';
-import { WHOLESALE_FALLBACK } from '@/lib/pricing';
+import { WHOLESALE_FALLBACK, getSuggestedPrice } from '@/lib/pricing';
 import { gtagEvent } from '@/lib/analytics';
 import { formatVideoUrl } from '@/lib/videoUtils';
 import { addCustomerWatch } from '@/lib/customerBenefits';
@@ -30,16 +30,30 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const [selectedImage, setSelectedImage] = useState<string>(currentProduct.images[0] || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600');
   
   const sizeOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'talla');
+  // Lista estándar de tallas (orden preferido); también se muestran tallas nuevas no incluidas aquí.
   const allowedSizes = ['6', '8', '10', '12', '14'];
 
   // Las tallas vienen del producto o de la lista estándar
   const rawSizes = sizeOption?.values && sizeOption.values.length > 0 ? sizeOption.values : allowedSizes;
-  const availableSizes = rawSizes.filter((s) => allowedSizes.includes(s) || allowedSizes.includes(s.trim()));
+  // Conserva todas las tallas del producto (sin descartar las no estándar),
+  // ordenando primero las estándar y luego el resto.
+  const availableSizes = Array.from(new Set(
+    [...allowedSizes, ...rawSizes.map((s) => s.trim())]
+  ));
 
-  const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
+  const soldOut = currentProduct.in_stock === false;
+  const sizeStockOf = (s: string) => (currentProduct.stock_by_size || {})[s];
+  // Por defecto, seleccionar la primera talla que tenga stock disponible
+  const defaultSize = availableSizes.find((s) => !soldOut && sizeStockOf(s) !== 0) || availableSizes[0] || '6';
+  const [selectedSize, setSelectedSize] = useState<string>(defaultSize);
+
+  // Hay al menos una talla con stock, y se protege el botón Agregar si la talla
+  // actualmente seleccionada está agotada.
+  const anySizeAvailable = availableSizes.some((s) => !soldOut && sizeStockOf(s) !== 0);
+  const selectedSizeSoldOut = soldOut || sizeStockOf(selectedSize) === 0;
 
   // Solo está agotado si el admin lo marca explícitamente en el editor
-  const soldOut = currentProduct.in_stock === false;
+  // (ver soldOut definido arriba)
 
   const colorOption = currentProduct.options?.find((o) => o.key.toLowerCase() === 'color');
   const availableColors = colorOption?.values || (currentProduct.color ? [currentProduct.color] : []);
@@ -52,7 +66,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
 
-  const suggestedPrice = currentProduct.suggested_price || currentProduct.compare_price || 49900;
+  const suggestedPrice = getSuggestedPrice(currentProduct);
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
 
   // Compartir por WhatsApp (precio editable por el cliente)
@@ -227,9 +241,9 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     setZoomOpen(true);
                   }}
                 >
-                  {product.ribbon && (
+{currentProduct.ribbon && (
                     <span className="absolute top-4 left-4 z-10 text-xs font-black uppercase tracking-widest px-3.5 py-1 bg-ush-pink text-white shadow-md pointer-events-none">
-                      {product.ribbon}
+                      {currentProduct.ribbon}
                     </span>
                   )}
 
@@ -290,7 +304,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               {/* Dual Price Display */}
               <div className="mt-4 p-4 bg-neutral-50 border border-gray-200 space-y-2">
                 <div className="flex items-baseline justify-between text-xs">
-                  <span className="font-bold text-neutral-700 uppercase">Precio Sugerido de Venta:</span>
+                  <span className="font-bold text-neutral-700 uppercase">P. Al Detal:</span>
                   <span className="font-extrabold text-neutral-900">{formatCOP(suggestedPrice)}</span>
                 </div>
 
@@ -368,6 +382,8 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
               <div className="flex flex-wrap gap-2">
                 {availableSizes.map((size) => {
+                  const sizeStock = (currentProduct.stock_by_size || {})[size];
+                  const sizeSoldOut = soldOut || sizeStock === 0;
                   return (
                     <button
                       key={size}
@@ -375,9 +391,12 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                         setSelectedSize(size);
                         setQuantity(1);
                       }}
-                      disabled={soldOut}
+                      disabled={sizeSoldOut}
+                      title={sizeSoldOut ? 'Talla agotada' : undefined}
                       className={`relative w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
-                        selectedSize === size
+                        sizeSoldOut
+                          ? 'border-gray-200 text-neutral-300 bg-neutral-100 cursor-not-allowed'
+                          : selectedSize === size
                           ? 'border-ush-pink bg-ush-pink text-white shadow-md'
                           : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
                       }`}
@@ -453,16 +472,16 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </button>
               <button
                 onClick={handleAddToCart}
-                disabled={soldOut}
+                disabled={selectedSizeSoldOut || !anySizeAvailable}
                 className={`w-full py-4 px-6 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all duration-200 shadow-md ${
-                  soldOut
+                  selectedSizeSoldOut || !anySizeAvailable
                     ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                     : added
                     ? 'bg-emerald-600 text-white'
                     : 'bg-ush-navy text-white hover:bg-ush-pink active:scale-[0.99]'
                 }`}
               >
-                {soldOut ? (
+                {selectedSizeSoldOut || !anySizeAvailable ? (
                   <>Agotado</>
                 ) : added ? (
                   <>
@@ -658,7 +677,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     {shareOpen && (() => {
       const imageUrl = currentProduct.images[0] || '';
       // El link siempre apunta al ecommerce público (precio ecommerce)
-      const retailUrl = `https://ushuaiajeans.com.co`;
+      const retailUrl = `https://www.ushuaiajeans.com.co`;
 
       const msg =
         `👗 *${currentProduct.name}* (Ref. #${currentProduct.reference})\n` +

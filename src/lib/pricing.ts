@@ -9,17 +9,17 @@ export interface PriceTier {
   usesWholesalePrice: boolean;
 }
 
+// Fallback de precio mayorista cuando el producto no tiene `price` cargado
+// (35% de descuento sobre el precio sugerido — límite inferior del rango 35-42%).
+export const WHOLESALE_FALLBACK = 0.65;
+
 // Escalas del negocio: la compra mínima para descuento es de 8 a 11 uds (20%),
 // y desde 12 uds aplica el precio mayorista.
 export const PRICE_TIERS: PriceTier[] = [
   { key: 'detalle', label: 'Detal (1–7 uds)', min: 1, max: 7, discount: 0, usesWholesalePrice: false },
   { key: 'escala8', label: 'Mayorista 8–11 uds (20%)', min: 8, max: 11, discount: 0.2, usesWholesalePrice: false },
-  { key: 'mayorista12', label: 'Mayorista 12+ uds', min: 12, discount: 0.42, usesWholesalePrice: true },
+  { key: 'mayorista12', label: 'Mayorista 12+ uds', min: 12, discount: 1 - WHOLESALE_FALLBACK, usesWholesalePrice: true },
 ];
-
-// Fallback de precio mayorista cuando el producto no tiene `price` cargado
-// (35% de descuento sobre el precio sugerido — límite inferior del rango 35-42%).
-export const WHOLESALE_FALLBACK = 0.65;
 
 export function getTierForUnits(units: number): PriceTier {
   return PRICE_TIERS.find((t) => units >= t.min && (t.max === undefined || units <= t.max)) || PRICE_TIERS[0];
@@ -34,6 +34,22 @@ export function getUnitPrice(suggestedPrice: number, wholesalePrice: number, tot
   const tier = getTierForUnits(totalUnits);
   if (tier.usesWholesalePrice) return wholesalePrice;
   return Math.round(suggestedPrice * (1 - tier.discount));
+}
+
+// Precio de venta al detal (sugerido) con fallback unificado.
+// Prioridad: suggested_price → compare_price → price → 49900.
+// Usado de forma consistente por tarjetas, detalle y carrito.
+export function getSuggestedPrice(p: {
+  suggested_price?: number | null;
+  compare_price?: number | null;
+  price?: number | null;
+}): number {
+  const candidates = [p.suggested_price, p.compare_price, p.price];
+  for (const c of candidates) {
+    const n = Number(c);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 49900;
 }
 
 // ── Códigos de descuento / referido ──────────────────────────────

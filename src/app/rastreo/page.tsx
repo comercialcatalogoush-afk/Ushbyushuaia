@@ -224,7 +224,17 @@ export default function RastreoPage() {
             <Box size={28} className="text-ush-pink" />
           </div>
           <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-            <span data-field-key="trTitle">{c.trTitle}</span>{c.trTitleEm && c.trTitleEm !== c.trTitle ? <span className="text-ush-pink"> <span data-field-key="trTitleEm">{c.trTitleEm}</span></span> : null}
+            {(() => {
+              const base = (c.trTitle || '').trim();
+              const em = (c.trTitleEm || '').trim();
+              const alreadyEmphasized = !!em && (base === em || base.toLowerCase().endsWith(' ' + em.toLowerCase()));
+              return (
+                <>
+                  <span data-field-key="trTitle">{base}</span>
+                  {!alreadyEmphasized && em ? <span className="text-ush-pink"> <span data-field-key="trTitleEm">{em}</span></span> : null}
+                </>
+              );
+            })()}
           </h1>
           <p data-field-key="trIntro" className="text-sm text-ush-pinkDark font-medium mt-2 max-w-lg mx-auto">
             {c.trIntro}
@@ -243,9 +253,7 @@ export default function RastreoPage() {
                 type="text"
                 required
                 inputMode="numeric"
-                minLength={11}
                 maxLength={11}
-                pattern="[0-9]{11}"
                 autoComplete="off"
                 value={guia}
                 onChange={(e) => setGuia(e.target.value.replace(/\D/g, '').slice(0, 11))}

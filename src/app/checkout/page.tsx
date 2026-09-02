@@ -220,9 +220,9 @@ export default function CheckoutPage() {
     }
 
     setLoading(false);
-    submittingRef.current = false;
 
     if (!orderSaved) {
+      submittingRef.current = false;
       setErrorMessage('No se pudo registrar tu pedido en la base de datos. Tu carrito se mantiene intacto. Vuelve a intentarlo o contáctanos por WhatsApp para tramitarlo.');
       return;
     }
@@ -249,6 +249,8 @@ export default function CheckoutPage() {
         price: i.unit_price,
       })),
     });
+
+    submittingRef.current = false;
   };
 
   if (completedOrder) {
@@ -853,7 +855,7 @@ export default function CheckoutPage() {
               {isWholesaleTier ? (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold space-y-1">
                   <p className="flex items-center gap-1 font-bold">
-                    <Sparkles size={14} /> Precio Mayorista Aplicado (8+ uds)
+                    <Sparkles size={14} /> Precio Mayorista Aplicado (12+ uds)
                   </p>
                   <p className="flex items-center gap-1 text-[11px] text-emerald-700">
                     <Truck size={14} /> <strong>¡Envío Gratis Incluido!</strong>

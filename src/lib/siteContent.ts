@@ -323,8 +323,8 @@ export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
     label: 'Rastreo',
     description: 'Página de seguimiento de envíos.',
     fields: [
-      { key: 'trTitle', label: 'Título principal', type: 'text', group: 'Encabezado', default: 'Rastrear mi Pedido' },
-      { key: 'trTitleEm', label: 'Palabra destacada', type: 'text', group: 'Encabezado', default: 'mi Pedido' },
+      { key: 'trTitle', label: 'Título principal', type: 'text', group: 'Encabezado', default: 'Rastrear mi' },
+      { key: 'trTitleEm', label: 'Palabra destacada', type: 'text', group: 'Encabezado', default: 'Pedido' },
       { key: 'trIntro', label: 'Descripción', type: 'textarea', group: 'Encabezado', default: 'Ingresa tu número de guía y sigue el recorrido de tu pedido en tiempo real con actualización automática.' },
       { key: 'trLabel', label: 'Etiqueta del campo', type: 'text', group: 'Formulario', default: 'Número de Guía' },
       { key: 'trPlaceholder', label: 'Placeholder', type: 'text', group: 'Formulario', default: 'Ingresa tu número de guía (11 dígitos)' },

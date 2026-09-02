@@ -267,7 +267,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gray-200 border-t border-gray-200 animate-fadeInUp">
                     <div className="bg-white p-4">
                       <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">1 a 7 unidades</p>
-                      <p className="mt-1 text-xs font-bold text-neutral-600">Precio de venta sugerido</p>
+                      <p className="mt-1 text-xs font-bold text-neutral-600">Precio al detal</p>
                       <p className="text-[11px] text-neutral-400 mt-0.5">Detal, sin descuento mayorista.</p>
                     </div>
                     <div className="bg-white p-4 border-t sm:border-t-0 border-gray-200 sm:border-l">

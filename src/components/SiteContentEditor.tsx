@@ -2286,7 +2286,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     <header className="bg-neutral-50 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-neutral-500">Precios (COP)</header>
                     <div className="p-3 space-y-2.5">
                       {([
-                        { key: 'suggested_price', label: 'Precio sugerido de venta' },
+                        { key: 'suggested_price', label: 'Precio al detal' },
                         { key: 'price', label: 'Precio mayorista (12+ uds)' },
                         { key: 'compare_price', label: 'Precio tachado (opcional)' },
                       ] as const).map((f) => (
