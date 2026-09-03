@@ -9,7 +9,7 @@ import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
 import { generateInvoicePdf, uploadInvoicePdf, buildInvoiceWhatsAppUrl } from '@/lib/invoice';
 import {
-  Trash2, Save, X, ArrowLeft, CheckCircle,
+  Trash2, Save, X, CheckCircle,
   Lock, LogOut, ShieldAlert, Key, History,
   RefreshCw, ShoppingBag, LayoutTemplate, XCircle,
   FileSpreadsheet, FileText, Users, KeyRound, Mail,
@@ -675,9 +675,6 @@ export default function AdminCatalogPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-xs text-neutral-300 hover:text-white flex items-center gap-1 font-medium">
-              <ArrowLeft size={16} /> Ver Catálogo Público
-            </Link>
             <Link
               href="/catalogo-digital"
               target="_blank"

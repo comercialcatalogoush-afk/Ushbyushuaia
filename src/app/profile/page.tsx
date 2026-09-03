@@ -15,6 +15,9 @@ const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 function friendlyAuthError(err: any): string {
   if (!err?.message) return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   const m = err.message.toLowerCase();
+  if (m.includes('failed to fetch') || m.includes('fetch failed') || m.includes('networkerror') || m.includes('network error') || m.includes('load failed')) {
+    return 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente.';
+  }
   if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos. Verifica e intenta de nuevo.';
   if (m.includes('email not confirmed')) return 'Aún no confirmas tu correo. Revisa tu bandeja y confirma tu cuenta.';
   if (m.includes('user already registered')) return 'Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.';
@@ -100,7 +103,12 @@ export default function ProfilePage() {
       }
     };
 
-    supabase.auth.getSession().then(({ data }) => sync(data.session));
+    supabase.auth.getSession()
+      .then(({ data }) => sync(data.session))
+      .catch((err) => {
+        setChecking(false);
+        setError(friendlyAuthError(err));
+      });
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       sync(session);
       if (session && window.location.hash.includes('type=recovery')) {
@@ -126,6 +134,7 @@ export default function ProfilePage() {
           fetch('/api/catalog', { cache: 'no-store' }),
         ]);
         if (cancelled) return;
+        if (!catalogResponse.ok) throw new Error('No se pudo cargar el catálogo.');
         const payload = await catalogResponse.json();
         setProducts(Array.isArray(payload) ? payload : (payload.products || []));
         const token = sessionData.session?.access_token;
@@ -155,8 +164,8 @@ export default function ProfilePage() {
     if (!user?.email) { setPasswordErr('No se pudo identificar tu cuenta.'); return; }
     setLoadingProfile(true);
     // Doble verificación: primero comprobamos que la contraseña actual es correcta.
-    const verify = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
-    if (verify.error) { setPasswordErr('La contraseña actual es incorrecta. Verifica e inténtalo de nuevo.'); setLoadingProfile(false); return; }
+    const verify = await supabase.auth.signInWithPassword({ email: user.email.trim().toLowerCase(), password: currentPassword });
+    if (verify.error) { setPasswordErr(friendlyAuthError(verify.error)); setLoadingProfile(false); return; }
     const res = await supabase.auth.updateUser({ password: newPassword });
     setLoadingProfile(false);
     if (res.error) { setPasswordErr(friendlyAuthError(res.error)); return; }
@@ -175,7 +184,8 @@ export default function ProfilePage() {
     setError(''); setSuccess('');
     if (!email || !password) { setError('Por favor completa todos los campos.'); return; }
     setLoading(true);
-    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data, error: err } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
     if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
     setSuccess('✅ ¡Bienvenido! Iniciaste sesión correctamente.');
     const isAdmin = data.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
@@ -188,8 +198,9 @@ export default function ProfilePage() {
     if (!name || !email || !password) { setError('Por favor completa todos los campos.'); return; }
     if (password.length < 6) { setError('La contraseña debe tener mínimo 6 caracteres.'); return; }
     setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
     const { data, error: err } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: { data: { full_name: name, marketing_opt_in: marketingOptIn, marketing_consent_at: marketingOptIn ? new Date().toISOString() : null } },
     });
@@ -199,14 +210,14 @@ export default function ProfilePage() {
     fetch('/api/auth/register-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim().toLowerCase(), name, marketingOptIn }),
+      body: JSON.stringify({ email: normalizedEmail, name, marketingOptIn }),
     }).catch(() => {});
 
     if (data.session) {
       setSuccess('✅ ¡Cuenta creada! Ya iniciaste sesión.');
       setTimeout(() => { window.location.href = returnTo; }, 1200);
     } else {
-      setSuccess(`✅ Te enviamos un correo de confirmación a ${email}. Revísalo para activar tu cuenta.`);
+      setSuccess(`✅ Te enviamos un correo de confirmación a ${normalizedEmail}. Revísalo para activar tu cuenta.`);
       setLoading(false);
     }
   };
