@@ -68,9 +68,10 @@ function customPricesByProductId(products: Product[], customPrices: Record<strin
 export function LookbookClient() {
   const [access, setAccess] = useState<AccessState>('checking');
   const [initialProducts, setInitialProducts] = useState<Product[]>([]);
+  const [userEmail, setUserEmail] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Todas');
-  const [view, setView] = useState<'lookbook' | 'grid'>('lookbook');
+  const [view, setView] = useState<'lookbook' | 'grid'>('grid');
   const [page, setPage] = useState(0);
   const ITEMS_PER_PAGE = view === 'lookbook' ? 6 : 24;
   const [priceMode, setPriceMode] = useState<PriceMode>('wholesale');
@@ -108,10 +109,12 @@ export function LookbookClient() {
     };
 
     supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setUserEmail(data.session?.user?.email || '');
       void loadCatalog(Boolean(data.session));
     });
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUserEmail(session?.user?.email || '');
       void loadCatalog(Boolean(session));
     });
 
@@ -131,6 +134,7 @@ export function LookbookClient() {
   const paginated = filtered.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
   const selectedProducts = initialProducts.filter((product) => selectedRefs.has(referenceOf(product)));
   const selectedCount = selectedProducts.length;
+  const isAdmin = userEmail.toLowerCase() === 'comercialmayoristas@ushuaiajeans.com.co';
 
   const handleCategoryChange = (cat: string) => {
     setCategory(cat);
@@ -288,21 +292,25 @@ export function LookbookClient() {
               </p>
             )}
             <div className="mt-4 flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => requestDownload(initialProducts, 'completo')}
-                className="flex items-center gap-2 bg-[#d88193] hover:bg-[#c06579] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
-              >
-                <Download size={14} /> PDF catálogo completo
-              </button>
-              <button
-                type="button"
-                onClick={() => requestDownload(selectedProducts, 'seleccion')}
-                disabled={selectedCount === 0}
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
-              >
-                <Download size={14} /> PDF selección ({selectedCount})
-              </button>
+              {!isAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => requestDownload(initialProducts, 'completo')}
+                    className="flex items-center gap-2 bg-[#d88193] hover:bg-[#c06579] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
+                  >
+                    <Download size={14} /> PDF catálogo completo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => requestDownload(selectedProducts, 'seleccion')}
+                    disabled={selectedCount === 0}
+                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
+                  >
+                    <Download size={14} /> PDF selección ({selectedCount})
+                  </button>
+                </>
+              )}
               <Link
                 href="/catalogo"
                 className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
@@ -368,20 +376,22 @@ export function LookbookClient() {
               </button>
             </div>
           </div>
-          <div className="max-w-7xl mx-auto mt-3 pt-3 border-t border-neutral-100 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">
-              {selectedCount} de {initialProducts.length} seleccionadas
-            </span>
-            <button type="button" onClick={selectAll} className="px-3 py-1 text-[10px] font-bold uppercase border border-neutral-200 hover:border-[#d88193]">
-              Todas
-            </button>
-            <button type="button" onClick={selectFiltered} className="px-3 py-1 text-[10px] font-bold uppercase border border-neutral-200 hover:border-[#d88193]">
-              Seleccionar filtradas
-            </button>
-            <button type="button" onClick={clearSelection} className="px-3 py-1 text-[10px] font-bold uppercase border border-neutral-200 hover:border-[#d88193]">
-              Limpiar
-            </button>
-          </div>
+          {!isAdmin && (
+            <div className="max-w-7xl mx-auto mt-3 pt-3 border-t border-neutral-100 flex flex-wrap items-center justify-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">
+                {selectedCount} de {initialProducts.length} seleccionadas
+              </span>
+              <button type="button" onClick={selectAll} className="px-3 py-1 text-[10px] font-bold uppercase border border-neutral-200 hover:border-[#d88193]">
+                Todas
+              </button>
+              <button type="button" onClick={selectFiltered} className="px-3 py-1 text-[10px] font-bold uppercase border border-neutral-200 hover:border-[#d88193]">
+                Seleccionar filtradas
+              </button>
+              <button type="button" onClick={clearSelection} className="px-3 py-1 text-[10px] font-bold uppercase border border-neutral-200 hover:border-[#d88193]">
+                Limpiar
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Results count */}
@@ -402,19 +412,21 @@ export function LookbookClient() {
                   href={`/producto/${p.slug}`}
                   className="group relative aspect-[3/4] bg-neutral-100 overflow-hidden"
                 >
-                  <label
-                    className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-white/90 text-[#1b2333] px-2 py-1.5 text-[9px] font-black uppercase shadow"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedRefs.has(referenceOf(p))}
-                      onChange={() => toggleReference(p)}
-                      className="accent-[#d88193]"
-                      aria-label={`Seleccionar referencia ${referenceOf(p)}`}
-                    />
-                    {selectedRefs.has(referenceOf(p)) ? 'Incluida' : 'Incluir'}
-                  </label>
+                  {!isAdmin && (
+                    <label
+                      className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-white/90 text-[#1b2333] px-2 py-1.5 text-[9px] font-black uppercase shadow"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedRefs.has(referenceOf(p))}
+                        onChange={() => toggleReference(p)}
+                        className="accent-[#d88193]"
+                        aria-label={`Seleccionar referencia ${referenceOf(p)}`}
+                      />
+                      {selectedRefs.has(referenceOf(p)) ? 'Incluida' : 'Incluir'}
+                    </label>
+                  )}
                   {p.images[0] && (
                     <Image
                       src={p.images[0]}
@@ -489,19 +501,21 @@ export function LookbookClient() {
                   href={`/producto/${p.slug}`}
                   className="group relative bg-white border border-neutral-200 hover:border-[#d88193] hover:shadow-md transition-all duration-200 rounded-lg overflow-hidden"
                 >
-                  <label
-                    className="absolute z-10 mt-2 ml-[calc(100%-5rem)] flex items-center gap-1 bg-white/90 text-[#1b2333] px-1.5 py-1 text-[8px] font-black shadow"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedRefs.has(referenceOf(p))}
-                      onChange={() => toggleReference(p)}
-                      className="accent-[#d88193]"
-                      aria-label={`Seleccionar referencia ${referenceOf(p)}`}
-                    />
-                    {selectedRefs.has(referenceOf(p)) ? '✓' : '+'}
-                  </label>
+                  {!isAdmin && (
+                    <label
+                      className="absolute z-10 mt-2 ml-[calc(100%-5rem)] flex items-center gap-1 bg-white/90 text-[#1b2333] px-1.5 py-1 text-[8px] font-black shadow"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedRefs.has(referenceOf(p))}
+                        onChange={() => toggleReference(p)}
+                        className="accent-[#d88193]"
+                        aria-label={`Seleccionar referencia ${referenceOf(p)}`}
+                      />
+                      {selectedRefs.has(referenceOf(p)) ? '✓' : '+'}
+                    </label>
+                  )}
                   <div className="aspect-[3/4] relative bg-neutral-50">
                     {p.images[0] && (
                       <Image

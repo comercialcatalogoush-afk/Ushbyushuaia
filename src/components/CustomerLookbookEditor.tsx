@@ -31,7 +31,7 @@ export function CustomerLookbookEditor({
     [products]
   );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [priceMode, setPriceMode] = useState<LookbookPriceMode>(config?.customerPriceMode === 'blank' ? 'blank' : 'ecommerce');
+  const [priceMode, setPriceMode] = useState<LookbookPriceMode>('ecommerce');
   const [groupMode, setGroupMode] = useState<LookbookGroupMode>(config?.groupMode || 'category');
   const [customPrices, setCustomPrices] = useState<Record<string, string>>({});
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string[]>>({});
@@ -42,10 +42,9 @@ export function CustomerLookbookEditor({
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const publishedIds = config?.selectedProductIds?.length
-      ? publicProducts.filter((product) => config.selectedProductIds.includes(product.id)).map((product) => product.id)
-      : publicProducts.map((product) => product.id);
-    setSelectedIds(new Set(publishedIds));
+    // El cliente decide qué referencias quiere mostrar: siempre se preselecciona
+    // todo el catálogo disponible (ya no existe una edición publicada por el admin).
+    setSelectedIds(new Set(publicProducts.map((product) => product.id)));
     setCustomPrices((current) => {
       const next = { ...current };
       publicProducts.forEach((product) => {

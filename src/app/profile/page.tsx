@@ -2,9 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, KeyRound, LogOut, ShieldCheck, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, KeyRound, LogOut, ShieldCheck, Loader2, Film, FileText, UserCircle, CheckSquare } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { CustomerAccountBenefits } from '@/components/CustomerAccountBenefits';
+import { CustomerAudiovisualContent } from '@/components/CustomerAudiovisualContent';
+import { CustomerLookbookEditor } from '@/components/CustomerLookbookEditor';
+import { LookbookConfig } from '@/lib/lookbookPdf';
+import { Product } from '@/types';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 
@@ -44,6 +48,18 @@ export default function ProfilePage() {
   const [isRecovery, setIsRecovery] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [returnTo, setReturnTo] = useState('/');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'contenido' | 'pdf'>('perfil');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [lookbookConfig, setLookbookConfig] = useState<LookbookConfig | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState('');
+  const [passwordErr, setPasswordErr] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -98,6 +114,55 @@ export default function ProfilePage() {
   }, []);
 
   const isAdminUser = !!user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+  useEffect(() => {
+    if (!user || isAdminUser) return;
+    let cancelled = false;
+    const loadProfileData = async () => {
+      setLoadingProfile(true);
+      try {
+        const [{ data: sessionData }, catalogResponse] = await Promise.all([
+          supabase.auth.getSession(),
+          fetch('/api/catalog', { cache: 'no-store' }),
+        ]);
+        if (cancelled) return;
+        const payload = await catalogResponse.json();
+        setProducts(Array.isArray(payload) ? payload : (payload.products || []));
+        const token = sessionData.session?.access_token;
+        if (token) {
+          const configResponse = await fetch('/api/lookbook-config', { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
+          if (configResponse.ok) {
+            const configPayload = await configResponse.json();
+            setLookbookConfig(configPayload.config || null);
+          }
+        }
+      } catch (_) {
+        if (!cancelled) { setProducts([]); setLookbookConfig(null); }
+      } finally {
+        if (!cancelled) setLoadingProfile(false);
+      }
+    };
+    loadProfileData();
+    return () => { cancelled = true; };
+  }, [user, isAdminUser]);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMsg(''); setPasswordErr('');
+    if (!currentPassword || !newPassword || !confirmPassword) { setPasswordErr('Por favor completa todos los campos.'); return; }
+    if (newPassword.length < 6) { setPasswordErr('La nueva contraseña debe tener mínimo 6 caracteres.'); return; }
+    if (newPassword !== confirmPassword) { setPasswordErr('La confirmación de la nueva contraseña no coincide.'); return; }
+    if (!user?.email) { setPasswordErr('No se pudo identificar tu cuenta.'); return; }
+    setLoadingProfile(true);
+    // Doble verificación: primero comprobamos que la contraseña actual es correcta.
+    const verify = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
+    if (verify.error) { setPasswordErr('La contraseña actual es incorrecta. Verifica e inténtalo de nuevo.'); setLoadingProfile(false); return; }
+    const res = await supabase.auth.updateUser({ password: newPassword });
+    setLoadingProfile(false);
+    if (res.error) { setPasswordErr(friendlyAuthError(res.error)); return; }
+    setPasswordMsg('✅ Contraseña actualizada correctamente.');
+    setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+  };
 
   const switchMode = (m: 'login' | 'register' | 'recover') => {
     setMode(m);
@@ -222,36 +287,103 @@ export default function ProfilePage() {
   // ── Sesión activa ──
   if (user && !isRecovery) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-16">
+      <div className="min-h-screen bg-neutral-50">
         <title>Mi Cuenta | Ush By Ushuaia</title>
-        <div className="w-full max-w-md bg-white shadow-xl border border-gray-200 overflow-hidden animate-fadeIn text-center">
-          <div className="bg-[#d88193] text-white p-8">
+        <div className="bg-[#d88193] text-white">
+          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-6 sm:px-6">
             {user.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} alt="" className="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-white/40 object-cover" />
+              <img src={user.user_metadata.avatar_url} alt="" className="h-14 w-14 rounded-full border-2 border-white/40 object-cover" />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 border-2 border-white/40">
-                <User size={28} />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/40 bg-white/20"><User size={26} /></div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-xl font-black uppercase sm:text-2xl">Mi Cuenta</h1>
+              <p className="truncate text-xs text-white/80">{user.email}</p>
+            </div>
+            {isAdminUser && (
+              <a href="/admin" className="ml-auto inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#1b2333] transition hover:bg-[#f3b3c0]"><Settings size={15} /> Panel de Administrador</a>
+            )}
+          </div>
+        </div>
+
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row">
+          {/* Menú lateral */}
+          <aside className="shrink-0 lg:w-64">
+            <div className="flex flex-row gap-2 overflow-x-auto rounded-xl border border-neutral-200 bg-white p-2 shadow-sm lg:flex-col lg:overflow-visible">
+              <button type="button" onClick={() => setActiveTab('perfil')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'perfil' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><UserCircle size={16} /> Mi perfil</button>
+              <button type="button" onClick={() => setActiveTab('contenido')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'contenido' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><Film size={16} /> Contenido audiovisual</button>
+              <button type="button" onClick={() => setActiveTab('pdf')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'pdf' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><FileText size={16} /> Catálogo PDF</button>
+            </div>
+            <div className="mt-4 space-y-2">
+              <button onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-xs font-bold uppercase tracking-wider text-neutral-600 transition hover:bg-gray-50"><LogOut size={15} /> Cerrar Sesión</button>
+              <Link href="/" className="block text-center text-xs text-neutral-400 hover:text-neutral-700">← Volver al catálogo</Link>
+            </div>
+          </aside>
+
+          {/* Contenido de la pestaña activa */}
+          <main className="min-w-0 flex-1">
+            {activeTab === 'perfil' && (
+              <div className="space-y-5 text-left">
+                <section className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+                  <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-[#1b2333]"><UserCircle size={17} className="text-[#d88193]" /> Mis datos</h2>
+                  <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div><dt className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Nombre</dt><dd className="mt-1 text-sm font-bold text-[#1b2333]">{user.user_metadata?.full_name || user.user_metadata?.name || '—'}</dd></div>
+                    <div><dt className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Correo electrónico</dt><dd className="mt-1 text-sm font-bold text-[#1b2333]">{user.email}</dd></div>
+                  </dl>
+                </section>
+
+                <section className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+                  <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-[#1b2333]"><ShieldCheck size={17} className="text-[#d88193]" /> Cambiar contraseña</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-neutral-500">Para proteger tu cuenta, primero confirmamos tu contraseña actual antes de aplicar un cambio.</p>
+                  <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
+                    {passwordMsg && <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-700"><CheckCircle2 size={16} className="mt-0.5 shrink-0" /><span>{passwordMsg}</span></div>}
+                    {passwordErr && <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700"><AlertCircle size={16} className="mt-0.5 shrink-0" /><span>{passwordErr}</span></div>}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-neutral-700">Contraseña actual *</label>
+                      <div className="relative">
+                        <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" className="w-full border border-gray-300 py-3 pl-9 pr-10 text-xs outline-none focus:border-[#d88193]" />
+                        <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">{showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-neutral-700">Nueva contraseña * <span className="font-normal normal-case text-neutral-400">(mín. 6)</span></label>
+                        <div className="relative">
+                          <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                          <input type={showNew ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" className="w-full border border-gray-300 py-3 pl-9 pr-10 text-xs outline-none focus:border-[#d88193]" />
+                          <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">{showNew ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-neutral-700">Confirmar nueva *</label>
+                        <div className="relative">
+                          <CheckSquare size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                          <input type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="w-full border border-gray-300 py-3 pl-9 pr-10 text-xs outline-none focus:border-[#d88193]" />
+                          <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">{showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="submit" disabled={loadingProfile} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1b2333] px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-[#d88193] disabled:opacity-60"><KeyRound size={15} />{loadingProfile ? 'Verificando...' : 'Actualizar contraseña'}</button>
+                  </form>
+                </section>
+
+                <CustomerAccountBenefits user={user} products={products} config={lookbookConfig} />
               </div>
             )}
-            <h1 className="text-xl font-black uppercase">Mi Cuenta</h1>
-            <p className="text-xs text-white/80 mt-1 break-all">{user.email}</p>
-          </div>
-          <div className="p-8 space-y-3 text-left">
-            <p className="text-sm text-neutral-600">
-              <span className="font-bold text-neutral-800">Nombre:</span> {user.user_metadata?.full_name || user.user_metadata?.name || '—'}
-            </p>
-            {isAdminUser && (
-              <a href="/admin" className="flex items-center justify-center gap-2 w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest transition-colors">
-                <Settings size={16} /> Ir al Panel de Administrador
-              </a>
+
+            {activeTab === 'contenido' && (
+              <div className="w-full text-left">
+                <CustomerAudiovisualContent products={products} fullPage />
+              </div>
             )}
-            {!isAdminUser && <CustomerAccountBenefits user={user} />}
-            <button onClick={handleLogout}
-              className="flex items-center justify-center gap-2 w-full border border-gray-300 text-neutral-600 font-bold py-3 text-xs uppercase tracking-wider hover:bg-gray-50 transition-colors">
-              <LogOut size={15} /> Cerrar Sesión
-            </button>
-            <Link href="/" className="block text-center text-xs text-neutral-400 hover:text-neutral-700 mt-1">← Volver al catálogo</Link>
-          </div>
+
+            {activeTab === 'pdf' && (
+              <div className="w-full text-left">
+                <CustomerLookbookEditor products={products} config={lookbookConfig} onClose={() => setActiveTab('perfil')} embedded />
+              </div>
+            )}
+          </main>
         </div>
       </div>
     );

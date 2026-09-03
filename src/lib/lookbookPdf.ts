@@ -275,29 +275,47 @@ export async function generateLookbookPdf(
         doc.setTextColor(216, 129, 147);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7);
-        doc.text(`REF. ${String(product.reference || product.id)}`, x + 3, y + 50);
+        doc.text(`REF. ${String(product.reference || product.id)}`, x + 3, y + 46);
         doc.setTextColor(27, 35, 51);
         doc.setFontSize(8.2);
         const productName = options.priceMode === 'custom' ? getLookbookProductName(product) : product.name;
-        doc.text(clipPdfText(doc, productName, cardWidth - 6, options.priceMode === 'custom' ? 1 : 2).map((line) => line.toUpperCase()), x + 3, y + 56);
-        if (options.priceMode === 'custom') {
+        doc.text(clipPdfText(doc, productName, cardWidth - 6, options.priceMode === 'custom' ? 1 : 2).map((line) => line.toUpperCase()), x + 3, y + 52);
+        if (options.priceMode === 'blank') {
+          doc.setTextColor(110, 116, 130);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.8);
+          doc.text(product.fit ? clipPdfText(doc, product.fit, cardWidth - 6, 1) : ' ', x + 3, y + 58);
+        } else if (options.priceMode === 'custom') {
           doc.setTextColor(110, 116, 130);
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(6.8);
           const sizes = options.selectedSizes?.[product.id] || getAvailableProductSizes(product);
-          doc.text(`TALLAS: ${sizes.join(' · ') || 'POR DEFINIR'}`, x + 3, y + 62);
+          doc.text(`TALLAS: ${sizes.join(' · ') || 'POR DEFINIR'}`, x + 3, y + 58);
+          const customPrice = getLookbookPrice(product, 'custom', options.customPrices);
+          if (customPrice) {
+            doc.setTextColor(27, 35, 51);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.text(customPrice, x + cardWidth - 3, y + 58, { align: 'right' });
+          }
         } else {
-          doc.setTextColor(110, 116, 130);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7);
-          doc.text(product.fit ? clipPdfText(doc, product.fit, cardWidth - 6, 1) : ' ', x + 3, y + 63);
-        }
-        const price = getLookbookPrice(product, options.priceMode, options.customPrices);
-        if (price) {
+          // Ficha estilo Canva: muestra precio mayorista y precio al detal apilados.
+          const wholesalePrice = getLookbookPrice(product, 'wholesale');
+          const ecommercePrice = getLookbookPrice(product, 'ecommerce');
           doc.setTextColor(27, 35, 51);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(8.5);
-          doc.text(price, x + cardWidth - 3, y + 63, { align: 'right' });
+          if (ecommercePrice) doc.text(ecommercePrice, x + cardWidth - 3, y + 58, { align: 'right' });
+          doc.setTextColor(216, 129, 147);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.8);
+          if (wholesalePrice) doc.text(`Mayorista ${wholesalePrice}`, x + cardWidth - 3, y + 62, { align: 'right' });
+        }
+        if (product.video_url) {
+          doc.setTextColor(216, 129, 147);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.5);
+          doc.text('ver video', x + 3, y + cardHeight - 3);
         }
       });
       drawFooter(doc, page, totalPages, pageWidth);

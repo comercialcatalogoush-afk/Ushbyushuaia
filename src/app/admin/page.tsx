@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { Logo } from '@/components/Logo';
-import { LookbookPdfEditor } from '@/components/LookbookPdfEditor';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 const DEFAULT_FITS = ['Wide Leg', 'Barrel', 'Straight Boot', 'Vaquero', 'Bota Flare', 'Skinny', 'Mom', 'Cargo', 'Bermuda', 'Straight'];
@@ -120,7 +119,6 @@ export default function AdminCatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'orders' | 'clients' | 'history' | 'backup' | 'site'>('orders');
-  const [showLookbookEditor, setShowLookbookEditor] = useState(false);
   const [invoiceBusyId, setInvoiceBusyId] = useState<string | null>(null);
   const [invoiceReady, setInvoiceReady] = useState<{ orderId: string; url: string } | null>(null);
 
@@ -766,12 +764,6 @@ export default function AdminCatalogPage() {
             className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 text-neutral-600 hover:bg-neutral-100"
           >
             <LayoutTemplate size={14} className="text-[#d88193]" /> Editor del sitio (Catálogo)
-          </button>
-          <button
-            onClick={() => setShowLookbookEditor(true)}
-            className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 text-neutral-600 hover:bg-neutral-100"
-          >
-            <FileText size={14} className="text-[#d88193]" /> Catálogo PDF
           </button>
         </div>
         )}
@@ -1800,10 +1792,6 @@ export default function AdminCatalogPage() {
         {/* ── TAB 7: EDITOR DEL SITIO WEB (tipo Wix) ── */}
         {activeTab === 'site' && (
           <SiteContentEditor onExit={() => setActiveTab(editorReturnTab)} />
-        )}
-
-        {showLookbookEditor && (
-          <LookbookPdfEditor products={products} onClose={() => setShowLookbookEditor(false)} />
         )}
 
       </div>
