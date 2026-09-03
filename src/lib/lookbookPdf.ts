@@ -95,16 +95,17 @@ function loadPdfImage(url: string): Promise<PdfImage | null> {
 }
 
 async function loadImagesInBatches(products: Product[], onProgress?: (completed: number, total: number) => void) {
-  const entries: Array<readonly [string, PdfImage | null]> = [];
+  const entries: Array<readonly [string, PdfImage[]]> = [];
   const batchSize = 8;
   let completed = 0;
   onProgress?.(0, products.length);
   for (let index = 0; index < products.length; index += batchSize) {
     const batch = products.slice(index, index + batchSize);
-    const loaded = await Promise.all(batch.map(async (product) => [
-      product.id,
-      await loadPdfImage(getGoogleDriveImageUrl(product.images?.[0] || '')),
-    ] as const));
+    const loaded = await Promise.all(batch.map(async (product) => {
+      const urls = (product.images || []).slice(0, 3).map((url) => getGoogleDriveImageUrl(url)).filter(Boolean);
+      const images = (await Promise.all(urls.map((url) => loadPdfImage(url)))).filter((image): image is PdfImage => Boolean(image));
+      return [product.id, images] as const;
+    }));
     entries.push(...loaded);
     completed += batch.length;
     onProgress?.(completed, products.length);
@@ -131,12 +132,12 @@ async function loadLogo() {
 function drawFooter(doc: jsPDF, page: number, totalPages: number, pageWidth: number) {
   doc.setDrawColor(229, 229, 232);
   doc.setLineWidth(0.25);
-  doc.line(14, 246, pageWidth - 14, 246);
+  doc.line(14, 150, pageWidth - 14, 150);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(150, 156, 165);
-  doc.text('USH BY USHUAIA - Catalogo digital - Imagenes desde URLs externas', 14, 252);
-  doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - 14, 252, { align: 'right' });
+  doc.text('USH BY USHUAIA - Catalogo digital - Imagenes desde URLs externas', 14, 154.5);
+  doc.text(`Pagina ${page} de ${totalPages}`, pageWidth - 14, 154.5, { align: 'right' });
 }
 
 export async function generateLookbookPdf(
@@ -153,173 +154,129 @@ export async function generateLookbookPdf(
   if (!publicProducts.length) throw new Error('No hay referencias publicadas para generar el catálogo.');
 
   const imageMap = await loadImagesInBatches(publicProducts, options.onProgress);
-  const failedImages = publicProducts.filter((product) => !imageMap.get(product.id) && product.images?.[0]).map((product) => product.reference);
-  const groups = new Map<string, Product[]>();
-  publicProducts.forEach((product) => {
-    const label = options.groupMode === 'category' ? (product.category || 'Sin categoría') : (product.fit || 'Sin fit');
-    groups.set(label, [...(groups.get(label) || []), product]);
-  });
-  const groupedProducts = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b, 'es'));
-  const totalPages = 1 + groupedProducts.reduce((total, [, groupProducts]) => total + Math.max(1, Math.ceil(groupProducts.length / 9)), 0);
-  const pageWidth = 175;
-  const pageHeight = 260;
+  const failedImages = publicProducts.filter((product) => product.images?.length && !imageMap.get(product.id)?.length).map((product) => product.reference);
+  const totalPages = publicProducts.length + 1;
+  const pageWidth = 280;
+  const pageHeight = 157.5;
   const doc = new jsPDF({ unit: 'mm', format: [pageWidth, pageHeight] });
-  const margin = 14;
-  const contentWidth = pageWidth - margin * 2;
-  const gap = 4;
-  const cardWidth = (contentWidth - gap * 2) / 3;
-  const imageHeight = 43;
-  const cardHeight = 66;
   const logo = await loadLogo();
   let page = 1;
 
-  // Portada editorial: bloques con posiciones fijas para evitar solapamientos
-  // incluso cuando cambian la cantidad de referencias o el modo de precios.
-  doc.setFillColor(27, 35, 51);
+  // La portada conserva la proporción horizontal del PDF de Canva.
+  doc.setFillColor(244, 244, 245);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
-  doc.setFillColor(216, 129, 147);
-  doc.rect(0, 0, pageWidth, 5, 'F');
+  doc.setFillColor(27, 35, 51);
+  doc.rect(0, 0, 92, pageHeight, 'F');
   if (logo) {
-    try {
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(margin, 18, 32, 32, 1, 1, 'F');
-      doc.addImage(logo, 'JPEG', margin + 3, 21, 26, 26);
-    } catch (_) {}
+    try { doc.addImage(logo, 'JPEG', 18, 18, 38, 38); } catch (_) {}
   }
-  doc.setTextColor(215, 219, 228);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.text('EDICION MAYORISTA', pageWidth - margin, 25, { align: 'right' });
-  doc.text('2026', pageWidth - margin, 35, { align: 'right' });
-  doc.setDrawColor(216, 129, 147);
-  doc.setLineWidth(0.5);
-  doc.line(pageWidth - 46, 41, pageWidth - margin, 41);
-
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(29);
-  doc.text('CATÁLOGO', margin, 76);
+  doc.setFontSize(27);
+  doc.text('CATÁLOGO', 18, 82);
   doc.setTextColor(243, 179, 192);
-  doc.setFontSize(25);
-  doc.text('LOOKBOOK', margin, 99);
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(17);
-  doc.text('2026', margin, 114);
-  doc.setTextColor(243, 179, 192);
-  doc.setFontSize(8.5);
-  doc.text('USH BY USHUAIA - MAYORISTAS', margin, 137);
-  doc.setDrawColor(216, 129, 147);
-  doc.setLineWidth(1);
-  doc.line(margin, 148, margin + 56, 148);
-
-  doc.setFillColor(35, 44, 63);
-  doc.roundedRect(margin, 171, contentWidth, 40, 2, 2, 'F');
-  doc.setTextColor(215, 219, 228);
+  doc.setFontSize(22);
+  doc.text('DIGITAL', 18, 102);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text('EDICION DISPONIBLE', margin + 7, 183);
-  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text('USH BY USHUAIA · MAYORISTAS', 18, 121);
+  doc.text(`${publicProducts.length} referencias seleccionadas`, 18, 132);
+  doc.setTextColor(27, 35, 51);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text(`${publicProducts.length} referencias`, margin + 7, 195);
-  doc.setTextColor(243, 179, 192);
+  doc.setFontSize(22);
+  doc.text('Tu colección,', 112, 70);
+  doc.setTextColor(216, 129, 147);
+  doc.text('a tu manera.', 112, 93);
+  doc.setTextColor(75, 80, 90);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.text(options.priceMode === 'ecommerce' ? 'Precios ecommerce' : options.priceMode === 'wholesale' ? 'Precios mayoristas' : options.priceMode === 'custom' ? 'Precios personalizados' : 'Catalogo sin precios', margin + 7, 206);
-  doc.setTextColor(215, 219, 228);
-  doc.setFontSize(9);
-  doc.text('Moda, calidad y tendencia para tu boutique.', margin, 229);
-  doc.text('USH BY USHUAIA - Itagui, Antioquia - Colombia', margin, 240);
-  doc.setTextColor(158, 166, 180);
-  doc.setFontSize(7.5);
-  doc.text('Catalogo digital elaborado con imagenes externas del producto.', margin, 250);
+  doc.setFontSize(11);
+  doc.text(options.priceMode === 'blank' ? 'Catálogo sin precios' : options.priceMode === 'custom' ? 'Precios personalizados' : 'Moda, calidad y tendencia para tu boutique.', 112, 113);
+  doc.setFontSize(8);
+  doc.text('Editado desde tu selección de referencias.', 112, 128);
 
-  for (const [group, groupProducts] of groupedProducts) {
-    const pagesInGroup = Math.max(1, Math.ceil(groupProducts.length / 9));
-    for (let groupPage = 0; groupPage < pagesInGroup; groupPage += 1) {
-      doc.addPage();
-      page += 1;
+  for (const product of publicProducts) {
+    doc.addPage();
+    page += 1;
+    const margin = 12;
+    const imageAreaWidth = 165;
+    const detailX = 184;
+    const detailWidth = pageWidth - detailX - margin;
+    const images = imageMap.get(product.id) || [];
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    doc.setFillColor(239, 239, 241);
+    doc.rect(0, 0, imageAreaWidth, 150, 'F');
+    if (images.length) {
+      const imageWidth = images.length >= 3 ? 53 : images.length === 2 ? 80 : 150;
+      const imageGap = images.length >= 3 ? 3 : 5;
+      images.slice(0, 3).forEach((image, index) => {
+        const slotX = margin + index * (imageWidth + imageGap);
+        const slotWidth = images.length === 1 ? 140 : imageWidth;
+        const slotHeight = 132;
+        const scale = Math.min(slotWidth / image.width, slotHeight / image.height);
+        const renderedWidth = image.width * scale;
+        const renderedHeight = image.height * scale;
+        doc.addImage(image.data, 'JPEG', slotX + (slotWidth - renderedWidth) / 2, 9 + (slotHeight - renderedHeight) / 2, renderedWidth, renderedHeight, undefined, 'FAST');
+      });
+    } else {
       doc.setTextColor(216, 129, 147);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.text(options.groupMode === 'category' ? 'CATEGORIA' : 'FIT', margin, 17);
-      doc.setTextColor(27, 35, 51);
-      doc.setFontSize(19);
-      doc.text(`${String(group).toUpperCase()}${groupPage > 0 ? ' - CONTINUACION' : ''}`, margin, 26);
-      doc.setDrawColor(229, 229, 232);
-      doc.setLineWidth(0.35);
-      doc.line(margin, 31, margin + contentWidth, 31);
-
-      const pageProducts = groupProducts.slice(groupPage * 9, groupPage * 9 + 9);
-      pageProducts.forEach((product, index) => {
-        const col = index % 3;
-        const row = Math.floor(index / 3);
-        const x = margin + col * (cardWidth + gap);
-        const y = 35 + row * 70;
-        doc.setFillColor(250, 250, 251);
-        doc.setDrawColor(236, 236, 238);
-        doc.roundedRect(x, y, cardWidth, cardHeight, 1.5, 1.5, 'FD');
-        const image = imageMap.get(product.id);
-        if (image) {
-          const scale = Math.min((cardWidth - 2) / image.width, imageHeight / image.height);
-          const imageWidth = image.width * scale;
-          const imageY = y + 1 + (imageHeight - image.height * scale) / 2;
-          doc.addImage(image.data, 'JPEG', x + (cardWidth - imageWidth) / 2, imageY, imageWidth, image.height * scale, undefined, 'FAST');
-        } else {
-          doc.setFillColor(255, 243, 245);
-          doc.rect(x + 1, y + 1, cardWidth - 2, imageHeight, 'F');
-          doc.setTextColor(216, 129, 147);
-          doc.setFontSize(15);
-          doc.text('USH', x + cardWidth / 2, y + imageHeight / 2, { align: 'center' });
-        }
-        doc.setTextColor(216, 129, 147);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.text(`REF. ${String(product.reference || product.id)}`, x + 3, y + 46);
-        doc.setTextColor(27, 35, 51);
-        doc.setFontSize(8.2);
-        const productName = options.priceMode === 'custom' ? getLookbookProductName(product) : product.name;
-        doc.text(clipPdfText(doc, productName, cardWidth - 6, options.priceMode === 'custom' ? 1 : 2).map((line) => line.toUpperCase()), x + 3, y + 52);
-        if (options.priceMode === 'blank') {
-          doc.setTextColor(110, 116, 130);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.8);
-          doc.text(product.fit ? clipPdfText(doc, product.fit, cardWidth - 6, 1) : ' ', x + 3, y + 58);
-        } else if (options.priceMode === 'custom') {
-          doc.setTextColor(110, 116, 130);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.8);
-          const sizes = options.selectedSizes?.[product.id] || getAvailableProductSizes(product);
-          doc.text(`TALLAS: ${sizes.join(' · ') || 'POR DEFINIR'}`, x + 3, y + 58);
-          const customPrice = getLookbookPrice(product, 'custom', options.customPrices);
-          if (customPrice) {
-            doc.setTextColor(27, 35, 51);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(8.5);
-            doc.text(customPrice, x + cardWidth - 3, y + 58, { align: 'right' });
-          }
-        } else {
-          // Ficha estilo Canva: muestra precio mayorista y precio al detal apilados.
-          const wholesalePrice = getLookbookPrice(product, 'wholesale');
-          const ecommercePrice = getLookbookPrice(product, 'ecommerce');
-          doc.setTextColor(27, 35, 51);
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8.5);
-          if (ecommercePrice) doc.text(ecommercePrice, x + cardWidth - 3, y + 58, { align: 'right' });
-          doc.setTextColor(216, 129, 147);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(6.8);
-          if (wholesalePrice) doc.text(`Mayorista ${wholesalePrice}`, x + cardWidth - 3, y + 62, { align: 'right' });
-        }
-        if (product.video_url) {
-          doc.setTextColor(216, 129, 147);
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(6.5);
-          doc.text('ver video', x + 3, y + cardHeight - 3);
-        }
-      });
-      drawFooter(doc, page, totalPages, pageWidth);
+      doc.setFontSize(22);
+      doc.text('USH', imageAreaWidth / 2, 76, { align: 'center' });
     }
+    doc.setTextColor(27, 35, 51);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text(`REF: ${String(product.reference || product.id)}`, detailX, 48);
+    doc.setFontSize(13);
+    doc.text(clipPdfText(doc, product.name, detailWidth, 2).map((line) => line.toUpperCase()), detailX, 58);
+    doc.setTextColor(75, 80, 90);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const sizes = options.selectedSizes?.[product.id] || getAvailableProductSizes(product);
+    doc.text(`TALLA: ${sizes.join(' · ') || 'POR DEFINIR'}`, detailX, 76);
+    if (product.video_url) {
+      doc.setTextColor(27, 35, 51);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text('VER VIDEO', detailX, 89);
+    }
+    if (options.priceMode !== 'blank') {
+      const customPrice = getLookbookPrice(product, 'custom', options.customPrices);
+      const wholesalePrice = getLookbookPrice(product, 'wholesale');
+      const ecommercePrice = getLookbookPrice(product, 'ecommerce');
+      doc.setTextColor(110, 116, 130);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      if (options.priceMode === 'custom') {
+        doc.text('PRECIO PARA TUS CLIENTES:', detailX, 111);
+        doc.setTextColor(27, 35, 51);
+        doc.setFontSize(17);
+        doc.text(customPrice || 'EDITABLE', detailX, 124);
+      } else if (options.priceMode === 'wholesale') {
+        doc.text('COMPRA EN:', detailX, 111);
+        doc.setTextColor(27, 35, 51);
+        doc.setFontSize(17);
+        doc.text(wholesalePrice, detailX, 124);
+      } else {
+        doc.text('COMPRA EN:', detailX, 105);
+        doc.setTextColor(27, 35, 51);
+        doc.setFontSize(17);
+        doc.text(wholesalePrice, detailX, 117);
+        doc.setTextColor(110, 116, 130);
+        doc.setFontSize(7);
+        doc.text('PRECIO SUGERIDO EN:', detailX, 130);
+        doc.setTextColor(27, 35, 51);
+        doc.setFontSize(17);
+        doc.text(ecommercePrice, detailX, 142);
+      }
+    }
+    doc.setFillColor(27, 35, 51);
+    doc.rect(detailX, 146, detailWidth, 4, 'F');
+    if (logo) {
+      try { doc.addImage(logo, 'JPEG', pageWidth - 32, 130, 20, 15); } catch (_) {}
+    }
+    drawFooter(doc, page, totalPages, pageWidth);
   }
 
   return {
