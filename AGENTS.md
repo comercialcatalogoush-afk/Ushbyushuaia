@@ -6,6 +6,13 @@
 - Todos los comentarios de código en **español**.
 - Si haces cambios relevantes, actualiza **MEMORIA.md** al final del turno.
 
+## Regla interna e inviolable (SIEMPRE en `principal`)
+- **TODO** desarrollo y **TODO** deploy se hace SIEMPRE en la rama `principal`. Nunca crear,
+  cambiar ni publicar en otra rama.
+- Cualquier commit, push o deploy a Vercel usa únicamente `principal`.
+- No usar `target: 'preview'` ni aliases de preview para el sitio principal: el deploy
+  de producción (`ushbyushuaia.vercel.app`) se genera siempre desde `principal`.
+
 ## Regla obligatoria antes de cada cambio
 Antes de modificar cualquier archivo:
 
