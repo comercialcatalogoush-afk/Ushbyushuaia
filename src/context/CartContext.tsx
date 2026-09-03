@@ -91,6 +91,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
     }
+    // Precio unitario escalado (escala de unidades proyectada tras agregar)
+    // para el evento de analítica: refleja lo que el cliente pagará realmente.
+    const projectedUnits = totalUnits + quantity;
+    const suggestedUnit = getSuggestedPrice(product);
+    const wholesaleUnit = product.price || Math.round(suggestedUnit * WHOLESALE_FALLBACK);
+    const scaledUnitPrice = getUnitPrice(suggestedUnit, wholesaleUnit, projectedUnits);
+
     setItems((prev) => {
       // Exact match → just increment quantity
       const existingIdx = prev.findIndex(
@@ -132,8 +139,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsCartOpen(true);
     gtagEvent('add_to_cart', {
       currency: 'COP',
-      value: (product.price || 0) * quantity,
-      items: [{ item_id: product.reference || product.slug, item_name: product.name, quantity, price: product.price || 0 }],
+      value: scaledUnitPrice * quantity,
+      items: [{ item_id: product.reference || product.slug, item_name: product.name, quantity, price: scaledUnitPrice }],
     });
   };
 
