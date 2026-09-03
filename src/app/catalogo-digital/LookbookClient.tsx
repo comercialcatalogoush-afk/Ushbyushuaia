@@ -233,7 +233,7 @@ export function LookbookClient() {
         <div className="bg-white border border-neutral-200 shadow-sm p-8 text-center max-w-md">
           <h1 className="text-xl font-black uppercase text-[#1b2333]">Catálogo digital privado</h1>
           <p className="text-sm text-neutral-500 mt-2">Disponible únicamente para clientes registrados y el administrador.</p>
-          <Link href="/profile" className="inline-flex items-center gap-2 mt-6 bg-[#1b2333] text-white px-5 py-3 text-xs font-bold uppercase tracking-widest">
+          <Link href="/profile?returnTo=%2Fcatalogo-digital" className="inline-flex items-center gap-2 mt-6 bg-[#1b2333] text-white px-5 py-3 text-xs font-bold uppercase tracking-widest">
             Iniciar sesión
           </Link>
         </div>
@@ -311,12 +311,14 @@ export function LookbookClient() {
                   </button>
                 </>
               )}
-              <Link
-                href="/catalogo"
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
-              >
-                <ExternalLink size={14} /> Ir al catálogo en línea
-              </Link>
+              {!isAdmin && (
+                <Link
+                  href="/catalogo"
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
+                >
+                  <ExternalLink size={14} /> Ir al catálogo en línea
+                </Link>
+              )}
             </div>
             {downloadMessage && (
               <p className="text-[11px] text-emerald-200 mt-3">{downloadMessage}</p>

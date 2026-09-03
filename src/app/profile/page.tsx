@@ -12,6 +12,13 @@ import { Product } from '@/types';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 
+function getAuthRedirectUrl(path: string) {
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, '');
+  const isLocal = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  const baseUrl = isLocal ? window.location.origin : (configuredSiteUrl || window.location.origin);
+  return `${baseUrl}${path}`;
+}
+
 function friendlyAuthError(err: any): string {
   if (!err?.message) return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
   const m = err.message.toLowerCase();
@@ -238,7 +245,7 @@ export default function ProfilePage() {
       }).catch(() => {});
 
       const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/profile`,
+        redirectTo: getAuthRedirectUrl('/profile'),
       });
 
       if (err) {
@@ -274,7 +281,7 @@ export default function ProfilePage() {
     setError(''); setSuccess('');
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/profile` },
+      options: { redirectTo: getAuthRedirectUrl(`/profile?returnTo=${encodeURIComponent(returnTo)}`) },
     });
     if (err) setError(friendlyAuthError(err));
   };
