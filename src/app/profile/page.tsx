@@ -11,11 +11,12 @@ import { LookbookConfig } from '@/lib/lookbookPdf';
 import { Product } from '@/types';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
+const CANONICAL_SITE_URL = 'https://ushbyushuaia.vercel.app';
 
 function getAuthRedirectUrl(path: string) {
-  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, '');
   const isLocal = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
-  const baseUrl = isLocal ? window.location.origin : (configuredSiteUrl || window.location.origin);
+  // Producción siempre retorna al dominio canónico, aunque el usuario haya abierto un alias antiguo.
+  const baseUrl = isLocal ? window.location.origin : CANONICAL_SITE_URL;
   return `${baseUrl}${path}`;
 }
 
