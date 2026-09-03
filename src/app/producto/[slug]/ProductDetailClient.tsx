@@ -304,7 +304,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               {/* Dual Price Display */}
               <div className="mt-4 p-4 bg-neutral-50 border border-gray-200 space-y-2">
                 <div className="flex items-baseline justify-between text-xs">
-                  <span className="font-bold text-neutral-700 uppercase">P. Al Detal:</span>
+                  <span className="font-bold text-neutral-700 uppercase">Precio al detal:</span>
                   <span className="font-extrabold text-neutral-900">{formatCOP(suggestedPrice)}</span>
                 </div>
 

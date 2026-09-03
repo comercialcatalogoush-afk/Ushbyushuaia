@@ -129,7 +129,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             );
           })()}
           <div className="mt-2 pt-2 border-t border-gray-100 flex items-baseline justify-between gap-1">
-            <span className="text-[9px] font-extrabold text-ush-pink uppercase">P. Mayorista:</span>
+            <span className="text-[9px] font-extrabold text-ush-pink uppercase">Precio mayorista:</span>
             <span className="text-sm font-black text-neutral-900">{formatCOP(wholesalePrice)}</span>
           </div>
         </div>
@@ -241,7 +241,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
           {/* Price Display Block */}
           <div className="mt-2.5 bg-neutral-50 p-2.5 border border-gray-100 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-neutral-600 font-bold uppercase">P. Al Detal:</span>
+              <span className="text-[11px] text-neutral-600 font-bold uppercase">Precio al detal:</span>
               <span className="text-xs text-neutral-800 font-extrabold whitespace-nowrap">
                 {formatCOP(suggestedPrice)}
               </span>
