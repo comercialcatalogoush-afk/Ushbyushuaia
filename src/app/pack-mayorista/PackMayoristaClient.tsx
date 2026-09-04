@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Truck, Sparkles, CheckCircle2, ArrowRight, RotateCcw,
-  MessageCircle, Grid, SlidersHorizontal, Copy, Check,
+  MessageCircle, Grid, SlidersHorizontal,
   ExternalLink, TrendingUp, Coins, Flame, Zap, ShoppingBag,
   ChevronLeft, ChevronRight, Ruler, AlertCircle
 } from 'lucide-react';
@@ -199,7 +199,6 @@ export const PackMayoristaClient: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
   const [simulatedPrice, setSimulatedPrice] = useState<number>(115000);
-  const [isCopiedFollowUp, setIsCopiedFollowUp] = useState<boolean>(false);
   const [addedToCartSuccess, setAddedToCartSuccess] = useState<boolean>(false);
 
   // Autoplay timers
@@ -361,25 +360,6 @@ export const PackMayoristaClient: React.FC = () => {
     setTimeout(() => setAddedToCartSuccess(false), 5000);
   };
 
-  // Texto sugerido para enviar por WhatsApp a clientes que no han respondido
-  const followUpMessageText = `¡Hola! 👋 Te escribo de *USH BY USHUAIA*. Notamos que tenías interés en surtir tu boutique o iniciar tu propio negocio de jeans.
-
-Preparamos para ti el *Pack Mayorista Oficial de 12 Prendas* (las siluetas más vendidas de Wide Leg, Skinny, Straight, Shorts y Faldas) con:
-🚚 *Envío 100% GRATIS* a cualquier ciudad de Colombia.
-💰 *Inversión de solo $813.996 COP* (margen de ganancia de hasta $560.000+).
-🔄 Si no te convence alguna prenda, ¡te permitimos cambiarla por otra!
-
-Mira las 12 prendas con fotos reales y filtra por tus tallas aquí:
-👉 https://ushbyushuaia.vercel.app/pack-mayorista
-
-¿Te gustaría que te apartemos tu curva hoy para despacho prioritario? Quedo a tu disposición 🙌`;
-
-  const handleCopyFollowUp = () => {
-    navigator.clipboard.writeText(followUpMessageText);
-    setIsCopiedFollowUp(true);
-    setTimeout(() => setIsCopiedFollowUp(false), 3500);
-  };
-
   // Contadores de prendas por talla
   const sizeCounts = useMemo(() => {
     const counts: { [sz: string]: number } = { all: INITIAL_PACK.length };
@@ -428,53 +408,135 @@ Mira las 12 prendas con fotos reales y filtra por tus tallas aquí:
         </span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
 
-        {/* ── HERO PRINCIPAL: INICIA TU PROPIO NEGOCIO ── */}
-        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-50 border border-rose-200 text-[#c06579] text-xs font-black uppercase tracking-widest mb-3">
-            <Sparkles size={13} className="text-[#d88193]" />
+        {/* ── HERO COMPACTO: PACK OFICIAL 12 PRENDAS ── */}
+        <div className="text-center max-w-3xl mx-auto mb-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[#c06579] text-[11px] font-black uppercase tracking-widest mb-2">
+            <Sparkles size={12} className="text-[#d88193]" />
             <span>Oportunidad Mayorista B2B</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black uppercase text-[#1b2333] tracking-tight leading-tight">
-            Inicia tu Propio Negocio con el <br />
-            <span className="text-[#d88193]">Pack Oficial de 12 Prendas</span>
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-black uppercase text-[#1b2333] tracking-tight leading-tight">
+            Pack Mayorista Oficial de 12 Prendas
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl mx-auto">
-            Selección curada con nuestras siluetas de mayor venta en jeans, shorts y faldas de mezclilla colombiana prémium. Margen de ganancia superior y <strong>flete 100% bonificado</strong> en tu primer pedido.
+          <p className="mt-1.5 text-xs sm:text-sm text-neutral-600 leading-relaxed max-w-xl mx-auto">
+            Las 12 siluetas de mayor venta en jeans, shorts y faldas de mezclilla colombiana. Margen directo superior y <strong>envío 100% gratis</strong> a toda Colombia.
           </p>
+        </div>
 
-          {/* 3 Pilares Resumidos */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-6 text-left">
-            <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-xs hover:border-[#d88193] transition group">
-              <div className="w-9 h-9 rounded-lg bg-rose-50 text-[#d88193] flex items-center justify-center font-bold text-lg mb-2.5 group-hover:scale-110 transition">
-                <Coins size={20} />
+        {/* ── SECCIÓN DE MARGEN DE GANANCIA Y SIMULADOR ARRIBA (COMPACTO Y DESTACADO) ── */}
+        <div className="bg-white border border-rose-200 rounded-2xl p-4 sm:p-6 mb-6 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6 items-center">
+
+            {/* Columna Resumen Métricas */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider">
+                  <Truck size={12} /> Envío 100% Bonificado
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-[#c06579] text-[10px] font-black uppercase tracking-wider">
+                  <TrendingUp size={12} /> Inversión Cerrada
+                </span>
               </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1b2333]">Inversión Cerrada</h3>
+
+              <h2 className="text-lg sm:text-xl font-black uppercase text-[#1b2333] leading-tight">
+                Margen de Ganancia para tu Negocio
+              </h2>
               <p className="text-xs text-neutral-600 mt-1 leading-snug">
-                <strong className="text-[#d88193]">{formatCOP(totalWholesale)} COP</strong> por 12 prendas surtidas (promedio {formatCOP(totalWholesale / 12)}/ud).
+                Precio mayorista garantizado en las 12 prendas. Eres libre de definir tu precio de reventa para maximizar tu rentabilidad.
               </p>
+
+              {/* Grid 4 métricas compactas */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-neutral-100 text-center">
+                <div className="bg-neutral-50 rounded-lg p-2 border border-neutral-200">
+                  <span className="text-[10px] font-bold text-neutral-500 block uppercase leading-none">Prendas</span>
+                  <span className="text-xs sm:text-sm font-black text-neutral-800 mt-1 block">12 Surtidas</span>
+                </div>
+                <div className="bg-neutral-50 rounded-lg p-2 border border-neutral-200">
+                  <span className="text-[10px] font-bold text-neutral-500 block uppercase leading-none">Flete Nacional</span>
+                  <span className="text-xs sm:text-sm font-black text-emerald-700 mt-1 block">100% GRATIS</span>
+                </div>
+                <div className="bg-neutral-50 rounded-lg p-2 border border-neutral-200">
+                  <span className="text-[10px] font-bold text-neutral-500 block uppercase leading-none">Valor Detal Base</span>
+                  <span className="text-xs sm:text-sm font-black text-neutral-700 mt-1 block line-through">{formatCOP(totalRegular)}</span>
+                </div>
+                <div className="bg-rose-50 rounded-lg p-2 border border-rose-200">
+                  <span className="text-[10px] font-black text-[#c06579] block uppercase leading-none">Tu Inversión</span>
+                  <span className="text-xs sm:text-sm font-black text-[#c06579] mt-1 block">{formatCOP(totalWholesale)}</span>
+                </div>
+              </div>
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-xs hover:border-emerald-300 transition group">
-              <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg mb-2.5 group-hover:scale-110 transition">
-                <Truck size={20} />
+            {/* Columna Simulador y Botones */}
+            <div className="bg-[#faf8f8] border border-neutral-200 rounded-xl p-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-neutral-700">
+                    Tu precio estimado de reventa por prenda:
+                  </label>
+                  <span className="font-black text-xs sm:text-sm text-[#c06579] bg-white border border-rose-200 px-2.5 py-0.5 rounded-md shadow-2xs">
+                    {formatCOP(simulatedPrice)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="range"
+                    min="95000"
+                    max="180000"
+                    step="5000"
+                    value={simulatedPrice}
+                    onChange={(e) => setSimulatedPrice(Number(e.target.value))}
+                    className="flex-1 accent-[#d88193] cursor-pointer"
+                  />
+                </div>
+
+                {/* Caja de Ganancia Neta */}
+                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-center flex items-center justify-between px-3.5">
+                  <div className="text-left">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block leading-none">
+                      Ganancia Neta Estimada:
+                    </span>
+                    <span className="text-[10px] text-emerald-700 font-bold mt-0.5 block">
+                      Retorno proyectado del {roiPercentage}%
+                    </span>
+                  </div>
+                  <div className="text-lg sm:text-xl font-black text-emerald-700">
+                    +{formatCOP(simulatedProfit)} COP
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1b2333]">Flete 100% Gratis</h3>
-              <p className="text-xs text-neutral-600 mt-1 leading-snug">
-                Alcanzas la escala mayorista de inmediato con cobertura nacional bonificada a tu puerta.
-              </p>
+
+              {/* Botones de Acción Directos */}
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <a
+                  href={buildOrderPackWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#1eb855] text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 btn-green-pulse shadow-md"
+                >
+                  <MessageCircle size={15} />
+                  <span>Pedir por WhatsApp</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleAddAllToCart}
+                  className="py-2.5 px-3 rounded-xl bg-[#1b2333] hover:bg-neutral-800 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition"
+                >
+                  <ShoppingBag size={15} />
+                  <span>{addedToCartSuccess ? '✓ 12 en Carrito' : 'Llevar 12 al Carrito'}</span>
+                </button>
+              </div>
+
+              {addedToCartSuccess && (
+                <div className="mt-2 p-2 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="shrink-0 text-emerald-700" />
+                  <span>¡12 prendas agregadas al carrito! Bolsa lista para tramitar.</span>
+                </div>
+              )}
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-xs hover:border-[#d88193] transition group">
-              <div className="w-9 h-9 rounded-lg bg-rose-50 text-[#d88193] flex items-center justify-center font-bold text-lg mb-2.5 group-hover:scale-110 transition">
-                <TrendingUp size={20} />
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1b2333]">Margen Libre</h3>
-              <p className="text-xs text-neutral-600 mt-1 leading-snug">
-                Ganas entre <strong>+$476.000 y +$566.000 COP</strong> vendiendo al valor regular de boutique.
-              </p>
-            </div>
           </div>
         </div>
 
@@ -856,186 +918,6 @@ Mira las 12 prendas con fotos reales y filtra por tus tallas aquí:
             </div>
           </div>
         )}
-
-        {/* ── BOTONES DE ACCIÓN PRINCIPALES DEL PACK DE 12 ── */}
-        <div className="bg-white border border-rose-200 rounded-2xl p-6 mb-12 shadow-md">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black uppercase mb-2">
-                <Truck size={13} />
-                <span>Envío 100% Bonificado a toda Colombia</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black uppercase text-[#1b2333]">
-                ¿Listo para tu primer pedido mayorista?
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-600 mt-1 max-w-xl">
-                Recibe 12 prendas oficiales surtidas con curva de tallas a tu elección. Despacho garantizado por transportadora certificada y factura comercial.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
-              <a
-                href={buildOrderPackWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-6 py-4 rounded-full bg-[#25D366] hover:bg-[#1eb855] text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 btn-green-pulse shadow-lg"
-              >
-                <MessageCircle size={18} />
-                <span>Pedir Pack por WhatsApp en 1 Clic</span>
-              </a>
-
-              <button
-                type="button"
-                onClick={handleAddAllToCart}
-                className="w-full sm:w-auto px-5 py-4 rounded-full bg-[#1b2333] hover:bg-neutral-800 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition"
-              >
-                <ShoppingBag size={16} />
-                <span>{addedToCartSuccess ? '✓ 12 en el Carrito' : 'Llevar las 12 al Carrito Web'}</span>
-              </button>
-            </div>
-          </div>
-
-          {addedToCartSuccess && (
-            <div className="mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
-              <span>¡Las 12 prendas fueron agregadas a tu carrito web! Puedes ver tu bolsa o tramitar el pedido en línea.</span>
-            </div>
-          )}
-        </div>
-
-        {/* ── ESTIMADOR DE RENTABILIDAD Y SIMULADOR DE GANANCIAS LIBRE ── */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 mb-12 shadow-sm">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8">
-
-            {/* Columna Explicación */}
-            <div>
-              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-50 text-[#c06579] text-xs font-black uppercase tracking-wider mb-2">
-                <TrendingUp size={13} />
-                <span>Simulador Financiero Mayorista</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black uppercase text-[#1b2333]">
-                Margen de Ganancia para tu Negocio
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm text-neutral-600 leading-relaxed">
-                El margen base está calculado sobre el valor regular de las prendas en nuestra página sin descuento, pero como mayorista <strong>eres 100% libre de fijar tus propios precios</strong> en tu tienda o redes sociales para multiplicar tus ganancias.
-              </p>
-
-              <div className="mt-4 p-3.5 rounded-xl bg-rose-50/50 border border-rose-100 text-xs text-neutral-700 leading-relaxed">
-                💡 <strong>Tú fijas tu propio precio de venta:</strong> Según tu ubicación, clientela y boutique, muchos mayoristas comercializan estas prendas entre $110.000 y $140.000 COP obteniendo retornos superiores al 65%.
-              </div>
-
-              <div className="mt-5 space-y-2.5 text-xs sm:text-sm">
-                <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                  <span className="text-neutral-500">Cantidad de prendas:</span>
-                  <strong className="text-neutral-900 font-bold">12 Unidades (Mix Variado)</strong>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                  <span className="text-neutral-500">Flete a toda Colombia:</span>
-                  <strong className="text-emerald-700 font-black">100% GRATIS</strong>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-neutral-100">
-                  <span className="text-neutral-500">Valor base en tienda sin descuento:</span>
-                  <strong className="text-neutral-900 font-bold">{formatCOP(totalRegular)} COP</strong>
-                </div>
-                <div className="flex justify-between pt-2 text-base font-black text-[#1b2333]">
-                  <span>Tu Inversión Mayorista (12 Uds):</span>
-                  <span className="text-xl text-[#c06579]">{formatCOP(totalWholesale)} COP</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Columna Simulador Interactivo */}
-            <div className="bg-[#faf8f8] border border-neutral-200 rounded-xl p-5 sm:p-6 flex flex-col justify-between">
-              <div>
-                <label className="text-xs font-black uppercase tracking-wider text-neutral-700 block mb-2">
-                  Simula tu precio promedio de venta al detal:
-                </label>
-
-                <div className="flex items-center gap-3 mb-2">
-                  <input
-                    type="range"
-                    min="95000"
-                    max="180000"
-                    step="5000"
-                    value={simulatedPrice}
-                    onChange={(e) => setSimulatedPrice(Number(e.target.value))}
-                    className="flex-1 accent-[#d88193] cursor-pointer"
-                  />
-                  <span className="font-black text-sm sm:text-base text-[#c06579] bg-white border border-rose-200 px-3 py-1.5 rounded-lg shadow-2xs min-w-[100px] text-center">
-                    {formatCOP(simulatedPrice)}
-                  </span>
-                </div>
-                <p className="text-[11px] text-neutral-500">
-                  Mueve la barra para calcular tus ingresos según tus precios de reventa.
-                </p>
-
-                {/* Caja de Utilidad Neta */}
-                <div className="mt-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-                  <div className="flex items-center justify-center gap-1 text-[11px] font-black uppercase tracking-wider text-emerald-800 mb-1">
-                    <Zap size={13} />
-                    <span>Tu Ganancia Proyectada Neta:</span>
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-700">
-                    +{formatCOP(simulatedProfit)} COP
-                  </div>
-                  <div className="mt-1 text-[11px] font-bold text-emerald-800">
-                    Recuperas tus {formatCOP(totalWholesale)} y recibes {formatCOP(totalSimulatedRevenue)} COP ({roiPercentage}% de Retorno)
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href={buildOrderPackWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 w-full py-3.5 rounded-full bg-[#25D366] hover:bg-[#1eb855] text-white font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 btn-green-pulse shadow-md text-center"
-              >
-                <MessageCircle size={17} />
-                <span>Pedir este Pack con mi Ganancia Proyectada</span>
-              </a>
-            </div>
-
-          </div>
-        </div>
-
-        {/* ── SECCIÓN DE COPIADO RÁPIDO PARA SEGUIMIENTO POR WHATSAPP ── */}
-        <div className="bg-[#1b2333] text-white rounded-2xl p-6 sm:p-8 shadow-xl">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 pb-4 border-b border-neutral-700">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-xs font-black uppercase mb-1">
-                <span>Herramienta para tu Equipo Comercial</span>
-              </div>
-              <h3 className="text-lg sm:text-xl font-black uppercase">
-                Mensaje de Seguimiento para Clientes que No Han Respondido
-              </h3>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Copia este mensaje listo y envíalo por WhatsApp a tus prospectos mayoristas:
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCopyFollowUp}
-              className="px-5 py-2.5 rounded-lg bg-[#d88193] hover:bg-[#c06579] text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 transition shrink-0 shadow-md"
-            >
-              {isCopiedFollowUp ? (
-                <>
-                  <Check size={16} />
-                  <span>¡Mensaje Copiado!</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={16} />
-                  <span>Copiar Mensaje para WhatsApp</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="bg-neutral-900/90 border border-neutral-700 rounded-xl p-4 text-xs sm:text-sm text-neutral-300 font-mono leading-relaxed whitespace-pre-wrap select-all">
-            {followUpMessageText}
-          </div>
-        </div>
 
       </div>
     </div>

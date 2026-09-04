@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, X, ChevronLeft, ChevronRight, ZoomOut, BellRing } from 'lucide-react';
@@ -68,6 +68,32 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   const suggestedPrice = getSuggestedPrice(currentProduct);
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
+
+  // ── LUPA ESTILO GEF (HOVER LENS INTERACTIVO) ──
+  const [isHoverLens, setIsHoverLens] = useState(false);
+  const [lensPos, setLensPos] = useState({ x: 0, y: 0, percentX: 0, percentY: 0 });
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMoveLens = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imageContainerRef.current) return;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const lensW = 140;
+    const lensH = 175; // Proporción 3:4
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    let x = mouseX - lensW / 2;
+    let y = mouseY - lensH / 2;
+
+    x = Math.max(0, Math.min(x, rect.width - lensW));
+    y = Math.max(0, Math.min(y, rect.height - lensH));
+
+    const percentX = (x / Math.max(1, rect.width - lensW)) * 100;
+    const percentY = (y / Math.max(1, rect.height - lensH)) * 100;
+
+    setLensPos({ x, y, percentX, percentY });
+  };
 
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
@@ -227,18 +253,24 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 </div>
               )}
 
-              {/* Main Preview Image */}
+              {/* Main Preview Image con Lupa Hover Lens estilo GEF */}
               <div
-                  className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 overflow-hidden shadow-md min-w-0 mx-auto cursor-zoom-in group"
-                  onClick={() => {
-                    const idx = Math.max(0, currentProduct.images.findIndex((i) => i === selectedImage));
-                    setZoomIndex(idx);
-                    setZoomScale(1);
-                    setZoomPan({ x: 0, y: 0 });
-                    setZoomOpen(true);
-                  }}
-                >
-{currentProduct.ribbon && (
+                ref={imageContainerRef}
+                className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 shadow-md min-w-0 mx-auto cursor-crosshair group select-none"
+                onMouseEnter={() => setIsHoverLens(true)}
+                onMouseLeave={() => setIsHoverLens(false)}
+                onMouseMove={handleMouseMoveLens}
+                onClick={() => {
+                  const idx = Math.max(0, currentProduct.images.findIndex((i) => i === selectedImage));
+                  setZoomIndex(idx);
+                  setZoomScale(1);
+                  setZoomPan({ x: 0, y: 0 });
+                  setZoomOpen(true);
+                }}
+              >
+                {/* Contenedor con overflow-hidden para la imagen y el recuadro selector */}
+                <div className="relative w-full h-full overflow-hidden">
+                  {currentProduct.ribbon && (
                     <span className="absolute top-4 left-4 z-10 text-xs font-black uppercase tracking-widest px-3.5 py-1 bg-ush-pink text-white shadow-md pointer-events-none">
                       {currentProduct.ribbon}
                     </span>
@@ -252,12 +284,44 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     unoptimized={selectedImage.startsWith('http://') || selectedImage.startsWith('https://')}
                     quality={100}
                     sizes="(max-width: 1024px) 90vw, 40vw"
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover object-center pointer-events-none"
                   />
-                  <span className="absolute bottom-3 right-3 z-10 w-10 h-10 bg-white/90 hover:bg-white text-ush-navy shadow-md border border-gray-200 flex items-center justify-center pointer-events-none">
-                    <ZoomIn size={18} />
+
+                  {/* Recuadro Selector Lens idéntico a GEF */}
+                  {isHoverLens && (
+                    <div
+                      className="hidden lg:block absolute pointer-events-none border border-neutral-600/70 bg-white/20 backdrop-brightness-95 shadow-xs z-20"
+                      style={{
+                        width: '140px',
+                        height: '175px',
+                        left: `${lensPos.x}px`,
+                        top: `${lensPos.y}px`,
+                      }}
+                    />
+                  )}
+
+                  <span className="absolute bottom-3 right-3 z-10 w-9 h-9 bg-white/90 text-ush-navy shadow-md border border-gray-200 flex items-center justify-center pointer-events-none rounded-md">
+                    <ZoomIn size={16} />
                   </span>
                 </div>
+
+                {/* Ventana de Zoom Contigua estilo GEF (flotante contigua de alta fidelidad) */}
+                {isHoverLens && (
+                  <div
+                    className="hidden lg:block absolute top-0 left-[calc(100%+20px)] w-[480px] h-[580px] bg-white border border-gray-300 shadow-2xl rounded-xl overflow-hidden z-50 pointer-events-none"
+                    style={{
+                      backgroundImage: `url(${selectedImage})`,
+                      backgroundPosition: `${lensPos.percentX}% ${lensPos.percentY}%`,
+                      backgroundSize: '280%',
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  >
+                    <div className="absolute top-3 left-3 bg-neutral-900/80 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1.5">
+                      <span>🔍 Detalle de Tela 2.8x</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Promotional Video Player if available */}
