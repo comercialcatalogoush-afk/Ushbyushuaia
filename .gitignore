@@ -33,3 +33,4 @@ next-env.d.ts
 CATALOGO_LOOKBOOK_EDITORIAL_2026.html
 *.pdf
 MEMORIA.md
+.token-optimizer/

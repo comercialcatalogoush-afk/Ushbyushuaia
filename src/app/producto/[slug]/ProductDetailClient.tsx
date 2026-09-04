@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, Share2, MessageCircle, ZoomIn, X, ChevronLeft, ChevronRight, ZoomOut, Copy, BellRing } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, X, ChevronLeft, ChevronRight, ZoomOut, BellRing } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -69,9 +69,6 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const suggestedPrice = getSuggestedPrice(currentProduct);
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
 
-  // Compartir por WhatsApp (precio editable por el cliente)
-  const [shareOpen, setShareOpen] = useState(false);
-  const [sharePrice, setSharePrice] = useState<number>(suggestedPrice);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [zoomPan, setZoomPan] = useState({ x: 0, y: 0 });
@@ -460,16 +457,8 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </div>
             </div>
 
-            {/* Add to Cart CTA */}
-            <div className="pt-4 space-y-3">
-              <button
-                type="button"
-                onClick={handleWatchAvailability}
-                disabled={watchLoading}
-                className={`w-full border py-3 px-4 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${watchSaved ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-[#d88193]/50 text-ush-pink hover:bg-[#fff5f7]'}`}
-              >
-                <BellRing size={16} /> {watchLoading ? 'Guardando...' : watchSaved ? 'Alerta guardada' : 'Avisarme de esta talla y color'}
-              </button>
+            {/* Add to Cart CTA - El botón principal más grande */}
+            <div className="pt-4 space-y-2.5">
               <button
                 onClick={handleAddToCart}
                 disabled={selectedSizeSoldOut || !anySizeAvailable}
@@ -494,14 +483,44 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 )}
               </button>
 
-              {/* Compartir por WhatsApp */}
-              <button
-                type="button"
-                onClick={() => { setSharePrice(suggestedPrice); setShareOpen(true); }}
-                className="w-full py-3 px-4 font-bold uppercase tracking-widest text-xs border border-[#d88193]/40 text-ush-pink hover:bg-ush-pinkLight flex items-center justify-center gap-2 transition-colors"
-              >
-                <Share2 size={15} /> Compartir
-              </button>
+              {/* Botones secundarios en fila compacta de 2 columnas: Consultar Asesor + Avisar stock */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ref = currentProduct.reference || currentProduct.name;
+                    const img = currentProduct.images && currentProduct.images[0] ? currentProduct.images[0] : '';
+                    let msg = `¡Hola USH BY USHUAIA! 👖✨\nMe interesa consultar disponibilidad mayorista de esta referencia:\n\n`;
+                    msg += `• *Referencia:* ${ref}\n`;
+                    msg += `• *Silueta:* ${currentProduct.fit || currentProduct.category || 'Jeans'}\n`;
+                    msg += `• *Talla de interés:* ${selectedSize}\n`;
+                    if (selectedColor) msg += `• *Color:* ${selectedColor}\n`;
+                    msg += `• *Cantidad:* ${quantity} unidades\n`;
+                    if (img) msg += `• *Foto:* ${img}\n`;
+                    msg += `\n¿Tienen disponibilidad en bodega de Itagüí para despacho inmediato? ¡Muchas gracias!`;
+                    const encoded = encodeURIComponent(msg);
+                    window.open(`https://wa.me/${whatsappNumber}?text=${encoded}`, '_blank');
+                  }}
+                  className="w-full py-2.5 px-2 font-bold uppercase tracking-wider text-[11px] border border-emerald-500/40 text-emerald-700 hover:bg-emerald-50 flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <MessageCircle size={14} className="text-emerald-600" />
+                  <span>Consultar Asesor</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleWatchAvailability}
+                  disabled={watchLoading}
+                  className={`w-full py-2.5 px-2 font-bold uppercase tracking-wider text-[11px] border flex items-center justify-center gap-1.5 transition-colors ${
+                    watchSaved
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                      : 'border-gray-300 text-neutral-600 hover:border-[#d88193] hover:text-[#d88193]'
+                  }`}
+                >
+                  <BellRing size={14} />
+                  <span>{watchLoading ? 'Guardando...' : watchSaved ? 'Guardado' : 'Avisar stock'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Guarantee Callouts */}
@@ -673,155 +692,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
       </div>
     )}
 
-    {/* ── Modal Compartir Referencia ── */}
-    {shareOpen && (() => {
-      const imageUrl = currentProduct.images[0] || '';
-      // El link siempre apunta al ecommerce público (precio ecommerce)
-      const retailUrl = `https://www.ushuaiajeans.com.co`;
-
-      const msg =
-        `👗 *${currentProduct.name}* (Ref. #${currentProduct.reference})\n` +
-        `💲 Precio: *${formatCOP(sharePrice)}*\n` +
-        `${selectedColor ? `🎨 Color: ${selectedColor}\n` : ''}` +
-        `${selectedSize ? `📏 Talla: ${selectedSize}\n` : ''}` +
-        `\n🔗 Ver prenda aquí: ${retailUrl}\n` +
-        (imageUrl ? `📸 Foto: ${imageUrl}\n` : '') +
-        `\n¿Te gusta? Escríbeme y te tomo el pedido.`;
-
-      const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
-
-      return (
-        <div
-          className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setShareOpen(false)}
-        >
-          <div
-            className="bg-white w-full max-w-lg shadow-2xl rounded-xl overflow-hidden animate-fadeIn border border-gray-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="p-5 bg-[#1b2333] text-white flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                <Share2 size={16} className="text-[#d88193]" /> Compartir Referencia con Clientes
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShareOpen(false)}
-                aria-label="Cerrar"
-                className="text-neutral-400 hover:text-white p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-
-              {/* Product preview */}
-              <div className="flex gap-3 items-center p-3 bg-neutral-50 rounded-lg border border-neutral-200">
-                <div className="w-14 h-16 relative bg-neutral-200 rounded overflow-hidden flex-shrink-0">
-                  {imageUrl && (
-                    <Image src={imageUrl} alt={currentProduct.name} fill unoptimized={imageUrl.startsWith('http://') || imageUrl.startsWith('https://')} sizes="64px" className="object-cover" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase text-[#d88193]">Ref. #{currentProduct.reference}</p>
-                  <p className="text-xs font-bold text-neutral-800 truncate">{currentProduct.name}</p>
-                  <p className="text-[10px] text-[#d88193] font-bold mt-0.5 truncate">→ ushuaiajeans.com.co</p>
-                </div>
-              </div>
-
-              {/* ⚠️ Aviso precio ecommerce */}
-              <div className="flex gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <span className="text-amber-500 text-base flex-shrink-0 mt-0.5">⚠️</span>
-                <div>
-                  <p className="text-[11px] font-black text-amber-800 uppercase tracking-wide mb-1">
-                    El enlace va a ushuaiajeans.com.co
-                  </p>
-                  <p className="text-[11px] text-amber-700 leading-relaxed">
-                    Tu cliente verá la prenda en <strong>ushuaiajeans.com.co</strong> con el{' '}
-                    <strong>precio de ecommerce de esa página</strong>.
-                    El precio que ingresas abajo solo aparece en tu mensaje de WhatsApp —
-                    es el precio que <strong>tú le cobras</strong> a tu cliente.
-                  </p>
-                </div>
-              </div>
-
-              {/* Precio que el mayorista muestra en su mensaje */}
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-1.5">
-                  Precio que le mostrarás a tu cliente (en el mensaje):
-                </label>
-                <div className="flex items-center border border-gray-300 focus-within:border-[#d88193] rounded-lg overflow-hidden bg-white">
-                  <span className="px-3 text-sm font-bold text-neutral-400">$</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={sharePrice}
-                    onChange={(e) => setSharePrice(Number(e.target.value) || 0)}
-                    className="w-full py-2.5 pr-3 text-base font-black text-neutral-900 focus:outline-none"
-                  />
-                </div>
-                <p className="text-[10px] text-neutral-400 mt-1">
-                  Pon el precio al que tú lo vendes. Solo aparece en el mensaje, no en el sitio.
-                </p>
-              </div>
-
-              {/* Vista previa del mensaje */}
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-1.5">
-                  Vista previa del mensaje:
-                </label>
-                <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg text-xs text-neutral-700 font-mono whitespace-pre-line leading-relaxed max-h-44 overflow-y-auto">
-                  {msg}
-                </div>
-              </div>
-
-              {/* Botones de acción */}
-              <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setShareOpen(false)}
-                  className="w-full py-3 bg-[#25D366] hover:bg-[#1fb959] text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 rounded-lg transition-colors shadow-sm"
-                >
-                  <MessageCircle size={16} /> Enviar por WhatsApp
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (navigator.clipboard) {
-                      navigator.clipboard.writeText(msg);
-                      alert('¡Mensaje copiado al portapapeles!');
-                    }
-                  }}
-                  className="w-full py-3 bg-[#1b2333] hover:bg-black text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 rounded-lg transition-colors shadow-sm"
-                >
-                  <Copy size={16} /> Copiar Mensaje
-                </button>
-              </div>
-
-              {/* Compartir nativo en móvil */}
-              {typeof navigator !== 'undefined' && 'share' in navigator && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await navigator.share({ title: currentProduct.name, text: msg, url: retailUrl });
-                      setShareOpen(false);
-                    } catch (_) {}
-                  }}
-                  className="w-full py-2.5 border border-neutral-200 hover:border-[#d88193] text-neutral-700 font-bold uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 rounded-lg transition-colors"
-                >
-                  <Share2 size={14} /> Compartir en otras apps (Instagram, Telegram...)
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    })()}
     </>
+
   );
 }

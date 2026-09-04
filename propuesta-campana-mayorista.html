@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inicia tu Propio Negocio — Pack Mayorista 12 Prendas | Ush By Ushuaia</title>
+  
+  <!-- Google Fonts: Avenir / Montserrat / Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ── PALETA OFICIAL DEL CATÁLOGO DIGITAL (ushbyushuaia.vercel.app) ── */
+    :root {
+      --ush-pink: #d88193;
+      --ush-pink-dark: #c06579;
+      --ush-pink-hover: #b5586c;
+      --ush-pink-light: #fdf3f5;
+      --ush-pink-soft: #f8e4e8;
+      --ush-navy: #1b2333;
+      --ush-navy-dark: #121824;
+      --ush-card: #ffffff;
+      --ush-accent: #d88193;
+      --ush-body-bg: #ffffff;
+      
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --border-light: #e2e8f0;
+      --border-pink: rgba(216, 129, 147, 0.35);
+      
+      --green-whatsapp: #25D366;
+      --green-badge: #10b981;
+      --green-light: #ecfdf5;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --radius-full: 9999px;
+      
+      --shadow-soft: 0 4px 20px -2px rgba(27, 35, 51, 0.06), 0 2px 6px -1px rgba(27, 35, 51, 0.04);
+      --shadow-card: 0 10px 30px -5px rgba(216, 129, 147, 0.15), 0 4px 12px -2px rgba(27, 35, 51, 0.05);
+      --shadow-pink: 0 8px 25px rgba(216, 129, 147, 0.35);
+      
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Montserrat', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--ush-body-bg);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Barra Superior Informativa (Estilo Ave María) */
+    .top-announcement {
+      background-color: var(--ush-navy);
+      color: #ffffff;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .pill-envio-gratis {
+      background: var(--green-badge);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.6px;
+    }
+
+    /* Cabecera / Navegación */
+    header.site-nav {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-light);
+      padding: 16px 0;
+      position: sticky;
+      top: 41px;
+      z-index: 90;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand-logo {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-logo h1 {
+      font-family: var(--font-heading);
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--ush-navy);
+      line-height: 1;
+    }
+
+    .brand-logo h1 span {
+      color: var(--ush-pink);
+    }
+
+    .brand-logo small {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-ws-top {
+      background: var(--green-whatsapp);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .btn-ws-top:hover {
+      background: #1eb855;
+      transform: translateY(-1px);
+    }
+
+    /* Banner Informativo Propuesta Interna */
+    .eval-banner {
+      background: var(--ush-pink-light);
+      border: 1px dashed var(--ush-pink);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      margin: 20px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 13.5px;
+      color: var(--ush-navy);
+    }
+
+    .eval-banner strong {
+      color: var(--ush-pink-dark);
+    }
+
+    /* HERO — Estilo Ave María "Inicia tu Propio Negocio" */
+    .hero-avemaria {
+      padding: 40px 0 20px;
+      text-align: center;
+    }
+
+    .hero-badge-tag {
+      display: inline-block;
+      background: var(--ush-pink-light);
+      color: var(--ush-pink-dark);
+      border: 1px solid var(--border-pink);
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title-main {
+      font-family: var(--font-heading);
+      font-size: clamp(30px, 4.2vw, 48px);
+      font-weight: 800;
+      color: var(--ush-navy);
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+
+    .hero-title-main span {
+      color: var(--ush-pink);
+    }
+
+    .hero-description-lead {
+      font-size: clamp(15px, 1.8vw, 17px);
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 30px;
+    }
+
+    /* 3 Pilares Resumidos (Estilo Ave María) */
+    .hero-pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+      max-width: 980px;
+      margin: 0 auto 40px;
+    }
+
+    .pillar-card {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-soft);
+      transition: all 0.2s ease;
+    }
+
+    .pillar-card:hover {
+      border-color: var(--ush-pink);
+      transform: translateY(-2px);
+    }
+
+    .pillar-icon {
+      font-size: 26px;
+      margin-bottom: 6px;
+    }
+
+    .pillar-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ush-navy);
+      margin-bottom: 4px;
+    }
+
+    .pillar-card p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* ── SECCIÓN CARRUSEL PROTAGONISTA ── */
+    .carousel-section {
+      padding: 10px 0 50px;
+    }
+
+    .carousel-container-box {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Barra de Progreso 5 Segundos */
+    .carousel-timer-progress {
+      width: 100%;
+      height: 4px;
+      background: rgba(226, 232, 240, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .carousel-timer-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--ush-pink);
+      transition: width 0.05s linear;
+    }
+
+    .carousel-stage-split {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      min-height: 540px;
+    }
+
+    @media (max-width: 860px) {
+      .carousel-stage-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Marco de Foto Grande */
+    .carousel-photo-frame {
+      background: #fdfbfb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 30px;
+      overflow: hidden;
+      border-right: 1px solid var(--border-light);
+    }
+
+    @media (max-width: 860px) {
+      .carousel-photo-frame {
+        border-right: none;
+        border-bottom: 1px solid var(--border-light);
+        min-height: 380px;
+      }
+    }
+
+    .carousel-photo-frame img {
+      max-width: 100%;
+      max-height: 470px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.08));
+      transition: transform 0.35s ease, opacity 0.25s ease;
+    }
+
+    .badge-ref-corner {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      background: var(--ush-navy);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .badge-free-shipping-corner {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: var(--green-badge);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-timer-indicator {
+      position: absolute;
+      bottom: 14px;
+      right: 18px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      color: var(--text-muted);
+      border: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Panel de Datos Concisos de la Prenda */
+    .carousel-info-panel {
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #ffffff;
+    }
+
+    @media (max-width: 600px) {
+      .carousel-info-panel {
+        padding: 24px;
+      }
+    }
+
+    .slide-counter-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ush-pink);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slide-counter-badge::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ush-pink);
+    }
+
+    .slide-product-title {
+      font-family: var(--font-heading);
+      font-size: clamp(24px, 2.8vw, 32px);
+      font-weight: 800;
+      color: var(--ush-navy);
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+
+    .slide-product-desc {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    /* Matriz de Precios Claro */
+    .pricing-card-box {
+      background: var(--ush-pink-light);
+      border: 1px solid var(--border-pink);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .pricing-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .pricing-row:last-child {
+      margin-bottom: 0;
+      border-top: 1px dashed rgba(216, 129, 147, 0.4);
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+
+    .price-label-small {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .price-value-regular {
+      font-size: 15px;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .price-value-mayorista {
+      font-family: var(--font-heading);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--ush-pink-dark);
+    }
+
+    .profit-potential-banner {
+      font-size: 12.5px;
+      color: var(--ush-navy);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .profit-potential-banner span.tag-green {
+      color: #047857;
+      background: #d1fae5;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    /* Acciones del Carrusel */
+    .carousel-action-btns {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Botón Cambiar Prenda -> Redirección WhatsApp Directa */
+    .btn-swap-to-whatsapp {
+      flex: 1.1;
+      background: #ffffff;
+      border: 1.5px solid var(--ush-pink);
+      color: var(--ush-pink-dark);
+      padding: 13px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-swap-to-whatsapp:hover {
+      background: var(--ush-pink-light);
+      border-color: var(--ush-pink-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(216, 129, 147, 0.25);
+    }
+
+    /* Botón Pedir Pack Completo */
+    .btn-order-pack-active {
+      flex: 1.3;
+      background: var(--ush-pink);
+      color: #ffffff;
+      padding: 13px 20px;
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: var(--shadow-pink);
+      transition: all 0.2s ease;
+    }
+
+    .btn-order-pack-active:hover {
+      background: var(--ush-pink-dark);
+      transform: translateY(-2px);
+    }
+
+    .swap-note-help {
+      display: block;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    .swap-note-help strong {
+      color: var(--ush-navy);
+    }
+
+    /* Navegación y Miniaturas */
+    .carousel-bottom-strip {
+      background: #fafafa;
+      border-top: 1px solid var(--border-light);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .carousel-arrows {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      color: var(--ush-navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+
+    .btn-arrow:hover {
+      background: var(--ush-pink);
+      color: #ffffff;
+      border-color: var(--ush-pink);
+    }
+
+    .thumbnails-scroller {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--ush-pink) transparent;
+      padding: 4px 0;
+      flex: 1;
+    }
+
+    .thumb-btn {
+      flex: 0 0 65px;
+      height: 76px;
+      background: #ffffff;
+      border: 2px solid transparent;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .thumb-btn img {
+      width: 100%;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .thumb-btn span {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .thumb-btn:hover {
+      border-color: var(--ush-pink);
+    }
+
+    .thumb-btn.active {
+      border-color: var(--ush-pink);
+      background: var(--ush-pink-light);
+      box-shadow: 0 0 8px rgba(216, 129, 147, 0.4);
+    }
+
+    .thumb-btn.active span {
+      color: var(--ush-pink-dark);
+    }
+
+    /* ── SECCIÓN DE RENTABILIDAD & ESTIMADOR DE GANANCIAS ── */
+    .profit-estimator-section {
+      padding: 40px 0 60px;
+      background: #fdfbfb;
+      border-top: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .estimator-card {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      box-shadow: var(--shadow-soft);
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 36px;
+    }
+
+    @media (max-width: 860px) {
+      .estimator-card {
+        grid-template-columns: 1fr;
+        padding: 24px;
+        gap: 24px;
+      }
+    }
+
+    .estimator-left h3 {
+      font-family: var(--font-heading);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--ush-navy);
+      margin-bottom: 10px;
+    }
+
+    .estimator-left p {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    .profit-explainer-box {
+      background: var(--ush-pink-light);
+      border-left: 4px solid var(--ush-pink);
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--ush-navy);
+      margin-bottom: 20px;
+    }
+
+    .calc-row-detail {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 14px;
+    }
+
+    .calc-row-detail.total {
+      border-top: 2px solid var(--ush-pink);
+      border-bottom: none;
+      padding-top: 14px;
+      margin-top: 8px;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--ush-navy);
+    }
+
+    .calc-row-detail.total span:last-child {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      color: var(--ush-pink-dark);
+    }
+
+    /* Columna Derecha con Simulador de Precio */
+    .estimator-right {
+      background: #fafafa;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-align: center;
+    }
+
+    .simulator-box {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .simulator-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .simulator-slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .simulator-slider-wrap input[type=range] {
+      flex: 1;
+      accent-color: var(--ush-pink);
+    }
+
+    .slider-val-badge {
+      font-family: var(--font-heading);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ush-pink-dark);
+      background: #ffffff;
+      border: 1px solid var(--border-pink);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      min-width: 95px;
+      text-align: center;
+    }
+
+    .profit-grand-box {
+      background: var(--green-light);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin: 18px 0;
+    }
+
+    .profit-grand-box small {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #065f46;
+      margin-bottom: 4px;
+    }
+
+    .profit-grand-box .profit-number {
+      font-family: var(--font-heading);
+      font-size: clamp(28px, 3.5vw, 40px);
+      font-weight: 800;
+      color: #065f46;
+      line-height: 1.1;
+    }
+
+    .profit-grand-box .profit-note {
+      font-size: 12.5px;
+      color: #047857;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .btn-ws-grand {
+      background: var(--green-whatsapp);
+      color: #ffffff;
+      font-family: var(--font-heading);
+      font-size: 15.5px;
+      font-weight: 800;
+      padding: 15px 24px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-ws-grand:hover {
+      background: #1eb855;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.45);
+    }
+
+    /* Pie de página */
+    footer.site-footer {
+      border-top: 1px solid var(--border-light);
+      padding: 30px 0;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      background: #ffffff;
+    }
+
+    footer.site-footer a {
+      color: var(--ush-pink-dark);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra Superior -->
+  <div class="top-announcement">
+    <span class="pill-envio-gratis">ENVÍO GRATIS</span>
+    <span>🔥 Inicia tu negocio de jeans con <strong>12 referencias oficiales</strong> · <strong>Flete 100% bonificado</strong> a toda Colombia</span>
+  </div>
+
+  <!-- Header Blanco Oficial -->
+  <header class="site-nav">
+    <div class="container nav-inner">
+      <div class="brand-logo">
+        <h1>USH <span>BY USHUAIA</span></h1>
+        <small>Catálogo Mayorista Digital</small>
+      </div>
+      <div class="nav-actions">
+        <a id="btnNavWhatsApp" href="https://wa.me/573011393902" target="_blank" class="btn-ws-top">
+          <span>💬</span> Pedir al 301 139 3902
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- Banner de Presentación Interna -->
+    <div class="eval-banner">
+      <div>
+        <strong>📌 PROPUESTA PARA DIRECCIÓN COMERCIAL</strong>
+        <div>Modelo publicitario inspirado en <em>Ave María (Inicia tu propio negocio)</em> para convertir visitantes en clientes mayoristas.</div>
+      </div>
+      <a href="#carrusel-protagonista" style="background: var(--ush-pink); color:#fff; padding:6px 14px; border-radius:99px; font-weight:700; font-size:12px; white-space:nowrap;">
+        Ver Carrusel ↓
+      </a>
+    </div>
+
+    <!-- Sección Hero Principal (Estilo Ave María) -->
+    <section class="hero-avemaria">
+      <span class="hero-badge-tag">OPORTUNIDAD MAYORISTA</span>
+      <h2 class="hero-title-main">
+        Inicia tu Propio Negocio con el <br/>
+        <span>Pack Oficial de 12 Prendas</span>
+      </h2>
+      <p class="hero-description-lead">
+        Selección de alta rotación con nuestras mejores referencias de jeans, shorts y faldas. Calidad colombiana prémium, siluetas comprobadas y despacho prioritario.
+      </p>
+
+      <!-- 3 Pilares Resumidos sin saturación -->
+      <div class="hero-pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon">💰</div>
+          <h4>Inversión Cerrada</h4>
+          <p id="heroPillarCost"><strong>$813.996 COP</strong> por 12 prendas oficiales (promedio $67.833/ud).</p>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-icon">🚚</div>
+          <h4>Envío 100% Gratis</h4>
+          <p>Alcanzas de inmediato la escala mayorista con flete nacional bonificado.</p>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-icon">📈</div>
+          <h4>Margen Libre</h4>
+          <p>Basado en precio regular de tienda y con total libertad para fijar tus precios.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CARRUSEL PROTAGONISTA (CAMBIO AUTOMÁTICO CADA 5 SEGUNDOS) ── -->
+    <section id="carrusel-protagonista" class="carousel-section">
+      <div class="carousel-container-box" id="carouselInteractiveArea">
+        
+        <!-- Barra de Progreso 5 Segundos -->
+        <div class="carousel-timer-progress">
+          <div class="carousel-timer-bar" id="carouselTimerBar"></div>
+        </div>
+
+        <div class="carousel-stage-split">
+          
+          <!-- Marco de Foto Grande -->
+          <div class="carousel-photo-frame">
+            <span class="badge-ref-corner" id="mainRefBadge">REF: 552605</span>
+            <div class="badge-free-shipping-corner">
+              <span>🚚</span> <span>ENVÍO GRATIS</span>
+            </div>
+            <div class="badge-timer-indicator">
+              <span>⏱️</span> <span>Pasa cada 5s</span>
+            </div>
+
+            <img id="activeSlideImage" src="CAPAÑA DE PUBLICIDAD/552605.png" alt="Prenda de catálogo Ush By Ushuaia" />
+          </div>
+
+          <!-- Panel Conciso de Datos -->
+          <div class="carousel-info-panel">
+            <div>
+              <div class="slide-counter-badge" id="slideIndexBadge">Prenda 1 de 12 del Pack</div>
+              <h3 class="slide-product-title" id="slideTitle">Jean Skinny Tiro Medio Denim Stretch</h3>
+              <p class="slide-product-desc" id="slideDesc">
+                Denim stretch de alta recuperación con calce favorecedor que realza la silueta.
+              </p>
+
+              <!-- Tarjeta de Precios Clara -->
+              <div class="pricing-card-box">
+                <div class="pricing-row">
+                  <span class="price-label-small">Precio regular en tienda:</span>
+                  <span class="price-value-regular" id="slideRegularPrice">$129.900</span>
+                </div>
+                <div class="pricing-row">
+                  <span class="price-label-small" style="font-weight:700; color:var(--ush-navy);">Tu Precio en este Pack:</span>
+                  <span class="price-value-mayorista" id="slideWholesalePrice">$89.900</span>
+                </div>
+                <div class="pricing-row">
+                  <div class="profit-potential-banner">
+                    <span>Margen estimado sobre precio regular:</span>
+                    <span class="tag-green" id="slideProfitTag">+$40.000</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div>
+              <div class="carousel-action-btns">
+                <!-- BOTÓN CAMBIAR REFERENCIA -> REDIRECCIONA DIRECTO A WHATSAPP -->
+                <button class="btn-swap-to-whatsapp" id="btnSwapToWhatsApp" title="Redirecciona a WhatsApp con el detalle de la prenda a cambiar">
+                  <span>🔄</span> Cambiar esta referencia
+                </button>
+                
+                <!-- BOTÓN PEDIR PACK COMPLETO -->
+                <button class="btn-order-pack-active" id="btnOrderSlidePack">
+                  <span>💬</span> Pedir Pack Completo
+                </button>
+              </div>
+              <small class="swap-note-help">
+                💡 Al hacer clic en <strong>"Cambiar esta referencia"</strong> se abrirá tu chat de WhatsApp indicándonos cuál prenda deseas cambiar y cuáles 11 conservas.
+              </small>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Barra Inferior de Navegación y Miniaturas -->
+        <div class="carousel-bottom-strip">
+          <div class="carousel-arrows">
+            <button class="btn-arrow" id="btnPrevSlide" title="Anterior">‹</button>
+            <button class="btn-arrow" id="btnNextSlide" title="Siguiente">›</button>
+          </div>
+
+          <div class="thumbnails-scroller" id="thumbnailsBar">
+            <!-- Miniaturas generadas por JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── ESTIMADOR DE RENTABILIDAD & SIMULADOR DE PRECIO ── -->
+    <section class="profit-estimator-section">
+      <div class="estimator-card">
+        
+        <div class="estimator-left">
+          <h3>Margen de Ganancia para el Mayorista</h3>
+          <p>
+            El margen inicial está calculado con base en el <strong>valor regular de las prendas en nuestra página sin descuento</strong>, pero la ganancia real puede ser sustancialmente mayor, ya que cada mayorista es libre de comercializar las prendas al valor que considere óptimo en su mercado o boutique.
+          </p>
+
+          <div class="profit-explainer-box">
+            💡 <strong>Tú fijas tu propio precio de venta:</strong> Puedes vender a precio de lista o fijar un precio superior según tu marca y ubicación para multiplicar tus utilidades.
+          </div>
+
+          <div class="calc-row-detail">
+            <span>Cantidad de prendas:</span>
+            <strong>12 Unidades (Mix Variado)</strong>
+          </div>
+          <div class="calc-row-detail">
+            <span>Flete a toda Colombia:</span>
+            <strong style="color: #047857;">100% GRATIS</strong>
+          </div>
+          <div class="calc-row-detail">
+            <span>Valor base en tienda sin descuento:</span>
+            <strong id="calcRegularTotal">$1.290.700 COP</strong>
+          </div>
+          <div class="calc-row-detail total">
+            <span>Inversión Mayorista (12 Uds):</span>
+            <span id="calcWholesaleTotal">$813.996 COP</span>
+          </div>
+        </div>
+
+        <div class="estimator-right">
+          <div>
+            <!-- Simulador de Ganancia Libre -->
+            <div class="simulator-box">
+              <span class="simulator-label">Simula tu precio promedio de venta al detal:</span>
+              <div class="simulator-slider-wrap">
+                <input type="range" id="priceSimulatorSlider" min="95000" max="180000" step="5000" value="115000" />
+                <span class="slider-val-badge" id="sliderValDisplay">$115.000</span>
+              </div>
+              <small style="font-size:11.5px; color:var(--text-muted);">
+                Ajusta el valor para proyectar tu retorno según tus clientes.
+              </small>
+            </div>
+
+            <!-- Gran Total de Ganancia -->
+            <div class="profit-grand-box">
+              <small>Tu Ganancia Proyectada Neta</small>
+              <div class="profit-number" id="profitGrandNumber">+$566.004</div>
+              <div class="profit-note" id="profitGrandNote">Recuperas tus $813.996 y recibes $1.380.000 en ventas</div>
+            </div>
+          </div>
+
+          <a id="btnGrandWhatsApp" href="https://wa.me/573011393902" target="_blank" class="btn-ws-grand">
+            <span>💬</span> Pedir mi Pack por WhatsApp
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer Blanco Oficial -->
+  <footer class="site-footer">
+    <div class="container">
+      <p style="font-weight:700; color:var(--ush-navy); margin-bottom:4px;">USH BY USHUAIA — JEANS COLOMBIANOS AL POR MAYOR</p>
+      <p style="margin-bottom:8px;">Línea de Pedidos Mayoristas: <strong>301 139 3902</strong> · Catálogo Digital: <a href="https://ushbyushuaia.vercel.app/" target="_blank">ushbyushuaia.vercel.app</a></p>
+      <small style="color:var(--text-light);">Propuesta comercial lista para adjuntar al catálogo digital.</small>
+    </div>
+  </footer>
+
+  <script>
+    // --- 12 REFERENCIAS SELECCIONADAS (CON PRECIO REGULAR SIN DESCUENTO DE LA PÁGINA) ---
+    const INITIAL_PACK = [
+      {
+        id: 1,
+        ref: '552605',
+        title: 'Jean Skinny Tiro Medio Gris Oscuro',
+        desc: 'Denim stretch de alta recuperación, ajuste anatómico y acabado gris humo clásico.',
+        category: 'Skinny Fit',
+        wholesalePrice: 89900,
+        regularPrice: 129900,
+        file: '552605.png',
+        fallback: 'https://lh3.googleusercontent.com/d/1bMHlLBtScerJBd_3dXxn09ajXXRAotYW'
+      },
+      {
+        id: 2,
+        ref: '552429',
+        title: 'Jean Baggy Bota Tubo Blanco Índigo',
+        desc: 'Jean rígido de corte relajado y bota tubo en tono blanco estival, silueta juvenil top.',
+        category: 'Baggy Fit',
+        wholesalePrice: 69900,
+        regularPrice: 119900,
+        file: '552429.jpg',
+        fallback: ''
+      },
+      {
+        id: 3,
+        ref: '552699',
+        title: 'Jean Straight Rígido Negro 100% Algodón',
+        desc: 'Corte recto atemporal tiro medio en negro profundo, un fondo de armario imprescindible.',
+        category: 'Straight Boot',
+        wholesalePrice: 71900,
+        regularPrice: 119900,
+        file: '552699.png',
+        fallback: 'https://lh3.googleusercontent.com/d/1UpJolDNGkMxaev41cUtHy_0WcqIqxbWi'
+      },
+      {
+        id: 4,
+        ref: '552736',
+        title: 'Jean Barrel Rígido Tiro Medio Ivory',
+        desc: 'Silueta barrel en tendencia con caída estructurada y tono crema marfil refinado.',
+        category: 'Barrel Fit',
+        wholesalePrice: 90930,
+        regularPrice: 129900,
+        file: '552736.png',
+        fallback: ''
+      },
+      {
+        id: 5,
+        ref: '552758',
+        title: 'Jean Wide Leg Tiro Medio Celeste',
+        desc: 'Bota ancha estilizada que alarga visualmente las piernas en denim suave de verano.',
+        category: 'Wide Leg',
+        wholesalePrice: 89900,
+        regularPrice: 119900,
+        file: '552758.png',
+        fallback: 'https://lh3.googleusercontent.com/d/1FIaCUKj3HFaRad-ijNNMPUBEophL08cr'
+      },
+      {
+        id: 6,
+        ref: '552771',
+        title: 'Jean Vaquero Flare Tiro Medio Licrado',
+        desc: 'Bota campana vaquera con elasticidad envolvente y azul medio con desvanecido sutil.',
+        category: 'Bota Flare',
+        wholesalePrice: 71940,
+        regularPrice: 119900,
+        file: '552771.png',
+        fallback: ''
+      },
+      {
+        id: 7,
+        ref: '556214',
+        title: 'Short Corto Denim Clásico',
+        desc: 'Short veraniego de tiro medio con dobladillo y detalles desgastados de rápida venta.',
+        category: 'Shorts',
+        wholesalePrice: 43140,
+        regularPrice: 71900,
+        file: '556214.jpg',
+        fallback: ''
+      },
+      {
+        id: 8,
+        ref: '556231',
+        title: 'Short Largo Denim Bermuda',
+        desc: 'Bermuda short cómoda en tejido fresco y resistente, un básico accesible de alta demanda.',
+        category: 'Shorts',
+        wholesalePrice: 39900,
+        regularPrice: 69900,
+        file: '556231.png',
+        fallback: ''
+      },
+      {
+        id: 9,
+        ref: '556295',
+        title: 'Short Dama Denim Premium',
+        desc: 'Short femenino con lavado prémium y corte favorecedor para climas cálidos y fines de semana.',
+        category: 'Shorts',
+        wholesalePrice: 79900,
+        regularPrice: 119900,
+        file: '556295.png',
+        fallback: ''
+      },
+      {
+        id: 10,
+        ref: '558068',
+        title: 'Falda Corta Colombiana Denim Negro',
+        desc: 'Falda corta en denim rígido negro intenso con calce perfecto para cualquier ocasión.',
+        category: 'Faldas',
+        wholesalePrice: 67410,
+        regularPrice: 109900,
+        file: '558068.png',
+        fallback: ''
+      },
+      {
+        id: 11,
+        ref: '558069',
+        title: 'Falda Dama Rígida Azul Claro',
+        desc: 'Falda de corte recto con abertura frontal en tono azul cielo, máxima frescura juvenil.',
+        category: 'Faldas',
+        wholesalePrice: 49538,
+        regularPrice: 89900,
+        file: '558069.png',
+        fallback: ''
+      },
+      {
+        id: 12,
+        ref: '558070',
+        title: 'Falda Dama Licrada Azul Oscuro',
+        desc: 'Falda en denim licrado con compresión suave que esculpe la silueta con total confort.',
+        category: 'Faldas',
+        wholesalePrice: 49538,
+        regularPrice: 89900,
+        file: '558070.png',
+        fallback: 'https://lh3.googleusercontent.com/d/1plUrb6B6_NZhY6mjLqTbtOhujsRUkSKT'
+      }
+    ];
+
+    let currentPack = [...INITIAL_PACK];
+    let activeIndex = 0;
+    const AUTOPLAY_DELAY = 5000; // 5 segundos
+    let autoplayTimer = null;
+    let progressTimer = null;
+    let progressStartTime = 0;
+
+    function formatCOP(num) {
+      return '$' + Math.round(num).toLocaleString('es-CO');
+    }
+
+    // Ruta inteligente de imágenes: prueba escritorio y ruta relativa
+    function getCandidatePaths(item) {
+      return [
+        `CAPAÑA DE PUBLICIDAD/${item.file}`,
+        `../CAPAÑA DE PUBLICIDAD/${item.file}`,
+        `CAPANA DE PUBLICIDAD/${item.file}`,
+        `../CAPANA DE PUBLICIDAD/${item.file}`,
+        `C:/Users/ACOMERCIALV/Desktop/CAPAÑA DE PUBLICIDAD/${item.file}`
+      ];
+    }
+
+    function setupImgErrorHandling(imgElement, item) {
+      let candidateIndex = 0;
+      const candidates = getCandidatePaths(item);
+
+      imgElement.onerror = function() {
+        candidateIndex++;
+        if (candidateIndex < candidates.length) {
+          this.src = candidates[candidateIndex];
+        } else if (item.fallback) {
+          this.src = item.fallback;
+        } else {
+          // Placeholder con colores oficiales
+          this.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'><rect width='400' height='500' fill='%23fdf3f5'/><text x='50%25' y='46%25' font-family='sans-serif' font-size='22' font-weight='bold' fill='%23d88193' text-anchor='middle'>REF: ${item.ref}</text><text x='50%25' y='53%25' font-family='sans-serif' font-size='14' fill='%231b2333' text-anchor='middle'>${item.category}</text><text x='50%25' y='60%25' font-family='sans-serif' font-size='12' fill='%2310b981' text-anchor='middle'>Ush By Ushuaia</text></svg>`;
+        }
+      };
+    }
+
+    // Actualizar Carrusel
+    function updateCarousel() {
+      const item = currentPack[activeIndex];
+      const mainImg = document.getElementById('activeSlideImage');
+      
+      mainImg.style.opacity = '0';
+      mainImg.style.transform = 'scale(0.96)';
+      
+      setTimeout(() => {
+        setupImgErrorHandling(mainImg, item);
+        mainImg.src = getCandidatePaths(item)[0];
+        mainImg.style.opacity = '1';
+        mainImg.style.transform = 'scale(1)';
+      }, 120);
+
+      document.getElementById('mainRefBadge').textContent = `REF: ${item.ref}`;
+      document.getElementById('slideIndexBadge').textContent = `Prenda ${activeIndex + 1} de 12 del Pack`;
+      document.getElementById('slideTitle').textContent = `${item.title} (REF ${item.ref})`;
+      document.getElementById('slideDesc').textContent = item.desc;
+      document.getElementById('slideRegularPrice').textContent = formatCOP(item.regularPrice);
+      document.getElementById('slideWholesalePrice').textContent = formatCOP(item.wholesalePrice);
+      
+      const profit = item.regularPrice - item.wholesalePrice;
+      document.getElementById('slideProfitTag').textContent = `+${formatCOP(profit)}`;
+
+      // Actualizar enlace de WhatsApp del botón "Cambiar esta referencia"
+      updateSwapWhatsAppUrl(item);
+
+      // Thumbnails activos
+      const thumbBtns = document.querySelectorAll('.thumb-btn');
+      thumbBtns.forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === activeIndex);
+      });
+
+      const activeThumb = thumbBtns[activeIndex];
+      if (activeThumb) {
+        activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+
+      // Reiniciar temporizador de 5 segundos
+      resetAutoplay();
+    }
+
+    // Generar URL directa de WhatsApp para cambiar la referencia activa
+    function updateSwapWhatsAppUrl(currentItem) {
+      // Las 11 prendas que SÍ se mantienen
+      const keptItems = currentPack.filter(p => p.id !== currentItem.id);
+
+      let msg = `¡Hola Ush By Ushuaia! 👋 Me interesa el Pack Mayorista de 12 Prendas ($813.996 COP con Envío Gratis).\n\n`;
+      msg += `🔄 PRENDA QUE DESEO CAMBIAR:\n`;
+      msg += `• REF: ${currentItem.ref} — ${currentItem.title} (${formatCOP(currentItem.wholesalePrice)})\n\n`;
+      msg += `✅ PRENDAS QUE MANTENGO DEL PACK (11 Unidades):\n`;
+      
+      keptItems.forEach((p, idx) => {
+        msg += `${idx + 1}. Ref: ${p.ref} - ${p.title} (${formatCOP(p.wholesalePrice)})\n`;
+      });
+
+      msg += `\n📦 Total Inversión Base: $813.996 COP`;
+      msg += `\n🚚 Envío: 100% GRATIS a mi ciudad`;
+      msg += `\n\n¿Por cuáles prendas de valor similar del catálogo digital la podemos cambiar? ¡Gracias!`;
+
+      const encoded = encodeURIComponent(msg);
+      const waUrl = `https://wa.me/573011393902?text=${encoded}`;
+
+      const swapBtn = document.getElementById('btnSwapToWhatsApp');
+      swapBtn.onclick = () => window.open(waUrl, '_blank');
+    }
+
+    // Renderizar Miniaturas
+    function renderThumbnails() {
+      const container = document.getElementById('thumbnailsBar');
+      container.innerHTML = '';
+
+      currentPack.forEach((item, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `thumb-btn ${idx === activeIndex ? 'active' : ''}`;
+        
+        const img = document.createElement('img');
+        setupImgErrorHandling(img, item);
+        img.src = getCandidatePaths(item)[0];
+
+        const span = document.createElement('span');
+        span.textContent = item.ref;
+
+        btn.appendChild(img);
+        btn.appendChild(span);
+
+        btn.addEventListener('click', () => {
+          activeIndex = idx;
+          updateCarousel();
+        });
+
+        container.appendChild(btn);
+      });
+    }
+
+    // Control de Autoplay cada 5 Segundos
+    function nextSlide() {
+      activeIndex = (activeIndex + 1) % currentPack.length;
+      updateCarousel();
+    }
+
+    function prevSlide() {
+      activeIndex = (activeIndex - 1 + currentPack.length) % currentPack.length;
+      updateCarousel();
+    }
+
+    function resetAutoplay() {
+      if (autoplayTimer) clearInterval(autoplayTimer);
+      if (progressTimer) clearInterval(progressTimer);
+
+      const bar = document.getElementById('carouselTimerBar');
+      bar.style.width = '0%';
+      progressStartTime = Date.now();
+
+      // Animación de la barra de progreso
+      progressTimer = setInterval(() => {
+        const elapsed = Date.now() - progressStartTime;
+        const percentage = Math.min((elapsed / AUTOPLAY_DELAY) * 100, 100);
+        bar.style.width = percentage + '%';
+        if (percentage >= 100) {
+          clearInterval(progressTimer);
+        }
+      }, 50);
+
+      // Temporizador de 5 segundos
+      autoplayTimer = setInterval(() => {
+        nextSlide();
+      }, AUTOPLAY_DELAY);
+    }
+
+    // Recalcular Totales y Simulador
+    function recalculateTotals() {
+      let totalWholesale = 0;
+      let totalRegular = 0;
+
+      currentPack.forEach(item => {
+        totalWholesale += item.wholesalePrice;
+        totalRegular += item.regularPrice;
+      });
+
+      // Actualizar UI base
+      document.getElementById('heroPillarCost').innerHTML = `<strong>${formatCOP(totalWholesale)} COP</strong> por 12 prendas oficiales (promedio ${formatCOP(totalWholesale / 12)}/ud).`;
+      document.getElementById('calcRegularTotal').textContent = formatCOP(totalRegular) + ' COP';
+      document.getElementById('calcWholesaleTotal').textContent = formatCOP(totalWholesale) + ' COP';
+
+      // Simulador de Precio Libre
+      const slider = document.getElementById('priceSimulatorSlider');
+      const simulatedPrice = parseInt(slider.value, 10);
+      document.getElementById('sliderValDisplay').textContent = formatCOP(simulatedPrice);
+
+      const totalSimulatedRevenue = simulatedPrice * 12;
+      const simulatedProfit = totalSimulatedRevenue - totalWholesale;
+
+      document.getElementById('profitGrandNumber').textContent = `+${formatCOP(simulatedProfit)}`;
+      document.getElementById('profitGrandNote').textContent = `Inviertes ${formatCOP(totalWholesale)} y vendes a ${formatCOP(totalSimulatedRevenue)} COP`;
+
+      // Enlaces dinámicos de WhatsApp para el pack completo
+      let msg = `¡Hola Ush By Ushuaia! 👋 Deseo pedir el Pack Mayorista Oficial Completo (12 Prendas):\n\n`;
+      currentPack.forEach((item, i) => {
+        msg += `${i + 1}. Ref: ${item.ref} - ${item.title} (${formatCOP(item.wholesalePrice)})\n`;
+      });
+      msg += `\n📦 Total Inversión Mayorista: ${formatCOP(totalWholesale)} COP`;
+      msg += `\n🚚 Envío: 100% GRATIS a nivel nacional`;
+      msg += `\n\n¿Me indican cómo seleccionar las tallas y continuar con el pago? ¡Muchas gracias!`;
+
+      const encoded = encodeURIComponent(msg);
+      const waUrl = `https://wa.me/573011393902?text=${encoded}`;
+
+      document.getElementById('btnNavWhatsApp').href = waUrl;
+      document.getElementById('btnGrandWhatsApp').href = waUrl;
+      document.getElementById('btnOrderSlidePack').onclick = () => window.open(waUrl, '_blank');
+    }
+
+    // Eventos
+    document.getElementById('btnPrevSlide').addEventListener('click', () => {
+      prevSlide();
+    });
+
+    document.getElementById('btnNextSlide').addEventListener('click', () => {
+      nextSlide();
+    });
+
+    // Simulador de Precio
+    document.getElementById('priceSimulatorSlider').addEventListener('input', recalculateTotals);
+
+    // Teclas
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        prevSlide();
+      } else if (e.key === 'ArrowRight') {
+        nextSlide();
+      }
+    });
+
+    // Pausar autoplay cuando el usuario pasa el mouse sobre la foto grande
+    const area = document.getElementById('carouselInteractiveArea');
+    area.addEventListener('mouseenter', () => {
+      if (autoplayTimer) clearInterval(autoplayTimer);
+      if (progressTimer) clearInterval(progressTimer);
+    });
+    area.addEventListener('mouseleave', () => {
+      resetAutoplay();
+    });
+
+    // Inicializar
+    renderThumbnails();
+    updateCarousel();
+    recalculateTotals();
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check, Sparkles, Truck } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check, Sparkles, Truck, Send } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { INITIAL_PRODUCTS } from '@/data/products';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
@@ -47,6 +47,26 @@ export const CartDrawer: React.FC = () => {
   const handleProceedToCheckout = () => {
     setIsCartOpen(false);
     router.push('/checkout');
+  };
+
+  // Fast Order vía WhatsApp comercial en 1 Clic (Propuesta 3)
+  const handleWhatsAppFastOrder = () => {
+    if (items.length === 0) return;
+    let msg = `¡Hola USH BY USHUAIA! 🛍️✨\nQuiero confirmar mi pedido mayorista directo:\n\n`;
+    items.forEach((item, idx) => {
+      const unitPrice = calculateItemUnitPrice(item);
+      msg += `${idx + 1}. Ref. ${item.product.reference || item.product.name} | Talla: ${item.selectedSize || 'Única'} | Cantidad: ${item.quantity} | ${formatCOP(unitPrice * item.quantity)}\n`;
+    });
+    msg += `\n📦 *Total Prendas:* ${totalItemsCount} unidades\n`;
+    msg += `💰 *Subtotal Estimado:* ${formatCOP(subtotalCOP)}\n`;
+    if (coupon && discountCOP > 0) {
+      msg += `🎟️ *Cupón:* ${coupon.code} (−${formatCOP(discountCOP)})\n`;
+    }
+    msg += `🚚 *Flete Nacional:* ${totalItemsCount >= 12 ? '¡GRATIS A TODO COLOMBIA! 🎁' : 'Asumido por el cliente (12+ es gratis)'}\n\n`;
+    msg += `Por favor indíquenme los medios de pago para transferencia y coordinar el despacho desde Itagüí. ¡Muchas gracias!`;
+
+    const encoded = encodeURIComponent(msg);
+    window.open(`https://wa.me/573011393902?text=${encoded}`, '_blank');
   };
 
   // Helper to get image URL with fallback to INITIAL_PRODUCTS + Drive conversion
@@ -105,7 +125,10 @@ export const CartDrawer: React.FC = () => {
                   Agrega referencias del catálogo mayorista para comenzar tu pedido.
                 </p>
                 <button
-                  onClick={() => setIsCartOpen(false)}
+                  onClick={() => {
+                    setIsCartOpen(false);
+                    router.push('/catalogo');
+                  }}
                   className="mt-6 bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-6 py-3 hover:bg-[#d88193] transition-colors"
                 >
                   Explorar Catálogo
@@ -303,19 +326,31 @@ export const CartDrawer: React.FC = () => {
                 )}
               </div>
 
-              {/* Single direct action: goes straight to /checkout */}
-              <button
-                onClick={handleProceedToCheckout}
-                disabled={totalItemsCount < MIN_ORDER_UNITS}
-                className={`w-full font-bold py-4 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] ${
-                  totalItemsCount < MIN_ORDER_UNITS
-                    ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
-                    : 'bg-ush-navy text-white hover:bg-ush-pink'
-                }`}
-              >
-                <span>Tramitar Pedido</span>
-                <ArrowRight size={16} />
-              </button>
+              {/* Acciones de Tramitación: Checkout Web + WhatsApp Fast Order (Propuesta 3) */}
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={handleProceedToCheckout}
+                  disabled={totalItemsCount < MIN_ORDER_UNITS}
+                  className={`w-full font-bold py-3.5 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] ${
+                    totalItemsCount < MIN_ORDER_UNITS
+                      ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                      : 'bg-ush-navy text-white hover:bg-ush-pink'
+                  }`}
+                >
+                  <span>Tramitar en Línea</span>
+                  <ArrowRight size={16} />
+                </button>
+
+                {totalItemsCount >= MIN_ORDER_UNITS && (
+                  <button
+                    onClick={handleWhatsAppFastOrder}
+                    className="w-full font-bold py-3 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm bg-[#25D366] hover:bg-[#1ebd5a] text-white active:scale-[0.99]"
+                  >
+                    <Send size={15} />
+                    <span>📲 Pedir por WhatsApp en 1 Clic</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

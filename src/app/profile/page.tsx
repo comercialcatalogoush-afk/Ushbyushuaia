@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, KeyRound, LogOut, ShieldCheck, Loader2, Film, FileText, UserCircle, CheckSquare } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Settings, Eye, EyeOff, KeyRound, LogOut, ShieldCheck, Loader2, Film, FileText, UserCircle, CheckSquare, Calculator } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { CustomerAccountBenefits } from '@/components/CustomerAccountBenefits';
 import { CustomerAudiovisualContent } from '@/components/CustomerAudiovisualContent';
 import { CustomerLookbookEditor } from '@/components/CustomerLookbookEditor';
 import { LookbookConfig } from '@/lib/lookbookPdf';
 import { Product } from '@/types';
+import { CalculadoraClient } from '../calculadora-ganancias/CalculadoraClient';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 const CANONICAL_SITE_URL = 'https://ushbyushuaia.vercel.app';
@@ -59,7 +60,7 @@ export default function ProfilePage() {
   const [isRecovery, setIsRecovery] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [returnTo, setReturnTo] = useState('/');
-  const [activeTab, setActiveTab] = useState<'perfil' | 'contenido' | 'pdf'>('perfil');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'contenido' | 'pdf' | 'calculadora'>('perfil');
   const [products, setProducts] = useState<Product[]>([]);
   const [lookbookConfig, setLookbookConfig] = useState<LookbookConfig | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -86,6 +87,10 @@ export default function ProfilePage() {
     const requestedReturnTo = params.get('returnTo');
     if (requestedReturnTo && requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//')) {
       setReturnTo(requestedReturnTo);
+    }
+    const requestedTab = params.get('tab');
+    if (requestedTab === 'calculadora' || requestedTab === 'perfil' || requestedTab === 'contenido' || requestedTab === 'pdf') {
+      setActiveTab(requestedTab);
     }
 
     const sync = (session: any) => {
@@ -326,10 +331,11 @@ export default function ProfilePage() {
         </div>
 
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row">
-          {/* Menú lateral */}
-          <aside className="shrink-0 lg:w-64">
+          {/* Menú lateral sticky */}
+          <aside className="shrink-0 lg:w-64 lg:sticky lg:top-24 lg:self-start">
             <div className="flex flex-row gap-2 overflow-x-auto rounded-xl border border-neutral-200 bg-white p-2 shadow-sm lg:flex-col lg:overflow-visible">
               <button type="button" onClick={() => setActiveTab('perfil')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'perfil' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><UserCircle size={16} /> Mi perfil</button>
+              <button type="button" onClick={() => setActiveTab('calculadora')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'calculadora' ? 'bg-[#d88193] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><Calculator size={16} /> Calculadora</button>
               <button type="button" onClick={() => setActiveTab('contenido')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'contenido' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><Film size={16} /> Contenido audiovisual</button>
               <button type="button" onClick={() => setActiveTab('pdf')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'pdf' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><FileText size={16} /> Catálogo PDF</button>
             </div>
@@ -388,6 +394,12 @@ export default function ProfilePage() {
                 </section>
 
                 <CustomerAccountBenefits user={user} products={products} config={lookbookConfig} />
+              </div>
+            )}
+
+            {activeTab === 'calculadora' && (
+              <div className="w-full text-left">
+                <CalculadoraClient embedded />
               </div>
             )}
 

@@ -67,6 +67,7 @@ const PAGE_ROUTES: Record<string, string> = {
   'rastreo': '/rastreo',
   'catalogo': '/catalogo',
   'politicas': '/politicas',
+  'calculadora': '/calculadora-ganancias',
   'footer': '/',
 };
 
@@ -83,6 +84,10 @@ const SECTION_MAP: Record<string, { pageId: string; group: string }> = {
   'outlet-hours': { pageId: 'outlet', group: 'Horario destacado' },
   'cc-header': { pageId: 'como-comprar', group: 'Encabezado' },
   'cc-process': { pageId: 'como-comprar', group: 'Proceso' },
+  'cc-b2b': { pageId: 'como-comprar', group: 'Aliados B2B' },
+  'cc-contacto': { pageId: 'como-comprar', group: 'Contacto al Pie' },
+  'calc-header': { pageId: 'calculadora', group: 'Encabezado' },
+  'calc-panel': { pageId: 'calculadora', group: 'Condiciones' },
   'ct-header': { pageId: 'contacto', group: 'Encabezado' },
   'ct-info': { pageId: 'contacto', group: 'Datos oficiales' },
   'ct-whatsapp': { pageId: 'contacto', group: 'WhatsApp' },

@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Ganancias Mayorista (Privada) | Ush By Ushuaia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── PALETA OFICIAL DEL CATÁLOGO USH BY USHUAIA ── */
+    :root {
+      --ush-pink:       #d88193;
+      --ush-pink-dark:  #c06579;
+      --ush-pink-hover: #b5586c;
+      --ush-pink-light: #fdf3f5;
+      --ush-pink-soft:  #f8e4e8;
+      --ush-navy:       #1b2333;
+      --ush-navy-dark:  #121824;
+      --ush-card:       #ffffff;
+      --ush-body-bg:    #ffffff;
+      --text-main:      #1e293b;
+      --text-muted:     #64748b;
+      --text-light:     #94a3b8;
+      --border-light:   #e2e8f0;
+      --border-pink:    rgba(216,129,147,0.3);
+      --green:          #059669;
+      --green-light:    #ecfdf5;
+      --green-border:   #a7f3d0;
+      --red:            #ef4444;
+      --shadow-card:    0 10px 30px -5px rgba(27,35,51,0.06), 0 4px 12px -2px rgba(216,129,147,0.08);
+      --shadow-pink:    0 8px 25px rgba(216,129,147,0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--ush-body-bg);
+      color: var(--text-main);
+      font-family: 'Outfit', 'Avenir Next', system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── BARRA SUPERIOR DE SIMULACIÓN DE SESIÓN ── */
+    .session-switcher-bar {
+      background: var(--ush-navy-dark);
+      color: white;
+      padding: 10px 20px;
+      font-size: 0.82rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-bottom: 2px solid var(--ush-pink);
+    }
+    .session-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .session-indicator {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .session-indicator.locked {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+    .btn-toggle-session {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-toggle-session:hover {
+      background: var(--ush-pink);
+      border-color: var(--ush-pink);
+    }
+
+    /* ── TOPBAR DE MARCA ── */
+    .topbar {
+      background: var(--ush-navy);
+      color: white;
+      text-align: center;
+      font-size: 0.78rem;
+      letter-spacing: 0.5px;
+      padding: 8px 16px;
+      font-weight: 500;
+    }
+    .topbar span { color: var(--ush-pink); font-weight: 700; }
+
+    /* ── PANTALLA BLOQUEADA (VISITANTE NO REGISTRADO) ── */
+    .auth-gate {
+      max-width: 580px;
+      margin: 80px auto;
+      padding: 44px 36px;
+      background: white;
+      border: 1.5px solid var(--border-pink);
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+    }
+    .gate-icon {
+      width: 72px; height: 72px;
+      margin: 0 auto 20px;
+      background: var(--ush-pink-light);
+      border: 1px solid var(--border-pink);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+    }
+    .auth-gate h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: var(--ush-navy);
+      margin-bottom: 12px;
+    }
+    .auth-gate p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+    .gate-benefits {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 16px 20px;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+    .gate-benefits h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--ush-navy);
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+    .gate-benefits ul {
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      display: grid;
+      gap: 8px;
+    }
+    .gate-benefits li span {
+      color: var(--ush-pink-dark);
+      font-weight: 800;
+      margin-right: 6px;
+    }
+    .btn-login-cta {
+      display: inline-block;
+      width: 100%;
+      background: var(--ush-navy);
+      color: white;
+      text-decoration: none;
+      padding: 15px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .btn-login-cta:hover {
+      background: var(--ush-pink);
+      transform: translateY(-2px);
+    }
+
+    /* ── CONTENIDO PRINCIPAL (CLIENTE CON SESIÓN ACTIVA) ── */
+    #calculatorContainer {
+      display: block;
+    }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, var(--ush-pink-light) 0%, #ffffff 70%);
+      border-bottom: 1px solid var(--border-pink);
+      padding: 50px 24px 38px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: var(--ush-pink-soft);
+      border: 1px solid var(--border-pink);
+      border-radius: 999px;
+      padding: 5px 18px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      color: var(--ush-pink-dark);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+      color: var(--ush-navy);
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .hero h1 em { color: var(--ush-pink); font-style: italic; }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* ── LAYOUT DE LA CALCULADORA ── */
+    .calc-main {
+      max-width: 1320px;
+      margin: 36px auto 60px;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 1040px) {
+      .calc-main { grid-template-columns: 1fr; }
+    }
+
+    /* ── COLUMNA IZQUIERDA: CATÁLOGO Y BUSCADOR ── */
+    .catalog-picker-card {
+      background: white;
+      border: 1.5px solid var(--border-light);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+    }
+    .picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .picker-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--ush-navy);
+      font-weight: 700;
+    }
+    .picker-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Buscador */
+    .search-box {
+      width: 100%;
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px 18px 12px 42px;
+      border: 1.5px solid var(--border-light);
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-family: 'Outfit', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--ush-pink);
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px; top: 14px;
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    /* Pestañas de Silueta */
+    .fit-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 22px;
+    }
+    .fit-tab {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .fit-tab:hover {
+      border-color: var(--ush-pink);
+      color: var(--ush-navy);
+    }
+    .fit-tab.active {
+      background: var(--ush-navy);
+      border-color: var(--ush-navy);
+      color: white;
+    }
+
+    /* Grilla de Referencias */
+    .products-scroll-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      max-height: 720px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .prod-card {
+      border: 1.5px solid var(--border-light);
+      border-radius: 14px;
+      background: white;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .prod-card:hover {
+      border-color: var(--ush-pink);
+      box-shadow: 0 6px 18px rgba(216,129,147,0.15);
+    }
+    .prod-card.has-qty {
+      border-color: var(--ush-pink);
+      background: var(--ush-pink-light);
+    }
+
+    .prod-thumb {
+      width: 100%; aspect-ratio: 3/4;
+      background: #f1f5f9;
+      position: relative;
+      overflow: hidden;
+    }
+    .prod-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.3s;
+    }
+    .prod-card:hover .prod-thumb img {
+      transform: scale(1.05);
+    }
+    .ref-badge {
+      position: absolute; top: 8px; left: 8px;
+      background: var(--ush-navy); color: white;
+      font-size: 0.65rem; font-weight: 800;
+      padding: 2px 7px; border-radius: 6px;
+    }
+    .fit-tag {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(255,255,255,0.92);
+      color: var(--ush-pink-dark);
+      font-size: 0.65rem; font-weight: 800;
+      padding: 2px 7px; border-radius: 4px;
+    }
+
+    .prod-body {
+      padding: 12px;
+      display: flex; flex-direction: column; flex-grow: 1;
+    }
+    .prod-title {
+      font-size: 0.78rem; font-weight: 700; color: var(--ush-navy);
+      line-height: 1.3; height: 2.6em;
+      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+      margin-bottom: 8px;
+    }
+    .prod-prices {
+      margin-top: auto;
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .price-wholesale {
+      font-size: 0.95rem; font-weight: 800; color: var(--ush-pink-dark);
+    }
+    .price-pvp {
+      font-size: 0.72rem; color: var(--text-muted); text-decoration: line-through;
+    }
+
+    /* Controles de Cantidad en Tarjeta */
+    .qty-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .qty-btn {
+      background: white; border: none;
+      width: 32px; height: 32px;
+      font-size: 1rem; font-weight: 800;
+      color: var(--ush-navy);
+      cursor: pointer; transition: background 0.2s;
+    }
+    .qty-btn:hover { background: var(--ush-pink-soft); color: var(--ush-pink-dark); }
+    .qty-val {
+      font-size: 0.85rem; font-weight: 800; color: var(--ush-navy);
+    }
+
+    /* ── COLUMNA DERECHA: PROYECCIÓN FINANCIERA EN VIVO ── */
+    .calc-summary-panel {
+      position: sticky;
+      top: 24px;
+      background: white;
+      border: 1.5px solid var(--border-light);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+    }
+    .summary-title {
+      font-size: 1.15rem; font-weight: 800; color: var(--ush-navy);
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 18px;
+    }
+    .total-badge {
+      background: var(--ush-pink-soft);
+      color: var(--ush-pink-dark);
+      font-size: 0.78rem; font-weight: 800;
+      padding: 4px 12px; border-radius: 999px;
+    }
+
+    /* Barra de Progreso a las Escalas Reales */
+    .scale-progress-wrap {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+    .scale-labels {
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; font-weight: 700;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .scale-bar {
+      height: 8px; background: #e2e8f0; border-radius: 999px;
+      overflow: hidden; margin-bottom: 8px;
+    }
+    .scale-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--ush-pink), var(--green));
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .scale-status-text {
+      font-size: 0.76rem; font-weight: 600; color: var(--ush-navy);
+      line-height: 1.35;
+    }
+
+    /* Desglose de Referencias en Resumen */
+    .selected-items-list {
+      max-height: 180px;
+      overflow-y: auto;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+    .sel-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.8rem; padding: 6px 0;
+    }
+    .sel-row-info {
+      line-height: 1.25; max-width: 220px;
+    }
+    .sel-row-ref { font-weight: 800; color: var(--ush-navy); }
+    .sel-row-fit { color: var(--text-muted); font-size: 0.72rem; }
+    .sel-row-qty {
+      font-weight: 700; color: var(--ush-pink-dark);
+    }
+    .sel-empty {
+      text-align: center; color: var(--text-muted);
+      font-size: 0.82rem; padding: 18px 0;
+    }
+
+    /* Métricas Financieras */
+    .financial-rows {
+      display: grid; gap: 10px; margin-bottom: 20px;
+    }
+    .fin-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.88rem; color: var(--text-muted);
+    }
+    .fin-row strong {
+      color: var(--ush-navy); font-size: 1rem;
+    }
+    .fin-row.income strong { color: #0284c7; }
+    .fin-row.profit {
+      border-top: 1px dashed var(--border-light);
+      padding-top: 12px; margin-top: 4px;
+    }
+    .fin-row.profit span {
+      font-size: 1rem; font-weight: 800; color: var(--ush-navy);
+    }
+    .fin-row.profit strong {
+      font-size: 1.9rem; font-weight: 900; color: var(--green);
+    }
+
+    /* ROI Box */
+    .roi-card {
+      background: var(--green-light);
+      border: 1px solid var(--green-border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .roi-pct {
+      font-size: 2.2rem; font-weight: 900; color: var(--green); line-height: 1;
+    }
+    .roi-sub {
+      font-size: 0.72rem; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Badge Envío */
+    .shipping-alert {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 20px;
+      line-height: 1.35;
+    }
+    .shipping-alert.free {
+      background: #ecfdf5; color: var(--green); border: 1px dashed var(--green);
+    }
+    .shipping-alert.missing {
+      background: #fffbeb; color: #b45309; border: 1px dashed #fde68a;
+    }
+
+    /* Botón de WhatsApp */
+    .btn-send-wa {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      background: #25D366;
+      color: white;
+      text-decoration: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      box-shadow: 0 8px 20px rgba(37,211,102,0.3);
+      transition: all 0.2s;
+    }
+    .btn-send-wa:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(37,211,102,0.4);
+    }
+    .btn-send-wa.disabled {
+      background: #cbd5e1;
+      color: #64748b;
+      box-shadow: none;
+      transform: none;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE SIMULACIÓN DE SESIÓN (PARA QUE EL USUARIO PRUEBE AMBOS ESTADOS) -->
+  <div class="session-switcher-bar">
+    <div class="session-status">
+      <div class="session-indicator" id="sessionDot"></div>
+      <span id="sessionStatusLabel">Sesión Activa: <strong>cliente_mayorista@ushuaia.com</strong></span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span style="font-size:0.75rem;opacity:0.8;">Simular estado de acceso:</span>
+      <button class="btn-toggle-session" onclick="toggleSessionState()" id="btnSessionToggle">
+        Simular Vista sin Iniciar Sesión 🔒
+      </button>
+    </div>
+  </div>
+
+  <div class="topbar">
+    👗 Catálogo Digital Mayorista Oficial · <span>Acceso Exclusivo para Clientes Registrados</span> · Tallas 6 a 14 · ushbyushuaia.vercel.app
+  </div>
+
+  <!-- ESTADO 1: BLOQUEO PARA VISITANTE NO REGISTRADO -->
+  <div class="auth-gate" id="authGate" style="display: none;">
+    <div class="gate-icon">🔒</div>
+    <h2>Calculadora de Rentabilidad Privada</h2>
+    <p>Esta herramienta calcula los costos directos de fábrica, proyecciones de ganancia y márgenes mayoristas oficiales. Está reservada exclusivamente para <strong>clientes registrados</strong> de Ush By Ushuaia.</p>
+
+    <div class="gate-benefits">
+      <h4>Beneficios al Registrarte como Cliente Mayorista:</h4>
+      <ul>
+        <li><span>✓</span> Ver tarifas mayoristas oficiales protegidas de fábrica.</li>
+        <li><span>✓</span> Simular pedidos y calcular ganancias con las 90 referencias.</li>
+        <li><span>✓</span> Desbloquear Envío Gratis nacional a partir de 12 prendas.</li>
+        <li><span>✓</span> Descargar catálogo en PDF para vitrina con o sin precios.</li>
+      </ul>
+    </div>
+
+    <a href="/profile?returnTo=/calculadora-ganancias" class="btn-login-cta" onclick="event.preventDefault(); toggleSessionState();">
+      Iniciar Sesión o Registrarme Ahora
+    </a>
+  </div>
+
+  <!-- ESTADO 2: CALCULADORA DESBLOQUEADA CON TODO EL CATÁLOGO -->
+  <div id="calculatorContainer">
+    <section class="hero">
+      <div class="hero-tag">Herramienta Exclusiva Mayorista · Catálogo Completo 2026</div>
+      <h1>Calculadora de Ganancias:<br><em>Proyección Mayorista desde 12 Prendas Surtidas</em></h1>
+      <p>Arma tu pedido combinando <strong>cualquiera de las 90 referencias oficiales</strong> (Wide Leg, Barrel, Straight, Vaquero o Shorts). <strong>No importa que sean todas diferentes</strong>: a partir de <strong>12 unidades surtidas</strong> se activa la tarifa mayorista oficial de fábrica y el <strong>Envío 100% Gratis</strong> a toda Colombia.</p>
+    </section>
+
+    <div class="calc-main">
+      <!-- Columna 1: Buscador y Catálogo Completo -->
+      <div class="catalog-picker-card">
+        <div class="picker-header">
+          <div class="picker-title">Referencias Oficiales Disponibles</div>
+          <div class="picker-count" id="catalogCountLabel">Mostrando 90 referencias</div>
+        </div>
+
+        <div style="background:var(--ush-pink-light);border:1px solid var(--border-pink);border-radius:12px;padding:12px 18px;margin-bottom:18px;font-size:0.84rem;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:1.3rem;">✨</span>
+          <span style="color:var(--ush-navy);font-weight:600;line-height:1.4;">
+            <strong>Surtido 100% Libre:</strong> Puedes mezclar diferentes modelos, siluetas y tallas. Cada prenda sumará para tu escala mayorista oficial de <strong>12 unidades surtidas con flete gratis</strong>.
+          </span>
+        </div>
+
+        <!-- Buscador -->
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            class="search-input"
+            id="searchInput"
+            placeholder="Buscar por referencia (ej: 552851) o silueta (Wide Leg, Barrel)..."
+            oninput="handleSearch(this.value)"
+          />
+        </div>
+
+        <!-- Filtros de Silueta -->
+        <div class="fit-tabs">
+          <button class="fit-tab active" onclick="filterByFit('Todas')">Todas (90)</button>
+          <button class="fit-tab" onclick="filterByFit('Wide Leg')">Wide Leg</button>
+          <button class="fit-tab" onclick="filterByFit('Barrel')">Barrel</button>
+          <button class="fit-tab" onclick="filterByFit('Straight Boot')">Straight Boot</button>
+          <button class="fit-tab" onclick="filterByFit('Vaquero')">Vaquero / Flare</button>
+          <button class="fit-tab" onclick="filterByFit('Shorts')">Shorts / Bermudas</button>
+        </div>
+
+        <!-- Grilla de productos con fotos reales de Google Drive -->
+        <div class="products-scroll-grid" id="productsGrid"></div>
+      </div>
+
+      <!-- Columna 2: Proyección Financiera en Vivo -->
+      <div class="calc-summary-panel">
+        <div class="summary-title">
+          <span>Tu Proyección Mayorista</span>
+          <span class="total-badge" id="totalUnitsBadge">0 prendas</span>
+        </div>
+
+        <!-- Barra de Progreso de Escalas Oficiales -->
+        <div class="scale-progress-wrap">
+          <div class="scale-labels">
+            <span>Objetivo: 12 prendas surtidas</span>
+            <span id="scaleNextLabel">Faltan 12 para Precio Mayorista</span>
+          </div>
+          <div class="scale-bar">
+            <div class="scale-fill" id="scaleFillBar" style="width: 0%;"></div>
+          </div>
+          <div class="scale-status-text" id="scaleStatusMsg">
+            💡 Combina cualquier referencia diferente. Con 12 unidades surtidas se activa el precio mayorista pleno y Envío Gratis.
+          </div>
+        </div>
+
+        <!-- Lista de Referencias Seleccionadas -->
+        <div class="selected-items-list" id="selectedItemsList">
+          <div class="sel-empty">Toca los botones "+" en cualquier jean del catálogo para añadir prendas.</div>
+        </div>
+
+        <!-- Números Financieros -->
+        <div class="financial-rows">
+          <div class="fin-row">
+            <span>Inversión en prendas:</span>
+            <strong id="finInversion">$0</strong>
+          </div>
+          <div class="fin-row">
+            <span>Costo promedio / prenda:</span>
+            <strong id="finCostoPromedio">$0</strong>
+          </div>
+          <div class="fin-row income">
+            <span>Ingresos estimados ventas (PVP):</span>
+            <strong id="finIngresos">$0</strong>
+          </div>
+          <div class="fin-row profit">
+            <span>Tu Ganancia Neta:</span>
+            <strong id="finGanancia">$0</strong>
+          </div>
+        </div>
+
+        <!-- Retorno sobre Inversión (ROI) -->
+        <div class="roi-card">
+          <div class="roi-pct" id="finROI">0%</div>
+          <div class="roi-sub">Retorno Neto Sobre tu Inversión</div>
+        </div>
+
+        <!-- Alerta de Envío Gratis -->
+        <div class="shipping-alert missing" id="shippingAlert">
+          📦 Compra mínima: 8 prendas. ¡Desde 12 prendas el flete es 100% GRATIS!
+        </div>
+
+        <!-- Botón de Envío Directo a WhatsApp -->
+        <a href="#" class="btn-send-wa disabled" id="btnSendWA" target="_blank">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Selecciona mínimo 8 prendas para cotizar
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── BASE DE DATOS DE LAS 90 REFERENCIAS OFICIALES DE USH BY USHUAIA ──
+    const ALL_PRODUCTS = [{"ref":"552516","name":"Jean dama barrel straight tiro medio rígido 100% algodón, color gris oscuro","fit":"Barrel","pvp":129900,"wholesale":80538,"img":"https://lh3.googleusercontent.com/d/1Z6ezRMUlC8Db9xSjPPxQf-uLA3Oy6QhS"},{"ref":"552576","name":"Jean Oficial REF 552576","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1xlsQ9FVPHJ27Wt-rIErwcpqpbRoGT-71"},{"ref":"552593","name":"Jean Oficial REF 552593","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1PUlgVm4beBc8eL-JCyPCcActSvumKXTh"},{"ref":"552604","name":"Jean Oficial REF 552604","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/11CQIF58qPP-06STT4nxjMjnY8_8nDsyp"},{"ref":"552605","name":"Jean skinny tiro medio en denim stretch, color gris oscuro 100%","fit":"Skinny","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1bMHlLBtScerJBd_3dXxn09ajXXRAotYW"},{"ref":"552627","name":"Jean Oficial REF 552627","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/15S8yQ4HXXqOaOXAbwh4zXMM5bYzVPllK"},{"ref":"552631","name":"Jean Oficial REF 552631","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1HJk0o48sOE9gSWBYCkQletNUNNjaJ1Uq"},{"ref":"552637","name":"Jean straight boot licrado tiro medio en denim azul claro","fit":"Straight Boot","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1-m4zpuYJsQgIb4edWTdP_ikQEQJznxDz"},{"ref":"552638","name":"Jean straight boot licrado tiro medio en denim negro","fit":"Straight Boot","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1DNBsdOFn9nE7Gy1F6Nu73Dk0h4LO2ynl"},{"ref":"552640","name":"Jean straight boot licrado tiro medio en denim azul oscuro","fit":"Straight Boot","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1vk6h8hXDtRQDilZu8CaW0FUSoK-myMZO"},{"ref":"552642","name":"Jean Oficial REF 552642","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1mlpeVTjkWeeCWtPDlzAeXnGZAh-QdCCQ"},{"ref":"552682","name":"Jean Oficial REF 552682","fit":"Wide Leg","pvp":129900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/10JCSUaub5twqUqM79MfsG_jwPVM6efi_"},{"ref":"552691","name":"Jean dama barrel tiro medio rígido, color Kaki","fit":"Barrel","pvp":139900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1vIUEUzYs2-R0QT_lA71ipZufob60bWFP"},{"ref":"552697","name":"Jean straight rígido tiro medio 100% algodón, color baby blue","fit":"Straight Boot","pvp":119900,"wholesale":72900,"img":"https://lh3.googleusercontent.com/d/1TbKfogGybx3oblS5CQbNw5Z1gZsYwJHV"},{"ref":"552699","name":"Jean straight rígido tiro medio 100% algodón, color negro","fit":"Straight Boot","pvp":119900,"wholesale":72900,"img":"https://lh3.googleusercontent.com/d/1UpJolDNGkMxaev41cUtHy_0WcqIqxbWi"},{"ref":"552715","name":"Jean flare boot licrado tiro medio en denim color azul medio","fit":"Bota Flare","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1ex0QfU6wpCb3rqPjx6dKx3_WqHq7MnxH"},{"ref":"552716","name":"Jean dama flare tiro medio licrado, color azul claro","fit":"Bota Flare","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1u4hJePZLgaijC5KucQcKQw-L9hXUv7a9"},{"ref":"552717","name":"Jean Oficial REF 552717","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1pHv-iscv-yrFiboeuotdCqP-NeHjXfCY"},{"ref":"552721","name":"Jean straight boot licrado tiro medio en denim color gris humo","fit":"Straight Boot","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1kO0ach3pvb3do_m_XuVLOP7jKseQoxFW"},{"ref":"552724","name":"Jean Oficial REF 552724","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1oP9NawCaub1d7PPh3HZFqc5SqSBbJ-OT"},{"ref":"552725","name":"Jean Oficial REF 552725","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/176oRP4_ruaxg7OMewmW2h6-HPoBI8M5R"},{"ref":"552738","name":"Jean dama barrel tiro medio rígido, color azúl claro","fit":"Barrel","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1Y7qOhxrxwERHVnoMoc33YbqstyLr8x7M"},{"ref":"552739","name":"Jean dama barrel tiro medio rígido 100% algodón, color azul dirty","fit":"Barrel","pvp":139900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1g6Y9mV_E13nUwvS0bShrjT0HKkU3_TC-"},{"ref":"552744","name":"Jean vaquero flare tiro medio en denim licrado, color azul oscuro","fit":"Vaquero","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1cIxsFNUoY7UD-COh-CS7m-hlwq2_JBZp"},{"ref":"552746","name":"Jean vaquero flare tiro medio en denim licrado, color azul claro","fit":"Vaquero","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1HDC0gE6S5LsfLtxuxAeNBohCEMWT2jor"},{"ref":"552749","name":"Jean straight boot rígido tiro medio en denim, color azul medio","fit":"Straight Boot","pvp":129900,"wholesale":79900,"img":"https://lh3.googleusercontent.com/d/1Ra2A6txEhLTREUtqchc_tZe7JBnxXwjF"},{"ref":"552750","name":"Jean Oficial REF 552750","fit":"Wide Leg","pvp":129900,"wholesale":80538,"img":"https://lh3.googleusercontent.com/d/1MiUIovmR9mSGKNDNf3zQtuYI1w5iAHUK"},{"ref":"552758","name":"JEAN WIDE LEG TIRO MEDIO Ref: 552758","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1FIaCUKj3HFaRad-ijNNMPUBEophL08cr"},{"ref":"552761","name":"Jean straight tiro medio en denim rígido 100% algodón, color ivory","fit":"Straight Boot","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1k7QmZHc_f9zIvZBMmF-W6zmseT3di6tu"},{"ref":"552770","name":"Jean vaquero flare tiro medio en denim licrado, color Mocca dirty","fit":"Vaquero","pvp":129900,"wholesale":79900,"img":"https://lh3.googleusercontent.com/d/1oXURmi0l8mj4Zx90fzt-rO_NXE7NgR1g"},{"ref":"552773","name":"Jean vaquero flare tiro medio en denim licrado, color kaki dirty","fit":"Vaquero","pvp":129900,"wholesale":79900,"img":"https://lh3.googleusercontent.com/d/18QjzUamKSUWWVjbHV-DknpLNyg0uYmdX"},{"ref":"552776","name":"Jean wide leg tiro medio en denim rígido, color golden Black","fit":"Wide Leg","pvp":139900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1nIWxa8V922LWsjBsAU5DWu50RXFpwAdL"},{"ref":"552778","name":"Jean Oficial REF 552778","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1lLhowOAQiUdXkTwnAykF-TZd1Z6yHdAF"},{"ref":"552780","name":"Jean straight tiro alto en denim rígido 100% algodón, color azúl medio","fit":"Straight Boot","pvp":139900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1i9Wsly2Fy2_8fCdFr56VWVQ1odgLHy-j"},{"ref":"552782","name":"Jean vaquero flare tiro medio en denim licrado, color ivory","fit":"Vaquero","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1r1QRGRkK45KwgvkSFx3Mx5bYJGhINlsP"},{"ref":"552808","name":"Jean dama vaquero tiro medio licrado, color Gris oscuro","fit":"Vaquero","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1m3uu-_STjg3il24YdUjB9_WQ8CgiYbRX"},{"ref":"552809","name":"Jean dama wide leg tiro alto licrado, color Azul oscuro","fit":"Wide Leg","pvp":129900,"wholesale":79900,"img":"https://lh3.googleusercontent.com/d/1dsfpeTwALM1tBbh2CD7Yp-2SZiPNth_R"},{"ref":"552810","name":"Jean dama wide leg tiro medio licrado, color Negro","fit":"Wide Leg","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1FejzErp_kct3YgRSGaeRnOM-NVkbOe8r"},{"ref":"552813","name":"Jean Oficial REF 552813","fit":"Wide Leg","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1alpeTkfq4V2sBNnN3vFPqJOaf_pR-P2g"},{"ref":"552814","name":"Jean dama straight tiro medio licrado, color Ivory","fit":"Straight Boot","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1TXhWShZKVZzHumNX3E1ZIEiSPEDgcuNj"},{"ref":"552816","name":"Jean dama flare tiro medio licrado, color Azul medio","fit":"Bota Flare","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/144uWZSEXLpxdZX2KMalN6MNXIsY_fHgx"},{"ref":"552821","name":"Jean dama skinny tiro medio licrado, color Azul medio","fit":"Skinny","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1H-gNZa8c60OqibQ_jD8gEQFcS6GVb-gg"},{"ref":"552828","name":"Jean dama vaquero licrado color azul oscuro","fit":"Vaquero","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/13WzAQEOYXFsfs6gF7ElGdvb168wU-GmV"},{"ref":"552829","name":"Jean straight tiro alto rígido, color Azul claro","fit":"Straight Boot","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1K-7AXnFL31UU8FnobsMygIueCU0tHcBf"},{"ref":"552830","name":"Jean dama wide leg tiro alto licrado, color Negro","fit":"Wide Leg","pvp":129900,"wholesale":79900,"img":"https://lh3.googleusercontent.com/d/13IN2AE6hFY-Ck29ngChAT4w1Bdki2b17"},{"ref":"552836","name":"Jean wide leg tiro alto rígido con sesgo lateral en contraste, color Azul medio","fit":"Wide Leg","pvp":129900,"wholesale":80538,"img":"https://lh3.googleusercontent.com/d/1YNAUGcGrOwRtwWAK7gEHUBZqtwUFbaix"},{"ref":"552839","name":"Jean dama flare tiro medio licrado, color Azul oscuro","fit":"Bota Flare","pvp":119900,"wholesale":76900,"img":"https://lh3.googleusercontent.com/d/1T3UXsg64_lQ9ZQ8SYoTcrontsFA6bI2S"},{"ref":"552850","name":"Jean dama straight tiro alto rígido con destellos metalizados, color Gris oscuro","fit":"Straight Boot","pvp":149900,"wholesale":89900,"img":"https://lh3.googleusercontent.com/d/17RqtN1KqTiJIKOz9Q6f0TQNHzsi354A8"},{"ref":"552851","name":"Jean dama wide leg tiro alto rígido, color azul oscuro","fit":"Wide Leg","pvp":149900,"wholesale":94900,"img":"https://lh3.googleusercontent.com/d/1gZA3DTSNZzXTMk1xc8Zffq1Aifjg0ekE"},{"ref":"552853","name":"Jean wide leg tiro alto rígido con bota doblada fija, color azul medio","fit":"Wide Leg","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1u4Oe-xD3z7Dga0oItOUobH4gNPhROm4_"},{"ref":"552854","name":"Jean wide leg tiro alto licrado con bolsillos de tapa color azul claro","fit":"Wide Leg","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1a6P-KpZ8I4hKXUWkTiRZa_wR5UmvxC2f"},{"ref":"552859","name":"Jean dama wide leg tiro alto rígido con bota en contraste color Gris","fit":"Wide Leg","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1qA5a9d9gJB3r-R-2A9hsjgKs73_NvO8l"},{"ref":"552862","name":"Jean dama straight tiro alto rígido con detalle de amarre, color Azul dirty","fit":"Straight Boot","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1-x60TTxGKYxHKB3QRiKXLNUZcgZgG2d0"},{"ref":"552863","name":"Jean dama barrel straight rígido con bolsillos de tapa, color gris","fit":"Barrel","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1BNJOT5S0ztO5v6nNBJjbuHXx_hQXDExi"},{"ref":"552864","name":"Jean dama barrel straight rígido con pretina asimétrica, color Azul claro","fit":"Barrel","pvp":139900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1kH0Jj0xwQm2Z9pHCuygwJv81zNskz4Tf"},{"ref":"552865","name":"Jean dama mom fit tiro alto rígido con estampado frutal, color Crudo","fit":"Mom","pvp":129900,"wholesale":79900,"img":"https://lh3.googleusercontent.com/d/1oCTOZpr4A3dGmwfRkxyeMbDyMFRHv0hI"},{"ref":"552866","name":"Jean dama mom fit tiro alto rígido con estampado floral, color Crudo","fit":"Mom","pvp":129900,"wholesale":79900,"img":"https://lh3.googleusercontent.com/d/1QxOCUxZG9FPtnnhNsQB3J9bumw-OGLGL"},{"ref":"552868","name":"Jean dama wide leg tiro alto licrado, color Azul oscuro","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1KKd8K79bGARq0JNj5c2WbYuyv1YWCrAz"},{"ref":"552869","name":"Jean dama wide leg tiro alto licrado, color Azul medio","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1oG1bMK5fLle2Tm3Z2Rlnx86tQWEOVD1w"},{"ref":"552870","name":"Jean dama wide leg tiro alto rígido, color Azul claro","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/18Qg7KLCQYh8mgOaVKjc3FMfA57aGDaxL"},{"ref":"552871","name":"Jean dama wide leg tiro alto rígido, color Gris oscuro","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1gec11zw6UgP9cA8-buYQw6XuvJQQHAZG"},{"ref":"552872","name":"Jean dama wide leg tiro alto rígido, color Gris medio","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1da7VLy-iQltXVQ9nazekfOJhqfMYrfz8"},{"ref":"552873","name":"Jean dama wide leg tiro alto licrado, color Ivory","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1AKzE1IyaT9RUdIDYCpBWoCZzVNDenntq"},{"ref":"552874","name":"Jean dama wide leg tiro alto rígido. color Almendra","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1hSaz4t7yA2zM64CvW81O2_eLcDIpGFep"},{"ref":"552875","name":"Jean dama wide leg tiro alto rígido, color Azul dirty","fit":"Wide Leg","pvp":119900,"wholesale":74900,"img":"https://lh3.googleusercontent.com/d/1R2k_ibs2Ej0XN3HznZPLloryXAkAGYLe"},{"ref":"552878","name":"Jean dama barrel straight rígido con bordado paisley, color Café","fit":"Barrel","pvp":159900,"wholesale":99900,"img":"https://lh3.googleusercontent.com/d/1FVzALXXPkeQrzCUvlff0S4dv78E9nXSP"},{"ref":"552879","name":"Jean dama barrel straight rígido con botón en la bota, color Ivory","fit":"Barrel","pvp":129900,"wholesale":84900,"img":"https://lh3.googleusercontent.com/d/1cYF6aFXUqW8aNAS-i5nqnR_PAXsIApQY"},{"ref":"556172","name":"Short corto dama rígido, color Azul oscuro","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1CQFM0b6dl1pjvln4__vY0bN9RIBeMQWz"},{"ref":"556240","name":"Jean Oficial REF 556240","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1HvC2LIb2vUeC9b8EjqPVVD2ls9WDCUjn"},{"ref":"556242","name":"Jean Oficial REF 556242","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1o0Z74PMhiul0kijGJiEhJt-jCXwSAsbB"},{"ref":"556247","name":"Short largo rígido en denim azul medio","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1RMoGNzKF7F4QVajSztKsSIywDTKbZhFo"},{"ref":"556280","name":"Jean Oficial REF 556280","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1cK0TikfY5fkPKiNnfs8bBXc_QhTsXN6c"},{"ref":"556283","name":"Short corto dama licrado, color Gris oscuro","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1tJOeyAA95xI3XtR_Xyfm1eq5q2PVBB6t"},{"ref":"556284","name":"Short corto dama rígido con encaje y desgastes, color Azul claro","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1IQ_aNT87fVMSrcXV-AbxntKSS4DB9gDu"},{"ref":"556286","name":"Jean Oficial REF 556286","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1XjoEUkcQC44JNNSupkYbjVF9Sq1KlxZx"},{"ref":"556287","name":"Jean Oficial REF 556287","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1F0EEaMFPt1I3bmefUO9iFuJB21myLq57"},{"ref":"556288","name":"Jean Oficial REF 556288","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1Lb493kzGdD-K4QkUTYwpjQMCoUxjoPKO"},{"ref":"556289","name":"Jean Oficial REF 556289","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1bWh1NvFpdiXgdv7PTFaPn5HKO7KaHyLh"},{"ref":"556290","name":"Jean Oficial REF 556290","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1JhvdFDvokzgOonC9_gziqUMvcDXvJIjn"},{"ref":"556291","name":"Jean Oficial REF 556291","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1s85nBZINCSJX9Ozju3BlI7oEf0rjEA8Q"},{"ref":"556292","name":"Jean Oficial REF 556292","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1MfIIOM-RouTQKfhyyXGLRCjKjxLuNUzF"},{"ref":"558061","name":"Falda corta rígida de tiro medio en denim, color ivory","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1tO5QPnU7e4VTDr0geha7WqyMoP7KmpA1"},{"ref":"558063","name":"Falda corta dama rígida 100% algodón, color blanco","fit":"Shorts","pvp":74900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1-JXQ2Q0sUYd4DGVUAdCEQMkhaKAt_rDq"},{"ref":"558066","name":"Falda corta en denim rígido, color azul oscuro 100% algodón","fit":"Shorts","pvp":74900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1sw6KrJjkjhm50TVP98bFuw9Vod7thD65"},{"ref":"558070","name":"Falda dama licrada, color Azul oscuro","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1plUrb6B6_NZhY6mjLqTbtOhujsRUkSKT"},{"ref":"558071","name":"Falda dama rígida 100% algodón, color Azul medio","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1xtrTGynq_eSqrfP7CDS_neVj5CtMBqlS"},{"ref":"558072","name":"Falda dama rígida 100% algodón, color Gris","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1a3OGZ3azasHsU9gFTv2HbPau0WPm727_"},{"ref":"558075","name":"Falda dama rígida, color Negro","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/18KVkJ0TfjlhgUxo-8ZwNfOlKupkVZBwz"},{"ref":"558077","name":"Falda dama rígida, color crudo","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/1mLh0VrlD6RQ3BL2vOx3LOuGtSy-8sM34"},{"ref":"558079","name":"Falda dama licrada, color Azul claro","fit":"Shorts","pvp":79900,"wholesale":54900,"img":"https://lh3.googleusercontent.com/d/17rtRjBgLlh52lL7nc04snizodE_YN9e_"}];
+
+    // Estado de la aplicación
+    let isAuthenticated = true;
+    let selectedQuantities = new Map(); // ref -> qty
+    let currentFitFilter = 'Todas';
+    let currentSearchTerm = '';
+
+    function fmt(n) {
+      return '$' + Math.round(n).toLocaleString('es-CO');
+    }
+
+    // Toggle de simulación de sesión
+    function toggleSessionState() {
+      isAuthenticated = !isAuthenticated;
+      const dot = document.getElementById('sessionDot');
+      const label = document.getElementById('sessionStatusLabel');
+      const btn = document.getElementById('btnSessionToggle');
+      const gate = document.getElementById('authGate');
+      const calc = document.getElementById('calculatorContainer');
+
+      if (isAuthenticated) {
+        dot.className = 'session-indicator';
+        label.innerHTML = 'Sesión Activa: <strong>cliente_mayorista@ushuaia.com</strong>';
+        btn.textContent = 'Simular Vista sin Iniciar Sesión 🔒';
+        gate.style.display = 'none';
+        calc.style.display = 'block';
+      } else {
+        dot.className = 'session-indicator locked';
+        label.innerHTML = 'Visitante Anónimo: <strong>Sin Sesión Activa</strong>';
+        btn.textContent = 'Simular Sesión Iniciada 🔓';
+        gate.style.display = 'block';
+        calc.style.display = 'none';
+      }
+    }
+
+    // Filtrado y búsqueda
+    function filterByFit(fit) {
+      currentFitFilter = fit;
+      document.querySelectorAll('.fit-tab').forEach(t => {
+        t.classList.toggle('active', t.textContent.startsWith(fit));
+      });
+      renderProducts();
+    }
+
+    function handleSearch(term) {
+      currentSearchTerm = term.trim().toLowerCase();
+      renderProducts();
+    }
+
+    function getFilteredProducts() {
+      return ALL_PRODUCTS.filter(p => {
+        const matchesFit = currentFitFilter === 'Todas' || 
+          p.fit.toLowerCase() === currentFitFilter.toLowerCase() ||
+          (currentFitFilter === 'Vaquero' && (p.fit.includes('Vaquero') || p.fit.includes('Flare')));
+        
+        const matchesSearch = !currentSearchTerm || 
+          p.ref.includes(currentSearchTerm) || 
+          p.name.toLowerCase().includes(currentSearchTerm) ||
+          p.fit.toLowerCase().includes(currentSearchTerm);
+
+        return matchesFit && matchesSearch;
+      });
+    }
+
+    // Render de la cuadrícula de productos
+    function renderProducts() {
+      const grid = document.getElementById('productsGrid');
+      const filtered = getFilteredProducts();
+      document.getElementById('catalogCountLabel').textContent = `Mostrando ${filtered.length} referencias`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">No se encontraron referencias con ese criterio.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const qty = selectedQuantities.get(p.ref) || 0;
+        return `
+          <div class="prod-card ${qty > 0 ? 'has-qty' : ''}" id="card-${p.ref}">
+            <div class="prod-thumb">
+              <img src="${p.img}" alt="REF ${p.ref}" loading="lazy" onerror="this.src='https://lh3.googleusercontent.com/d/1gZA3DTSNZzXTMk1xc8Zffq1Aifjg0ekE'" />
+              <span class="ref-badge">REF ${p.ref}</span>
+              <span class="fit-tag">${p.fit}</span>
+            </div>
+            <div class="prod-body">
+              <div class="prod-title" title="${p.name}">${p.name}</div>
+              <div class="prod-prices">
+                <span class="price-wholesale">${fmt(p.wholesale)}</span>
+                <span class="price-pvp">${fmt(p.pvp)}</span>
+              </div>
+              <div class="qty-control">
+                <button class="qty-btn" onclick="changeQty('${p.ref}', -1)">-</button>
+                <span class="qty-val" id="qty-val-${p.ref}">${qty}</span>
+                <button class="qty-btn" onclick="changeQty('${p.ref}', 1)">+</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Modificar cantidad
+    function changeQty(ref, delta) {
+      const current = selectedQuantities.get(ref) || 0;
+      const next = current + delta;
+      if (next <= 0) {
+        selectedQuantities.delete(ref);
+      } else {
+        selectedQuantities.set(ref, next);
+      }
+
+      const valEl = document.getElementById('qty-val-' + ref);
+      if (valEl) valEl.textContent = next > 0 ? next : 0;
+      const card = document.getElementById('card-' + ref);
+      if (card) card.classList.toggle('has-qty', next > 0);
+
+      updateCalculations();
+    }
+
+    function removeItem(ref) {
+      selectedQuantities.delete(ref);
+      renderProducts();
+      updateCalculations();
+    }
+
+    // Recalcular métricas de negocio
+    function updateCalculations() {
+      let totalUnits = 0;
+      let totalPVP = 0;
+      const selectedItems = [];
+
+      selectedQuantities.forEach((qty, ref) => {
+        const prod = ALL_PRODUCTS.find(p => p.ref === ref);
+        if (prod && qty > 0) {
+          totalUnits += qty;
+          totalPVP += prod.pvp * qty;
+          selectedItems.push({ ...prod, qty });
+        }
+      });
+
+      document.getElementById('totalUnitsBadge').textContent = `${totalUnits} prenda${totalUnits !== 1 ? 's' : ''}`;
+
+      // Reglas de precios exactas de pricing.ts
+      let discountPct = 0;
+      let scaleWidth = 0;
+      let scaleNextMsg = '';
+      let scaleStatusMsg = '';
+
+      if (totalUnits === 0) {
+        scaleWidth = 0;
+        scaleNextMsg = 'Faltan 12 para Precio Mayorista';
+        scaleStatusMsg = '💡 Combina cualquier referencia diferente. Mínimo 12 prendas surtidas para activar tarifa mayorista de fábrica y Envío Gratis.';
+      } else if (totalUnits < 8) {
+        scaleWidth = (totalUnits / 12) * 50;
+        scaleNextMsg = `Llevas ${totalUnits}/12 prendas surtidas`;
+        scaleStatusMsg = `⚠️ Llevas ${totalUnits} prendas surtidas. Faltan ${12 - totalUnits} para el precio mayorista pleno con Envío Gratis (mínimo de escala: 8 uds).`;
+      } else if (totalUnits < 12) {
+        discountPct = 0.20;
+        scaleWidth = 50 + ((totalUnits - 8) / 4) * 25;
+        scaleNextMsg = `¡Faltan ${12 - totalUnits} para Envío Gratis!`;
+        scaleStatusMsg = `🔥 Llevas ${totalUnits} prendas surtidas (20% OFF inicial). Agrega ${12 - totalUnits} prendas más (de cualquier modelo) para precio mayorista pleno + Envío Gratis.`;
+      } else if (totalUnits < 24) {
+        discountPct = 0.38;
+        scaleWidth = 75 + ((totalUnits - 12) / 12) * 25;
+        scaleNextMsg = '¡12+ Surtidas: Envío Gratis!';
+        scaleStatusMsg = '🎉 ¡Tarifa Mayorista Oficial de Fábrica + ENVÍO GRATIS a toda Colombia desbloqueados!';
+      } else {
+        discountPct = 0.42;
+        scaleWidth = 100;
+        scaleNextMsg = '¡Escala Gran Mayorista 24+!';
+        scaleStatusMsg = '💎 Máximo margen de fábrica (42%) con despacho prioritario.';
+      }
+
+      document.getElementById('scaleFillBar').style.width = Math.min(scaleWidth, 100) + '%';
+      document.getElementById('scaleNextLabel').textContent = scaleNextMsg;
+      document.getElementById('scaleStatusMsg').textContent = scaleStatusMsg;
+
+      // Render lista de seleccionados
+      const listEl = document.getElementById('selectedItemsList');
+      if (selectedItems.length === 0) {
+        listEl.innerHTML = '<div class="sel-empty">Toca los botones "+" en cualquier jean del catálogo para añadir prendas.</div>';
+      } else {
+        listEl.innerHTML = selectedItems.map(item => `
+          <div class="sel-row">
+            <div class="sel-row-info">
+              <span class="sel-row-ref">REF ${item.ref}</span> · <span class="sel-row-fit">${item.fit}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="sel-row-qty">${item.qty} uds</span>
+              <button onclick="removeItem('${item.ref}')" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.9rem;">✕</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Cálculos de dinero
+      let inversion = 0;
+      if (totalUnits < 8) {
+        inversion = totalPVP;
+      } else if (totalUnits < 12) {
+        inversion = Math.round(totalPVP * 0.80);
+      } else if (totalUnits < 24) {
+        // Desde 12 unidades surtidas: toma el precio mayorista individual de cada prenda diferente seleccionada
+        inversion = selectedItems.reduce((acc, it) => acc + (it.wholesale * it.qty), 0);
+      } else {
+        inversion = Math.round(totalPVP * 0.58);
+      }
+
+      const ganancia = totalPVP - inversion;
+      const costoPromedio = totalUnits > 0 ? Math.round(inversion / totalUnits) : 0;
+      const roi = inversion > 0 && totalUnits >= 8 ? Math.round((ganancia / inversion) * 100) : 0;
+
+      document.getElementById('finInversion').textContent = fmt(inversion);
+      document.getElementById('finCostoPromedio').textContent = fmt(costoPromedio);
+      document.getElementById('finIngresos').textContent = fmt(totalPVP);
+      document.getElementById('finGanancia').textContent = totalUnits >= 8 ? fmt(ganancia) : '$0';
+      document.getElementById('finROI').textContent = totalUnits >= 8 ? `${roi}%` : '0%';
+
+      // Alerta de envío
+      const shippingAlert = document.getElementById('shippingAlert');
+      if (totalUnits >= 12) {
+        shippingAlert.className = 'shipping-alert free';
+        shippingAlert.innerHTML = `🚚 ¡ENVÍO GRATIS A TODA COLOMBIA INCLUIDO! (${totalUnits} prendas surtidas)`;
+      } else if (totalUnits >= 8) {
+        shippingAlert.className = 'shipping-alert missing';
+        shippingAlert.innerHTML = `📦 Llevas ${totalUnits} prendas surtidas. Agrega ${12 - totalUnits} más (de cualquier referencia) para tener FLETE GRATIS.`;
+      } else {
+        shippingAlert.className = 'shipping-alert missing';
+        shippingAlert.innerHTML = `📦 Selecciona mínimo 12 prendas surtidas para escala mayorista plena con Flete Gratis (llevas ${totalUnits}/12).`;
+      }
+
+      // Botón WhatsApp
+      const btnWA = document.getElementById('btnSendWA');
+      if (totalUnits >= 12) {
+        btnWA.classList.remove('disabled');
+        btnWA.textContent = `📲 Cotizar Pedido Mayorista por WhatsApp (${totalUnits} prendas surtidas)`;
+        
+        const listaText = selectedItems.map(it => `- REF ${it.ref} (${it.fit}): ${it.qty} uds`).join('\n');
+        const msg = encodeURIComponent(
+          `¡Hola Ush By Ushuaia! Armé mi pedido mayorista en la Calculadora con ${totalUnits} prendas surtidas:\n\n` +
+          `${listaText}\n\n` +
+          `💳 Inversión Mayorista: ${fmt(inversion)}\n` +
+          `💰 Ingreso Estimado Ventas (PVP): ${fmt(totalPVP)}\n` +
+          `✅ Ganancia Proyectada: ${fmt(ganancia)} (${roi}% ROI)\n` +
+          `🚚 Envío Nacional: 100% GRATIS (12+ prendas surtidas)\n\n` +
+          `¿Me confirman disponibilidad de tallas para cerrar el pedido?`
+        );
+        btnWA.href = `https://wa.me/573011393902?text=${msg}`;
+      } else if (totalUnits >= 8) {
+        btnWA.classList.remove('disabled');
+        btnWA.textContent = `📲 Cotizar Escala 20% (${totalUnits}/12 prendas surtidas)`;
+        
+        const listaText = selectedItems.map(it => `- REF ${it.ref} (${it.fit}): ${it.qty} uds`).join('\n');
+        const msg = encodeURIComponent(
+          `¡Hola Ush By Ushuaia! Armé mi pedido con ${totalUnits} prendas surtidas (Escala 20%):\n\n` +
+          `${listaText}\n\n` +
+          `Total: ${fmt(inversion)}. ¿Me asesoran para completar las 12 prendas y tener Envío Gratis?`
+        );
+        btnWA.href = `https://wa.me/573011393902?text=${msg}`;
+      } else {
+        btnWA.classList.add('disabled');
+        btnWA.textContent = `Selecciona mínimo 12 prendas surtidas para cotizar (${totalUnits}/12)`;
+        btnWA.href = '#';
+      }
+    }
+
+    // Inicializar
+    renderProducts();
+    updateCalculations();
+  </script>
+</body>
+</html>

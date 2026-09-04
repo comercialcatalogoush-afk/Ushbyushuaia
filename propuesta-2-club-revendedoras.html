@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programa Oficial de Distribución y Alianzas B2B | Ush By Ushuaia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── PALETA REAL DEL CATÁLOGO USH BY USHUAIA ── */
+    :root {
+      --ush-pink:       #d88193;
+      --ush-pink-dark:  #c06579;
+      --ush-pink-hover: #b5586c;
+      --ush-pink-light: #fdf3f5;
+      --ush-pink-soft:  #f8e4e8;
+      --ush-navy:       #1b2333;
+      --ush-navy-dark:  #121824;
+      --ush-body-bg:    #ffffff;
+      --text-main:      #1e293b;
+      --text-muted:     #64748b;
+      --border-light:   #e2e8f0;
+      --border-pink:    rgba(216,129,147,0.3);
+      --green:          #059669;
+      --green-light:    #ecfdf5;
+      --green-border:   #a7f3d0;
+      --gold:           #d97706;
+      --shadow-card:    0 10px 30px -5px rgba(27,35,51,0.06), 0 4px 12px -2px rgba(216,129,147,0.08);
+      --shadow-pink:    0 8px 25px rgba(216,129,147,0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--ush-body-bg);
+      color: var(--text-main);
+      font-family: 'Outfit', 'Avenir Next', system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      background: var(--ush-navy);
+      color: white; text-align: center;
+      font-size: 0.78rem; letter-spacing: 0.5px;
+      padding: 9px 16px; font-weight: 500;
+    }
+    .topbar span { color: var(--ush-pink); font-weight: 700; }
+
+    /* HERO INSTITUCIONAL B2B */
+    .hero {
+      background: linear-gradient(135deg, var(--ush-pink-light) 0%, #ffffff 70%);
+      border-bottom: 1px solid var(--border-pink);
+      padding: 68px 24px 50px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: var(--ush-pink-soft);
+      border: 1px solid var(--border-pink);
+      border-radius: 999px;
+      padding: 6px 20px;
+      font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+      color: var(--ush-pink-dark);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.1rem, 5vw, 3.6rem);
+      color: var(--ush-navy); line-height: 1.15; margin-bottom: 16px;
+    }
+    .hero h1 em { color: var(--ush-pink); font-style: italic; }
+    .hero p { color: var(--text-muted); max-width: 720px; margin: 0 auto; font-size: 1.08rem; }
+
+    /* BENCHMARKING: CÓMO OPERAN LOS GRANDES DE COLOMBIA */
+    .benchmark-section {
+      max-width: 1080px; margin: 40px auto; padding: 0 20px;
+    }
+    .benchmark-box {
+      background: #ffffff;
+      border: 1.5px solid var(--border-light);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow-card);
+    }
+    .benchmark-header {
+      text-align: center; max-width: 800px; margin: 0 auto 30px;
+    }
+    .benchmark-header h2 {
+      font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--ush-navy); margin-bottom: 10px;
+    }
+    .benchmark-header p {
+      font-size: 0.92rem; color: var(--text-muted); line-height: 1.65;
+    }
+    .brand-chips {
+      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .brand-chip {
+      background: #f8fafc; border: 1px solid var(--border-light);
+      border-radius: 999px; padding: 6px 18px;
+      font-size: 0.8rem; font-weight: 800; color: var(--ush-navy);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .brand-chip span { color: var(--ush-pink); font-size: 0.9rem; }
+
+    /* Tabla comparativa */
+    .comp-table-wrap {
+      overflow-x: auto; margin-top: 20px;
+    }
+    .comp-table {
+      width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;
+    }
+    .comp-table th {
+      background: var(--ush-navy); color: white; padding: 14px 18px;
+      font-weight: 700; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.8px;
+    }
+    .comp-table td {
+      padding: 14px 18px; border-bottom: 1px solid var(--border-light);
+      color: var(--text-main); vertical-align: middle;
+    }
+    .comp-table tr:nth-child(even) { background: #fafafa; }
+    .comp-table tr:hover { background: var(--ush-pink-light); }
+    .col-ush {
+      font-weight: 800; color: var(--ush-navy); background: #fdf3f5 !important;
+      border-left: 2px solid var(--ush-pink); border-right: 2px solid var(--ush-pink);
+    }
+    .badge-check { color: var(--green); font-weight: 800; margin-right: 6px; }
+
+    /* NIVELES DE DISTRIBUCIÓN */
+    .niveles-section {
+      max-width: 1200px; margin: 60px auto; padding: 0 20px;
+    }
+    .section-title {
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+      color: var(--ush-navy); margin-bottom: 8px;
+    }
+    .section-sub { text-align: center; color: var(--text-muted); margin-bottom: 40px; font-size: 0.96rem; }
+
+    .niveles-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 1040px) { .niveles-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 580px) { .niveles-grid { grid-template-columns: 1fr; } }
+
+    .nivel-card {
+      background: white;
+      border-radius: 20px; padding: 30px 24px;
+      border: 1.5px solid var(--border-light);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow-card);
+      transition: all 0.25s;
+    }
+    .nivel-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--ush-pink);
+      box-shadow: 0 16px 40px -8px rgba(216,129,147,0.25);
+    }
+    .nivel-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 5px;
+    }
+
+    .bronce::before { background: #94a3b8; }
+    .plata::before { background: var(--ush-pink); }
+    .oro::before { background: #f59e0b; }
+    .platino::before { background: var(--ush-navy); }
+
+    .nbadge {
+      display: inline-block;
+      font-size: 0.65rem; font-weight: 800; letter-spacing: 1.2px;
+      text-transform: uppercase; padding: 4px 12px;
+      border-radius: 999px; margin-bottom: 14px;
+      align-self: flex-start;
+    }
+    .bronce .nbadge { background: #f1f5f9; color: #475569; }
+    .plata .nbadge { background: var(--ush-pink-soft); color: var(--ush-pink-dark); }
+    .oro .nbadge { background: #fef3c7; color: #b45309; }
+    .platino .nbadge { background: #f1f5f9; color: var(--ush-navy); }
+
+    .nicon { font-size: 2.6rem; margin-bottom: 8px; display: block; line-height: 1; }
+    .nname { font-size: 1.4rem; font-weight: 800; color: var(--ush-navy); margin-bottom: 4px; }
+    .nreq { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 18px; font-weight: 600; }
+
+    .blist { list-style: none; margin-top: auto; }
+    .blist li {
+      font-size: 0.86rem; padding: 9px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      display: flex; gap: 8px; color: var(--text-main);
+      line-height: 1.45;
+    }
+    .blist li:last-child { border-bottom: none; }
+    .blist li .ck { color: var(--ush-pink-dark); font-weight: 800; flex-shrink: 0; }
+
+    /* CASOS DE ESTUDIO / ALMACENES Y BOUTIQUES */
+    .test-section {
+      background: var(--ush-pink-light);
+      border-top: 1px solid var(--border-pink);
+      border-bottom: 1px solid var(--border-pink);
+      padding: 68px 24px;
+    }
+    .test-inner { max-width: 1100px; margin: 0 auto; }
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
+      gap: 24px; margin-top: 36px;
+    }
+    .test-card {
+      background: white;
+      border: 1px solid var(--border-pink);
+      border-radius: 18px; padding: 28px;
+      box-shadow: 0 4px 14px rgba(216,129,147,0.06);
+    }
+    .stars { color: #f59e0b; font-size: 0.95rem; letter-spacing: 2px; margin-bottom: 12px; }
+    .test-text {
+      font-size: 0.92rem; color: var(--text-muted);
+      line-height: 1.7; margin-bottom: 20px;
+    }
+    .test-author { display: flex; align-items: center; gap: 14px; }
+    .avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--ush-pink), var(--ush-pink-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; color: white; font-size: 1rem; flex-shrink: 0;
+    }
+    .aname { font-size: 0.95rem; font-weight: 700; color: var(--ush-navy); }
+    .acity { font-size: 0.78rem; color: var(--text-muted); }
+    .anivel {
+      margin-left: auto;
+      font-size: 0.72rem; font-weight: 800;
+      background: var(--ush-pink-soft); color: var(--ush-pink-dark);
+      border-radius: 999px; padding: 4px 12px;
+    }
+
+    /* PILARES ESTRATÉGICOS */
+    .why-section { max-width: 1100px; margin: 0 auto 60px; padding: 64px 20px 0; }
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+      gap: 22px; margin-top: 34px;
+    }
+    .why-card {
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: 16px; padding: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+    }
+    .why-card:hover {
+      transform: translateY(-4px); border-color: var(--ush-pink); box-shadow: var(--shadow-card);
+    }
+    .why-card .wi { font-size: 2.2rem; margin-bottom: 12px; }
+    .why-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--ush-navy); margin-bottom: 8px; }
+    .why-card p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; }
+
+    /* CTA FINAL */
+    .cta-section {
+      background: var(--ush-navy);
+      padding: 72px 24px; text-align: center; color: white;
+    }
+    .cta-section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.9rem,4vw,3rem); margin-bottom: 12px;
+    }
+    .cta-section h2 em { color: var(--ush-pink); font-style: italic; }
+    .cta-section p { color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto 34px; font-size: 1.05rem; }
+    .btn-wa {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: #25D366; color: white;
+      padding: 17px 38px; border-radius: 999px;
+      font-size: 1.08rem; font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 28px rgba(37,211,102,0.35);
+      transition: all 0.2s;
+    }
+    .btn-wa:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(37,211,102,0.45); }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    🏭 Fabricación Directa Denim Colombiano · <span>Tallas 6 a 14</span> · Envíos Nacionales Coordinadora / Envía · ushbyushuaia.vercel.app
+  </div>
+
+  <section class="hero">
+    <div class="hero-tag">Propuesta 2 · Modelo de Distribución B2B de Grandes Fabricantes</div>
+    <h1>Programa Oficial de Distribución:<br><em>Alianzas para Boutiques y Almacenes</em></h1>
+    <p>Inspirado en los gigantes de la confección nacional (<strong>Rifle, Cocoa Jeans, STF Group y Grupo Uribe</strong>): un canal mayorista institucional diseñado para abastecer el comercio formal con márgenes protegidos, material de vitrina en alta definición y despacho asegurado desde planta.</p>
+  </section>
+
+  <!-- BENCHMARKING DE LA INDUSTRIA COLOMBIANA -->
+  <section class="benchmark-section">
+    <div class="benchmark-box">
+      <div class="benchmark-header">
+        <h2>¿Cómo Dominan el Mercado las Grandes Marcas de Confección?</h2>
+        <p>Empresas consolidadas con producción industrial y tiendas propias operan con esquemas de distribución mayorista B2B que protegen al comerciante y garantizan la rotación del denim.</p>
+        <div class="brand-chips">
+          <div class="brand-chip"><span>✓</span> Rifle Jeans</div>
+          <div class="brand-chip"><span>✓</span> Cocoa Jeans</div>
+          <div class="brand-chip"><span>✓</span> STF Group (Studio F / ELA)</div>
+          <div class="brand-chip"><span>✓</span> GCO Grupo Uribe</div>
+        </div>
+      </div>
+
+      <div class="comp-table-wrap">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>Pilar Comercial</th>
+              <th>Grandes Cadenas Tradicionales</th>
+              <th class="col-ush">Modelo B2B Ush By Ushuaia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Margen Comercial</strong></td>
+              <td>22% a 28% (márgenes apretados por intermediación)</td>
+              <td class="col-ush"><span class="badge-check">✓</span> <strong>38% a 42% de Margen Neto</strong> directo de fábrica</td>
+            </tr>
+            <tr>
+              <td><strong>Volumen de Entrada</strong></td>
+              <td>Exigen compras masivas de colección ($15M a $30M)</td>
+              <td class="col-ush"><span class="badge-check">✓</span> <strong>Desde 8 a 12 unidades</strong> con surtido libre</td>
+            </tr>
+            <tr>
+              <td><strong>Curva de Tallas</strong></td>
+              <td>Curvas cerradas obligatorias (te quedas con tallas difíciles)</td>
+              <td class="col-ush"><span class="badge-check">✓</span> <strong>Curvas abiertas</strong>: tú eliges tallas (6, 8, 10, 12, 14)</td>
+            </tr>
+            <tr>
+              <td><strong>Flete y Logística</strong></td>
+              <td>El flete corre a cargo del comprador</td>
+              <td class="col-ush"><span class="badge-check">✓</span> <strong>Flete 100% GRATIS</strong> en pedidos de 12+ unidades</td>
+            </tr>
+            <tr>
+              <td><strong>Material de Vitrina</strong></td>
+              <td>Restringido o con marcas de agua pesadas</td>
+              <td class="col-ush"><span class="badge-check">✓</span> <strong>Google Drive en alta resolución</strong> listo para pauta y vitrina</td>
+            </tr>
+            <tr>
+              <td><strong>Siluetas de Vanguardia</strong></td>
+              <td>Ciclos de diseño lentos de 6 meses</td>
+              <td class="col-ush"><span class="badge-check">✓</span> <strong>Alta rotación</strong>: Wide Leg, Barrel, Straight Boot rígido</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- NIVELES DE ALIANZA B2B -->
+  <section class="niveles-section">
+    <h2 class="section-title">Escalas Oficiales del Programa de Aliados</h2>
+    <p class="section-sub">Alineadas con las reglas de precio de <code>pricing.ts</code> y despacho nacional por Coordinadora y Envía</p>
+
+    <div class="niveles-grid">
+      <!-- Nivel 1 -->
+      <div class="nivel-card bronce">
+        <span class="nbadge">Prueba de Vitrina</span>
+        <span class="nicon">🛍️</span>
+        <div class="nname">Boutique Aliada</div>
+        <div class="nreq">8 a 11 prendas por pedido</div>
+        <ul class="blist">
+          <li><span class="ck">✓</span><strong>20% de Margen</strong> sobre precio de etiqueta sugerido</li>
+          <li><span class="ck">✓</span>Curaduría de tallas libres (6 a 14 sin curva cerrada)</li>
+          <li><span class="ck">✓</span>Acceso completo a catálogo digital en línea</li>
+          <li><span class="ck">✓</span>Despacho con transportadora Coordinadora / Envía</li>
+          <li><span class="ck">✓</span>Asesoría de hormas y tiro por WhatsApp</li>
+        </ul>
+      </div>
+
+      <!-- Nivel 2 -->
+      <div class="nivel-card plata">
+        <span class="nbadge">Punto Autorizado</span>
+        <span class="nicon">🏬</span>
+        <div class="nname">Punto Oficial</div>
+        <div class="nreq">12 a 23 prendas por pedido</div>
+        <ul class="blist">
+          <li><span class="ck">✓</span><strong>Precio Mayorista de Fabricante</strong> (35% a 38% OFF)</li>
+          <li><span class="ck">✓</span><strong>🚚 ¡FLETE 100% GRATIS!</strong> a toda Colombia</li>
+          <li><span class="ck">✓</span>Acceso a Drive oficial con fotos de modelo en estudio</li>
+          <li><span class="ck">✓</span>Ficha técnica de mezclilla (100% algodón rígido y licrado)</li>
+          <li><span class="ck">✓</span>Guía de rastreo automatizada en web</li>
+        </ul>
+      </div>
+
+      <!-- Nivel 3 -->
+      <div class="nivel-card oro">
+        <span class="nbadge">Distribución Regional</span>
+        <span class="nicon">⭐</span>
+        <div class="nname">Distribuidor Plata</div>
+        <div class="nreq">24 a 49 prendas al mes</div>
+        <ul class="blist">
+          <li><span class="ck">✓</span><strong>40% a 42% de Margen Neto</strong> directo de planta</li>
+          <li><span class="ck">✓</span><strong>Envío prioritario nacional gratuito</strong></li>
+          <li><span class="ck">✓</span>Reserva de stock en referencias Top (552851, 552850, 552739)</li>
+          <li><span class="ck">✓</span>Lookbook digital descargable en PDF para vitrina</li>
+          <li><span class="ck">✓</span>Línea de reposición rápida con ejecutivo asignado</li>
+        </ul>
+      </div>
+
+      <!-- Nivel 4 -->
+      <div class="nivel-card platino">
+        <span class="nbadge">Gran Mayorista</span>
+        <span class="nicon">🏢</span>
+        <div class="nname">Distribuidor Élite</div>
+        <div class="nreq">50+ prendas al mes</div>
+        <ul class="blist">
+          <li><span class="ck">✓</span><strong>Máxima tarifa industrial de confección</strong></li>
+          <li><span class="ck">✓</span>Protección de referencias en tu zona comercial</li>
+          <li><span class="ck">✓</span>Acceso anticipado a lanzamientos antes de publicarse</li>
+          <li><span class="ck">✓</span>Despacho express desde bodega central el mismo día</li>
+          <li><span class="ck">✓</span>Términos y condiciones comerciales de fábrica</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASOS DE BOUTIQUES EN ZONAS COMERCIALES -->
+  <section class="test-section">
+    <div class="test-inner">
+      <h2 class="section-title">Comercios que Confían en Confección Nacional</h2>
+      <p class="section-sub">Boutiques multimarca que abastecen sus vitrinas con las referencias oficiales de Ush By Ushuaia</p>
+
+      <div class="test-grid">
+        <div class="test-card">
+          <div class="stars">★★★★★</div>
+          <p class="test-text">"En mi boutique en Medellín vendo marcas reconocidas, pero necesitaba un fabricante directo con siluetas que rotaran rápido como Wide Leg y Barrel tiro alto. La confección de Ush By Ushuaia compite de frente con marcas como Cocoa o Rifle, pero con un margen mucho más rentable para nosotros."</p>
+          <div class="test-author">
+            <div class="avatar">CR</div>
+            <div>
+              <div class="aname">Carlos Restrepo</div>
+              <div class="acity">Boutique Multimarca, C.C. Santafé (Medellín)</div>
+            </div>
+            <div class="anivel">Punto Oficial</div>
+          </div>
+        </div>
+
+        <div class="test-card">
+          <div class="stars">★★★★★</div>
+          <p class="test-text">"El banco de fotos de Google Drive nos ahorró miles de pesos en sesiones de fotos. Descargamos las imágenes limpias en alta definición, las subimos a nuestra web y pautamos en Instagram. Las clientas identifican de inmediato el calce y la horma colombiana."</p>
+          <div class="test-author">
+            <div class="avatar">MP</div>
+            <div>
+              <div class="aname">María Paula Gómez</div>
+              <div class="acity">Almacén de Moda, El Peñón (Cali)</div>
+            </div>
+            <div class="anivel">Distribuidor Plata</div>
+          </div>
+        </div>
+
+        <div class="test-card">
+          <div class="stars">★★★★★</div>
+          <p class="test-text">"Tener el envío gratis desde 12 unidades nos permite reponer mercancía cada 10 días sin cargar fletes innecesarios al balance. Las referencias 552851 y 552697 son ventas fijas en nuestro almacén."</p>
+          <div class="test-author">
+            <div class="avatar">AH</div>
+            <div>
+              <div class="aname">Andrés Hernández</div>
+              <div class="acity">Distribuidor Textil, San Victorino (Bogotá)</div>
+            </div>
+            <div class="anivel">Distribuidor Élite</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PILARES ESTRATÉGICOS -->
+  <section class="why-section">
+    <h2 class="section-title">¿Por Qué Deberías Implementar Este Enfoque?</h2>
+    <p class="section-sub">Diferenciación estratégica para posicionar a Ush By Ushuaia en el mercado mayorista</p>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="wi">💎</div>
+        <h3>Posicionamiento de Marca Fabricante</h3>
+        <p>Eleva a Ush By Ushuaia al nivel de las grandes fábricas con tienda propia que abastecen el comercio formal de centros comerciales y boutiques.</p>
+      </div>
+      <div class="why-card">
+        <div class="wi">📊</div>
+        <h3>Pedidos Constantes y Predecibles</h3>
+        <p>Las boutiques multimarca reordenan de 12 a 30 prendas cada quincena o mes para mantener su vitrina surtida, estabilizando la producción.</p>
+      </div>
+      <div class="why-card">
+        <div class="wi">🚚</div>
+        <h3>El Poder del Flete Incluido</h3>
+        <p>Al igual que las grandes distribuidoras, absorber el flete en 12+ unidades con transportadoras nacionales (Coordinadora/Envía) elimina la principal objeción de compra.</p>
+      </div>
+      <div class="why-card">
+        <div class="wi">🛡️</div>
+        <h3>Protección de Márgenes Comerciales</h3>
+        <p>El precio al detal se respeta como precio sugerido de vitrina ($119.900 - $149.900), garantizando que la boutique obtenga siempre su 38% a 42% de ganancia.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2>¿Tienes una Boutique o Almacén Multimarca?</h2>
+    <p>Habla directamente con la dirección comercial de Ush By Ushuaia y solicita la apertura de tu cuenta mayorista de fábrica.</p>
+    <a class="btn-wa" href="https://wa.me/573011393902?text=Hola%20Ush%20By%20Ushuaia,%20tengo%20una%20tienda/boutique%20y%20quiero%20conocer%20las%20condiciones%20para%20ser%20Punto%20de%20Venta%20Oficial." target="_blank">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Solicitar Apertura de Cuenta Mayorista
+    </a>
+  </section>
+
+</body>
+</html>

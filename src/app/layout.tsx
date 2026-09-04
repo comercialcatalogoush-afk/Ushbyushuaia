@@ -11,6 +11,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { SectionLayoutSync } from '@/components/SectionLayoutSync';
 import { CustomerBenefitsBanner } from '@/components/CustomerBenefitsBanner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-R91RRDYKM1';
@@ -51,6 +52,7 @@ export default function RootLayout({
             <main className="flex-grow">
               <ErrorBoundary>{children}</ErrorBoundary>
             </main>
+            <FloatingCartButton />
             <Footer />
           </ThemeProvider>
         </CartProvider>

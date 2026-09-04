@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp VIP Drop — Preventa Mayorista Exclusiva | Ush By Ushuaia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── PALETA REAL DEL CATÁLOGO USH BY USHUAIA ── */
+    :root {
+      --ush-pink:       #d88193;
+      --ush-pink-dark:  #c06579;
+      --ush-pink-hover: #b5586c;
+      --ush-pink-light: #fdf3f5;
+      --ush-pink-soft:  #f8e4e8;
+      --ush-navy:       #1b2333;
+      --ush-navy-dark:  #121824;
+      --ush-body-bg:    #ffffff;
+      --text-main:      #1e293b;
+      --text-muted:     #64748b;
+      --border-light:   #e2e8f0;
+      --border-pink:    rgba(216,129,147,0.3);
+      --green:          #059669;
+      --green-light:    #ecfdf5;
+      --green-border:   #a7f3d0;
+      --wa-green:       #25D366;
+      --wa-dark:        #075E54;
+      --shadow-card:    0 10px 30px -5px rgba(27,35,51,0.06), 0 4px 12px -2px rgba(216,129,147,0.08);
+      --shadow-pink:    0 8px 25px rgba(216,129,147,0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--ush-body-bg);
+      color: var(--text-main);
+      font-family: 'Outfit', 'Avenir Next', system-ui, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOPBAR DE CAMPAÑA */
+    .topbar {
+      background: var(--ush-navy);
+      color: white; text-align: center;
+      font-size: 0.78rem; letter-spacing: 0.5px;
+      padding: 9px 16px; font-weight: 500;
+    }
+    .topbar span { color: var(--ush-pink); font-weight: 700; }
+
+    /* HERO VIP DROP */
+    .hero {
+      background: linear-gradient(135deg, var(--ush-pink-light) 0%, #ffffff 70%);
+      border-bottom: 1px solid var(--border-pink);
+      padding: 60px 24px 44px;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #ecfdf5; border: 1px solid #a7f3d0;
+      border-radius: 999px; padding: 6px 18px;
+      font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
+      color: #065f46; text-transform: uppercase; margin-bottom: 18px;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      color: var(--ush-navy); line-height: 1.15; margin-bottom: 14px;
+    }
+    .hero h1 em { color: var(--ush-pink); font-style: italic; }
+    .hero p { color: var(--text-muted); max-width: 660px; margin: 0 auto 28px; font-size: 1.05rem; }
+
+    /* CONTADOR REGRESIVO DE PREVENTA */
+    .countdown-card {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: white; border: 1.5px solid var(--border-pink);
+      border-radius: 16px; padding: 12px 24px;
+      box-shadow: 0 6px 20px rgba(216,129,147,0.15);
+    }
+    .cd-label { font-size: 0.76rem; font-weight: 800; color: var(--ush-pink-dark); text-transform: uppercase; letter-spacing: 0.8px; }
+    .cd-blocks { display: flex; gap: 6px; align-items: center; }
+    .cd-box {
+      background: var(--ush-pink-light); border: 1px solid var(--border-pink);
+      border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 48px;
+    }
+    .cd-num { font-size: 1.4rem; font-weight: 900; color: var(--ush-navy); display: block; line-height: 1; }
+    .cd-txt { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
+    .cd-sep { font-size: 1.2rem; font-weight: 900; color: var(--ush-pink); }
+
+    /* POR QUÉ FUNCIONA EN WHATSAPP (BENCHMARK MODA 2026) */
+    .why-wa-section {
+      max-width: 1040px; margin: 40px auto; padding: 0 20px;
+    }
+    .why-wa-box {
+      background: #f0fdf4; border: 1.5px solid #bbf7d0;
+      border-left: 5px solid #22c55e;
+      border-radius: 16px; padding: 26px 30px;
+      display: flex; gap: 20px; align-items: flex-start;
+    }
+    .why-wa-box .ic { font-size: 2.4rem; line-height: 1; flex-shrink: 0; }
+    .why-wa-box h3 { font-size: 1.05rem; font-weight: 800; color: #14532d; margin-bottom: 6px; }
+    .why-wa-box p { font-size: 0.9rem; color: #166534; line-height: 1.65; }
+
+    /* FAST BUILDER LAYOUT */
+    .drop-section {
+      max-width: 1320px; margin: 50px auto 70px; padding: 0 20px;
+    }
+    .section-title {
+      text-align: center; font-family: 'Playfair Display', serif;
+      font-size: clamp(1.7rem, 3.5vw, 2.3rem); color: var(--ush-navy); margin-bottom: 8px;
+    }
+    .section-sub { text-align: center; color: var(--text-muted); margin-bottom: 36px; font-size: 0.95rem; }
+
+    .drop-layout {
+      display: grid; grid-template-columns: 1fr 420px; gap: 32px; align-items: start;
+    }
+    @media (max-width: 1020px) { .drop-layout { grid-template-columns: 1fr; } }
+
+    /* Cuadrícula de Prendas */
+    .drop-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px;
+    }
+    .item-card {
+      background: white; border: 1.5px solid var(--border-light);
+      border-radius: 18px; overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: all 0.2s; position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .item-card:hover {
+      border-color: var(--ush-pink); transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(216,129,147,0.18);
+    }
+    .item-card.has-selected {
+      border-color: var(--ush-pink); background: #ffffff;
+      box-shadow: 0 0 0 2px var(--ush-pink);
+    }
+
+    .item-img-wrap {
+      width: 100%; aspect-ratio: 3/4; position: relative;
+      background: #f8fafc; overflow: hidden;
+    }
+    .item-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;
+    }
+    .item-card:hover .item-img-wrap img { transform: scale(1.05); }
+
+    .tag-top {
+      position: absolute; top: 10px; left: 10px;
+      background: var(--ush-navy); color: white;
+      font-size: 0.65rem; font-weight: 800; padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .tag-fit {
+      position: absolute; bottom: 10px; left: 10px;
+      background: rgba(255,255,255,0.95); color: var(--ush-pink-dark);
+      font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;
+    }
+
+    .item-body { padding: 14px; display: flex; flex-direction: column; flex-grow: 1; }
+    .item-ref { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; margin-bottom: 2px; }
+    .item-title {
+      font-size: 0.82rem; font-weight: 700; color: var(--ush-navy); line-height: 1.3;
+      height: 2.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+      margin-bottom: 8px;
+    }
+    .item-prices {
+      display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;
+    }
+    .price-may { font-size: 1.05rem; font-weight: 900; color: var(--ush-pink-dark); }
+    .price-detal { font-size: 0.74rem; color: var(--text-muted); text-decoration: line-through; }
+
+    /* Selector de Tallas Rápido */
+    .sizes-selector {
+      display: flex; gap: 4px; margin-bottom: 12px; justify-content: space-between;
+    }
+    .size-chip {
+      flex: 1; text-align: center;
+      background: #f8fafc; border: 1px solid var(--border-light);
+      border-radius: 6px; padding: 4px 0; font-size: 0.75rem; font-weight: 700;
+      color: var(--text-main); cursor: pointer; transition: all 0.15s;
+    }
+    .size-chip:hover { border-color: var(--ush-pink); color: var(--ush-pink-dark); }
+    .size-chip.selected {
+      background: var(--ush-navy); border-color: var(--ush-navy); color: white;
+    }
+
+    /* Botón Agregar Prenda */
+    .btn-add-item {
+      width: 100%; background: var(--ush-pink-light); border: 1.5px solid var(--border-pink);
+      color: var(--ush-pink-dark); font-size: 0.8rem; font-weight: 800; padding: 9px;
+      border-radius: 10px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-add-item:hover {
+      background: var(--ush-pink); color: white; border-color: var(--ush-pink);
+    }
+    .item-card.has-selected .btn-add-item {
+      background: var(--ush-navy); color: white; border-color: var(--ush-navy);
+    }
+
+    /* TICKET DIGITAL / FAST CHECKOUT A WHATSAPP */
+    .wa-ticket-panel {
+      position: sticky; top: 24px;
+      background: white; border: 2px solid var(--border-light);
+      border-radius: 22px; padding: 28px;
+      box-shadow: var(--shadow-card);
+    }
+    .ticket-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 14px; border-bottom: 1px dashed var(--border-light);
+      margin-bottom: 18px;
+    }
+    .ticket-title {
+      font-size: 1.15rem; font-weight: 900; color: var(--ush-navy);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ticket-badge {
+      background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 800;
+      padding: 3px 10px; border-radius: 999px;
+    }
+
+    /* Barra de Envío Gratis 12+ prendas */
+    .shipping-meter {
+      background: #f8fafc; border: 1px solid var(--border-light);
+      border-radius: 14px; padding: 14px; margin-bottom: 18px;
+    }
+    .sm-labels {
+      display: flex; justify-content: space-between; font-size: 0.76rem; font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .sm-bar {
+      height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 6px;
+    }
+    .sm-fill {
+      height: 100%; background: linear-gradient(90deg, var(--ush-pink), var(--green));
+      border-radius: 999px; transition: width 0.3s;
+    }
+    .sm-text {
+      font-size: 0.75rem; font-weight: 600; color: var(--ush-navy);
+    }
+
+    /* Lista del Ticket */
+    .ticket-items {
+      max-height: 220px; overflow-y: auto; margin-bottom: 18px;
+      border-bottom: 1px solid var(--border-light); padding-bottom: 14px;
+    }
+    .ti-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 0; font-size: 0.8rem;
+    }
+    .ti-name { font-weight: 700; color: var(--ush-navy); }
+    .ti-details { color: var(--text-muted); font-size: 0.72rem; }
+    .ti-price { font-weight: 800; color: var(--ush-pink-dark); }
+    .ti-del { background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; }
+    .ti-del:hover { color: #ef4444; }
+    .ti-empty { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 22px 0; }
+
+    /* Totales del Ticket */
+    .ticket-totals { display: grid; gap: 8px; margin-bottom: 20px; font-size: 0.88rem; }
+    .tt-row { display: flex; justify-content: space-between; color: var(--text-muted); }
+    .tt-row strong { color: var(--ush-navy); font-size: 1rem; }
+    .tt-row.savings { color: var(--green); font-weight: 700; }
+    .tt-row.savings strong { color: var(--green); }
+    .tt-row.total-pay {
+      border-top: 1.5px dashed var(--border-light); padding-top: 10px; margin-top: 4px;
+    }
+    .tt-row.total-pay strong { font-size: 1.4rem; font-weight: 900; color: var(--ush-navy); }
+
+    /* Botón Directo a WhatsApp */
+    .btn-wa-order {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; background: var(--wa-green); color: white;
+      text-decoration: none; padding: 16px; border-radius: 14px;
+      font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+      box-shadow: 0 8px 24px rgba(37,211,102,0.38); transition: all 0.2s;
+    }
+    .btn-wa-order:hover {
+      transform: translateY(-2px); box-shadow: 0 12px 30px rgba(37,211,102,0.48);
+    }
+    .btn-wa-order.disabled {
+      background: #cbd5e1; color: #64748b; box-shadow: none;
+      transform: none; pointer-events: none; cursor: not-allowed;
+    }
+
+    /* ESTRATEGIA WHATSAPP COMMERCE */
+    .wa-strategy-section {
+      background: var(--ush-pink-light); border-top: 1px solid var(--border-pink);
+      border-bottom: 1px solid var(--border-pink); padding: 68px 24px;
+    }
+    .wa-strat-inner { max-width: 1100px; margin: 0 auto; }
+    .wa-strat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 22px; margin-top: 36px;
+    }
+    .wa-strat-card {
+      background: white; border: 1px solid var(--border-pink); border-radius: 18px;
+      padding: 28px; box-shadow: 0 4px 14px rgba(216,129,147,0.06);
+    }
+    .wa-strat-card .ic { font-size: 2.2rem; margin-bottom: 14px; }
+    .wa-strat-card h3 { font-size: 1.05rem; font-weight: 800; color: var(--ush-navy); margin-bottom: 8px; }
+    .wa-strat-card p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    🔥 WhatsApp VIP Drop · <span>Preventa Exclusiva Colección 2026</span> · Tallas 6 a 14 · ushbyushuaia.vercel.app
+  </div>
+
+  <section class="hero">
+    <div class="hero-tag">
+      <span>●</span> Canal Digital VIP WhatsApp · Ush By Ushuaia
+    </div>
+    <h1>Preventa Flash por WhatsApp:<br><em>El Formato que Más Convierte Este Año</em></h1>
+    <p>Las marcas líderes de moda en Colombia reemplazaron los PDFs pesados por <strong>micrositios de preventa express de 1 clic</strong>: la clienta selecciona sus referencias en 30 segundos y el pedido llega formateado con código de reserva a la línea comercial de WhatsApp.</p>
+    <br>
+    <div class="countdown-card">
+      <span class="cd-label">⏱ La Preventa VIP termina en:</span>
+      <div class="cd-blocks">
+        <div class="cd-box"><span class="cd-num" id="cdD">04</span><span class="cd-txt">Días</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-box"><span class="cd-num" id="cdH">18</span><span class="cd-txt">Horas</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-box"><span class="cd-num" id="cdM">42</span><span class="cd-txt">Min</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-box"><span class="cd-num" id="cdS">15</span><span class="cd-txt">Seg</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POR QUÉ ESTÁ FUNCIONANDO ESTE AÑO -->
+  <div class="why-wa-section">
+    <div class="why-wa-box">
+      <div class="ic">📲</div>
+      <div>
+        <h3>¿Por qué el modelo WhatsApp VIP Drop supera a una tienda tradicional?</h3>
+        <p>En Colombia, más del <strong>85% de las transacciones mayoristas de moda se cierran dentro de WhatsApp</strong>. Las compradoras de boutiques no quieren llenar formularios de 15 pasos ni navegar páginas lentas: quieren ver las fotos de la colección, elegir sus tallas y hablar de inmediato con su asesor. Este formato reduce el tiempo de cierre de 25 minutos de chat a <strong>menos de 2 minutos</strong> con el pedido listo para despachar.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELECTOR RÁPIDO DE PREVENTA -->
+  <section class="drop-section">
+    <h2 class="section-title">Drop Oficial de Colección: Selecciona tus Jeans</h2>
+    <p class="section-sub">Elige tu talla y agrega prendas al ticket. Con 8 prendas desbloqueas tarifa mayorista y con 12 prendas el flete es GRATIS.</p>
+
+    <div class="drop-layout">
+      <!-- Cuadrícula de 12 Referencias Estrella -->
+      <div class="drop-grid" id="dropGrid"></div>
+
+      <!-- Ticket Digital Flotante -->
+      <div class="wa-ticket-panel">
+        <div class="ticket-header">
+          <div class="ticket-title">
+            <span>🎟️ Tu Ticket VIP</span>
+          </div>
+          <span class="ticket-badge" id="ticketCountBadge">0 prendas</span>
+        </div>
+
+        <!-- Barra de Progreso de Envío Gratis -->
+        <div class="shipping-meter">
+          <div class="sm-labels">
+            <span>Mínimo 8 uds</span>
+            <span id="smProgressLabel" style="color:var(--ush-pink-dark);">Faltan 8 prendas</span>
+          </div>
+          <div class="sm-bar">
+            <div class="sm-fill" id="smProgressBar" style="width: 0%;"></div>
+          </div>
+          <div class="sm-text" id="smProgressMsg">
+            Agrega al menos 8 prendas para activar tu precio de fábrica.
+          </div>
+        </div>
+
+        <!-- Lista de Prendas Agregadas -->
+        <div class="ticket-items" id="ticketItemsList">
+          <div class="ti-empty">Toca cualquier prenda y selecciona tu talla para armar el ticket.</div>
+        </div>
+
+        <!-- Totales -->
+        <div class="ticket-totals">
+          <div class="tt-row">
+            <span>Valor catálogo público (PVP):</span>
+            <strong id="ttDetal">$0</strong>
+          </div>
+          <div class="tt-row savings">
+            <span>🎉 Ahorro Mayorista Directo:</span>
+            <strong id="ttAhorro">$0</strong>
+          </div>
+          <div class="tt-row total-pay">
+            <span>Total Mayorista a Pagar:</span>
+            <strong id="ttTotalPagar">$0</strong>
+          </div>
+        </div>
+
+        <!-- Botón Directo a WhatsApp -->
+        <a href="#" class="btn-wa-order disabled" id="btnWhatsAppOrder" target="_blank">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Mínimo 8 prendas para cotizar
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PILARES DE POR QUÉ FUNCIONA ESTE CANAL DIGITAL -->
+  <section class="wa-strategy-section">
+    <div class="wa-strat-inner">
+      <h2 class="section-title">¿Por Qué Invertir en Estrategias de WhatsApp Commerce?</h2>
+      <p class="section-sub">Los números y tendencias comprobadas de las marcas de moda en Colombia</p>
+
+      <div class="wa-strat-grid">
+        <div class="wa-strat-card">
+          <div class="ic">⚡</div>
+          <h3>Cero Fricción de Compra</h3>
+          <p>El cliente no crea cuentas ni llena pasarelas de pago engorrosas. Arma su pedido y conversa en WhatsApp con un humano en segundos.</p>
+        </div>
+        <div class="wa-strat-card">
+          <div class="ic">🔥</div>
+          <h3>Urgencia de "Lote VIP"</h3>
+          <p>Presentar colecciones como "Drops Semanales" activa la psicología de escasez: las boutiques compran rápido antes de que se agote la curva de tallas.</p>
+        </div>
+        <div class="wa-strat-card">
+          <div class="ic">📦</div>
+          <h3>Incentivo Inmediato de Flete</h3>
+          <p>La clienta ve en vivo que con 12 prendas se ahorra el flete nacional con Coordinadora/Envía, aumentando el ticket promedio automáticamente.</p>
+        </div>
+        <div class="wa-strat-card">
+          <div class="ic">🎯</div>
+          <h3>Tráfico Directo desde Instagram</h3>
+          <p>Un enlace en tu bio de Instagram o en un estado de WhatsApp lleva directamente a este ticket interactivo sin perder ventas en el camino.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // 12 Referencias oficiales reales con datos de products.ts y drive-map.ts
+    const DROP_PRODUCTS = [
+      { ref: '552851', name: 'Jean dama wide leg tiro alto rígido azul oscuro', fit: 'Wide Leg', pvp: 149900, wholesale: 94900, img: 'https://lh3.googleusercontent.com/d/1gZA3DTSNZzXTMk1xc8Zffq1Aifjg0ekE' },
+      { ref: '552850', name: 'Jean dama straight tiro alto rígido con destellos metalizados', fit: 'Straight Boot', pvp: 149900, wholesale: 89900, img: 'https://lh3.googleusercontent.com/d/17RqtN1KqTiJIKOz9Q6f0TQNHzsi354A8' },
+      { ref: '552810', name: 'Jean dama wide leg tiro medio licrado color negro', fit: 'Wide Leg', pvp: 129900, wholesale: 79900, img: 'https://lh3.googleusercontent.com/d/1FejzErp_kct3YgRSGaeRnOM-NVkbOe8r' },
+      { ref: '552739', name: 'Jean dama barrel tiro medio rígido 100% algodón azul dirty', fit: 'Barrel', pvp: 129900, wholesale: 79900, img: 'https://lh3.googleusercontent.com/d/1g6Y9mV_E13nUwvS0bShrjT0HKkU3_TC-' },
+      { ref: '552697', name: 'Jean straight rígido tiro medio 100% algodón baby blue', fit: 'Straight Boot', pvp: 129900, wholesale: 79900, img: 'https://lh3.googleusercontent.com/d/1TbKfogGybx3oblS5CQbNw5Z1gZsYwJHV' },
+      { ref: '552699', name: 'Jean straight rígido tiro medio 100% algodón negro', fit: 'Straight Boot', pvp: 129900, wholesale: 79900, img: 'https://lh3.googleusercontent.com/d/1UpJolDNGkMxaev41cUtHy_0WcqIqxbWi' },
+      { ref: '552637', name: 'Jean straight boot licrado tiro medio denim azul claro', fit: 'Straight Boot', pvp: 119900, wholesale: 76900, img: 'https://lh3.googleusercontent.com/d/1-m4zpuYJsQgIb4edWTdP_ikQEQJznxDz' },
+      { ref: '552744', name: 'Jean vaquero flare tiro medio denim licrado azul oscuro', fit: 'Vaquero', pvp: 129900, wholesale: 79900, img: 'https://lh3.googleusercontent.com/d/1cIxsFNUoY7UD-COh-CS7m-hlwq2_JBZp' },
+      { ref: '552746', name: 'Jean vaquero flare tiro medio denim licrado azul claro', fit: 'Vaquero', pvp: 129900, wholesale: 79900, img: 'https://lh3.googleusercontent.com/d/1HDC0gE6S5LsfLtxuxAeNBohCEMWT2jor' },
+      { ref: '552716', name: 'Jean dama flare tiro medio licrado color azul claro', fit: 'Bota Flare', pvp: 119900, wholesale: 76900, img: 'https://lh3.googleusercontent.com/d/1u4hJePZLgaijC5KucQcKQw-L9hXUv7a9' },
+      { ref: '552828', name: 'Jean dama vaquero licrado color azul oscuro', fit: 'Vaquero', pvp: 119900, wholesale: 76900, img: 'https://lh3.googleusercontent.com/d/13WzAQEOYXFsfs6gF7ElGdvb168wU-GmV' },
+      { ref: '558079', name: 'Short denim tiro alto clásico color azul medio', fit: 'Shorts', pvp: 79900, wholesale: 54900, img: 'https://lh3.googleusercontent.com/d/17rtRjBgLlh52lL7nc04snizodE_YN9e_' }
+    ];
+
+    const ticketItems = []; // { ref, name, fit, pvp, wholesale, size, id }
+    const selectedSizeMap = new Map(); // ref -> size string
+
+    function fmt(n) { return '$' + Math.round(n).toLocaleString('es-CO'); }
+
+    function renderGrid() {
+      const grid = document.getElementById('dropGrid');
+      grid.innerHTML = DROP_PRODUCTS.map(p => {
+        const activeSize = selectedSizeMap.get(p.ref) || '8';
+        const hasAny = ticketItems.some(it => it.ref === p.ref);
+        return `
+          <div class="item-card ${hasAny ? 'has-selected' : ''}" id="card-${p.ref}">
+            <div class="item-img-wrap">
+              <img src="${p.img}" alt="REF ${p.ref}" loading="lazy" onerror="this.src='https://lh3.googleusercontent.com/d/1gZA3DTSNZzXTMk1xc8Zffq1Aifjg0ekE'" />
+              <span class="tag-top">REF ${p.ref}</span>
+              <span class="tag-fit">${p.fit}</span>
+            </div>
+            <div class="item-body">
+              <div class="item-ref">Colección Oficial 2026</div>
+              <div class="item-title" title="${p.name}">${p.name}</div>
+              <div class="item-prices">
+                <span class="price-may">${fmt(p.wholesale)}</span>
+                <span class="price-detal">${fmt(p.pvp)}</span>
+              </div>
+              <div class="sizes-selector">
+                ${['6', '8', '10', '12', '14'].map(sz => `
+                  <button type="button" class="size-chip ${activeSize === sz ? 'selected' : ''}" onclick="selectSize('${p.ref}', '${sz}')">${sz}</button>
+                `).join('')}
+              </div>
+              <button type="button" class="btn-add-item" onclick="addItemToTicket('${p.ref}')">
+                + Agregar al Ticket VIP
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectSize(ref, size) {
+      selectedSizeMap.set(ref, size);
+      renderGrid();
+    }
+
+    function addItemToTicket(ref) {
+      const p = DROP_PRODUCTS.find(x => x.ref === ref);
+      if (!p) return;
+      const size = selectedSizeMap.get(ref) || '8';
+      ticketItems.push({
+        id: Date.now() + Math.random(),
+        ref: p.ref,
+        name: p.name,
+        fit: p.fit,
+        pvp: p.pvp,
+        wholesale: p.wholesale,
+        size: size
+      });
+      renderGrid();
+      updateTicket();
+    }
+
+    function removeTicketItem(id) {
+      const idx = ticketItems.findIndex(it => it.id === id);
+      if (idx !== -1) ticketItems.splice(idx, 1);
+      renderGrid();
+      updateTicket();
+    }
+
+    function updateTicket() {
+      const totalUnits = ticketItems.length;
+      document.getElementById('ticketCountBadge').textContent = `${totalUnits} prenda${totalUnits !== 1 ? 's' : ''}`;
+
+      // Lógica de escalas oficiales (pricing.ts)
+      let progressPct = 0;
+      let progressLabel = '';
+      let progressMsg = '';
+
+      if (totalUnits === 0) {
+        progressPct = 0;
+        progressLabel = 'Mínimo 8 prendas';
+        progressMsg = 'Agrega al menos 8 prendas para activar tu precio mayorista.';
+      } else if (totalUnits < 8) {
+        progressPct = (totalUnits / 8) * 50;
+        progressLabel = `Faltan ${8 - totalUnits} prendas`;
+        progressMsg = `Suma ${8 - totalUnits} más para activar tu descuento del 20% inicial.`;
+      } else if (totalUnits < 12) {
+        progressPct = 50 + ((totalUnits - 8) / 4) * 25;
+        progressLabel = `Faltan ${12 - totalUnits} para Envío Gratis`;
+        progressMsg = `🔥 20% OFF activo. Con ${12 - totalUnits} prendas más obtienes FLETE GRATIS.`;
+      } else {
+        progressPct = 100;
+        progressLabel = '¡Flete Gratis Desbloqueado!';
+        progressMsg = '🚚 ¡Precio Mayorista Oficial + ENVÍO GRATIS a toda Colombia activo!';
+      }
+
+      document.getElementById('smProgressBar').style.width = Math.min(progressPct, 100) + '%';
+      document.getElementById('smProgressLabel').textContent = progressLabel;
+      document.getElementById('smProgressMsg').textContent = progressMsg;
+
+      // Lista
+      const listEl = document.getElementById('ticketItemsList');
+      if (ticketItems.length === 0) {
+        listEl.innerHTML = '<div class="ti-empty">Toca cualquier prenda y selecciona tu talla para armar el ticket.</div>';
+      } else {
+        listEl.innerHTML = ticketItems.map(it => `
+          <div class="ti-row">
+            <div>
+              <div class="ti-name">REF ${it.ref} · Talla ${it.size}</div>
+              <div class="ti-details">${it.fit}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="ti-price">${fmt(totalUnits >= 12 ? it.wholesale : (totalUnits >= 8 ? it.pvp * 0.8 : it.pvp))}</span>
+              <button class="ti-del" onclick="removeTicketItem(${it.id})">✕</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Dinero
+      const totalPVP = ticketItems.reduce((acc, it) => acc + it.pvp, 0);
+      let totalPagar = 0;
+
+      if (totalUnits < 8) {
+        totalPagar = totalPVP;
+      } else if (totalUnits < 12) {
+        totalPagar = Math.round(totalPVP * 0.80);
+      } else if (totalUnits < 24) {
+        totalPagar = ticketItems.reduce((acc, it) => acc + it.wholesale, 0);
+      } else {
+        totalPagar = Math.round(totalPVP * 0.58);
+      }
+
+      const ahorro = totalPVP - totalPagar;
+
+      document.getElementById('ttDetal').textContent = fmt(totalPVP);
+      document.getElementById('ttAhorro').textContent = ahorro > 0 ? `- ${fmt(ahorro)}` : '$0';
+      document.getElementById('ttTotalPagar').textContent = fmt(totalPagar);
+
+      const btnWA = document.getElementById('btnWhatsAppOrder');
+      if (totalUnits >= 8) {
+        btnWA.classList.remove('disabled');
+        btnWA.innerHTML = `📲 Enviar Ticket VIP por WhatsApp (${totalUnits} prendas)`;
+
+        // Formatear mensaje comercial para WhatsApp
+        const listText = ticketItems.map(it => `• REF ${it.ref} (Talla ${it.size})`).join('\\n');
+        const codeReserva = 'USH-VIP-' + Math.floor(1000 + Math.random() * 9000);
+
+        const msg = encodeURIComponent(
+          `¡Hola Ush By Ushuaia! Armé mi ticket en la Preventa VIP de WhatsApp:\\n\\n` +
+          `🎟️ Código de Reserva: ${codeReserva}\\n` +
+          `📦 Total: ${totalUnits} prendas\\n` +
+          `${listText}\\n\\n` +
+          `💰 Total Estimado Mayorista: ${fmt(totalPagar)}\\n` +
+          (totalUnits >= 12 ? `🚚 Envío: 100% GRATIS a Colombia\\n` : `🚚 Envío: A cotizar con transportadora\\n`) +
+          `\\nQuiero confirmar disponibilidad y apartar este lote antes de que se agote.`
+        );
+
+        btnWA.href = `https://wa.me/573011393902?text=${msg}`;
+      } else {
+        btnWA.classList.add('disabled');
+        btnWA.textContent = `Selecciona al menos 8 prendas (${totalUnits}/8)`;
+        btnWA.href = '#';
+      }
+    }
+
+    function startCountdown() {
+      const end = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000 + 18 * 3600 * 1000);
+      function tick() {
+        const d = end - Date.now();
+        if (d <= 0) return;
+        const days = Math.floor(d / 86400000);
+        const hrs = Math.floor((d % 86400000) / 3600000);
+        const mins = Math.floor((d % 3600000) / 60000);
+        const secs = Math.floor((d % 60000) / 1000);
+        document.getElementById('cdD').textContent = String(days).padStart(2, '0');
+        document.getElementById('cdH').textContent = String(hrs).padStart(2, '0');
+        document.getElementById('cdM').textContent = String(mins).padStart(2, '0');
+        document.getElementById('cdS').textContent = String(secs).padStart(2, '0');
+      }
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    // Iniciar
+    renderGrid();
+    updateTicket();
+    startCountdown();
+  </script>
+</body>
+</html>

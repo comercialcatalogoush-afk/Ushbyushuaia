@@ -1,10 +1,10 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingBag, Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles, CalendarClock } from 'lucide-react';
+import { Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles, CalendarClock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { useSiteTheme } from '@/lib/siteContentHooks';
@@ -21,7 +21,7 @@ export const Header: React.FC = () => {
   const [comingSoonSection, setComingSoonSection] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { totalItemsCount, setIsCartOpen } = useCart();
+  const { setIsCartOpen } = useCart();
   const theme = useSiteTheme();
 
   useEffect(() => {
@@ -227,12 +227,6 @@ export const Header: React.FC = () => {
               RASTREAR
             </Link>
 
-            <Link
-              href="/contacto"
-              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
-            >
-              CONTACTO
-            </Link>
 
             {isAdminLoggedIn && (
               <Link
@@ -276,15 +270,6 @@ export const Header: React.FC = () => {
               <span className="hidden xl:inline">Mi Cuenta</span>
             </Link>
 
-            {/* Cart Drawer Toggle */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="p-2 text-white bg-ush-pink hover:bg-ush-pinkHover transition-transform active:scale-95 flex items-center gap-2 px-3.5 py-2 rounded-full shadow-sm"
-              aria-label="Carrito de compras"
-            >
-              <ShoppingBag size={18} />
-              <span className="text-xs font-black">{totalItemsCount}</span>
-            </button>
           </div>
         </div>
       </div>
@@ -473,13 +458,6 @@ export const Header: React.FC = () => {
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             RASTREAR PEDIDO
-          </Link>
-          <Link
-            href="/contacto"
-            onClick={closeMobileMenu}
-            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
-          >
-            CONTACTO
           </Link>
           <div className="pt-2 flex items-center justify-between text-xs text-neutral-600">
             <Link

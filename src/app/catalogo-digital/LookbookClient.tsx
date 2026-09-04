@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Product } from '@/types';
 import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
 import { generateLookbookPdf, LookbookPriceMode } from '@/lib/lookbookPdf';
-import { Download, Share2, ChevronLeft, ChevronRight, Search, Grid3X3, BookOpen, ExternalLink } from 'lucide-react';
+import { Download, Share2, ChevronLeft, ChevronRight, Search, Grid3X3, BookOpen, ExternalLink, Calculator } from 'lucide-react';
 
 const CATEGORIES = ['Todas', 'Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
 type PriceMode = 'ecommerce' | 'none';
@@ -283,12 +283,20 @@ export function LookbookClient() {
                 </>
               )}
               {!isAdmin && (
-                <Link
-                  href="/catalogo"
-                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
-                >
-                  <ExternalLink size={14} /> Ir al catálogo en línea
-                </Link>
+                <>
+                  <Link
+                    href="/catalogo"
+                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors"
+                  >
+                    <ExternalLink size={14} /> Ir al catálogo en línea
+                  </Link>
+                  <Link
+                    href="/calculadora-ganancias"
+                    className="flex items-center gap-2 bg-[#d88193] hover:bg-[#c06579] text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-full transition-colors shadow-md"
+                  >
+                    <Calculator size={14} /> Calculadora Mayorista
+                  </Link>
+                </>
               )}
             </div>
             {downloadMessage && (
