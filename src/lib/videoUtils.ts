@@ -1,12 +1,14 @@
 export interface FormattedVideo {
   type: 'iframe' | 'video';
   src: string;
+  previewSrc?: string;
   isSupported: boolean;
+  driveId?: string;
 }
 
 /**
  * Normaliza cualquier URL de video (Google Drive, YouTube, Vimeo, MP4 directo)
- * para reproducirlo de forma fluida sin consumir almacenamiento en Supabase.
+ * para reproducirlo de forma fluida sin controles invasivos que tapen las prendas.
  */
 export function formatVideoUrl(rawUrl?: string): FormattedVideo {
   if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
@@ -15,13 +17,16 @@ export function formatVideoUrl(rawUrl?: string): FormattedVideo {
 
   const url = rawUrl.trim();
 
-  // 1. Google Drive (enlace para compartir /view, /preview, /open, etc.)
+  // 1. Google Drive: preferir streaming directo MP4 en <video> para evitar la interfaz
+  // pesada de Drive que coloca botones gigantes de pausa y títulos sobre la ropa.
   const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/([a-zA-Z0-9_-]+)|open\?id=([a-zA-Z0-9_-]+)|uc\?(?:.*&)?id=([a-zA-Z0-9_-]+))/i);
   if (driveMatch) {
     const fileId = driveMatch[1] || driveMatch[2] || driveMatch[3];
     return {
-      type: 'iframe',
-      src: `https://drive.google.com/file/d/${fileId}/preview`,
+      type: 'video',
+      src: `https://drive.google.com/uc?export=download&id=${fileId}`,
+      previewSrc: `https://drive.google.com/file/d/${fileId}/preview`,
+      driveId: fileId,
       isSupported: true,
     };
   }

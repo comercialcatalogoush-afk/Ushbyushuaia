@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, BellRing } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, BellRing, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -21,6 +21,110 @@ import { addCustomerWatch } from '@/lib/customerBenefits';
 interface ProductDetailClientProps {
   product: Product;
   related?: Product[];
+}
+
+/**
+ * Reproductor de video de moda vertical (9:16) tipo Reels / TikTok:
+ * - Se reproduce en loop limpio sin barra de progreso gigante ni botones centrales fijos que tapen las prendas.
+ * - Al tocar la pantalla en móvil conmuta suavemente entre Play y Pausa.
+ * - Controles discretos en las esquinas inferiores (audio y play) que no obstruyen la silueta de la ropa.
+ */
+function ProductFashionVideoPlayer({ video, productName }: { video: ReturnType<typeof formatVideoUrl>; productName: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [useFallbackIframe, setUseFallbackIframe] = useState(false);
+  const [showFeedback, setShowFeedback] = useState<'play' | 'pause' | null>(null);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+      setIsPlaying(true);
+      setShowFeedback('play');
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+      setShowFeedback('pause');
+    }
+    setTimeout(() => setShowFeedback(null), 600);
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
+  };
+
+  if (useFallbackIframe && video.previewSrc) {
+    return (
+      <iframe
+        src={video.previewSrc}
+        className="absolute inset-0 w-full h-full border-0"
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+        title={`Video de ${productName}`}
+      />
+    );
+  }
+
+  if (video.type === 'iframe' && !video.previewSrc) {
+    return (
+      <iframe
+        src={video.src}
+        className="absolute inset-0 w-full h-full border-0"
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+        title={`Video de ${productName}`}
+      />
+    );
+  }
+
+  return (
+    <div className="relative w-full h-full cursor-pointer select-none group" onClick={togglePlay}>
+      <video
+        ref={videoRef}
+        src={video.src}
+        autoPlay
+        muted={isMuted}
+        loop
+        playsInline
+        onError={() => setUseFallbackIframe(true)}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+
+      {/* Indicador suave al tocar (desaparece en 600ms) */}
+      {showFeedback && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <div className="w-14 h-14 rounded-full bg-black/60 text-white flex items-center justify-center shadow-lg transition-all animate-pulse">
+            {showFeedback === 'play' ? <Play size={24} /> : <Pause size={24} />}
+          </div>
+        </div>
+      )}
+
+      {/* Controles discretos en esquinas inferiores — NUNCA en el centro sobre la ropa */}
+      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-auto z-20">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+          aria-label={isPlaying ? 'Pausar video' : 'Reproducir video'}
+          className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all shadow-md backdrop-blur-xs active:scale-95"
+        >
+          {isPlaying ? <Pause size={13} /> : <Play size={13} className="translate-x-0.5" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={isMuted ? 'Activar sonido' : 'Silenciar sonido'}
+          className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all shadow-md backdrop-blur-xs active:scale-95"
+        >
+          {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function ProductDetailClient({ product, related = [] }: ProductDetailClientProps) {
@@ -69,19 +173,19 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const suggestedPrice = getSuggestedPrice(currentProduct);
   const wholesalePrice = currentProduct.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
 
-  // ── LUPA ESTILO GEF (HOVER LENS INTERACTIVO) ──
+  // ── LUPA ESTILO GEF (HOVER LENS INTERACTIVO — SOLO PC) ──
   const [isHoverLens, setIsHoverLens] = useState(false);
-  const [lensPos, setLensPos] = useState({ x: 0, y: 0, percentX: 0, percentY: 0, fixedLeft: 0, fixedTop: 0 });
+  const [lensPos, setLensPos] = useState({ x: 0, y: 0, percentX: 0, percentY: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
-  const updateLensCoordinates = (clientX: number, clientY: number) => {
+  const handleMouseMoveLens = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageContainerRef.current) return;
     const rect = imageContainerRef.current.getBoundingClientRect();
-    const lensW = 140;
-    const lensH = 175; // Proporción 3:4 idéntica a foto
+    const lensW = 160;
+    const lensH = 213; // Proporción 3:4 idéntica a la imagen
 
-    const mouseX = clientX - rect.left;
-    const mouseY = clientY - rect.top;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
     let x = mouseX - lensW / 2;
     let y = mouseY - lensH / 2;
@@ -92,30 +196,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     const percentX = (x / Math.max(1, rect.width - lensW)) * 100;
     const percentY = (y / Math.max(1, rect.height - lensH)) * 100;
 
-    // Dimensiones de la ventana flotante de alta fidelidad
-    const zoomW = 440;
-    const zoomH = 540;
-    const winW = typeof window !== 'undefined' ? window.innerWidth : 1280;
-    const winH = typeof window !== 'undefined' ? window.innerHeight : 800;
-
-    // Posición fixed de la ventana: a la derecha de la prenda si cabe; si no cabe en el monitor, se ajusta al margen derecho
-    let fixedLeft = rect.right + 20;
-    if (fixedLeft + zoomW > winW - 16) {
-      fixedLeft = Math.max(16, winW - zoomW - 20);
-    }
-    const fixedTop = Math.max(16, Math.min(rect.top, winH - zoomH - 16));
-
-    setLensPos({ x, y, percentX, percentY, fixedLeft, fixedTop });
-  };
-
-  const handleMouseEnterLens = (e: React.MouseEvent<HTMLDivElement>) => {
-    updateLensCoordinates(e.clientX, e.clientY);
-    setIsHoverLens(true);
-  };
-
-  const handleMouseMoveLens = (e: React.MouseEvent<HTMLDivElement>) => {
-    updateLensCoordinates(e.clientX, e.clientY);
-    if (!isHoverLens) setIsHoverLens(true);
+    setLensPos({ x, y, percentX, percentY });
   };
 
   // ── CARRUSEL HORIZONTAL TÁCTIL PARA MÓVIL ──
@@ -424,11 +505,11 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 </div>
               )}
 
-              {/* Main Preview Image con Lupa Hover Lens estilo GEF */}
+              {/* Main Preview Image con Lupa Hover Lens estilo GEF (SOLO EN PC) */}
               <div
                 ref={imageContainerRef}
-                className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 shadow-md min-w-0 mx-auto cursor-crosshair group select-none"
-                onMouseEnter={handleMouseEnterLens}
+                className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 shadow-md min-w-0 mx-auto cursor-crosshair select-none"
+                onMouseEnter={(e) => { handleMouseMoveLens(e); setIsHoverLens(true); }}
                 onMouseLeave={() => setIsHoverLens(false)}
                 onMouseMove={handleMouseMoveLens}
               >
@@ -451,13 +532,13 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     className="object-cover object-center pointer-events-none"
                   />
 
-                  {/* Recuadro Selector Lens idéntico a GEF */}
+                  {/* Recuadro Selector Lens idéntico a GEF (proporción exacta, borde fino) */}
                   {isHoverLens && (
                     <div
-                      className="hidden lg:block absolute pointer-events-none border-2 border-[#d88193] bg-[#d88193]/15 backdrop-brightness-95 shadow-md z-20"
+                      className="hidden lg:block absolute pointer-events-none border border-neutral-700 bg-white/10 backdrop-brightness-95 z-20"
                       style={{
-                        width: '140px',
-                        height: '175px',
+                        width: '160px',
+                        height: '213px',
                         left: `${lensPos.x}px`,
                         top: `${lensPos.y}px`,
                       }}
@@ -470,29 +551,27 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   </span>
                 </div>
 
-                {/* Ventana de Zoom Fixed estilo GEF (alta fidelidad, adaptativa al monitor) */}
+                {/* Ventana de Zoom idéntica a GEF: Contigua a la derecha, misma altura y proporción, SOLO EN PC */}
                 {isHoverLens && (
                   <div
-                    className="hidden lg:block fixed w-[440px] h-[540px] bg-white border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden z-[9999] pointer-events-none"
+                    className="hidden lg:block absolute top-0 left-[calc(100%+20px)] w-[460px] xl:w-[520px] h-full bg-white border border-gray-200 shadow-2xl overflow-hidden z-50 pointer-events-none"
                     style={{
-                      left: `${lensPos.fixedLeft}px`,
-                      top: `${lensPos.fixedTop}px`,
                       backgroundImage: `url("${selectedImage}")`,
                       backgroundPosition: `${lensPos.percentX}% ${lensPos.percentY}%`,
                       backgroundSize: '280%',
                       backgroundRepeat: 'no-repeat',
                     }}
                   >
-                    <div className="absolute top-3 left-3 bg-neutral-900/90 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-md flex items-center gap-1.5 backdrop-blur-xs">
-                      <Sparkles size={13} className="text-ush-pink" />
-                      <span>🔍 Detalle de Tela 2.8x</span>
+                    <div className="absolute top-3 left-3 bg-neutral-900/80 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-sm flex items-center gap-1.5">
+                      <Sparkles size={12} className="text-ush-pink" />
+                      <span>Detalle de Tela 2.8x</span>
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* ── 3. VIDEO VERTICAL ADAPTADO A MODA (9:16) ── */}
+            {/* ── 3. VIDEO VERTICAL ADAPTADO A MODA (9:16) — SIN BOTONES INVASIVOS QUE TAPEN PRENDAS ── */}
             {(() => {
               const video = formatVideoUrl(currentProduct.video_url);
               if (!video.isSupported || !video.src) return null;
@@ -502,17 +581,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     <Film size={16} className="text-ush-pink" /> Video de la Prenda en Movimiento
                   </h4>
                   <div className="max-w-[320px] sm:max-w-[360px] aspect-[9/16] mx-auto bg-neutral-100 rounded-2xl overflow-hidden shadow-xl border border-neutral-200 relative">
-                    {video.type === 'iframe' ? (
-                      <iframe
-                        src={video.src}
-                        className="absolute inset-0 w-full h-full border-0"
-                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                        allowFullScreen
-                        title={`Video de ${currentProduct.name}`}
-                      />
-                    ) : (
-                      <video src={video.src} controls playsInline className="absolute inset-0 w-full h-full object-cover" />
-                    )}
+                    <ProductFashionVideoPlayer video={video} productName={currentProduct.name} />
                   </div>
                 </div>
               );
