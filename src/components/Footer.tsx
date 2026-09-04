@@ -116,14 +116,15 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin size={15} className="text-white/70 flex-shrink-0 mt-0.5" />
-                <span>Cll. 85 Sur #50-72, Itagüí,<br />Antioquia — Colombia</span>
+                <span>Carrera 55 B # 72 a 02,<br />Itagüí, Antioquia — Colombia</span>
               </li>
             </ul>
 
             {/* Business hours */}
             <div data-editor-section="footer-hours" style={secStyleHours} className="bg-white/10 border border-white/20 p-3 text-xs">
-              <p data-field-key="footerHoursTitle" className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 {c.footerHoursTitle || 'Horario de Atención'}</p>
-              <p className="text-white/90 font-light">Lun – Vie: <span data-field-key="footerHoursWeek" className="font-bold">{c.footerHoursWeek || '8:00 AM – 5:30 PM'}</span></p>
+              <p data-field-key="footerHoursTitle" className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 {c.footerHoursTitle || 'Horario Canal Mayorista'}</p>
+              <p className="text-white/90 font-light">Lun – Jue: <span data-field-key="footerHoursWeek" className="font-bold">{c.footerHoursWeek || '7:00 AM – 4:00 PM'}</span></p>
+              <p className="text-white/90 font-light mt-0.5">Viernes: <span className="font-bold">7:00 AM – 3:30 PM</span></p>
               <p data-field-key="footerHoursNote" className="text-white/60 text-[10px] mt-1">{c.footerHoursNote || 'Sábados, domingos y festivos no hay atención.'}</p>
             </div>
           </div>

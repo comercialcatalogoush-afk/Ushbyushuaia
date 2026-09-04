@@ -20,6 +20,7 @@ const nextConfig = {
       // Grupos VIP fue eliminado: redirección 308 (permanente) manejada por el edge
       // (evita el 307 sin Location que generaba la página estática con redirect()).
       { source: '/grupos', destination: '/', permanent: true },
+      { source: '/inicia-tu-negocio', destination: '/pack-mayorista', permanent: true },
     ];
   },
   async headers() {

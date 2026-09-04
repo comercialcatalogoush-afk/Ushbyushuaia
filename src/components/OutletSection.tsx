@@ -18,9 +18,9 @@ export const OutletSection: React.FC = () => {
   const OUTLET = {
     name: c.outletName || 'Outlet USH BY USHUAIA',
     tag: c.outletTag || 'Principal · Atención Mayorista',
-    address: c.outletAddress || 'Cll. 85 Sur #50-72, Itagüí, Antioquia',
+    address: c.outletAddress || 'Carrera 55 B # 72 a 02. Itagüí, Antioquia',
     schedule: c.outletSchedule || 'Lunes a Viernes: 8:00 AM – 5:30 PM',
-    mapUrl: c.outletMapUrl || 'https://maps.google.com/?q=Cll+85+Sur+%2350-72,+Itagui',
+    mapUrl: c.outletMapUrl || 'https://maps.google.com/?q=Carrera+55B+%2372a-02,+Itagui',
     phone: c.outletPhone || '+57 301 139 3902',
     videoUrl: c.outletVideoUrl || '',
     poster: c.outletPoster || '',

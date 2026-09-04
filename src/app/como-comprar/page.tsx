@@ -298,7 +298,7 @@ export default async function ComoComprarPage() {
               </div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-800">Horario de Atención</h3>
               <p data-field-key="ccContactHours" className="text-xs text-neutral-600 font-medium">
-                {c.ccContactHours || 'Lunes a Viernes: 8:00 AM – 5:30 PM'}
+                {c.ccContactHours || 'Lun – Jue: 7:00 AM – 4:00 PM | Vie: 7:00 AM – 3:30 PM'}
               </p>
               <p className="text-[11px] text-neutral-400 font-light">Sábados, domingos y festivos cerrado.</p>
             </div>
@@ -310,7 +310,7 @@ export default async function ComoComprarPage() {
               </div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-800">Punto de Despacho</h3>
               <p data-field-key="ccContactAddress" className="text-xs text-neutral-600 font-medium leading-relaxed">
-                {c.ccContactAddress || 'Cll. 85 Sur #50-72, Itagüí, Antioquia — Colombia'}
+                {c.ccContactAddress || 'Carrera 55 B # 72 a 02. Itagüí, Antioquia, Colombia'}
               </p>
             </div>
 

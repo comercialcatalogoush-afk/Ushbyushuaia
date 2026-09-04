@@ -401,45 +401,64 @@ export default function ProfilePage() {
 
   // ── Auth card ──
   return (
-    <div className="min-h-screen bg-neutral-50 py-16 px-4 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-b from-[#fbf9f9] via-rose-50/20 to-[#fbf9f9] py-12 px-4 flex items-center justify-center">
       <meta name="robots" content="noindex,nofollow" />
       <title>Mi Cuenta | Ush By Ushuaia</title>
-      <div className="w-full max-w-md bg-white shadow-xl border border-gray-200 overflow-hidden animate-fadeIn">
+      <div className="w-full max-w-md bg-white shadow-2xl rounded-3xl border border-rose-100/80 overflow-hidden transition-all duration-300">
 
-        <div className="bg-[#d88193] text-white p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 border-2 border-white/40">
+        {/* Encabezado suave y moderno */}
+        <div className="bg-gradient-to-br from-white via-rose-50/30 to-white px-6 pt-8 pb-6 text-center border-b border-rose-100/60 relative">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#d88193] to-[#e8a3b2] text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-rose-300/40 ring-4 ring-rose-50">
             <User size={28} />
           </div>
-          <h1 className="text-xl font-black uppercase">Mi Cuenta</h1>
-          <p className="text-xs text-white/80 mt-1">USH BY USHUAIA — Mayoristas</p>
+          <span className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193] mb-1">
+            Catálogo Mayorista Oficial
+          </span>
+          <h1 className="text-2xl font-black uppercase tracking-tight text-[#1b2333]">
+            Mi Cuenta
+          </h1>
+          <p className="text-xs text-neutral-500 mt-1">
+            Precios de fábrica, existencias inmediatas y contenidos
+          </p>
         </div>
 
+        {/* Selector de pestañas tipo cápsula interactiva */}
         {!isRecovery && (
-          <div className="flex border-b border-gray-200">
-            {([
-              { key: 'login',    label: 'Iniciar Sesión' },
-              { key: 'register', label: 'Crear Cuenta' },
-              { key: 'recover',  label: 'Recuperar Clave' },
-            ] as const).map(({ key, label }) => (
-              <button key={key} onClick={() => switchMode(key)}
-                className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors border-r last:border-r-0 border-gray-200 ${
-                  mode === key ? 'bg-[#d88193] text-white' : 'text-neutral-500 hover:bg-gray-50'
-                }`}>
-                {label}
-              </button>
-            ))}
+          <div className="px-6 pt-5">
+            <div className="p-1 bg-neutral-100/90 rounded-2xl flex border border-neutral-200/60 shadow-2xs">
+              {([
+                { key: 'login',    label: 'Iniciar Sesión' },
+                { key: 'register', label: 'Crear Cuenta' },
+                { key: 'recover',  label: 'Recuperar' },
+              ] as const).map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => switchMode(key)}
+                  className={`flex-1 py-2 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all duration-200 cursor-pointer ${
+                    mode === key
+                      ? 'bg-white text-[#1b2333] shadow-xs font-extrabold scale-[1.02]'
+                      : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        <div className="p-8 space-y-5">
+        <div className="p-6 sm:p-8 space-y-5">
           {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
-              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" /><span>{error}</span>
+            <div className="flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium rounded-xl">
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-rose-500" />
+              <span>{error}</span>
             </div>
           )}
           {success && (
-            <div className="flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
-              <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5" /><span>{success}</span>
+            <div className="flex items-start gap-2.5 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium rounded-xl">
+              <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5 text-emerald-600" />
+              <span>{success}</span>
             </div>
           )}
 
@@ -447,47 +466,84 @@ export default function ProfilePage() {
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Correo *</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Correo Electrónico *
+                </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@correo.com"
-                    className="w-full border border-gray-300 pl-9 pr-3 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="tu@correo.com"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 pl-10 pr-3.5 py-3 text-xs text-neutral-900 focus:bg-white focus:outline-none focus:border-[#d88193] focus:ring-4 focus:ring-[#d88193]/15 transition"
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Contraseña *</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Contraseña *
+                </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type={showPass ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                    className="w-full border border-gray-300 pl-9 pr-10 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
-                  <button type="button" onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 pl-10 pr-10 py-3 text-xs text-neutral-900 focus:bg-white focus:outline-none focus:border-[#d88193] focus:ring-4 focus:ring-[#d88193]/15 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                  >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-                <LogIn size={16} />{loading ? 'Verificando...' : 'Iniciar Sesión'}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-[#1b2333] hover:bg-[#d88193] text-white font-black py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+              >
+                <LogIn size={16} />
+                <span>{loading ? 'Verificando...' : 'Iniciar Sesión'}</span>
               </button>
 
               <div className="flex items-center gap-3 py-1">
-                <div className="flex-1 h-px bg-gray-200" />
+                <div className="flex-1 h-px bg-neutral-200" />
                 <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">o</span>
-                <div className="flex-1 h-px bg-gray-200" />
+                <div className="flex-1 h-px bg-neutral-200" />
               </div>
 
-              <button type="button" onClick={handleGoogle} disabled={loading}
-                className="w-full border border-gray-300 hover:border-[#d88193] hover:bg-gray-50 text-neutral-700 font-bold py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-                <GoogleIcon size={16} /> Continuar con Google
+              <button
+                type="button"
+                onClick={handleGoogle}
+                disabled={loading}
+                className="w-full rounded-xl border border-neutral-200 hover:border-[#d88193] bg-white hover:bg-neutral-50 text-neutral-700 font-bold py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+              >
+                <GoogleIcon size={16} />
+                <span>Continuar con Google</span>
               </button>
 
-              <p className="text-center text-xs text-neutral-500">
-                ¿No tienes cuenta? <button type="button" onClick={() => switchMode('register')} className="text-[#d88193] font-bold hover:underline">Crea una →</button>
-              </p>
-              <p className="text-center text-xs text-neutral-500">
-                ¿Olvidaste tu contraseña? <button type="button" onClick={() => switchMode('recover')} className="text-[#d88193] font-bold hover:underline">Recupérala →</button>
-              </p>
+              <div className="pt-2 text-center space-y-1">
+                <p className="text-xs text-neutral-500">
+                  ¿No tienes cuenta?{' '}
+                  <button type="button" onClick={() => switchMode('register')} className="text-[#d88193] font-bold hover:underline cursor-pointer">
+                    Crea una gratis →
+                  </button>
+                </p>
+                <p className="text-xs text-neutral-500">
+                  ¿Olvidaste tu contraseña?{' '}
+                  <button type="button" onClick={() => switchMode('recover')} className="text-[#d88193] font-bold hover:underline cursor-pointer">
+                    Recupérala aquí →
+                  </button>
+                </p>
+              </div>
             </form>
           )}
 
@@ -495,42 +551,85 @@ export default function ProfilePage() {
           {mode === 'register' && (
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Nombre Completo *</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Nombre Completo *
+                </label>
                 <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre"
-                    className="w-full border border-gray-300 pl-9 pr-3 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Tu nombre y apellido"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 pl-10 pr-3.5 py-3 text-xs text-neutral-900 focus:bg-white focus:outline-none focus:border-[#d88193] focus:ring-4 focus:ring-[#d88193]/15 transition"
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Correo *</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Correo Electrónico *
+                </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@correo.com"
-                    className="w-full border border-gray-300 pl-9 pr-3 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="tu@correo.com"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 pl-10 pr-3.5 py-3 text-xs text-neutral-900 focus:bg-white focus:outline-none focus:border-[#d88193] focus:ring-4 focus:ring-[#d88193]/15 transition"
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Contraseña * <span className="text-neutral-400 font-normal normal-case">(mín. 6 caracteres)</span></label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Contraseña * <span className="text-neutral-400 font-normal normal-case">(mín. 6 caracteres)</span>
+                </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type={showPass ? 'text' : 'password'} required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                    className="w-full border border-gray-300 pl-9 pr-10 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 pl-10 pr-10 py-3 text-xs text-neutral-900 focus:bg-white focus:outline-none focus:border-[#d88193] focus:ring-4 focus:ring-[#d88193]/15 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                  >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
-              <label className="flex items-start gap-2 text-[11px] leading-relaxed text-neutral-500">
-                <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} className="mt-0.5 accent-[#d88193]" />
-                <span>Acepto recibir novedades del catálogo, reposiciones y contenidos mayoristas por correo. Podré retirarme cuando quiera.</span>
+              <label className="flex items-start gap-2.5 text-[11px] leading-relaxed text-neutral-600 bg-rose-50/40 border border-rose-100/60 p-3 rounded-xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={(e) => setMarketingOptIn(e.target.checked)}
+                  className="mt-0.5 accent-[#d88193] rounded"
+                />
+                <span>Acepto recibir novedades del catálogo, reposiciones y fotos de producto en alta resolución por correo.</span>
               </label>
-              <button type="submit" disabled={loading}
-                className="w-full bg-[#d88193] hover:bg-[#c06579] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-                <ArrowRight size={16} />{loading ? 'Creando cuenta...' : 'Crear Mi Cuenta'}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-[#d88193] hover:bg-[#c06579] text-white font-black py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+              >
+                <ArrowRight size={16} />
+                <span>{loading ? 'Creando cuenta...' : 'Crear Mi Cuenta Gratis'}</span>
               </button>
-              <p className="text-center text-xs text-neutral-500">
-                ¿Ya tienes cuenta? <button type="button" onClick={() => switchMode('login')} className="text-[#d88193] font-bold hover:underline">Inicia sesión →</button>
+
+              <p className="text-center text-xs text-neutral-500 pt-2">
+                ¿Ya tienes cuenta?{' '}
+                <button type="button" onClick={() => switchMode('login')} className="text-[#d88193] font-bold hover:underline cursor-pointer">
+                  Inicia sesión aquí →
+                </button>
               </p>
             </form>
           )}
@@ -538,23 +637,38 @@ export default function ProfilePage() {
           {/* ── RECOVER ── */}
           {mode === 'recover' && (
             <form onSubmit={handleRecover} className="space-y-4">
-              <p className="text-xs text-neutral-500 leading-relaxed text-center">
+              <p className="text-xs text-neutral-600 leading-relaxed text-center">
                 Ingresa tu correo y te enviamos un enlace seguro para restablecer tu contraseña.
               </p>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Correo *</label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Correo Electrónico *
+                </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@correo.com"
-                    className="w-full border border-gray-300 pl-9 pr-3 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="tu@correo.com"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 pl-10 pr-3.5 py-3 text-xs text-neutral-900 focus:bg-white focus:outline-none focus:border-[#d88193] focus:ring-4 focus:ring-[#d88193]/15 transition"
+                  />
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-                <KeyRound size={16} />{loading ? 'Enviando...' : 'Enviar Enlace de Recuperación'}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-[#1b2333] hover:bg-[#d88193] text-white font-black py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+              >
+                <KeyRound size={16} />
+                <span>{loading ? 'Enviando...' : 'Enviar Enlace de Recuperación'}</span>
               </button>
-              <p className="text-center text-xs text-neutral-500">
-                ¿Recordaste tu contraseña? <button type="button" onClick={() => switchMode('login')} className="text-[#d88193] font-bold hover:underline">Inicia sesión →</button>
+              <p className="text-center text-xs text-neutral-500 pt-2">
+                ¿Recordaste tu contraseña?{' '}
+                <button type="button" onClick={() => switchMode('login')} className="text-[#d88193] font-bold hover:underline cursor-pointer">
+                  Inicia sesión →
+                </button>
               </p>
             </form>
           )}
@@ -562,29 +676,48 @@ export default function ProfilePage() {
           {/* ── NEW PASSWORD (recovery) ── */}
           {mode === 'newpass' && (
             <form onSubmit={handleNewPassword} className="space-y-4">
-              <p className="text-xs text-neutral-500 leading-relaxed text-center">
-                Ingresa tu nueva contraseña. {user && <span className="font-bold text-neutral-700">Cuenta: {user.email}</span>}
+              <p className="text-xs text-neutral-600 leading-relaxed text-center">
+                Ingresa tu nueva contraseña. {user && <span className="font-bold text-neutral-800">Cuenta: {user.email}</span>}
               </p>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">Nueva Contraseña * <span className="text-neutral-400 font-normal normal-case">(mín. 6 caracteres)</span></label>
+                <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-700 mb-1.5">
+                  Nueva Contraseña * <span className="text-neutral-400 font-normal normal-case">(mín. 6 caracteres)</span>
+                </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type={showPass ? 'text' : 'password'} required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                    className="w-full border border-gray-300 pl-9 pr-10 py-3 text-xs focus:outline-none focus:border-[#d88193]" />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 pl-10 pr-10 py-3 text-xs text-neutral-900 focus:bg-white focus:outline-none focus:border-[#d88193] focus:ring-4 focus:ring-[#d88193]/15 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                  >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full bg-[#1b2333] hover:bg-[#d88193] text-white font-bold py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-                <ShieldCheck size={16} />{loading ? 'Guardando...' : 'Guardar Nueva Contraseña'}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-[#1b2333] hover:bg-[#d88193] text-white font-black py-3.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+              >
+                <ShieldCheck size={16} />
+                <span>{loading ? 'Guardando...' : 'Guardar Nueva Contraseña'}</span>
               </button>
             </form>
           )}
 
-          <div className="pt-4 border-t border-gray-100 text-center">
-            <Link href="/" className="text-xs text-neutral-400 hover:text-neutral-700">← Volver al catálogo</Link>
+          <div className="pt-4 border-t border-neutral-100 text-center">
+            <Link href="/" className="text-xs font-bold text-neutral-400 hover:text-[#d88193] transition">
+              ← Volver al catálogo principal
+            </Link>
           </div>
         </div>
       </div>

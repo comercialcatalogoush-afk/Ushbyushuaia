@@ -41,7 +41,13 @@ export const PoliticasNav: React.FC<PoliticasNavProps> = ({ items }) => {
     e.preventDefault();
     const el = document.getElementById(id);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const headerOffset = 120;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
       setActiveId(id);
     }
   };
@@ -54,7 +60,7 @@ export const PoliticasNav: React.FC<PoliticasNavProps> = ({ items }) => {
   const activeClasses = 'bg-[#1b2333] border-[#1b2333] text-white hover:bg-[#1b2333]';
 
   return (
-    <div className="sticky top-[108px] z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    <div className="sticky top-[64px] sm:top-[72px] z-30 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-xs">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-1 overflow-x-auto py-2.5 scrollbar-none">
           {items.map((it) => (

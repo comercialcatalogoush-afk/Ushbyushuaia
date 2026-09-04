@@ -10,7 +10,7 @@ const COMPANY = {
   tagline: 'Catálogo Mayorista — Ushuaia Jeans',
   web: 'www.ushuaiajeans.com.co',
   email: 'comercialmayoristas@ushuaiajeans.com.co',
-  address: 'Cll. 85 Sur #50-72, Itagüí, Antioquia — Colombia',
+  address: 'Carrera 55 B # 72 a 02. Itagüí, Antioquia, Colombia',
 };
 
 const NAVY: [number, number, number] = [27, 35, 51];
@@ -365,9 +365,9 @@ export async function generateInvoicePdf(
     const polItems = [
       'Precios con IVA incluido. Los valores facturados corresponden al precio mayorista según la cantidad adquirida.',
       'Cambios y reposiciones dentro de los 3 días hábiles siguientes al recibo del pedido, con prendas sin uso y etiquetas intactas (Ley 1480 de 2011 y Decreto 587 de 2016).',
-      'Despachos nacionales desde Cll. 85 Sur #50-72, Itagüí, Antioquia. Los tiempos de entrega se cuentan a partir de la confirmación del pago.',
+      'Despachos nacionales desde Carrera 55 B # 72 a 02, Itagüí, Antioquia. Los tiempos de entrega se cuentan a partir de la confirmación del pago.',
       'Tratamiento de datos personales conforme a la Ley 1581 de 2012 (Habeas Data).',
-      `Contacto: WhatsApp de lunes a jueves, 7:00 a. m. – 4:00 p. m. · ${COMPANY.email} · ${COMPANY.web}`,
+      `Contacto: WhatsApp Lun-Jue 7:00 a. m. – 4:00 p. m., Vie 7:00 a. m. – 3:30 p. m. · ${COMPANY.email} · ${COMPANY.web}`,
     ];
     for (const item of polItems) {
       doc.setFillColor(...PINK);
