@@ -194,10 +194,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
       </Link>
 
       {/* Content Info Section — ALL BADGES PLACED OUTSIDE / BELOW THE IMAGE */}
-      <div className="p-4 flex flex-col flex-1 justify-between bg-white">
+      <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between bg-white">
         <div>
           {/* Badges Container OUTSIDE Image */}
-          <div className="flex flex-wrap items-center gap-1 mb-2">
+          <div className="flex flex-wrap items-center gap-1 mb-1.5 sm:mb-2 min-h-[20px]">
             {isBestSellerBadge && (
               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-[#1b2333] text-white">
                 🔥 Más vendido
@@ -215,27 +215,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             </span>
           </div>
 
-          {/* Reference Title — abreviado con la tipografía de la marca */}
-          <Link href={`/producto/${product.slug}`}>
-            <h3 className="text-lg font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight">
-              {(() => {
-                const { short, color } = abbreviateProductName(product);
-                const finalColor = product.color || color;
-                return (
-                  <>
+          {/* Reference Title — nombre corto con altura estricta para tarjetas perfectamente parejas */}
+          <Link href={`/producto/${product.slug}`} className="block">
+            {(() => {
+              const { short, color } = abbreviateProductName(product);
+              const finalColor = product.color || color;
+              return (
+                <div>
+                  <h3 className="text-xs sm:text-sm font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight line-clamp-1 h-[1.2rem]">
                     {short}
-                    {finalColor && (
-                      <span className="block text-[11px] font-extrabold text-[#d88193] mt-1 uppercase tracking-[0.12em]">
-                        · {finalColor}
-                      </span>
-                    )}
-                    <span className="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mt-1">
-                      Ref. #{product.reference}
-                    </span>
-                  </>
-                );
-              })()}
-            </h3>
+                  </h3>
+                  <div className="text-[9px] sm:text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5 truncate h-[1rem]">
+                    Ref. #{product.reference}{finalColor ? ` · ${finalColor}` : ''}
+                  </div>
+                </div>
+              );
+            })()}
           </Link>
 
           {/* Price Display Block */}

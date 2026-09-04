@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, X, ChevronLeft, ChevronRight, ZoomOut, BellRing } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, BellRing } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -95,12 +95,29 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     setLensPos({ x, y, percentX, percentY });
   };
 
-  const [zoomOpen, setZoomOpen] = useState(false);
-  const [zoomScale, setZoomScale] = useState(1);
-  const [zoomPan, setZoomPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [zoomIndex, setZoomIndex] = useState(0);
+  // ── CARRUSEL HORIZONTAL TÁCTIL PARA MÓVIL ──
+  const [mobileSlideIndex, setMobileSlideIndex] = useState(0);
+  const mobileCarouselRef = useRef<HTMLDivElement>(null);
+
+  const handleMobileScroll = () => {
+    if (!mobileCarouselRef.current) return;
+    const { scrollLeft, clientWidth } = mobileCarouselRef.current;
+    if (clientWidth > 0) {
+      const idx = Math.round(scrollLeft / clientWidth);
+      setMobileSlideIndex(idx);
+    }
+  };
+
+  const scrollToMobileSlide = (index: number) => {
+    if (!mobileCarouselRef.current) return;
+    const clientWidth = mobileCarouselRef.current.clientWidth;
+    mobileCarouselRef.current.scrollTo({
+      left: index * clientWidth,
+      behavior: 'smooth',
+    });
+    setMobileSlideIndex(index);
+  };
+
   const [whatsappNumber, setWhatsappNumber] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
 
   React.useEffect(() => {
@@ -142,25 +159,6 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     });
     return unsubscribe;
   }, [currentProduct.slug]);
-
-  React.useEffect(() => {
-    if (!zoomOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setZoomOpen(false);
-      } else if (e.key === 'ArrowRight') {
-        setZoomIndex((i) => (i + 1) % currentProduct.images.length);
-        setZoomScale(1);
-        setZoomPan({ x: 0, y: 0 });
-      } else if (e.key === 'ArrowLeft') {
-        setZoomIndex((i) => (i - 1 + currentProduct.images.length) % currentProduct.images.length);
-        setZoomScale(1);
-        setZoomPan({ x: 0, y: 0 });
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [zoomOpen, currentProduct.images.length]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
@@ -214,11 +212,69 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
           <span>Volver al Catálogo Mayorista</span>
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           
-          {/* Gallery: Vertical Thumbnails LEFT + Main Image RIGHT */}
+          {/* Gallery Column */}
           <div className="lg:col-span-7">
-            <div className="flex gap-3 items-start">
+
+            {/* ── 1. GALERÍA MÓVIL (< lg): CARRUSEL HORIZONTAL TÁCTIL (SWIPEABLE) ── */}
+            <div className="lg:hidden mb-6">
+              <div
+                ref={mobileCarouselRef}
+                onScroll={handleMobileScroll}
+                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none touch-pan-x w-full aspect-[3/4] bg-neutral-100 rounded-2xl border border-gray-200 shadow-sm relative"
+              >
+                {currentProduct.images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="w-full h-full shrink-0 snap-center relative aspect-[3/4] overflow-hidden"
+                  >
+                    {currentProduct.ribbon && idx === 0 && (
+                      <span className="absolute top-3 left-3 z-10 text-[11px] font-black uppercase tracking-widest px-3 py-1 bg-ush-pink text-white shadow-md pointer-events-none">
+                        {currentProduct.ribbon}
+                      </span>
+                    )}
+                    <Image
+                      src={img}
+                      alt={`${currentProduct.name} - Vista ${idx + 1}`}
+                      fill
+                      priority={idx === 0}
+                      unoptimized={img.startsWith('http://') || img.startsWith('https://')}
+                      quality={100}
+                      sizes="100vw"
+                      className="object-cover object-center"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Dots y contador de fotos en móvil */}
+              {currentProduct.images.length > 1 && (
+                <div className="flex items-center justify-between px-2 mt-3">
+                  <div className="flex items-center gap-1.5">
+                    {currentProduct.images.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => scrollToMobileSlide(idx)}
+                        aria-label={`Ver foto ${idx + 1}`}
+                        className={`h-1.5 rounded-full transition-all ${
+                          mobileSlideIndex === idx
+                            ? 'w-6 bg-[#d88193]'
+                            : 'w-1.5 bg-neutral-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-neutral-600 bg-neutral-100 px-2.5 py-0.5 rounded-full border border-neutral-200">
+                    {mobileSlideIndex + 1} / {currentProduct.images.length}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* ── 2. GALERÍA ESCRITORIO (>= lg): MINIATURAS VERTICALES + LUPA HOVER LENS GEF ── */}
+            <div className="hidden lg:flex gap-3 items-start">
 
               {/* Left Vertical Thumbnail Column */}
               {(currentProduct.images.length > 1 || currentProduct.video_url) && (
@@ -241,7 +297,6 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   {currentProduct.video_url && (
                     <button
                       onClick={() => {
-                        // scroll to video section
                         document.getElementById('product-video')?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className="relative w-[72px] h-[90px] border-2 border-transparent hover:border-gray-300 overflow-hidden bg-neutral-900 flex items-center justify-center flex-shrink-0 opacity-70 hover:opacity-100 transition-all"
@@ -260,13 +315,6 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 onMouseEnter={() => setIsHoverLens(true)}
                 onMouseLeave={() => setIsHoverLens(false)}
                 onMouseMove={handleMouseMoveLens}
-                onClick={() => {
-                  const idx = Math.max(0, currentProduct.images.findIndex((i) => i === selectedImage));
-                  setZoomIndex(idx);
-                  setZoomScale(1);
-                  setZoomPan({ x: 0, y: 0 });
-                  setZoomOpen(true);
-                }}
               >
                 {/* Contenedor con overflow-hidden para la imagen y el recuadro selector */}
                 <div className="relative w-full h-full overflow-hidden">
@@ -324,16 +372,16 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </div>
             </div>
 
-            {/* Promotional Video Player if available */}
+            {/* ── 3. VIDEO VERTICAL ADAPTADO A MODA (9:16) ── */}
             {(() => {
               const video = formatVideoUrl(currentProduct.video_url);
               if (!video.isSupported || !video.src) return null;
               return (
-                <div id="product-video" className="mt-6 pt-6 border-t border-gray-100">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-ush-navy flex items-center gap-2 mb-3">
+                <div id="product-video" className="mt-8 pt-6 border-t border-gray-100">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-ush-navy flex items-center justify-center gap-2 mb-3">
                     <Film size={16} className="text-ush-pink" /> Video de la Prenda en Movimiento
                   </h4>
-                  <div className="aspect-video w-full bg-black overflow-hidden shadow-sm rounded-lg">
+                  <div className="max-w-[320px] sm:max-w-[360px] aspect-[9/16] mx-auto bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border border-neutral-200 relative">
                     {video.type === 'iframe' ? (
                       <iframe
                         src={video.src}
@@ -630,133 +678,6 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
       </div>
     </div>
 
-    {/* ── Modal Zoom de Imagen (fondo blanco, estilo ushuaiajeans.com.co) ── */}
-    {zoomOpen && (
-      <div
-        className="fixed inset-0 z-[60] bg-white flex flex-col"
-        onClick={() => setZoomOpen(false)}
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4">
-          <span className="text-neutral-600 text-sm font-medium">
-            {(zoomIndex + 1)} / {currentProduct.images.length}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, Math.min(6, s + 0.5))); }}
-              aria-label="Acercar"
-              className="w-10 h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center rounded-full transition-colors"
-            >
-              <ZoomIn size={20} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, Math.min(6, s - 0.5))); }}
-              aria-label="Alejar"
-              className="w-10 h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center rounded-full transition-colors"
-            >
-              <ZoomOut size={20} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoomOpen(false)}
-              aria-label="Cerrar zoom"
-              className="w-10 h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center rounded-full transition-colors"
-            >
-              <X size={22} />
-            </button>
-          </div>
-        </div>
-
-        {/* Prev / Next */}
-        {currentProduct.images.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                const next = (zoomIndex - 1 + currentProduct.images.length) % currentProduct.images.length;
-                setZoomIndex(next);
-                setZoomScale(1);
-                setZoomPan({ x: 0, y: 0 });
-              }}
-              aria-label="Imagen anterior"
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white hover:bg-neutral-100 text-neutral-700 border border-gray-200 flex items-center justify-center rounded-full shadow-md transition-colors"
-            >
-              <ChevronLeft size={26} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                const next = (zoomIndex + 1) % currentProduct.images.length;
-                setZoomIndex(next);
-                setZoomScale(1);
-                setZoomPan({ x: 0, y: 0 });
-              }}
-              aria-label="Imagen siguiente"
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white hover:bg-neutral-100 text-neutral-700 border border-gray-200 flex items-center justify-center rounded-full shadow-md transition-colors"
-            >
-              <ChevronRight size={26} />
-            </button>
-          </>
-        )}
-
-        {/* Pan / Zoom area */}
-        <div
-          className={`flex-1 flex items-center justify-center p-16 overflow-hidden select-none ${zoomScale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'}`}
-          onWheel={(e) => {
-            e.stopPropagation();
-            const delta = e.deltaY < 0 ? 0.15 : -0.15;
-            setZoomScale((s) => Math.max(1, Math.min(6, s + delta)));
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            setIsDragging(true);
-            setDragStart({ x: e.clientX - zoomPan.x, y: e.clientY - zoomPan.y });
-          }}
-          onMouseMove={(e) => {
-            if (isDragging) {
-              setZoomPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-            }
-          }}
-          onMouseUp={() => setIsDragging(false)}
-          onMouseLeave={() => setIsDragging(false)}
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            setZoomScale((s) => (s > 1 ? 1 : 2.5));
-            setZoomPan({ x: 0, y: 0 });
-          }}
-        >
-          <div
-            className="relative max-w-full max-h-full transition-transform duration-150"
-            style={{ transform: `scale(${zoomScale}) translate(${zoomPan.x}px, ${zoomPan.y}px)` }}
-          >
-            <Image
-              src={currentProduct.images[zoomIndex] || currentProduct.images[0]}
-              alt={currentProduct.name}
-              width={1000}
-              height={1333}
-              unoptimized={(currentProduct.images[zoomIndex] || currentProduct.images[0] || '').startsWith('http://') || (currentProduct.images[zoomIndex] || currentProduct.images[0] || '').startsWith('https://')}
-              quality={100}
-              sizes="90vw"
-              className="object-contain max-w-[90vw] max-h-[85vh] w-auto h-auto shadow-lg"
-            />
-          </div>
-        </div>
-            {/* Hint */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-neutral-500 text-xs flex items-center gap-4 z-20 bg-white/90 px-4 py-2 border border-gray-200 rounded-full">
-          <span>Rueda del mouse: zoom</span>
-          <span>Arrastra: mover</span>
-          <span>Doble clic: restaurar</span>
-        </div>
-      </div>
-    )}
-
     </>
-
   );
 }

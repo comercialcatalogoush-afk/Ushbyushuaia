@@ -333,8 +333,41 @@ export const PackMayoristaClient: React.FC = () => {
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
   };
 
-  // Añadir todas las 12 prendas al carrito web
-  const handleAddAllToCart = () => {
+  // Añadir el lote como Pack Mayorista Edición Limitada al carrito
+  const handleAddPackAsBundleToCart = () => {
+    // Generar resumen de tallas seleccionadas para el ítem
+    const sizeSummary = INITIAL_PACK.map((item) => {
+      const sz = selectedSizesByItem[item.ref] || item.availableSizes[0] || '8';
+      return `Ref ${item.ref}: T${sz}`;
+    }).join(' · ');
+
+    addToCart(
+      {
+        id: 'pack-12-edicion-limitada',
+        reference: 'PACK12-VIP',
+        name: 'Pack Mayorista 12 Prendas (Edición Limitada)',
+        slug: 'pack-mayorista',
+        price: totalWholesale,
+        suggested_price: totalRegular,
+        in_stock: true,
+        ribbon: 'EDICIÓN LIMITADA',
+        options: [{ id: 'size', key: 'Talla', values: ['Curva Surtida 12 Uds'] }],
+        images: [INITIAL_PACK[0].image, INITIAL_PACK[2].image, INITIAL_PACK[4].image],
+        category: 'Packs Mayoristas',
+        description: `Lote cerrado de 12 prendas en denim colombiano con envío 100% gratis. Tallas seleccionadas: ${sizeSummary}`,
+      },
+      'Curva Surtida (12 Uds)',
+      'Mix Oficial 12 Prendas',
+      1
+    );
+
+    setAddedToCartSuccess(true);
+    setIsCartOpen(true);
+    setTimeout(() => setAddedToCartSuccess(false), 5000);
+  };
+
+  // Añadir todas las 12 prendas desglosadas individualmente al carrito web
+  const handleAddAllIndividualToCart = () => {
     INITIAL_PACK.forEach((item) => {
       const chosenSize = selectedSizesByItem[item.ref] || item.availableSizes[0] || '8';
       addToCart(
@@ -521,18 +554,18 @@ export const PackMayoristaClient: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={handleAddAllToCart}
-                  className="py-2.5 px-3 rounded-xl bg-[#1b2333] hover:bg-neutral-800 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition"
+                  onClick={handleAddPackAsBundleToCart}
+                  className="py-2.5 px-3 rounded-xl bg-[#1b2333] hover:bg-neutral-800 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition shadow-sm"
                 >
                   <ShoppingBag size={15} />
-                  <span>{addedToCartSuccess ? '✓ 12 en Carrito' : 'Llevar 12 al Carrito'}</span>
+                  <span>{addedToCartSuccess ? '✓ Pack en Carrito' : '🛒 Agregar Pack Limitado'}</span>
                 </button>
               </div>
 
               {addedToCartSuccess && (
                 <div className="mt-2 p-2 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="shrink-0 text-emerald-700" />
-                  <span>¡12 prendas agregadas al carrito! Bolsa lista para tramitar.</span>
+                  <span>¡Pack Mayorista Edición Limitada agregado a tu carrito web!</span>
                 </div>
               )}
             </div>
