@@ -200,7 +200,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   return (
     <>
-    <div className="py-4 sm:py-8 lg:py-12 pb-24 lg:pb-12 bg-white min-h-screen">
+    <div className="py-4 sm:py-8 lg:py-12 pb-20 lg:pb-12 bg-white min-h-screen">
       
       {/* Size Guide Modal */}
       <SizeGuideModal isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
@@ -776,59 +776,6 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
         )}
       </div>{/* cierre max-w-7xl */}
     </div>{/* cierre py-4 container */}
-
-    {/* ── BARRA FIJA INFERIOR EN CELULAR: TALLA ACTIVA + AGREGAR (fallback accesible siempre) ── */}
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 shadow-2xl flex items-center justify-between gap-2">
-      <div className="min-w-0 flex-shrink-0">
-        <span className="text-[9px] font-bold text-neutral-500 uppercase block leading-none">Mayorista 12+:</span>
-        <span className="text-sm font-black text-[#1b2333] leading-tight block mt-0.5">{formatCOP(wholesalePrice)}</span>
-      </div>
-      {/* Selector talla compacto en barra inferior */}
-      <div className="flex gap-1 flex-wrap max-w-[130px]">
-        {availableSizes.slice(0, 5).map((size) => {
-          const sizeStock = (currentProduct.stock_by_size || {})[size];
-          const sizeSoldOut = soldOut || sizeStock === 0;
-          return (
-            <button
-              key={size}
-              type="button"
-              onClick={() => { setSelectedSize(size); setQuantity(1); }}
-              disabled={sizeSoldOut}
-              className={`w-8 h-8 text-[10px] font-bold border rounded transition-all ${
-                sizeSoldOut
-                  ? 'border-gray-200 text-neutral-300 bg-neutral-100 cursor-not-allowed'
-                  : selectedSize === size
-                  ? 'border-ush-pink bg-ush-pink text-white'
-                  : 'border-gray-300 text-neutral-700 bg-white'
-              }`}
-            >
-              {size}
-            </button>
-          );
-        })}
-      </div>
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={selectedSizeSoldOut || !anySizeAvailable}
-        className={`flex-1 py-2.5 px-2 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition ${
-          selectedSizeSoldOut || !anySizeAvailable
-            ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
-            : added
-            ? 'bg-emerald-600 text-white'
-            : 'bg-[#1b2333] text-white active:scale-[0.98] shadow-md'
-        }`}
-      >
-        {selectedSizeSoldOut || !anySizeAvailable ? (
-          <span>Agotado</span>
-        ) : added ? (
-          <><Check size={13} /><span>¡Listo!</span></>
-        ) : (
-          <><ShoppingBag size={13} /><span>Agregar T.{selectedSize}</span></>
-        )}
-      </button>
-    </div>
-
     </>
   );
 }

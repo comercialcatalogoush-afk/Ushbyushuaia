@@ -312,7 +312,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
      CALCULADORA PRINCIPAL
   ════════════════════════════════════════════ */
   return (
-    <div className={embedded ? "w-full space-y-6 pb-20" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 pb-24"}>
+    <div className={embedded ? "w-full overflow-x-hidden space-y-5 pb-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 pb-24"}>
 
       {/* ── Banner invitado: aviso de uso único ── */}
       {!isAuthenticated && guestActive && (
@@ -369,10 +369,10 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
       </div>
 
       {/* ── Grid Principal ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className={`grid grid-cols-1 gap-6 items-start ${embedded ? 'xl:grid-cols-12' : 'lg:grid-cols-12'}`}>
 
         {/* ── Columna izquierda: selector de referencias ── */}
-        <div className="lg:col-span-8 space-y-4">
+        <div className={`space-y-4 ${embedded ? 'xl:col-span-8' : 'lg:col-span-8'}`}>
 
           {/* Filtros */}
           <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm">
@@ -549,7 +549,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
         </div>
 
         {/* ── Columna derecha: panel financiero sticky ── */}
-        <div className="lg:col-span-4 sticky top-24 space-y-4">
+        <div className={`sticky top-24 space-y-4 ${embedded ? 'xl:col-span-4' : 'lg:col-span-4'}`}>
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-md">
             <div className="h-1.5 bg-gradient-to-r from-[#d88193] via-[#e8a3b0] to-[#d88193]" />
             <div className="p-5 space-y-4">
