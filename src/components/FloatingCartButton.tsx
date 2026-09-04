@@ -167,10 +167,10 @@ export const FloatingCartButton: React.FC = () => {
       {/* Contenedor fijo inferior-derecha con z-index seguro y espacio suficiente */}
       <div className="fixed bottom-4 right-3.5 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-1 pointer-events-none">
 
-        {/* ── Mensaje rotativo: oculto en móvil muy pequeño ── */}
+        {/* ── Mensaje rotativo: visible en móvil y desktop con animación fluida ── */}
         <div
           className={`
-            hidden sm:block px-3 py-1 rounded-full text-[10px] font-bold shadow-md select-none pointer-events-none max-w-[180px] text-center truncate
+            block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-lg select-none pointer-events-none max-w-[160px] sm:max-w-[200px] text-center truncate transition-all duration-300
             ${msgClass}
             ${fade ? 'msg-fade-in' : 'msg-fade-out'}
           `}
@@ -199,7 +199,7 @@ export const FloatingCartButton: React.FC = () => {
             focus:outline-none focus-visible:ring-4 focus-visible:ring-[#d88193]/50
             ${level === 'full' ? 'cart-full' : btnClass}
             ${ringClass}
-            ${popping ? 'cart-pop' : level !== 'empty' ? 'cart-float' : ''}
+            ${popping ? 'cart-pop' : 'cart-float'}
           `}
         >
           {/* Relleno visual de la bolsa */}

@@ -74,14 +74,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   const [lensPos, setLensPos] = useState({ x: 0, y: 0, percentX: 0, percentY: 0, fixedLeft: 0, fixedTop: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseMoveLens = (e: React.MouseEvent<HTMLDivElement>) => {
+  const updateLensCoordinates = (clientX: number, clientY: number) => {
     if (!imageContainerRef.current) return;
     const rect = imageContainerRef.current.getBoundingClientRect();
     const lensW = 140;
-    const lensH = 175; // Proporción 3:4
+    const lensH = 175; // Proporción 3:4 idéntica a foto
 
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
 
     let x = mouseX - lensW / 2;
     let y = mouseY - lensH / 2;
@@ -92,11 +92,30 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     const percentX = (x / Math.max(1, rect.width - lensW)) * 100;
     const percentY = (y / Math.max(1, rect.height - lensH)) * 100;
 
-    // Posición fixed de la ventana de zoom: a la derecha del contenedor de imagen
-    const fixedLeft = rect.right + 16;
-    const fixedTop = Math.max(8, rect.top);
+    // Dimensiones de la ventana flotante de alta fidelidad
+    const zoomW = 440;
+    const zoomH = 540;
+    const winW = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const winH = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    // Posición fixed de la ventana: a la derecha de la prenda si cabe; si no cabe en el monitor, se ajusta al margen derecho
+    let fixedLeft = rect.right + 20;
+    if (fixedLeft + zoomW > winW - 16) {
+      fixedLeft = Math.max(16, winW - zoomW - 20);
+    }
+    const fixedTop = Math.max(16, Math.min(rect.top, winH - zoomH - 16));
 
     setLensPos({ x, y, percentX, percentY, fixedLeft, fixedTop });
+  };
+
+  const handleMouseEnterLens = (e: React.MouseEvent<HTMLDivElement>) => {
+    updateLensCoordinates(e.clientX, e.clientY);
+    setIsHoverLens(true);
+  };
+
+  const handleMouseMoveLens = (e: React.MouseEvent<HTMLDivElement>) => {
+    updateLensCoordinates(e.clientX, e.clientY);
+    if (!isHoverLens) setIsHoverLens(true);
   };
 
   // ── CARRUSEL HORIZONTAL TÁCTIL PARA MÓVIL ──
@@ -409,7 +428,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               <div
                 ref={imageContainerRef}
                 className="relative flex-1 max-w-[520px] aspect-[3/4] bg-neutral-100 border border-gray-200 shadow-md min-w-0 mx-auto cursor-crosshair group select-none"
-                onMouseEnter={() => setIsHoverLens(true)}
+                onMouseEnter={handleMouseEnterLens}
                 onMouseLeave={() => setIsHoverLens(false)}
                 onMouseMove={handleMouseMoveLens}
               >
@@ -435,7 +454,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   {/* Recuadro Selector Lens idéntico a GEF */}
                   {isHoverLens && (
                     <div
-                      className="hidden lg:block absolute pointer-events-none border border-neutral-600/70 bg-white/20 backdrop-brightness-95 shadow-xs z-20"
+                      className="hidden lg:block absolute pointer-events-none border-2 border-[#d88193] bg-[#d88193]/15 backdrop-brightness-95 shadow-md z-20"
                       style={{
                         width: '140px',
                         height: '175px',
@@ -445,25 +464,27 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                     />
                   )}
 
-                  <span className="absolute bottom-3 right-3 z-10 w-9 h-9 bg-white/90 text-ush-navy shadow-md border border-gray-200 flex items-center justify-center pointer-events-none rounded-md">
-                    <ZoomIn size={16} />
+                  <span className="absolute bottom-3 right-3 z-10 px-2 py-1 bg-white/95 text-ush-navy shadow-md border border-gray-200 flex items-center gap-1 pointer-events-none rounded-md text-[10px] font-bold uppercase tracking-wider">
+                    <ZoomIn size={13} className="text-ush-pink" />
+                    <span>Zoom tela</span>
                   </span>
                 </div>
 
-                {/* Ventana de Zoom Fixed estilo GEF (sale a la derecha de la imagen, fuera del grid) */}
+                {/* Ventana de Zoom Fixed estilo GEF (alta fidelidad, adaptativa al monitor) */}
                 {isHoverLens && (
                   <div
-                    className="hidden lg:block fixed w-[420px] h-[520px] bg-white border border-gray-300 shadow-2xl rounded-xl overflow-hidden z-[9999] pointer-events-none"
+                    className="hidden lg:block fixed w-[440px] h-[540px] bg-white border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden z-[9999] pointer-events-none"
                     style={{
                       left: `${lensPos.fixedLeft}px`,
                       top: `${lensPos.fixedTop}px`,
-                      backgroundImage: `url(${selectedImage})`,
+                      backgroundImage: `url("${selectedImage}")`,
                       backgroundPosition: `${lensPos.percentX}% ${lensPos.percentY}%`,
                       backgroundSize: '280%',
                       backgroundRepeat: 'no-repeat',
                     }}
                   >
-                    <div className="absolute top-3 left-3 bg-neutral-900/80 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1.5">
+                    <div className="absolute top-3 left-3 bg-neutral-900/90 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-md flex items-center gap-1.5 backdrop-blur-xs">
+                      <Sparkles size={13} className="text-ush-pink" />
                       <span>🔍 Detalle de Tela 2.8x</span>
                     </div>
                   </div>
