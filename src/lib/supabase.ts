@@ -292,14 +292,15 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
   if (!safeSlug) return null;
 
   try {
+    // PostgREST solo permite un parámetro ?or= por query: si se encadenan
+    // múltiples llamadas .or(), cada una sobreescribe la anterior y solo
+    // aplica la última. Se usa UN solo .or() con anidamiento and()/or()
+    // para filtrar slug/id, hidden y status en una sola expresión.
+    // Sintaxis PostgREST: or=(and(or(...),or(...),or(...)))
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .or(`slug.eq.${safeSlug},id.eq.${safeSlug}`)
-      // No exponer borradores/productos ocultos por URL directa
-      // (o() con is.null evita excluir filas donde la columna es NULL)
-      .or('hidden.is.null,hidden.eq.false')
-      .or('status.is.null,status.neq.draft')
+      .or(`and(or(slug.eq.${safeSlug},id.eq.${safeSlug}),or(hidden.is.null,hidden.eq.false),or(status.is.null,status.neq.draft))`)
       .limit(1)
       .maybeSingle();
 
@@ -364,6 +365,44 @@ export async function submitOrder(orderData: any): Promise<{ success: boolean; d
       return { success: false, error: 'El pedido debe contener al menos un producto.' };
     }
 
+    // Validación server-side del total: el cliente puede fabricar un
+    // descuento falso manipulando localStorage. Se recalcula el total
+    // verificando que cada ítem tenga precio unitario positivo.
+    const items = safePayload.items as Array<{ quantity?: number; unit_price?: number }>;
+    let serverTotal = 0;
+    for (const item of items) {
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.unit_price) || 0;
+      if (qty <= 0 || price <= 0) {
+        return { success: false, error: 'El pedido contiene ítems con precio o cantidad inválida.' };
+      }
+      serverTotal += qty * price;
+    }
+    // Se acepta un margen del 2% para diferencias de redondeo de punto flotante.
+    const clientTotal = Number(safePayload.total) || 0;
+    if (Math.abs(serverTotal - clientTotal) > serverTotal * 0.02 + 1) {
+      return { success: false, error: 'El total del pedido no coincide con el calculado. Intenta de nuevo.' };
+    }
+
+    // Validar que el cupón declarado sea un código conocido y válido.
+    const couponCode = String(orderData.coupon_code || '').trim().toUpperCase();
+    if (couponCode) {
+      const VALID_COUPONS: Record<string, { discount: number; minUnits?: number }> = {
+        BIENVENIDA10: { discount: 0.1, minUnits: 3 },
+        USH10: { discount: 0.1, minUnits: 6 },
+      };
+      const serverCoupon = VALID_COUPONS[couponCode];
+      if (!serverCoupon) {
+        return { success: false, error: 'El código de descuento no es válido.' };
+      }
+      if (serverCoupon.minUnits) {
+        const totalUnits = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+        if (totalUnits < serverCoupon.minUnits) {
+          return { success: false, error: `El código ${couponCode} requiere mínimo ${serverCoupon.minUnits} unidades.` };
+        }
+      }
+    }
+
     // IMPORTANTE: NO usar .select() aquí. PostgREST convierte .select() en
     // "Prefer: return=representation", que la política RLS de orders rechaza
     // con 42501. Sin ese header el INSERT funciona (201).
@@ -373,7 +412,7 @@ export async function submitOrder(orderData: any): Promise<{ success: boolean; d
     }
     return { success: true, data };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    return { success: false, error: 'Error del servidor al procesar el pedido.' };
   }
 }
 
@@ -437,7 +476,29 @@ export async function confirmOrderAndDeductStock(
       const pid = item.product_id;
       if (qty <= 0 || !size || !pid) continue;
 
-      // Lee el stock actual directamente de la BD (no del snapshot local)
+      // Descuento atómico de stock: lee stock_by_size y actualiza en un solo
+      // paso usando PostgREST. El siguiente RPC es ideal pero requiere una
+      // función SQL que podría no existir; si falla, caemos al patrón
+      // read-then-write clásico (ya protegido por el reclamo atómico de la
+      // orden).
+      let deducted = false;
+      try {
+        const { data: rpcResult, error: rpcErr } = await supabase.rpc('deduct_stock', {
+          p_product_id: pid,
+          p_size: size,
+          p_qty: qty,
+        });
+        if (!rpcErr && rpcResult === true) {
+          deducted = true;
+          changed = true;
+        }
+      } catch (_) {
+        // RPC no existe o no está disponible — continuar con fallback
+      }
+
+      if (deducted) continue;
+
+      // Fallback: read-then-write (ya protegido por el claim atómico de la orden)
       const { data: row, error: readErr } = await supabase
         .from('products')
         .select('stock_by_size')

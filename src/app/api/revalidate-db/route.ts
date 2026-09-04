@@ -78,6 +78,5 @@ export async function POST(req: Request) {
   return handle(req);
 }
 
-export async function GET(req: Request) {
-  return handle(req);
-}
+// GET eliminado: el secreto en query string se registra en logs del servidor
+// y del CDN. Solo se admite POST con el secreto en header/body.

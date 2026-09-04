@@ -33,6 +33,7 @@ export async function GET(req: Request) {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'error' }, { status: 500 });
+    console.error('API catalog error:', e);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

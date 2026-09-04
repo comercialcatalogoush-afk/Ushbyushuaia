@@ -143,7 +143,7 @@ export function CustomerLookbookEditor({
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-neutral-500">Mostrar precios</p>
               <div className="grid gap-2">
-                {([['ecommerce', 'Precios ecommerce'], ['custom', 'Precios personalizados'], ['blank', 'Sin precios']] as Array<[LookbookPriceMode, string]>).map(([value, label]) => <button key={value} type="button" onClick={() => setPriceMode(value)} className={`rounded-lg border px-3 py-2 text-left text-[11px] font-bold transition ${priceMode === value ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#d88193]'}`}>{label}</button>)}
+                {([['ecommerce', 'Precios ecommerce'], ['blank', 'Sin precios']] as Array<[LookbookPriceMode, string]>).map(([value, label]) => <button key={value} type="button" onClick={() => setPriceMode(value)} className={`rounded-lg border px-3 py-2 text-left text-[11px] font-bold transition ${priceMode === value ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#d88193]'}`}>{label}</button>)}
               </div>
             </div>
             <div>

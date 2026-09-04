@@ -376,29 +376,26 @@ export async function exportOrderExcel(data: BackupData) {
 }
 
 // Vacía las tablas transaccionales (las que crecen). NO borra products.
+// Usa service_role para bypassear RLS: la purga solo se ejecuta desde el
+// panel admin y las políticas de fila no aplican a borrado masivo admin.
 export async function purgeTransactionalData(): Promise<{ success: boolean; error?: string }> {
-  // La columna id es uuid en wholesale_leads y price_history; orders usa texto.
-  // Un filtro neq con un UUID de ceros es sintácticamente válido para ambos tipos
-  // y nunca coincide con un id real, por lo que borra todas las filas.
   const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
+  const { createClient } = await import('@supabase/supabase-js');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) {
+    return { success: false, error: 'Falta SUPABASE_SERVICE_ROLE_KEY en el servidor.' };
+  }
+  const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
-  try {
-    const { error } = await supabase.from('orders').delete().neq('id', ZERO_UUID);
-    if (error) return { success: false, error: `orders: ${error.message}` };
-  } catch (e: any) {
-    return { success: false, error: `orders: ${e?.message}` };
-  }
-  try {
-    const { error } = await supabase.from('wholesale_leads').delete().neq('id', ZERO_UUID);
-    if (error) return { success: false, error: `wholesale_leads: ${error.message}` };
-  } catch (e: any) {
-    return { success: false, error: `wholesale_leads: ${e?.message}` };
-  }
-  try {
-    const { error } = await supabase.from('price_history').delete().neq('id', ZERO_UUID);
-    if (error) return { success: false, error: `price_history: ${error.message}` };
-  } catch (e: any) {
-    return { success: false, error: `price_history: ${e?.message}` };
+  const tables = ['orders', 'wholesale_leads', 'price_history'] as const;
+  for (const table of tables) {
+    try {
+      const { error } = await admin.from(table).delete().neq('id', ZERO_UUID);
+      if (error) return { success: false, error: `${table}: ${error.message}` };
+    } catch (e: any) {
+      return { success: false, error: `${table}: ${e?.message}` };
+    }
   }
   return { success: true };
 }

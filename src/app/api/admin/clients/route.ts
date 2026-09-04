@@ -295,7 +295,7 @@ export async function GET(req: Request) {
     });
   } catch (err: any) {
     console.error('API clients error:', err);
-    return NextResponse.json({ error: err.message || 'Error del servidor' }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
 

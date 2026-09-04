@@ -9,7 +9,7 @@ import { generateLookbookPdf, LookbookPriceMode } from '@/lib/lookbookPdf';
 import { Download, Share2, ChevronLeft, ChevronRight, Search, Grid3X3, BookOpen, ExternalLink } from 'lucide-react';
 
 const CATEGORIES = ['Todas', 'Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
-type PriceMode = 'wholesale' | 'ecommerce' | 'none' | 'custom';
+type PriceMode = 'ecommerce' | 'none';
 type AccessState = 'checking' | 'loading' | 'ready' | 'denied' | 'error';
 type DownloadScope = 'completo' | 'seleccion';
 
@@ -19,9 +19,7 @@ interface DownloadRequest {
 }
 
 const PRICE_MODE_LABELS: Record<PriceMode, string> = {
-  wholesale: 'Precios mayoristas',
   ecommerce: 'Precios e-commerce',
-  custom: 'Precios personalizados',
   none: 'Sin precios',
 };
 
@@ -39,31 +37,17 @@ function activeProducts(products: Product[]) {
   );
 }
 
-function priceFor(product: Product, mode: PriceMode, customPrices: Record<string, string>) {
+function priceFor(product: Product, mode: PriceMode) {
   if (mode === 'none') return '';
   if (mode === 'ecommerce') return formatCOP(product.suggested_price);
-  if (mode === 'custom') {
-    const custom = customPrices[referenceOf(product)] || '';
-    return custom ? formatCOP(Number(custom)) : 'Precio editable';
-  }
   return formatCOP(product.price);
 }
 
 const PRICE_MODE_TO_LOOKBOOK: Record<PriceMode, LookbookPriceMode> = {
-  wholesale: 'wholesale',
   ecommerce: 'ecommerce',
-  custom: 'custom',
   none: 'blank',
 };
 
-function customPricesByProductId(products: Product[], customPrices: Record<string, string>) {
-  const byId: Record<string, string> = {};
-  products.forEach((product, ) => {
-    const value = customPrices[referenceOf(product)];
-    if (value) byId[product.id] = value;
-  });
-  return byId;
-}
 
 export function LookbookClient() {
   const [access, setAccess] = useState<AccessState>('checking');
@@ -74,8 +58,7 @@ export function LookbookClient() {
   const [view, setView] = useState<'lookbook' | 'grid'>('grid');
   const [page, setPage] = useState(0);
   const ITEMS_PER_PAGE = view === 'lookbook' ? 6 : 24;
-  const [priceMode, setPriceMode] = useState<PriceMode>('wholesale');
-  const [customPrices, setCustomPrices] = useState<Record<string, string>>({});
+  const [priceMode, setPriceMode] = useState<PriceMode>('ecommerce');
   const [selectedRefs, setSelectedRefs] = useState<Set<string>>(new Set());
   const [downloadRequest, setDownloadRequest] = useState<DownloadRequest | null>(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
@@ -160,11 +143,7 @@ export function LookbookClient() {
   const clearSelection = () => setSelectedRefs(new Set());
   const selectFiltered = () => setSelectedRefs(new Set(filtered.map(referenceOf)));
 
-  const updateCustomPrice = (product: Product, value: string) => {
-    setCustomPrices((current) => ({ ...current, [referenceOf(product)]: value }));
-  };
-
-  const priceForScreen = (product: Product) => priceFor(product, priceMode, customPrices);
+  const priceForScreen = (product: Product) => priceFor(product, priceMode);
 
   const requestDownload = (items: Product[], scope: DownloadScope) => {
     if (items.length === 0) {
@@ -181,7 +160,6 @@ export function LookbookClient() {
     const result = await generateLookbookPdf(request.items, {
       priceMode: PRICE_MODE_TO_LOOKBOOK[priceMode],
       groupMode: 'category',
-      customPrices: customPricesByProductId(request.items, customPrices),
       onProgress: (completed, total) => setDownloadProgress(completed),
     });
     const url = URL.createObjectURL(result.blob);
@@ -268,9 +246,7 @@ export function LookbookClient() {
             <p className="text-sm text-neutral-400 mt-2 tracking-widest uppercase">Temporada 2026 · Itagüí, Colombia · {initialProducts.length} Referencias</p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               {([
-                ['wholesale', 'Precio mayorista'],
                 ['ecommerce', 'Precio e-commerce'],
-                ['custom', 'Precio modificable'],
                 ['none', 'Sin precios'],
               ] as const).map(([mode, label]) => (
                 <button
@@ -286,11 +262,6 @@ export function LookbookClient() {
                 </button>
               ))}
             </div>
-            {priceMode === 'custom' && (
-              <p className="text-[11px] text-neutral-300 mt-3">
-                Escribe el precio debajo de cada referencia y después confirma la descarga del PDF.
-              </p>
-            )}
             <div className="mt-4 flex flex-wrap justify-center gap-3">
               {!isAdmin && (
                 <>
@@ -447,7 +418,6 @@ export function LookbookClient() {
                     {priceMode !== 'none' && (
                       <p className="text-xs text-neutral-300 mt-1">
                         {priceMode === 'ecommerce' && 'E-commerce: '}
-                        {priceMode === 'custom' && 'Personalizado: '}
                         {priceForScreen(p)}
                       </p>
                     )}
@@ -476,19 +446,6 @@ export function LookbookClient() {
                   >
                     <Share2 size={13} className="text-[#1b2333]" />
                   </button>
-                  {priceMode === 'custom' && (
-                    <input
-                      type="number"
-                      min="0"
-                      inputMode="numeric"
-                      value={customPrices[referenceOf(p)] || ''}
-                      onChange={(e) => updateCustomPrice(p, e.target.value)}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                      placeholder="Precio"
-                      className="absolute bottom-3 left-3 z-10 w-24 bg-white/95 border border-neutral-300 px-2 py-1 text-[10px] text-[#1b2333] shadow focus:outline-none focus:border-[#d88193]"
-                      aria-label={`Precio personalizado de la referencia ${referenceOf(p)}`}
-                    />
-                  )}
                 </Link>
               ))}
             </div>
@@ -540,19 +497,6 @@ export function LookbookClient() {
                     <p className="text-[11px] font-black uppercase text-[#1b2333] truncate mt-0.5">{p.name}</p>
                     {priceMode !== 'none' && (
                       <p className="text-[11px] font-black text-[#d88193] mt-1">{priceForScreen(p)}</p>
-                    )}
-                    {priceMode === 'custom' && (
-                      <input
-                        type="number"
-                        min="0"
-                        inputMode="numeric"
-                        value={customPrices[referenceOf(p)] || ''}
-                        onChange={(e) => updateCustomPrice(p, e.target.value)}
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                        placeholder="Precio"
-                        className="w-full mt-2 border border-neutral-300 px-2 py-1 text-[10px] focus:outline-none focus:border-[#d88193]"
-                        aria-label={`Precio personalizado de la referencia ${referenceOf(p)}`}
-                      />
                     )}
                   </div>
                 </Link>
@@ -629,11 +573,6 @@ export function LookbookClient() {
                 )}
               </div>
 
-              {priceMode === 'custom' && (
-                <p className="text-[11px] text-neutral-500 mt-4">
-                  Se usarán los precios personalizados que hayas escrito. Los campos vacíos quedarán como “Precio editable”.
-                </p>
-              )}
 
               {isDownloading && (
                 <div className="mt-4">

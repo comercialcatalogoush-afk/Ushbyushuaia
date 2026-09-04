@@ -10,6 +10,7 @@ import { ScrollReveal } from '@/components/ScrollReveal';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SectionLayoutSync } from '@/components/SectionLayoutSync';
 import { CustomerBenefitsBanner } from '@/components/CustomerBenefitsBanner';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-R91RRDYKM1';
@@ -47,7 +48,9 @@ export default function RootLayout({
             <ToastContainer />
             <ScrollReveal />
             <CustomerBenefitsBanner />
-            <main className="flex-grow">{children}</main>
+            <main className="flex-grow">
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </main>
             <Footer />
           </ThemeProvider>
         </CartProvider>

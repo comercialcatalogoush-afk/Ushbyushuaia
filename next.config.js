@@ -13,6 +13,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  poweredByHeader: false,
+  reactStrictMode: true,
   async redirects() {
     return [
       // Grupos VIP fue eliminado: redirección 308 (permanente) manejada por el edge
