@@ -71,7 +71,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   // ── LUPA ESTILO GEF (HOVER LENS INTERACTIVO) ──
   const [isHoverLens, setIsHoverLens] = useState(false);
-  const [lensPos, setLensPos] = useState({ x: 0, y: 0, percentX: 0, percentY: 0 });
+  const [lensPos, setLensPos] = useState({ x: 0, y: 0, percentX: 0, percentY: 0, fixedLeft: 0, fixedTop: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMoveLens = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -92,7 +92,11 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     const percentX = (x / Math.max(1, rect.width - lensW)) * 100;
     const percentY = (y / Math.max(1, rect.height - lensH)) * 100;
 
-    setLensPos({ x, y, percentX, percentY });
+    // Posición fixed de la ventana de zoom: a la derecha del contenedor de imagen
+    const fixedLeft = rect.right + 16;
+    const fixedTop = Math.max(8, rect.top);
+
+    setLensPos({ x, y, percentX, percentY, fixedLeft, fixedTop });
   };
 
   // ── CARRUSEL HORIZONTAL TÁCTIL PARA MÓVIL ──
@@ -196,7 +200,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   return (
     <>
-    <div className="py-12 bg-white min-h-screen">
+    <div className="py-4 sm:py-8 lg:py-12 pb-24 lg:pb-12 bg-white min-h-screen">
       
       {/* Size Guide Modal */}
       <SizeGuideModal isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
@@ -206,23 +210,23 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
         {/* Back Link */}
         <Link
           href="/catalogo"
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ush-navy hover:text-ush-pink mb-8 group"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ush-navy hover:text-ush-pink mb-4 sm:mb-6 group"
         >
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           <span>Volver al Catálogo Mayorista</span>
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
           
           {/* Gallery Column */}
           <div className="lg:col-span-7">
 
-            {/* ── 1. GALERÍA MÓVIL (< lg): CARRUSEL HORIZONTAL TÁCTIL (SWIPEABLE) ── */}
-            <div className="lg:hidden mb-6">
+            {/* ── 1. GALERÍA MÓVIL (< lg): CARRUSEL HORIZONTAL TÁCTIL (SWIPEABLE LIBRE) ── */}
+            <div className="lg:hidden mb-6 relative">
               <div
                 ref={mobileCarouselRef}
                 onScroll={handleMobileScroll}
-                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none touch-pan-x w-full aspect-[3/4] bg-neutral-100 rounded-2xl border border-gray-200 shadow-sm relative"
+                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none w-full aspect-[3/4] bg-neutral-100 rounded-2xl border border-gray-200 shadow-sm relative"
               >
                 {currentProduct.images.map((img, idx) => (
                   <div
@@ -248,6 +252,32 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 ))}
               </div>
 
+              {/* Flechas flotantes en móvil para navegar fácilmente */}
+              {currentProduct.images.length > 1 && (
+                <>
+                  {mobileSlideIndex > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => scrollToMobileSlide(mobileSlideIndex - 1)}
+                      aria-label="Foto anterior"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 text-neutral-800 shadow-md flex items-center justify-center border border-gray-200"
+                    >
+                      <ArrowLeft size={16} />
+                    </button>
+                  )}
+                  {mobileSlideIndex < currentProduct.images.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => scrollToMobileSlide(mobileSlideIndex + 1)}
+                      aria-label="Foto siguiente"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 text-neutral-800 shadow-md flex items-center justify-center border border-gray-200"
+                    >
+                      <ArrowLeft size={16} className="rotate-180" />
+                    </button>
+                  )}
+                </>
+              )}
+
               {/* Dots y contador de fotos en móvil */}
               {currentProduct.images.length > 1 && (
                 <div className="flex items-center justify-between px-2 mt-3">
@@ -271,6 +301,73 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* ── PANEL RÁPIDO MÓVIL: PRECIO + TALLAS + CARRITO (visible solo en celular, justo debajo de las fotos) ── */}
+            <div className="lg:hidden mt-4 mb-2 bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3">
+              {/* Precio mayorista */}
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block">Precio detal</span>
+                  <span className="text-xs font-semibold text-neutral-500 line-through">{formatCOP(suggestedPrice)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-ush-pink block">Mayorista 12+ uds</span>
+                  <span className="text-2xl font-black text-[#1b2333]">{formatCOP(wholesalePrice)}</span>
+                </div>
+              </div>
+
+              {/* Selector de talla compacto */}
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 mb-2 block">
+                  Talla: <span className="text-ush-pink">{selectedSize}</span>
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map((size) => {
+                    const sizeStock = (currentProduct.stock_by_size || {})[size];
+                    const sizeSoldOut = soldOut || sizeStock === 0;
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => { setSelectedSize(size); setQuantity(1); }}
+                        disabled={sizeSoldOut}
+                        className={`relative w-10 h-10 text-xs font-bold uppercase border transition-all flex items-center justify-center rounded-lg ${
+                          sizeSoldOut
+                            ? 'border-gray-200 text-neutral-300 bg-neutral-100 cursor-not-allowed'
+                            : selectedSize === size
+                            ? 'border-ush-pink bg-ush-pink text-white shadow-md'
+                            : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
+                        }`}
+                      >
+                        {sizeSoldOut ? <span className="line-through text-neutral-300">{size}</span> : size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Botón agregar al carrito */}
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={selectedSizeSoldOut || !anySizeAvailable}
+                className={`w-full py-3.5 px-4 rounded-xl text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 ${
+                  selectedSizeSoldOut || !anySizeAvailable
+                    ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                    : added
+                    ? 'bg-emerald-600 text-white shadow-lg'
+                    : 'bg-[#1b2333] text-white hover:bg-ush-pink active:scale-[0.98] shadow-md'
+                }`}
+              >
+                {selectedSizeSoldOut || !anySizeAvailable ? (
+                  <span>Agotado</span>
+                ) : added ? (
+                  <><Check size={16} /><span>¡Agregado al carrito!</span></>
+                ) : (
+                  <><ShoppingBag size={16} /><span>Agregar al Carrito — Talla {selectedSize}</span></>
+                )}
+              </button>
             </div>
 
             {/* ── 2. GALERÍA ESCRITORIO (>= lg): MINIATURAS VERTICALES + LUPA HOVER LENS GEF ── */}
@@ -353,11 +450,13 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   </span>
                 </div>
 
-                {/* Ventana de Zoom Contigua estilo GEF (flotante contigua de alta fidelidad) */}
+                {/* Ventana de Zoom Fixed estilo GEF (sale a la derecha de la imagen, fuera del grid) */}
                 {isHoverLens && (
                   <div
-                    className="hidden lg:block absolute top-0 left-[calc(100%+20px)] w-[480px] h-[580px] bg-white border border-gray-300 shadow-2xl rounded-xl overflow-hidden z-50 pointer-events-none"
+                    className="hidden lg:block fixed w-[420px] h-[520px] bg-white border border-gray-300 shadow-2xl rounded-xl overflow-hidden z-[9999] pointer-events-none"
                     style={{
+                      left: `${lensPos.fixedLeft}px`,
+                      top: `${lensPos.fixedTop}px`,
                       backgroundImage: `url(${selectedImage})`,
                       backgroundPosition: `${lensPos.percentX}% ${lensPos.percentY}%`,
                       backgroundSize: '280%',
@@ -381,17 +480,17 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   <h4 className="text-xs font-bold uppercase tracking-wider text-ush-navy flex items-center justify-center gap-2 mb-3">
                     <Film size={16} className="text-ush-pink" /> Video de la Prenda en Movimiento
                   </h4>
-                  <div className="max-w-[320px] sm:max-w-[360px] aspect-[9/16] mx-auto bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border border-neutral-200 relative">
+                  <div className="max-w-[320px] sm:max-w-[360px] aspect-[9/16] mx-auto bg-neutral-100 rounded-2xl overflow-hidden shadow-xl border border-neutral-200 relative">
                     {video.type === 'iframe' ? (
                       <iframe
                         src={video.src}
-                        className="w-full h-full border-0"
+                        className="absolute inset-0 w-full h-full border-0"
                         allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                         allowFullScreen
                         title={`Video de ${currentProduct.name}`}
                       />
                     ) : (
-                      <video src={video.src} controls className="w-full h-full object-cover" />
+                      <video src={video.src} controls playsInline className="absolute inset-0 w-full h-full object-cover" />
                     )}
                   </div>
                 </div>
@@ -675,7 +774,59 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             </div>
           </div>
         )}
+      </div>{/* cierre max-w-7xl */}
+    </div>{/* cierre py-4 container */}
+
+    {/* ── BARRA FIJA INFERIOR EN CELULAR: TALLA ACTIVA + AGREGAR (fallback accesible siempre) ── */}
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 px-3 py-2 shadow-2xl flex items-center justify-between gap-2">
+      <div className="min-w-0 flex-shrink-0">
+        <span className="text-[9px] font-bold text-neutral-500 uppercase block leading-none">Mayorista 12+:</span>
+        <span className="text-sm font-black text-[#1b2333] leading-tight block mt-0.5">{formatCOP(wholesalePrice)}</span>
       </div>
+      {/* Selector talla compacto en barra inferior */}
+      <div className="flex gap-1 flex-wrap max-w-[130px]">
+        {availableSizes.slice(0, 5).map((size) => {
+          const sizeStock = (currentProduct.stock_by_size || {})[size];
+          const sizeSoldOut = soldOut || sizeStock === 0;
+          return (
+            <button
+              key={size}
+              type="button"
+              onClick={() => { setSelectedSize(size); setQuantity(1); }}
+              disabled={sizeSoldOut}
+              className={`w-8 h-8 text-[10px] font-bold border rounded transition-all ${
+                sizeSoldOut
+                  ? 'border-gray-200 text-neutral-300 bg-neutral-100 cursor-not-allowed'
+                  : selectedSize === size
+                  ? 'border-ush-pink bg-ush-pink text-white'
+                  : 'border-gray-300 text-neutral-700 bg-white'
+              }`}
+            >
+              {size}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={handleAddToCart}
+        disabled={selectedSizeSoldOut || !anySizeAvailable}
+        className={`flex-1 py-2.5 px-2 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition ${
+          selectedSizeSoldOut || !anySizeAvailable
+            ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+            : added
+            ? 'bg-emerald-600 text-white'
+            : 'bg-[#1b2333] text-white active:scale-[0.98] shadow-md'
+        }`}
+      >
+        {selectedSizeSoldOut || !anySizeAvailable ? (
+          <span>Agotado</span>
+        ) : added ? (
+          <><Check size={13} /><span>¡Listo!</span></>
+        ) : (
+          <><ShoppingBag size={13} /><span>Agregar T.{selectedSize}</span></>
+        )}
+      </button>
     </div>
 
     </>

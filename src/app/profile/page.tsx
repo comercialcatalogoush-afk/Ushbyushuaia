@@ -625,6 +625,22 @@ export default function ProfilePage() {
                 <span>{loading ? 'Creando cuenta...' : 'Crear Mi Cuenta Gratis'}</span>
               </button>
 
+              <div className="flex items-center gap-3 py-1">
+                <div className="flex-1 h-px bg-neutral-200" />
+                <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">o</span>
+                <div className="flex-1 h-px bg-neutral-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogle}
+                disabled={loading}
+                className="w-full rounded-xl border border-neutral-200 hover:border-[#d88193] bg-white hover:bg-neutral-50 text-neutral-700 font-bold py-3 text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+              >
+                <GoogleIcon size={16} />
+                <span>Registrarse con Google</span>
+              </button>
+
               <p className="text-center text-xs text-neutral-500 pt-2">
                 ¿Ya tienes cuenta?{' '}
                 <button type="button" onClick={() => switchMode('login')} className="text-[#d88193] font-bold hover:underline cursor-pointer">
