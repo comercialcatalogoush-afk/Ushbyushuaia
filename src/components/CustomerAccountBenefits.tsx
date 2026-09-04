@@ -6,7 +6,6 @@ import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { CustomerWatch, getCustomerWatches, removeCustomerWatch } from '@/lib/customerBenefits';
-import { LookbookConfig } from '@/lib/lookbookPdf';
 
 interface CustomerOrder {
   id: string;
@@ -29,7 +28,7 @@ function statusLabel(status?: string) {
   return labels[status || ''] || status || 'Registrado';
 }
 
-export function CustomerAccountBenefits({ user, products = [], config = null }: { user: any; products?: Product[]; config?: LookbookConfig | null }) {
+export function CustomerAccountBenefits({ user, products = [] }: { user: any; products?: Product[] }) {
   const { addToCart, formatCOP } = useCart();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [watches, setWatches] = useState<CustomerWatch[]>([]);

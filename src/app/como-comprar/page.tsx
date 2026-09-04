@@ -171,7 +171,7 @@ export default async function ComoComprarPage() {
                 {c.b2bDiff3Title || 'Material Digital de Reventa'}
               </h3>
               <p data-field-key="b2bDiff3Desc" className="text-xs text-neutral-600 font-light leading-relaxed">
-                {c.b2bDiff3Desc || 'Acceso a fotos de modelos y lookbook profesional de alta resolución para promocionar en tus redes antes de recibir el pedido.'}
+                {c.b2bDiff3Desc || 'Acceso a fotos de modelos y material audiovisual profesional de alta resolución para promocionar en tus redes antes de recibir el pedido.'}
               </p>
             </div>
 

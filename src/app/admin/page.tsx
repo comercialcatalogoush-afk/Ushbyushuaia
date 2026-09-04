@@ -408,8 +408,11 @@ export default function AdminCatalogPage() {
         newUserAlertTimerRef.current = setTimeout(() => setNewUserAlert(null), 8000);
       }
     );
+    // Auto-refresh de pedidos cada 60 s para no perder pedidos nuevos
+    const ordersInterval = setInterval(() => loadOrders(), 60000);
     return () => {
       unsubscribe();
+      clearInterval(ordersInterval);
       if (newUserAlertTimerRef.current) clearTimeout(newUserAlertTimerRef.current);
     };
   }, [isAuthenticated]);
@@ -675,18 +678,9 @@ export default function AdminCatalogPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/catalogo-digital"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5 bg-[#d88193] hover:bg-[#c06579] px-3 py-1.5 transition-colors"
-              title="Abrir el catálogo digital para seleccionar referencias y preparar el PDF."
-            >
-              <FileText size={14} /> Catálogo Digital
-            </Link>
             <button
               onClick={handleLogout}
-              className="text-xs text-rose-300 hover:text-rose-100 flex items-center gap-1 font-bold ml-4 border-l border-neutral-700 pl-4"
+              className="text-xs text-rose-300 hover:text-rose-100 flex items-center gap-1 font-bold border-l border-neutral-700 pl-4"
             >
               <LogOut size={16} /> Salir
             </button>

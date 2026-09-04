@@ -87,12 +87,13 @@ export function CustomerAudiovisualContent({ products, fullPage = false }: { pro
 }
 
 function AudiovisualEditor({ products, onClose, embedded = false }: { products: Product[]; onClose: () => void; embedded?: boolean }) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(products.map((product) => product.id)));
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [group, setGroup] = useState<'category' | 'fit'>('category');
   const [category, setCategory] = useState('all');
   const [fit, setFit] = useState('all');
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
   const [message, setMessage] = useState('');
 
   const categories = useMemo(() => Array.from(new Set(products.map((product) => product.category).filter((value): value is string => Boolean(value)))).sort((a, b) => a.localeCompare(b, 'es')), [products]);
@@ -118,37 +119,312 @@ function AudiovisualEditor({ products, onClose, embedded = false }: { products: 
   const toggle = (id: string) => setSelectedIds((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   const selectVisible = (include: boolean) => setSelectedIds((current) => { const next = new Set(current); filteredProducts.forEach((product) => include ? next.add(product.id) : next.delete(product.id)); return next; });
 
+  // Descarga individual de una sola foto elegida por el cliente
+  const handleDownloadSinglePhoto = async (imageUrl: string, ref: string, idx: number) => {
+    if (busy) return;
+    setDownloadingUrl(imageUrl);
+    const directUrl = getGoogleDriveImageUrl(imageUrl);
+    await downloadExternalFile(directUrl, `USH-Ref-${ref}-Foto-${idx + 1}.jpg`);
+    setDownloadingUrl(null);
+  };
+
+  // Descargar todas las fotos de una referencia específica
+  const handleDownloadProductPhotos = async (product: Product) => {
+    if (busy || !product.images?.length) return;
+    setBusy(true);
+    setMessage(`Descargando fotos de Ref. ${product.reference}...`);
+    let count = 0;
+    for (let i = 0; i < product.images.length; i++) {
+      const direct = getGoogleDriveImageUrl(product.images[i]);
+      await downloadExternalFile(direct, `USH-Ref-${product.reference}-${i + 1}.jpg`);
+      count++;
+    }
+    setMessage(`✓ Se descargaron ${count} fotos de la Ref. ${product.reference}`);
+    setBusy(false);
+    setTimeout(() => setMessage(''), 4000);
+  };
+
+  // Descarga masiva de todas las seleccionadas
   const downloadMedia = async (kind: 'images' | 'videos') => {
     if (busy) return;
     const targets = kind === 'images'
       ? selectedProducts.flatMap((product) => (product.images || []).map((image, index) => ({ url: getGoogleDriveImageUrl(image), name: `USH-${product.reference}-${index + 1}.jpg` })))
       : selectedProducts.flatMap((product) => { const video = getVideoMedia(product.video_url); return video?.downloadUrl ? [{ url: video.downloadUrl, name: `USH-${product.reference}-video` }] : []; });
-    if (!targets.length) { setMessage(kind === 'images' ? 'No hay fotos en las referencias seleccionadas.' : 'No hay videos descargables en las referencias seleccionadas.'); return; }
+    if (!targets.length) { setMessage(kind === 'images' ? 'Selecciona al menos una referencia para descargar.' : 'No hay videos en las referencias seleccionadas.'); return; }
     setBusy(true);
     let fallbackCount = 0;
     for (let index = 0; index < targets.length; index += 1) {
-      setMessage(`Preparando ${kind === 'images' ? 'fotos' : 'videos'}: ${index + 1} de ${targets.length}...`);
+      setMessage(`Descargando ${index + 1} de ${targets.length}...`);
       const downloaded = await downloadExternalFile(targets[index].url, targets[index].name);
       if (!downloaded) fallbackCount += 1;
     }
-    setMessage(fallbackCount ? `Se prepararon ${targets.length} archivos. ${fallbackCount} se abrieron en una pestaña porque el servidor externo no permite descarga directa.` : `${targets.length} archivos descargados correctamente.`);
+    setMessage(fallbackCount ? `Se prepararon ${targets.length} archivos.` : `✓ ${targets.length} archivos descargados con éxito.`);
     setBusy(false);
+    setTimeout(() => setMessage(''), 5000);
   };
 
   return (
     <div className={embedded ? 'w-full' : 'fixed inset-0 z-[70] flex items-center justify-center bg-[#111827]/80 p-2 sm:p-5'} role="dialog" aria-modal="true" aria-label="Contenido audiovisual">
       <div className={`flex w-full flex-col overflow-hidden bg-white shadow-2xl ${embedded ? 'min-h-[720px] rounded-xl border border-neutral-200' : 'max-h-[96vh] max-w-6xl rounded-xl'}`}>
-        <header className="flex items-start justify-between gap-4 bg-[#1b2333] px-4 py-4 text-white sm:px-6"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f3b3c0]">Biblioteca de contenido</p><h2 className="mt-1 text-lg font-black uppercase sm:text-xl">Contenido audiovisual</h2><p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/70">Selecciona referencias y descarga sus fotos o videos para compartir la colección en tus redes.</p></div><button type="button" onClick={onClose} disabled={busy} aria-label="Cerrar biblioteca" className="rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50"><X size={20} /></button></header>
-        <div className="grid min-h-0 flex-1 lg:grid-cols-[250px_1fr]">
+
+        {/* Encabezado */}
+        <header className="flex items-start justify-between gap-4 bg-[#1b2333] px-4 py-4 text-white sm:px-6">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f3b3c0]">Biblioteca de Contenido Digital</p>
+            <h2 className="mt-0.5 text-base font-black uppercase sm:text-xl">Fotos y Videos en Alta Resolución</h2>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/70">
+              Elige la foto exacta que quieres de cualquier referencia o descárgalas todas para tus redes sociales.
+            </p>
+          </div>
+          {!embedded && (
+            <button type="button" onClick={onClose} disabled={busy} aria-label="Cerrar biblioteca" className="rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-50">
+              <X size={20} />
+            </button>
+          )}
+        </header>
+
+        <div className="grid min-h-0 flex-1 lg:grid-cols-[260px_1fr]">
+
+          {/* Panel lateral / filtros */}
           <aside className="space-y-4 overflow-y-auto border-b border-neutral-200 bg-[#fafafa] p-4 lg:border-b-0 lg:border-r">
-            <div><p className="mb-2 text-[10px] font-black uppercase tracking-wider text-neutral-500">Organizar biblioteca</p><div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setGroup('category')} className={`rounded-lg border px-2 py-2 text-[10px] font-bold ${group === 'category' ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600'}`}>Categoría</button><button type="button" onClick={() => setGroup('fit')} className={`rounded-lg border px-2 py-2 text-[10px] font-bold ${group === 'fit' ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600'}`}>Fit</button></div></div>
-            <div className="space-y-2"><p className="text-[10px] font-black uppercase tracking-wider text-neutral-500">Filtrar referencias</p><div className="relative"><Search size={14} className="absolute left-3 top-2.5 text-neutral-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar referencia" className="w-full rounded-lg border border-neutral-200 bg-white py-2 pl-8 pr-2 text-xs outline-none focus:border-[#d88193]" /></div><select value={category} onChange={(event) => setCategory(event.target.value)} className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-2 text-xs text-neutral-600 outline-none"><option value="all">Todas las categorías</option>{categories.map((value) => <option key={value} value={value}>{value}</option>)}</select><select value={fit} onChange={(event) => setFit(event.target.value)} className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-2 text-xs text-neutral-600 outline-none"><option value="all">Todos los fits</option>{fits.map((value) => <option key={value} value={value}>{value}</option>)}</select></div>
-            <div className="border-t border-neutral-200 pt-3"><p className="text-sm font-black text-[#1b2333]">{selectedProducts.length} seleccionadas</p><p className="mt-1 text-[10px] leading-relaxed text-neutral-500">{selectedImages} fotos y {selectedVideos} videos descargables.</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => selectVisible(true)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600">Incluir visibles</button><button type="button" onClick={() => selectVisible(false)} className="rounded-lg border border-neutral-200 bg-white px-2 py-2 text-[9px] font-black uppercase text-neutral-600">Quitar visibles</button></div></div>
-            <div className="grid gap-2"><button type="button" onClick={() => downloadMedia('images')} disabled={busy || !selectedImages} className="flex items-center justify-center gap-2 rounded-lg bg-[#d88193] px-3 py-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50"><ImageIcon size={15} />{busy ? <><Loader2 size={14} className="animate-spin" /> Preparando...</> : `Descargar fotos (${selectedImages})`}</button><button type="button" onClick={() => downloadMedia('videos')} disabled={busy || !selectedVideos} className="flex items-center justify-center gap-2 rounded-lg bg-[#1b2333] px-3 py-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50"><Download size={15} /> Descargar videos ({selectedVideos})</button></div>
-            {message && <p className="text-[10px] leading-relaxed text-[#b5586c]">{message}</p>}
-            <p className="text-[10px] leading-relaxed text-neutral-400">Las descargas se realizan directamente desde la URL externa al dispositivo. No guardamos estos archivos en Supabase ni en Vercel.</p>
+
+            {/* Buscador */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-wider text-neutral-600">Buscar prenda</label>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-2.5 text-neutral-400" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Ref. o nombre..."
+                  className="w-full rounded-lg border border-neutral-200 bg-white py-2 pl-8 pr-2 text-xs outline-none focus:border-[#d88193]"
+                />
+              </div>
+            </div>
+
+            {/* Agrupar */}
+            <div>
+              <p className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-neutral-600">Organizar por</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setGroup('category')}
+                  className={`rounded-lg border px-2 py-2 text-[10px] font-bold transition ${group === 'category' ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600'}`}
+                >
+                  Categoría
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGroup('fit')}
+                  className={`rounded-lg border px-2 py-2 text-[10px] font-bold transition ${group === 'fit' ? 'border-[#d88193] bg-[#fff1f4] text-[#b5586c]' : 'border-neutral-200 bg-white text-neutral-600'}`}
+                >
+                  Silueta (Fit)
+                </button>
+              </div>
+            </div>
+
+            {/* Categorías */}
+            <div className="space-y-2">
+              <select
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+                className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-2 text-xs text-neutral-700 outline-none"
+              >
+                <option value="all">Todas las categorías ({categories.length})</option>
+                {categories.map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+
+              <select
+                value={fit}
+                onChange={(event) => setFit(event.target.value)}
+                className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-2 text-xs text-neutral-700 outline-none"
+              >
+                <option value="all">Todas las siluetas ({fits.length})</option>
+                {fits.map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </div>
+
+            {/* Descarga por lote de seleccionadas */}
+            <div className="border-t border-neutral-200 pt-3 space-y-2">
+              <div className="flex justify-between items-baseline">
+                <p className="text-xs font-black text-[#1b2333]">{selectedProducts.length} seleccionadas</p>
+                <span className="text-[10px] text-neutral-500">{selectedImages} fotos</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button type="button" onClick={() => selectVisible(true)} className="rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-[9px] font-black uppercase text-neutral-600 hover:bg-neutral-100">
+                  Marcar todas
+                </button>
+                <button type="button" onClick={() => selectVisible(false)} className="rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-[9px] font-black uppercase text-neutral-600 hover:bg-neutral-100">
+                  Desmarcar
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => downloadMedia('images')}
+                disabled={busy || !selectedImages}
+                className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#d88193] hover:bg-[#c06579] px-3 py-2.5 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50 transition shadow-xs"
+              >
+                <ImageIcon size={14} />
+                {busy ? <><Loader2 size={13} className="animate-spin" /> Descargando...</> : `Descargar lote (${selectedImages} fotos)`}
+              </button>
+            </div>
+
+            {message && (
+              <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-[11px] font-bold text-[#b5586c] leading-tight">
+                {message}
+              </div>
+            )}
+
+            <p className="text-[10px] leading-relaxed text-neutral-400">
+              💡 Puedes descargar cualquier foto individual haciendo clic en el icono de descarga de cada imagen, o descargar el pack completo de la prenda.
+            </p>
           </aside>
-          <main className="min-h-0 overflow-y-auto p-4 sm:p-6"><div className="mb-4 flex items-center justify-between gap-3 border-b border-neutral-200 pb-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-[#d88193]">Vista de selección</p><p className="mt-1 text-xs text-neutral-500">{filteredProducts.length} referencias con contenido</p></div><Film size={20} className="text-[#d88193]" /></div><div className="space-y-6">{groups.map(([label, groupProducts]) => <section key={label}><h3 className="mb-2 border-b border-neutral-200 pb-2 text-xs font-black uppercase tracking-wider text-[#d88193]">{label}</h3><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{groupProducts.map((product) => { const video = getVideoMedia(product.video_url); const selected = selectedIds.has(product.id); return <label key={product.id} className={`flex cursor-pointer gap-2 rounded-lg border p-2 transition ${selected ? 'border-[#d88193] bg-[#fff8f9]' : 'border-neutral-100 bg-neutral-50 opacity-60'}`}><input type="checkbox" checked={selected} onChange={() => toggle(product.id)} aria-label={`Incluir contenido de ${product.reference}`} className="mt-1 h-4 w-4 shrink-0 accent-[#d88193]" /><div className="relative h-24 w-16 shrink-0 overflow-hidden bg-neutral-200"><img src={getGoogleDriveImageUrl(product.images?.[0] || '')} alt="" className="h-full w-full object-cover" />{selected && <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d88193] text-white"><Check size={11} /></span>}</div><div className="min-w-0 flex-1"><p className="text-[10px] font-black uppercase text-[#1b2333]">{product.reference}</p><p className="line-clamp-2 text-[10px] leading-tight text-neutral-600">{product.name}</p><div className="mt-2 flex flex-wrap gap-1"><span className="inline-flex items-center gap-1 rounded bg-[#fff1f4] px-1.5 py-1 text-[9px] font-bold text-[#b5586c]"><ImageIcon size={10} /> {product.images?.length || 0} fotos</span>{video && <span className="inline-flex items-center gap-1 rounded bg-[#eef1f7] px-1.5 py-1 text-[9px] font-bold text-[#1b2333]"><Film size={10} /> {video.canDownload ? 'Video' : 'Video para ver'}</span>}</div></div></label>; })}</div></section>)}{!groups.length && <p className="py-16 text-center text-xs text-neutral-500">No encontramos referencias con esos filtros.</p>}</div></main>
+
+          {/* Galería principal de prendas y fotos individuales */}
+          <main className="min-h-0 overflow-y-auto p-4 sm:p-6 bg-white space-y-6">
+
+            <div className="flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#d88193]">Catálogo Oficial</p>
+                <p className="text-xs text-neutral-600 font-medium">
+                  {filteredProducts.length} referencias disponibles · Haz clic en cualquier foto para descargarla
+                </p>
+              </div>
+              <Film size={20} className="text-[#d88193]" />
+            </div>
+
+            {groups.map(([label, groupProducts]) => (
+              <section key={label} className="space-y-4">
+                <h3 className="border-b border-rose-100 pb-1.5 text-xs font-black uppercase tracking-wider text-[#d88193]">
+                  {label} ({groupProducts.length})
+                </h3>
+
+                <div className="space-y-4">
+                  {groupProducts.map((product) => {
+                    const isSelected = selectedIds.has(product.id);
+                    const images = product.images || [];
+                    const video = getVideoMedia(product.video_url);
+
+                    return (
+                      <div
+                        key={product.id}
+                        className={`rounded-xl border p-3.5 sm:p-4 transition-all ${
+                          isSelected ? 'border-[#d88193] bg-rose-50/20 shadow-xs' : 'border-neutral-200 bg-white hover:border-neutral-300'
+                        }`}
+                      >
+                        {/* Cabecera de la referencia */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggle(product.id)}
+                              aria-label={`Seleccionar lote de ${product.reference}`}
+                              className="h-4 w-4 rounded accent-[#d88193] cursor-pointer"
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black uppercase text-[#1b2333]">
+                                  Ref. {product.reference}
+                                </span>
+                                {product.fit && (
+                                  <span className="text-[9px] font-black uppercase text-[#d88193] bg-rose-50 px-2 py-0.5 rounded-full">
+                                    {product.fit}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-neutral-600 leading-tight mt-0.5">
+                                {product.name}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Acciones de referencia completa */}
+                          <div className="flex items-center gap-2 pt-1 sm:pt-0">
+                            {images.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadProductPhotos(product)}
+                                disabled={busy}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-100 hover:bg-rose-50 hover:text-[#d88193] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-neutral-700 transition"
+                              >
+                                <Download size={12} />
+                                <span>Descargar todas ({images.length})</span>
+                              </button>
+                            )}
+                            {video?.canDownload && (
+                              <button
+                                type="button"
+                                onClick={() => downloadExternalFile(video.downloadUrl, `USH-${product.reference}-video`)}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1b2333] hover:bg-neutral-800 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition"
+                              >
+                                <Film size={12} />
+                                <span>Video</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Galería de fotos individuales de esta prenda */}
+                        <div className="pt-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">
+                            Fotos individuales (toca para descargar la que desees):
+                          </p>
+                          <div className="flex flex-row overflow-x-auto gap-2.5 pb-1">
+                            {images.map((imgUrl, idx) => {
+                              const direct = getGoogleDriveImageUrl(imgUrl);
+                              const isDownloading = downloadingUrl === imgUrl;
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className="group/photo relative shrink-0 w-24 sm:w-28 rounded-lg overflow-hidden border border-gray-200 bg-neutral-100 shadow-2xs"
+                                >
+                                  <div className="aspect-[3/4] relative overflow-hidden bg-neutral-50">
+                                    <img
+                                      src={direct}
+                                      alt={`Ref ${product.reference} - Foto ${idx + 1}`}
+                                      className="w-full h-full object-cover transition duration-300 group-hover/photo:scale-105"
+                                      loading="lazy"
+                                    />
+                                    {/* Botón de descarga individual */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadSinglePhoto(imgUrl, product.reference, idx)}
+                                      disabled={busy}
+                                      title={`Descargar foto ${idx + 1}`}
+                                      className="absolute inset-x-0 bottom-0 bg-[#1b2333]/90 hover:bg-[#d88193] text-white py-1.5 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition"
+                                    >
+                                      {isDownloading ? (
+                                        <Loader2 size={11} className="animate-spin" />
+                                      ) : (
+                                        <>
+                                          <Download size={11} />
+                                          <span>Foto {idx + 1}</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+
+            {!groups.length && (
+              <p className="py-16 text-center text-xs text-neutral-500">
+                No se encontraron prendas con los filtros seleccionados.
+              </p>
+            )}
+
+          </main>
         </div>
       </div>
     </div>

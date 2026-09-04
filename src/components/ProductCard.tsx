@@ -197,21 +197,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
       <div className="p-4 flex flex-col flex-1 justify-between bg-white">
         <div>
           {/* Badges Container OUTSIDE Image */}
-          <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+          <div className="flex flex-wrap items-center gap-1 mb-2">
             {isBestSellerBadge && (
-              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-[#1b2333] text-white">
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-[#1b2333] text-white">
                 🔥 Más vendido
               </span>
             )}
             {product.ribbon && !isBestSellerBadge && (
-              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 text-white ${
+              <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 text-white ${
                 product.ribbon.toLowerCase().includes('nuevo') ? 'bg-[#d88193]' : 'bg-[#1b2333]'
               }`}>
                 {product.ribbon}
               </span>
             )}
-            <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-              <Truck size={10} /> Envío Gratis (12+ Uds)
+            <span className="text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-0.5">
+              <Truck size={9} /> <span className="hidden sm:inline">Envío Gratis </span>12+ Uds
             </span>
           </div>
 
@@ -258,7 +258,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
           </div>
 
           {/* Tallas Selector */}
-          <div className="mt-3">
+          <div className="mt-2 sm:mt-3">
             <div className="flex items-center justify-between mb-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
                 Talla: <span className="text-black font-extrabold">{selectedSize}</span>
@@ -271,11 +271,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
                 }}
                 className="text-[10px] font-bold text-ush-pink hover:underline flex items-center gap-1 uppercase"
               >
-                <Ruler size={11} /> Guía de Tallas
+                <Ruler size={11} /> <span className="hidden sm:inline">Guía de Tallas</span><span className="sm:hidden">Guía</span>
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-1">
+            {/* Fila única de tallas — sin desbordamiento en móvil */}
+            <div className="flex flex-nowrap gap-1 overflow-x-auto pb-0.5">
               {availableSizes.map((size) => {
                 const sizeStock = (product.stock_by_size || {})[size];
                 const sizeOut = soldOut || sizeStock === 0;
@@ -286,7 +287,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
                     onClick={() => handleSizeChange(size)}
                     disabled={sizeOut}
                     title={sizeOut ? (soldOut ? 'Producto agotado' : 'Talla agotada') : `Talla ${size}`}
-                    className={`relative text-[11px] w-7 h-7 font-bold border transition-all flex items-center justify-center ${
+                    className={`relative shrink-0 text-[10px] sm:text-[11px] w-6 h-6 sm:w-7 sm:h-7 font-bold border transition-all flex items-center justify-center ${
                       selectedSize === size
                         ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
                         : sizeOut

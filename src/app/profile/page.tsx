@@ -6,8 +6,6 @@ import { User, Mail, Lock, ArrowRight, LogIn, AlertCircle, CheckCircle2, Setting
 import { supabase } from '@/lib/supabase';
 import { CustomerAccountBenefits } from '@/components/CustomerAccountBenefits';
 import { CustomerAudiovisualContent } from '@/components/CustomerAudiovisualContent';
-import { CustomerLookbookEditor } from '@/components/CustomerLookbookEditor';
-import { LookbookConfig } from '@/lib/lookbookPdf';
 import { Product } from '@/types';
 import { CalculadoraClient } from '../calculadora-ganancias/CalculadoraClient';
 
@@ -60,9 +58,8 @@ export default function ProfilePage() {
   const [isRecovery, setIsRecovery] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [returnTo, setReturnTo] = useState('/');
-  const [activeTab, setActiveTab] = useState<'perfil' | 'contenido' | 'pdf' | 'calculadora'>('perfil');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'contenido' | 'calculadora'>('perfil');
   const [products, setProducts] = useState<Product[]>([]);
-  const [lookbookConfig, setLookbookConfig] = useState<LookbookConfig | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -89,7 +86,7 @@ export default function ProfilePage() {
       setReturnTo(requestedReturnTo);
     }
     const requestedTab = params.get('tab');
-    if (requestedTab === 'calculadora' || requestedTab === 'perfil' || requestedTab === 'contenido' || requestedTab === 'pdf') {
+    if (requestedTab === 'calculadora' || requestedTab === 'perfil' || requestedTab === 'contenido') {
       setActiveTab(requestedTab);
     }
 
@@ -142,24 +139,13 @@ export default function ProfilePage() {
     const loadProfileData = async () => {
       setLoadingProfile(true);
       try {
-        const [{ data: sessionData }, catalogResponse] = await Promise.all([
-          supabase.auth.getSession(),
-          fetch('/api/catalog', { cache: 'no-store' }),
-        ]);
+        const catalogResponse = await fetch('/api/catalog', { cache: 'no-store' });
         if (cancelled) return;
         if (!catalogResponse.ok) throw new Error('No se pudo cargar el catálogo.');
         const payload = await catalogResponse.json();
         setProducts(Array.isArray(payload) ? payload : (payload.products || []));
-        const token = sessionData.session?.access_token;
-        if (token) {
-          const configResponse = await fetch('/api/lookbook-config', { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
-          if (configResponse.ok) {
-            const configPayload = await configResponse.json();
-            setLookbookConfig(configPayload.config || null);
-          }
-        }
       } catch (_) {
-        if (!cancelled) { setProducts([]); setLookbookConfig(null); }
+        if (!cancelled) setProducts([]);
       } finally {
         if (!cancelled) setLoadingProfile(false);
       }
@@ -337,7 +323,6 @@ export default function ProfilePage() {
               <button type="button" onClick={() => setActiveTab('perfil')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'perfil' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><UserCircle size={16} /> Mi perfil</button>
               <button type="button" onClick={() => setActiveTab('calculadora')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'calculadora' ? 'bg-[#d88193] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><Calculator size={16} /> Calculadora</button>
               <button type="button" onClick={() => setActiveTab('contenido')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'contenido' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><Film size={16} /> Contenido audiovisual</button>
-              <button type="button" onClick={() => setActiveTab('pdf')} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-3 text-left text-xs font-black uppercase tracking-wide transition ${activeTab === 'pdf' ? 'bg-[#1b2333] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}><FileText size={16} /> Catálogo PDF</button>
             </div>
             <div className="mt-4 space-y-2">
               <button onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-xs font-bold uppercase tracking-wider text-neutral-600 transition hover:bg-gray-50"><LogOut size={15} /> Cerrar Sesión</button>
@@ -393,7 +378,7 @@ export default function ProfilePage() {
                   </form>
                 </section>
 
-                <CustomerAccountBenefits user={user} products={products} config={lookbookConfig} />
+                <CustomerAccountBenefits user={user} products={products} />
               </div>
             )}
 
@@ -406,12 +391,6 @@ export default function ProfilePage() {
             {activeTab === 'contenido' && (
               <div className="w-full text-left">
                 <CustomerAudiovisualContent products={products} fullPage />
-              </div>
-            )}
-
-            {activeTab === 'pdf' && (
-              <div className="w-full text-left">
-                <CustomerLookbookEditor products={products} config={lookbookConfig} onClose={() => setActiveTab('perfil')} embedded />
               </div>
             )}
           </main>

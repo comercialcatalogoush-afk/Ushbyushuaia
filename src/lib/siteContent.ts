@@ -308,7 +308,7 @@ export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
       { key: 'b2bDiff2Title', label: 'Diferencial 2 — Título', type: 'text', group: 'Aliados B2B', default: 'Surtido Libre desde 12 Unidades' },
       { key: 'b2bDiff2Desc', label: 'Diferencial 2 — Texto', type: 'textarea', group: 'Aliados B2B', default: 'Combina referencias, siluetas y colores en un solo pedido con precio mayorista de fábrica y flete gratis.' },
       { key: 'b2bDiff3Title', label: 'Diferencial 3 — Título', type: 'text', group: 'Aliados B2B', default: 'Material Digital de Reventa' },
-      { key: 'b2bDiff3Desc', label: 'Diferencial 3 — Texto', type: 'textarea', group: 'Aliados B2B', default: 'Acceso a fotos de modelos y lookbook profesional de alta resolución para promocionar en tus redes antes de recibir el pedido.' },
+      { key: 'b2bDiff3Desc', label: 'Diferencial 3 — Texto', type: 'textarea', group: 'Aliados B2B', default: 'Acceso a fotos de modelos y material audiovisual profesional de alta resolución para promocionar en tus redes antes de recibir el pedido.' },
       { key: 'b2bDiff4Title', label: 'Diferencial 4 — Título', type: 'text', group: 'Aliados B2B', default: 'Garantía Directa de Fábrica' },
       { key: 'b2bDiff4Desc', label: 'Diferencial 4 — Texto', type: 'textarea', group: 'Aliados B2B', default: '45 días de garantía en costuras y mezclilla rígida premium confeccionada en Itagüí, Antioquia.' },
       { key: 'b2bCalcCtaText', label: 'Botón Calculadora — Texto', type: 'text', group: 'Aliados B2B', default: 'Proyectar Ganancias en Calculadora' },

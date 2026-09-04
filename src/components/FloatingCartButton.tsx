@@ -165,12 +165,12 @@ export const FloatingCartButton: React.FC = () => {
       `}</style>
 
       {/* Contenedor fijo inferior-derecha con z-index seguro y espacio suficiente */}
-      <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-1.5 pointer-events-none">
+      <div className="fixed bottom-4 right-3.5 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-1 pointer-events-none">
 
-        {/* ── Mensaje rotativo ── */}
+        {/* ── Mensaje rotativo: oculto en móvil muy pequeño ── */}
         <div
           className={`
-            px-3 py-1 rounded-full text-[10px] font-bold shadow-md select-none pointer-events-none max-w-[180px] text-center truncate
+            hidden sm:block px-3 py-1 rounded-full text-[10px] font-bold shadow-md select-none pointer-events-none max-w-[180px] text-center truncate
             ${msgClass}
             ${fade ? 'msg-fade-in' : 'msg-fade-out'}
           `}
@@ -194,7 +194,7 @@ export const FloatingCartButton: React.FC = () => {
           aria-label={`Abrir carrito de compras (${units} unidades)`}
           style={{ pointerEvents: 'all' }}
           className={`
-            relative w-16 h-16 rounded-full flex items-center justify-center
+            relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center
             transition-all duration-300 shadow-xl
             focus:outline-none focus-visible:ring-4 focus-visible:ring-[#d88193]/50
             ${level === 'full' ? 'cart-full' : btnClass}
@@ -221,7 +221,7 @@ export const FloatingCartButton: React.FC = () => {
 
           {/* Icono bolsa */}
           <ShoppingBag
-            size={level === 'empty' ? 22 : 25}
+            size={level === 'empty' ? 20 : 22}
             strokeWidth={level === 'full' ? 2.5 : 2}
             className="relative z-10"
           />

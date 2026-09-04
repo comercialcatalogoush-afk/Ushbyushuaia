@@ -68,10 +68,10 @@ export function CustomerBenefitsBanner() {
         className="
           banner-float-anim
           fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50
-          w-[calc(100%-1.5rem)] max-w-4xl
+          w-[calc(100%-1rem)] max-w-4xl
           rounded-2xl border border-rose-200/90
           bg-white/98 backdrop-blur-md
-          p-4 sm:p-6 shadow-[0_16px_50px_rgba(216,129,147,0.25)]
+          p-3.5 sm:p-6 shadow-[0_16px_50px_rgba(216,129,147,0.25)]
         "
       >
         {/* Botón Cerrar (X) */}
@@ -119,7 +119,7 @@ export function CustomerBenefitsBanner() {
                 </div>
                 <div className="flex items-center gap-1.5 text-neutral-800">
                   <span className="text-[#d88193] text-sm">✓</span>
-                  <span>Catálogo PDF con tus precios</span>
+                  <span>Fotos y videos para tus redes</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-neutral-800">
                   <span className="text-[#d88193] text-sm">✓</span>

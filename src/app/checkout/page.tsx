@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { submitOrder, publishOrderChange } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, Truck, MessageCircle, AlertTriangle, Sparkles, CreditCard, Building2, Info, ChevronDown, Search, Phone, ArrowUpRight, FileDown, Loader2 } from 'lucide-react';
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
 import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
@@ -57,6 +58,8 @@ export default function CheckoutPage() {
   const [invoiceFileName, setInvoiceFileName] = useState('Factura-USH-BY-USHUAIA.pdf');
   const [invoiceState, setInvoiceState] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Error de validación del teléfono (10 dígitos requeridos para Colombia)
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   // Guardia síncrona contra doble envío: `loading` (estado React) tarda un
   // render en propagarse, así que un segundo clic rápido podría re-enviar y
   // crear un pedido duplicado. Este ref se bloquea al instante.
@@ -70,6 +73,23 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     getWhatsAppNumber().then(setWhatsappNumber);
+  }, []);
+
+  // Auto-relleno desde la sesión activa de Supabase (cliente registrado)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return;
+      const user = session.user;
+      const meta = user.user_metadata || {};
+      setFormData((prev) => ({
+        ...prev,
+        email: user.email || prev.email,
+        name: meta.full_name || meta.name || prev.name,
+        phone: meta.phone || prev.phone,
+        address: meta.address || prev.address,
+        city: meta.city || prev.city,
+      }));
+    }).catch(() => {});
   }, []);
 
   // La factura se genera en el navegador después de registrar el pedido.
@@ -151,6 +171,14 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0 || loading || submittingRef.current) return;
+
+    // Validación del teléfono: para Colombia (+57) se exigen exactamente 10 dígitos.
+    const rawPhoneDigits = (formData.phone || '').replace(/\D/g, '');
+    if (phoneCountry === '+57' && rawPhoneDigits.length !== 10) {
+      setPhoneError('El número de celular debe tener exactamente 10 dígitos (ej: 3001234567).');
+      return;
+    }
+    setPhoneError(null);
 
     // Mínimo mayorista: 8 unidades. Debajo de eso se sugiere la tienda retail.
     if (totalUnits < MIN_ORDER_UNITS) {
@@ -582,15 +610,33 @@ export default function CheckoutPage() {
                         <input
                           type="tel"
                           required
+                          inputMode="numeric"
+                          maxLength={10}
                           value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          onChange={(e) => {
+                            // Solo permite dígitos en el campo
+                            const digits = e.target.value.replace(/\D/g, '');
+                            setFormData({ ...formData, phone: digits });
+                            // Limpia el error al corregir
+                            if (phoneCountry === '+57' && digits.length === 10) setPhoneError(null);
+                          }}
                           placeholder={PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.placeholder || '300 000 0000'}
-                          className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
+                          className={`w-full border p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink ${
+                            phoneError ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                          }`}
                         />
                       </div>
-                      <p className="text-[10px] text-neutral-400 mt-1">
-                        {PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.country} — se enviará como {phoneCountry} {formData.phone || 'tu número'}
-                      </p>
+                      {/* Mensaje de error visual para teléfono */}
+                      {phoneError && (
+                        <p className="text-[10px] text-red-600 font-semibold mt-1 flex items-center gap-1">
+                          <AlertTriangle size={11} className="shrink-0" /> {phoneError}
+                        </p>
+                      )}
+                      {!phoneError && (
+                        <p className="text-[10px] text-neutral-400 mt-1">
+                          {PHONE_COUNTRIES.find((c) => c.code === phoneCountry)?.country} — se enviará como {phoneCountry} {formData.phone || 'tu número'}
+                        </p>
+                      )}
                     </div>
                   </div>
 
