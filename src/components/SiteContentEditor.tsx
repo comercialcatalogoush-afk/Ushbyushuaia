@@ -319,6 +319,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productSearch, setProductSearch] = useState('');
+  const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [productDraft, setProductDraft] = useState<Product | null>(null);
   const [isNewProduct, setIsNewProduct] = useState(false);
@@ -1271,9 +1272,13 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
 
   const filteredProductsList = products.filter((p) => {
     const q = productSearch.trim().toLowerCase();
-    if (!q) return true;
-    return (p.name || '').toLowerCase().includes(q) || (p.reference || '').toLowerCase().includes(q);
+    if (q && !(p.name || '').toLowerCase().includes(q) && !(p.reference || '').toLowerCase().includes(q)) return false;
+    if (visibilityFilter === 'visible' && (p.hidden || p.status === 'draft')) return false;
+    if (visibilityFilter === 'hidden' && !(p.hidden || p.status === 'draft')) return false;
+    return true;
   });
+  const visibleProductsCount = products.filter((p) => !p.hidden && p.status !== 'draft').length;
+  const hiddenProductsCount = products.length - visibleProductsCount;
   const sizeOptionDraft = productDraft?.options?.find((o) => o.key.toLowerCase() === 'talla');
   const draftSizes = sizeOptionDraft?.values && sizeOptionDraft.values.length > 0 ? sizeOptionDraft.values : PRODUCT_SIZES;
 
@@ -1807,6 +1812,28 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       <Plus size={14} /> Nueva referencia
                     </button>
                   </div>
+                </div>
+
+                {/* Visibility filter: Todos / Visibles / Ocultos */}
+                <div className="flex flex-wrap items-center gap-2 mb-5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mr-1">Mostrar:</span>
+                  {([
+                    { key: 'all' as const, label: 'Todos', count: products.length, activeCls: 'bg-[#1b2333] text-white' },
+                    { key: 'visible' as const, label: 'Visibles', count: visibleProductsCount, activeCls: 'bg-emerald-600 text-white' },
+                    { key: 'hidden' as const, label: 'Ocultos', count: hiddenProductsCount, activeCls: 'bg-red-500 text-white' },
+                  ]).map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setVisibilityFilter(opt.key)}
+                      className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-full border transition-colors ${
+                        visibilityFilter === opt.key
+                          ? opt.activeCls + ' border-transparent'
+                          : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {opt.label} ({opt.count})
+                    </button>
+                  ))}
                 </div>
 
                 {productsLoading && products.length === 0 ? (
