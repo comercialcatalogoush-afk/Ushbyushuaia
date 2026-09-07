@@ -19,7 +19,7 @@ export const OutletSection: React.FC = () => {
     name: c.outletName || 'Outlet USH BY USHUAIA',
     tag: c.outletTag || 'Principal · Atención Mayorista',
     address: c.outletAddress || 'Carrera 55 B # 72 a 02. Itagüí, Antioquia',
-    schedule: c.outletSchedule || 'Lunes a Viernes: 8:00 AM – 5:30 PM',
+    schedule: c.outletSchedule || 'Lunes a Jueves: 8:00 AM – 5:30 PM | Viernes: 8:00 AM – 5:00 PM',
     mapUrl: c.outletMapUrl || 'https://maps.google.com/?q=Carrera+55B+%2372a-02,+Itagui',
     phone: c.outletPhone || '+57 301 139 3902',
     videoUrl: c.outletVideoUrl || '',
@@ -31,7 +31,8 @@ export const OutletSection: React.FC = () => {
     buttonVisit: c.outletButtonVisit || 'Agendar Visita',
     open: c.outletOpen || '8:00 AM',
     close: c.outletClose || '5:30 PM',
-    scheduleNote: c.outletScheduleNote || 'Sábados, domingos y festivos no hay atención presencial.',
+    closeFriday: c.outletCloseFriday || '5:00 PM',
+    scheduleNote: c.outletScheduleNote || 'Viernes hasta las 5:00 PM. Sábados, domingos y festivos no hay atención presencial.',
   };
 
   const OUTLET_FINAL = { ...OUTLET, whatsapp: `https://wa.me/${whatsapp}` };
@@ -159,6 +160,11 @@ export const OutletSection: React.FC = () => {
                 <div className="flex items-center justify-between font-sans-ui">
                   <span className="text-sm font-semibold text-neutral-800 uppercase tracking-wider">Cierre</span>
                   <span data-field-key="outletClose" className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.close}</span>
+                </div>
+                <div className="my-4 border-t border-dashed border-[#c49a6c]/40" />
+                <div className="flex items-center justify-between font-sans-ui">
+                  <span className="text-sm font-semibold text-neutral-800 uppercase tracking-wider">Viernes</span>
+                  <span data-field-key="outletCloseFriday" className="font-serif-display text-3xl text-[#1b2333]">{OUTLET.open} – {OUTLET.closeFriday}</span>
                 </div>
                 <p data-field-key="outletScheduleNote" className="font-sans-ui text-[11px] text-neutral-500 mt-4">
                   {OUTLET.scheduleNote}

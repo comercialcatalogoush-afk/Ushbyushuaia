@@ -266,8 +266,8 @@ export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
       { key: 'outletName', label: 'Nombre del punto', type: 'text', group: 'Tarjeta principal', default: 'Outlet USH BY USHUAIA' },
       { key: 'outletTag', label: 'Etiqueta del punto', type: 'text', group: 'Tarjeta principal', default: 'Principal · Atención Mayorista' },
       { key: 'outletAddress', label: 'Dirección', type: 'text', group: 'Tarjeta principal', default: 'Carrera 55 B # 72 a 02. Itagüí, Antioquia' },
-      { key: 'outletSchedule', label: 'Horario', type: 'text', group: 'Tarjeta principal', default: 'Lunes a Viernes: 8:00 AM – 5:30 PM' },
-      { key: 'outletScheduleNote', label: 'Nota de horario', type: 'text', group: 'Tarjeta principal', default: 'Sábados, domingos y festivos no hay atención presencial.' },
+      { key: 'outletSchedule', label: 'Horario', type: 'text', group: 'Tarjeta principal', default: 'Lunes a Jueves: 8:00 AM – 5:30 PM | Viernes: 8:00 AM – 5:00 PM' },
+      { key: 'outletScheduleNote', label: 'Nota de horario', type: 'text', group: 'Tarjeta principal', default: 'Viernes hasta las 5:00 PM. Sábados, domingos y festivos no hay atención presencial.' },
       { key: 'outletMapUrl', label: 'Enlace al mapa', type: 'url', group: 'Tarjeta principal', default: 'https://maps.google.com/?q=Cll+85+Sur+%2350-72,+Itagui' },
       { key: 'outletPhone', label: 'Teléfono', type: 'text', group: 'Tarjeta principal', default: '+57 301 139 3902' },
       { key: 'outletVideoUrl', label: 'URL del video (vacío = pronto)', type: 'url', group: 'Tarjeta principal', default: '' },
@@ -276,6 +276,7 @@ export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
       { key: 'outletButtonVisit', label: 'Botón visita — texto', type: 'text', group: 'Botones', default: 'Agendar Visita' },
       { key: 'outletOpen', label: 'Horario — apertura', type: 'text', group: 'Horario destacado', default: '8:00 AM' },
       { key: 'outletClose', label: 'Horario — cierre', type: 'text', group: 'Horario destacado', default: '5:30 PM' },
+      { key: 'outletCloseFriday', label: 'Horario — cierre viernes', type: 'text', group: 'Horario destacado', default: '5:00 PM' },
     ],
   },
   {
