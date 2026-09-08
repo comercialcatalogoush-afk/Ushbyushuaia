@@ -242,27 +242,52 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresca el detalle desde el Edge: un título, precio o stock editados por el
+  // admin deben verse al instante, igual que en la cuadrícula del catálogo.
+  const refreshFromApi = React.useCallback((ts?: string | number) => {
+    const syncQuery = ts ? `&sync=${encodeURIComponent(String(ts))}` : '';
+    fetch(`/api/catalog?slug=${encodeURIComponent(currentProduct.slug)}${syncQuery}`, {
+      cache: 'no-store',
+      headers: ts ? { 'Cache-Control': 'no-cache' } : undefined,
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
+      .then((fresh: Product) => {
+        if (fresh) {
+          setCurrentProduct(fresh);
+        }
+      })
+      .catch(() => {});
+  }, [currentProduct.slug]);
+
+  // Refresca al abrir la página y al volver a enfocar la pestaña: aunque la
+  // plantilla venga de la caché del servidor, el detalle siempre pide datos frescos.
+  React.useEffect(() => {
+    refreshFromApi();
+    let lastFocus = Date.now();
+    const onFocus = () => {
+      if (Date.now() - lastFocus > 15000) {
+        lastFocus = Date.now();
+        refreshFromApi();
+      }
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [refreshFromApi]);
+
   // Realtime: si el admin confirma un pago (o edita el producto), el stock y
   // los datos se actualizan al instante desde Supabase.
   React.useEffect(() => {
     const unsubscribe = subscribeCatalogChanges((payload?: CatalogSyncPayload) => {
       // El timestamp del broadcast evita que el detalle conserve el stock o
       // precio anterior del CDN después de una publicación del admin.
-      const syncQuery = payload?.ts ? `&sync=${encodeURIComponent(String(payload.ts))}` : '';
-      fetch(`/api/catalog?slug=${encodeURIComponent(currentProduct.slug)}${syncQuery}`, {
-        cache: 'no-store',
-        headers: payload?.ts ? { 'Cache-Control': 'no-cache' } : undefined,
-      })
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('catalog ' + r.status))))
-        .then((fresh: Product) => {
-          if (fresh) {
-            setCurrentProduct(fresh);
-          }
-        })
-        .catch(() => {});
+      refreshFromApi(payload?.ts);
     });
     return unsubscribe;
-  }, [currentProduct.slug]);
+  }, [refreshFromApi]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
