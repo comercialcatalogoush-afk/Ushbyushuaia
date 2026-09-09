@@ -13,6 +13,7 @@ import { CustomerBenefitsBanner } from '@/components/CustomerBenefitsBanner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FloatingCartButton } from '@/components/FloatingCartButton';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || 'G-R91RRDYKM1';
 
@@ -57,6 +58,7 @@ export default function RootLayout({
           </ThemeProvider>
         </CartProvider>
         {GA4_ID && <GoogleAnalytics gaId={GA4_ID} />}
+        <SpeedInsights />
       </body>
     </html>
   );
