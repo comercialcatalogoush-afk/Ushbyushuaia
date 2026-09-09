@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { fetchAllProductsAdmin, supabase, fetchPriceHistory, fetchOrdersAdmin, confirmOrderAndDeductStock, cancelOrderAndRestoreStock, subscribeCatalogChanges, publishOrderChange } from '@/lib/supabase';
-import { exportBackup, downloadBackup, exportOrderExcel, purgeTransactionalData, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
+import { exportBackup, downloadBackup, exportOrderExcel, getNextBackupReminder, formatReminder, downloadReminderIcs, getReminderCountdown } from '@/lib/backup';
 import { Product, PriceHistoryRecord } from '@/types';
 import { SiteContentEditor } from '@/components/SiteContentEditor';
 import { generateInvoicePdf, uploadInvoicePdf, buildInvoiceWhatsAppUrl } from '@/lib/invoice';
@@ -553,12 +553,23 @@ export default function AdminCatalogPage() {
     setBackupLoading(true);
     setBackupMsg(null);
     setBackupError(null);
-    const res = await purgeTransactionalData();
-    if (res.success) {
-      setBackupMsg('✅ Tablas transaccionales vaciadas. El plan gratuito queda despejado hasta el próximo mes.');
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error('La sesión de administrador no está disponible. Vuelve a ingresar.');
+      const res = await fetch('/api/admin/purge', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `No se pudo vaciar (${res.status}).`);
+      const counts = body.results || {};
+      setBackupMsg(
+        `✅ Tablas transaccionales vaciadas (${counts.orders ?? 0} pedidos, ${counts.wholesale_leads ?? 0} leads, ${counts.price_history ?? 0} precios). El plan gratuito queda despejado hasta el próximo mes.`
+      );
       setBackupReminder(getNextBackupReminder());
-    } else {
-      setBackupError('No se pudieron vaciar los datos: ' + (res.error || 'error'));
+    } catch (e: any) {
+      setBackupError('No se pudieron vaciar los datos: ' + (e?.message || 'error'));
     }
     setBackupLoading(false);
   };

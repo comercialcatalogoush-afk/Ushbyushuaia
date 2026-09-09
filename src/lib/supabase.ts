@@ -70,6 +70,30 @@ function normalizeProductName(value: unknown): string {
   return String(value || '').replace(/\bShort\s+lardo\b/gi, 'Short largo');
 }
 
+// Algunas filas de Supabase guardan las opciones con la llave `name` en vez de
+// `key` (creadas por la sincronización del catálogo). Se normaliza para que el
+// editor y la tienda siempre encuentren `key` y eviten errores de render.
+function normalizeProductOptions(raw: unknown): Product['options'] {
+  let parsed: any[] = [];
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = [];
+    }
+  } else if (Array.isArray(raw)) {
+    parsed = raw;
+  }
+  return parsed.map((o) => {
+    const key = String(o?.key || o?.name || 'Talla');
+    return {
+      id: o?.id ?? `opt-${key}`,
+      key,
+      values: Array.isArray(o?.values) ? o.values : [],
+    };
+  });
+}
+
 const mapProductRow = (item: any): Product => {
   const name = normalizeProductName(item.name);
   const rawImages = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
@@ -96,7 +120,7 @@ const mapProductRow = (item: any): Product => {
   video_url: item.video_url || '',
   in_stock: item.in_stock !== false,
   hidden: item.hidden === true || item.status === 'draft',
-  options: typeof item.options === 'string' ? JSON.parse(item.options) : (item.options || []),
+  options: normalizeProductOptions(item.options),
   images,
   tags: Array.isArray(item.tags) ? item.tags : [],
   category: item.category || '',
