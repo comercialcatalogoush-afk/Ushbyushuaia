@@ -26,7 +26,7 @@ function normalizeFitLabel(label: string): string {
   const map: Record<string, string> = {
     'WIDE LEG': 'Wide Leg', 'WIDELEG': 'Wide Leg', 'BARREL': 'Barrel',
     'STRAIGHT BOOT': 'Straight Boot', 'STRAIGHTBOOT': 'Straight Boot',
-    'VAQUERO': 'Vaquero', 'BOTA FLARE': 'Bota Flare', 'BOTAFLARE': 'Bota Flare',
+    'VAQUERO': 'Vaquero', 'BOTA FLARE': 'Flare', 'BOTAFLARE': 'Flare', 'FLARE': 'Flare',
     'SKINNY': 'Skinny', 'STRAIGHT': 'Straight', 'MOM': 'Mom', 'CARGO': 'Cargo', 'BERMUDA': 'Bermuda'
   };
   return map[label.toUpperCase()] || label;
@@ -79,9 +79,11 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     const cat = searchParams.get('categoria');
     const fit = searchParams.get('fit');
     const buscar = searchParams.get('buscar');
-    if (cat) setActiveCategory(cat);
-    if (fit) setActiveFit(normalizeFitLabel(fit));
-    if (buscar) setSearchQuery(buscar);
+    // Cada navegación reemplaza el estado completo: los parámetros ausentes
+    // deben limpiar el filtro anterior y no quedarse pegados entre categorías.
+    setActiveCategory(cat || 'Todos');
+    setActiveFit(fit ? normalizeFitLabel(fit) : 'Todos');
+    setSearchQuery(buscar || '');
   }, [searchParams]);
 
   // Supabase es la fuente de verdad: usamos los productos que trae el servidor
@@ -126,11 +128,12 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     if (activeCategory !== 'Todos') {
       const cat = (p.category || '').toLowerCase();
       const catActive = activeCategory.toLowerCase();
-      const matchCat = cat === catActive || name.includes(catActive) || tags.includes(catActive);
+      const fit = normalizeFitLabel(p.fit || '').toLowerCase();
+      const matchCat = cat === catActive || fit === catActive || name.includes(catActive) || tags.includes(catActive);
       if (!matchCat) return false;
     }
     if (activeFit !== 'Todos') {
-      const fit = (p.fit || '').toLowerCase();
+      const fit = normalizeFitLabel(p.fit || '').toLowerCase();
       const fitActive = activeFit.toLowerCase();
       // Coincidencia exacta de fit, o bien la palabra completa del fit en
       // nombre/tags (evita que "Straight" arrastre "Straight Boot").

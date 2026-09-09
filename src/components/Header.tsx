@@ -37,8 +37,10 @@ export const Header: React.FC = () => {
     };
   }, [pathname]);
 
-  const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY', 'MOM'];
-  const pantalonesFits = ['WIDE LEG', 'STRAIGHT', 'BOTA FLARE', 'SKINNY'];
+  // Los nombres deben corresponder a los valores de fit presentes en Supabase.
+  // "BOTA FLARE" se conserva como etiqueta comercial y CatalogGrid lo normaliza a "Flare".
+  const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'STRAIGHT', 'BOTA FLARE', 'SKINNY', 'MOM'];
+  const pantalonesFits = ['WIDE LEG', 'STRAIGHT', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY', 'CARGO'];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +195,13 @@ export const Header: React.FC = () => {
                   className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
                 >
                   FALDAS
+                </Link>
+
+                <Link
+                  href="/catalogo?categoria=Bermudas"
+                  className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-neutral-50"
+                >
+                  BERMUDAS
                 </Link>
               </div>
             </div>
@@ -420,6 +429,7 @@ export const Header: React.FC = () => {
                   ['CARGOS', '/catalogo?categoria=Cargos'],
                   ['SHORTS', '/catalogo?categoria=Shorts'],
                   ['FALDAS', '/catalogo?categoria=Faldas'],
+                  ['BERMUDAS', '/catalogo?categoria=Bermudas'],
                 ].map(([label, href]) => (
                   <Link
                     key={label}
