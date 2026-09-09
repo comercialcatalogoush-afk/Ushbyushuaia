@@ -2,6 +2,7 @@ import { fetchProductsFromSupabase, isCompleteProduct } from '@/lib/supabase';
 import { Hero } from '@/components/Hero';
 import { Benefits } from '@/components/Benefits';
 import { ProductGrid } from '@/components/ProductGrid';
+import { HomePacksCarousel } from '@/components/HomePacksCarousel';
 import { WholesaleInquiryForm } from '@/components/WholesaleInquiryForm';
 import { OutletSection } from '@/components/OutletSection';
 import { SocialReviewsSection } from '@/components/SocialReviewsSection';
@@ -45,6 +46,9 @@ export default async function HomePage() {
 
       {/* Wholesale Benefits Cards */}
       <Benefits />
+
+      {/* Selecciones de 12 referencias antes de Más vendidas */}
+      <HomePacksCarousel products={publicProducts} />
 
       {/* Main Catalog Grid */}
       <ProductGrid products={publicProducts} />

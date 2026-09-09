@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { PackMayoristaClient } from './PackMayoristaClient';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Inicia tu Negocio — Pack Mayorista 12 Prendas | Ush By Ushuaia',
@@ -22,5 +22,7 @@ export const metadata: Metadata = {
 };
 
 export default function PackMayoristaPage() {
-  return <PackMayoristaClient />;
+  // El pack antiguo queda fuera de la navegación y vuelve a la portada para
+  // evitar que se siga mostrando la selección mezclada anterior.
+  redirect('/');
 }
