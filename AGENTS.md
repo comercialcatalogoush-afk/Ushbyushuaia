@@ -223,7 +223,10 @@ Estado conocido de Drive:
 - La clave de servicio solo puede utilizarse en código servidor protegido.
 
 ## Contenido y comportamiento que debe conservarse
-- `TEENS` y `HOMBRES` muestran “Próximamente” intencionalmente.
+- `HOMBRES` muestran "Próximamente" intencionalmente. El apartado `TEENS` está ACTIVO desde 2026-09-09:
+  muestran solo las refs que están en rebaja/oferta real en la tienda oficial (hoy 350095, 350102,
+  350105 en categoría `TEENS`) y se accede desde el menú → `/catalogo?categoria=TEENS`. No publicar
+  refs de menores que no existan con descuento en `ushuaiajeans.com.co`.
 - La categoría `Cargos` puede mostrar un estado vacío intencional.
 - El botón “Cargar más” debe conservar el número de productos ya cargados aunque se actualice el catálogo.
 - El catálogo debe conservar filtros por categoría, fit y búsqueda.

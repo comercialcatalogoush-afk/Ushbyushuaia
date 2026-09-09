@@ -197,13 +197,13 @@ export const Header: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => { setComingSoonSection('TEENS'); }}
+            <Link
+              href="/catalogo?categoria=TEENS"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2 flex items-center gap-1.5"
             >
               TEENS
               <Sparkles size={12} className="text-[#d88193]" />
-            </button>
+            </Link>
 
             <button
               onClick={() => { setComingSoonSection('HOMBRES'); }}
@@ -433,12 +433,13 @@ export const Header: React.FC = () => {
               </div>
             )}
           </div>
-          <button
-            onClick={() => { closeMobileMenu(); setComingSoonSection('TEENS'); }}
+          <Link
+            href="/catalogo?categoria=TEENS"
+            onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"
           >
             TEENS <Sparkles size={13} className="text-[#d88193]" />
-          </button>
+          </Link>
           <button
             onClick={() => { closeMobileMenu(); setComingSoonSection('HOMBRES'); }}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"

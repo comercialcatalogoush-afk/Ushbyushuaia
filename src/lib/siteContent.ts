@@ -870,7 +870,7 @@ export async function saveCategoriesOrder(order: string[]): Promise<{ success: b
 }
 
 export async function getCategoriesOrder(): Promise<string[]> {
-  const DEFAULT = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas', 'Bermuda', 'Nuevo'];
+  const DEFAULT = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas', 'Bermudas', 'Camisas', 'TEENS'];
   let cached: string[] | null = null;
   if (typeof window !== 'undefined') {
     try {

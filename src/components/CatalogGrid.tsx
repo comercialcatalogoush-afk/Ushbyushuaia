@@ -18,8 +18,8 @@ const PAGE_SIZE = 12;
 
 const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
 
-// Categorías del sitio oficial (aparecen siempre, aunque aún no tengan productos)
-const OFFICIAL_CATEGORY_ORDER = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas'];
+// Categorías del sitio oficial (aparecen siempre que tengan productos en Supabase)
+const OFFICIAL_CATEGORY_ORDER = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas', 'Bermudas', 'Camisas', 'TEENS'];
 
 // Normaliza la etiqueta del menú (ej: "VAQUERO", "WIDE LEG") al fit real del producto
 function normalizeFitLabel(label: string): string {
