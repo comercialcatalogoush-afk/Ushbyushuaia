@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Product, WholesaleLead } from '@/types';
 import { INITIAL_PRODUCTS } from '@/data/products';
 import { getGoogleDriveImageUrl } from './drive';
+import { getSuggestedPrice, getUnitPrice, WHOLESALE_FALLBACK } from './pricing';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uwfkwcrqqwruzfwzppjf.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_kOqjv3pdiOQoIp0AHKXWeg_H61J-N2g';
@@ -389,43 +390,94 @@ export async function submitOrder(orderData: any): Promise<{ success: boolean; d
       return { success: false, error: 'El pedido debe contener al menos un producto.' };
     }
 
-    // Validación server-side del total: el cliente puede fabricar un
-    // descuento falso manipulando localStorage. Se recalcula el total
-    // verificando que cada ítem tenga precio unitario positivo.
-    const items = safePayload.items as Array<{ quantity?: number; unit_price?: number }>;
-    let serverTotal = 0;
-    for (const item of items) {
-      const qty = Number(item.quantity) || 0;
-      const price = Number(item.unit_price) || 0;
-      if (qty <= 0 || price <= 0) {
-        return { success: false, error: 'El pedido contiene ítems con precio o cantidad inválida.' };
-      }
-      serverTotal += qty * price;
-    }
-    // Se acepta un margen del 2% para diferencias de redondeo de punto flotante.
-    const clientTotal = Number(safePayload.total) || 0;
-    if (Math.abs(serverTotal - clientTotal) > serverTotal * 0.02 + 1) {
-      return { success: false, error: 'El total del pedido no coincide con el calculado. Intenta de nuevo.' };
-    }
+    // Validación server-side del total. El precio de cada ítem NO se toma del
+    // navegador (que puede falsificarse manipulando el payload): aquí se
+    // recargan los precios reales de los productos desde Supabase y se recalcula
+    // el precio unitario según la escala de unidades del pedido (getUnitPrice),
+    // con el mismo criterio que usa el carrito. El total se recalcula con estos
+    // valores y, si el pedido declara un cupón válido, se le resta el descuento
+    // exacto del código. Los valores recalculados REEMPLAZAN los del navegador
+    // antes de insertar el pedido (fuente de verdad del servidor).
+    const items = safePayload.items as Array<{
+      product_id?: string;
+      reference?: string;
+      quantity?: number;
+      unit_price?: number;
+    }>;
 
-    // Validar que el cupón declarado sea un código conocido y válido.
+    // Validar el cupón declarado ANTES de recalcular el total.
     const couponCode = String(orderData.coupon_code || '').trim().toUpperCase();
+    let serverCoupon: { discount: number; minUnits?: number } | null = null;
     if (couponCode) {
       const VALID_COUPONS: Record<string, { discount: number; minUnits?: number }> = {
         BIENVENIDA10: { discount: 0.1, minUnits: 3 },
         USH10: { discount: 0.1, minUnits: 6 },
       };
-      const serverCoupon = VALID_COUPONS[couponCode];
+      serverCoupon = VALID_COUPONS[couponCode] || null;
       if (!serverCoupon) {
         return { success: false, error: 'El código de descuento no es válido.' };
       }
-      if (serverCoupon.minUnits) {
-        const totalUnits = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
-        if (totalUnits < serverCoupon.minUnits) {
-          return { success: false, error: `El código ${couponCode} requiere mínimo ${serverCoupon.minUnits} unidades.` };
-        }
+      const rawTotalUnits = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+      if (serverCoupon.minUnits && rawTotalUnits < serverCoupon.minUnits) {
+        return { success: false, error: `El código ${couponCode} requiere mínimo ${serverCoupon.minUnits} unidades.` };
       }
     }
+
+    // Cargar los precios reales de los productos del pedido (lectura pública permitida).
+    const refs = items
+      .map((i) => String(i.reference || i.product_id || '').trim())
+      .filter((r) => r.length > 0);
+    if (refs.length !== items.length) {
+      return { success: false, error: 'El pedido contiene ítems sin referencia válida.' };
+    }
+    const { data: dbRows, error: dbError } = await supabase
+      .from('products')
+      .select('reference, price, suggested_price, compare_price, hidden, status')
+      .in('reference', refs);
+    if (dbError || !dbRows) {
+      return { success: false, error: 'No se pudieron verificar los precios del pedido. Intenta de nuevo.' };
+    }
+    const productByRef = new Map(dbRows.map((row) => [String(row.reference), row]));
+
+    const totalUnitsDb = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+    let serverGross = 0;
+    const computedItems: Array<Record<string, unknown>> = [];
+    for (const item of items) {
+      const ref = String(item.reference || item.product_id || '').trim();
+      const row = productByRef.get(ref);
+      if (!row) {
+        return { success: false, error: `La referencia ${ref || 'desconocida'} no está en el catálogo.` };
+      }
+      if (row.hidden || row.status === 'draft') {
+        return { success: false, error: `La referencia ${ref} no está disponible para la venta.` };
+      }
+      const qty = Number(item.quantity) || 0;
+      if (qty <= 0) {
+        return { success: false, error: 'El pedido contiene cantidades inválidas.' };
+      }
+      const suggested = getSuggestedPrice(row);
+      const wholesale = Number(row.price) || Math.round(suggested * WHOLESALE_FALLBACK);
+      const unit = getUnitPrice(suggested, wholesale, totalUnitsDb);
+      serverGross += unit * qty;
+      computedItems.push({ ...item, unit_price: unit });
+    }
+
+    // Total esperado con el descuento del cupón aplicado (mismo redondeo del carrito).
+    let serverNet = serverGross;
+    if (serverCoupon && serverCoupon.discount > 0) {
+      serverNet = serverGross - Math.round(serverGross * serverCoupon.discount);
+    }
+
+    // Se acepta un margen del 2% para diferencias de redondeo de punto flotante.
+    const clientTotal = Number(safePayload.total) || 0;
+    if (Math.abs(serverNet - clientTotal) > serverNet * 0.02 + 1) {
+      return { success: false, error: 'El total del pedido no coincide con el calculado. Intenta de nuevo.' };
+    }
+
+    // El total y los precios unitarios registrados son los recalculados por el
+    // servidor (autoritativos), no los que envió el navegador.
+    safePayload.total = serverNet;
+    safePayload.items = computedItems;
 
     // IMPORTANTE: NO usar .select() aquí. PostgREST convierte .select() en
     // "Prefer: return=representation", que la política RLS de orders rechaza

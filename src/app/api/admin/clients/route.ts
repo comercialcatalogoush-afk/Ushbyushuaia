@@ -450,22 +450,25 @@ export async function POST(req: Request) {
       }
 
       // 3. Limpiar los datos asociados del cliente (bypass RLS vía service role).
+      // `orders` solo tiene customer_email (no existe la columna `email`): el OR
+      // anterior con email.eq.X hacía fallar la consulta y el pedido nunca se borraba.
       let deletedOrders = 0;
       let deletedLeads = 0;
-      const { data: ordersData } = await adminSupabase
+      const { data: ordersData, error: ordersDelErr } = await adminSupabase
         .from('orders')
         .select('id')
-        .or(`customer_email.eq.${normalizedEmail},email.eq.${normalizedEmail}`);
+        .ilike('customer_email', normalizedEmail);
+      if (ordersDelErr) {
+        console.warn('Error consultando pedidos del cliente:', ordersDelErr);
+      }
       if (Array.isArray(ordersData) && ordersData.length) {
         const ids = ordersData.map((o) => o.id);
-        const { data: delOrders } = await adminSupabase.from('orders').delete().in('id', ids);
+        await adminSupabase.from('orders').delete().in('id', ids);
         deletedOrders = ids.length;
       }
 
-      // Filtrar a su vez en price_history por los pedidos borrados (si existe la tabla y columnas)
-      try {
-        await adminSupabase.from('price_history').delete().or(`customer_email.eq.${normalizedEmail}`);
-      } catch (_) {}
+      // price_history es un auditorio de cambios de precios por producto (no
+      // tiene customer_email) y no se puede asociar a un cliente: se omite.
 
       const { data: leadsData } = await adminSupabase
         .from('wholesale_leads')

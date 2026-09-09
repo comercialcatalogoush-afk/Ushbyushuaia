@@ -6,7 +6,7 @@ import {
   Calculator, ShoppingBag, Truck, Sparkles, TrendingUp,
   Plus, Minus, Trash2, Search, CheckCircle2, Lock,
   ArrowRight, Send, Layers, ChevronRight, ShieldCheck,
-  RefreshCw, ChevronDown
+  RefreshCw, ChevronDown, Tag
 } from 'lucide-react';
 import { Product } from '@/types';
 import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
@@ -55,6 +55,11 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { addToCart, setIsCartOpen } = useCart();
   const [addedToCartToast, setAddedToCartToast] = useState(false);
+
+  /* ── Precio de venta personalizado: el cliente define a cuánto vende cada prenda ── */
+  const [customSellMode, setCustomSellMode] = useState(false);
+  const [globalSellPrice, setGlobalSellPrice] = useState<number>(0);
+  const [customSellPrices, setCustomSellPrices] = useState<Record<string, number>>({});
 
   /* ── 1. Verificar sesión ── */
   useEffect(() => {
@@ -187,24 +192,41 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
   const isWholesale12 = totalUnits >= 12;
   const isWholesale8  = totalUnits >= 8 && totalUnits < 12;
 
+  /* Costo unitario según la escala (igual criterio que el carrito) */
+  const unitCostFor = (product: Product) => {
+    const suggested = getSuggestedPrice(product);
+    return isWholesale12
+      ? product.price || Math.round(suggested * WHOLESALE_FALLBACK)
+      : isWholesale8 ? Math.round(suggested * 0.8) : suggested;
+  };
+
+  /* Precio de venta: prioridad a la prenda → valor general → precio sugerido */
+  const unitSellFor = (id: string, suggested: number) => {
+    if (!customSellMode) return suggested;
+    if ((customSellPrices[id] || 0) > 0) return customSellPrices[id];
+    if ((globalSellPrice || 0) > 0) return globalSellPrice;
+    return suggested;
+  };
+
   const financialSummary = useMemo(() => {
     let totalInvestment = 0;
-    let totalSuggestedRetail = 0;
+    let totalSellValue = 0;
+    let suggestedRetail = 0;
+    const units: Record<string, { qty: number; unitCost: number; unitSell: number; suggested: number }> = {};
     selectedItems.forEach(({ product, qty }) => {
+      const id = String(product.id);
       const suggested = getSuggestedPrice(product);
-      totalSuggestedRetail += suggested * qty;
-      if (isWholesale12) {
-        totalInvestment += (product.price || Math.round(suggested * WHOLESALE_FALLBACK)) * qty;
-      } else if (isWholesale8) {
-        totalInvestment += Math.round(suggested * 0.8) * qty;
-      } else {
-        totalInvestment += suggested * qty;
-      }
+      const unitCost = unitCostFor(product);
+      const unitSell = unitSellFor(id, suggested);
+      units[id] = { qty, unitCost, unitSell, suggested };
+      totalInvestment += unitCost * qty;
+      totalSellValue += unitSell * qty;
+      suggestedRetail += suggested * qty;
     });
-    const netProfit = Math.max(0, totalSuggestedRetail - totalInvestment);
+    const netProfit = Math.max(0, totalSellValue - totalInvestment);
     const roiPercentage = totalInvestment > 0 ? (netProfit / totalInvestment) * 100 : 0;
-    return { totalInvestment, totalSuggestedRetail, netProfit, roiPercentage };
-  }, [selectedItems, isWholesale12, isWholesale8]);
+    return { totalInvestment, totalSellValue, suggestedRetail, netProfit, roiPercentage, units };
+  }, [selectedItems, isWholesale12, isWholesale8, customSellMode, globalSellPrice, customSellPrices]);
 
   /* ── 8. Enviar cotización ── */
   const handleSendToWhatsApp = () => {
@@ -216,10 +238,10 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
     msg += `🚚 *Flete:* ${isWholesale12 ? '¡GRATIS!' : 'Lo asume el cliente (12+ es gratis)'}\n\n`;
     msg += `*Prendas:*\n`;
     selectedItems.forEach(({ product, qty }, i) => {
-      const suggested = getSuggestedPrice(product);
-      const unit = isWholesale12 ? product.price || Math.round(suggested * WHOLESALE_FALLBACK)
-        : isWholesale8 ? Math.round(suggested * 0.8) : suggested;
-      msg += `${i + 1}. Ref. ${product.reference || product.name} (${product.fit || product.category}): ${qty} uds × ${formatCOP(unit)}\n`;
+      const unit = financialSummary.units[String(product.id)];
+      const sell = unit ? unit.unitSell : getSuggestedPrice(product);
+      const cost = unit ? unit.unitCost : getSuggestedPrice(product);
+      msg += `${i + 1}. Ref. ${product.reference || product.name} (${product.fit || product.category}): ${qty} uds × venta ${formatCOP(sell)} (costo ${formatCOP(cost)})\n`;
     });
     msg += `\n¿Pueden verificar disponibilidad de curvas/tallas? ¡Gracias!`;
     window.open(`https://wa.me/573011393902?text=${encodeURIComponent(msg)}`, '_blank');
@@ -488,13 +510,39 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                           {product.name}
                         </p>
 
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-xs font-black text-[#1b2333]">
-                            {formatCOP(wholesalePrice)}
-                          </span>
-                          <span className="text-[10px] text-neutral-400 line-through">
-                            {formatCOP(suggested)}
-                          </span>
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                          {customSellMode ? (
+                            <>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] font-bold uppercase text-neutral-400">Venta:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1000"
+                                  value={customSellPrices[String(product.id)] || ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                                    setCustomSellPrices((prev) => ({ ...prev, [String(product.id)]: value }));
+                                  }}
+                                  placeholder={String(suggested)}
+                                  aria-label={`Precio de venta para ${product.name}`}
+                                  className="w-24 px-1.5 py-1 text-[11px] font-black text-[#1b2333] bg-rose-50 border border-[#d88193]/40 rounded focus:outline-none"
+                                />
+                              </div>
+                              <span className="text-[9px] text-neutral-400 line-through">
+                                {formatCOP(suggested)}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-xs font-black text-[#1b2333]">
+                                {formatCOP(wholesalePrice)}
+                              </span>
+                              <span className="text-[10px] text-neutral-400 line-through">
+                                {formatCOP(suggested)}
+                              </span>
+                            </>
+                          )}
                         </div>
 
                         {/* Controles */}
@@ -523,7 +571,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                           </div>
                           {qty > 0 && (
                             <span className="text-[10px] text-[#d88193] font-bold whitespace-nowrap">
-                              = {formatCOP(wholesalePrice * qty)}
+                              = {formatCOP(customSellMode ? unitSellFor(String(product.id), suggested) * qty : wholesalePrice * qty)}
                             </span>
                           )}
                         </div>
@@ -603,6 +651,44 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                 )}
               </div>
 
+              {/* Precio de venta personalizado */}
+              <button
+                type="button"
+                onClick={() => setCustomSellMode((v) => !v)}
+                aria-pressed={customSellMode}
+                className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-[11px] font-black uppercase tracking-wide transition-all ${
+                  customSellMode
+                    ? 'bg-[#1b2333] text-white'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                }`}
+              >
+                <span className="flex items-center gap-1.5"><Tag size={13} /> Precio de venta</span>
+                <span className="text-[9px] font-bold">{customSellMode ? 'Activo' : 'Sugerido'}</span>
+              </button>
+
+              {customSellMode && (
+                <div className="space-y-2 rounded-lg border border-rose-200 bg-rose-50 p-3">
+                  <div>
+                    <label htmlFor="global-sell-price" className="block text-[10px] font-bold uppercase tracking-wide text-neutral-500">
+                      Precio general (todas las prendas)
+                    </label>
+                    <input
+                      id="global-sell-price"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      value={globalSellPrice || ''}
+                      onChange={(e) => setGlobalSellPrice(e.target.value === '' ? 0 : Number(e.target.value))}
+                      placeholder="Ej: 119000"
+                      className="mt-1 w-full px-3 py-2 text-xs font-black text-[#1b2333] bg-white border border-rose-200 rounded-lg focus:outline-none focus:border-[#d88193]"
+                    />
+                  </div>
+                  <p className="text-[10px] leading-relaxed text-neutral-500">
+                    Define en cada tarjeta el precio por prenda si quieres valores distintos. Dejas el campo vacío en una prenda y se usará este valor general.
+                  </p>
+                </div>
+              )}
+
               {/* Métricas */}
               <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 space-y-3">
                 <div className="flex justify-between text-xs">
@@ -610,9 +696,15 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                   <span className="font-black text-neutral-900">{formatCOP(financialSummary.totalInvestment)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-neutral-600">P. Al Detal:</span>
-                  <span className="font-bold text-neutral-700">{formatCOP(financialSummary.totalSuggestedRetail)}</span>
+                  <span className="text-neutral-600">Precio de venta:</span>
+                  <span className="font-bold text-neutral-700">{formatCOP(financialSummary.totalSellValue)}</span>
                 </div>
+                {customSellMode && (
+                  <div className="flex justify-between text-[10px] text-neutral-400">
+                    <span>P. al detal sugerido (ref.):</span>
+                    <span>{formatCOP(financialSummary.suggestedRetail)}</span>
+                  </div>
+                )}
                 <div className="border-t border-neutral-200 pt-3 flex justify-between items-center">
                   <div>
                     <p className="text-xs font-black text-emerald-700 uppercase">Ganancia Proyectada</p>
@@ -631,20 +723,20 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                   <p className="text-[10px] text-neutral-400 uppercase font-bold">
                     Referencias ({selectedItems.length}):
                   </p>
-                  {selectedItems.map(({ product, qty }) => (
-                    <div key={product.id} className="flex justify-between items-center text-[11px]">
-                      <span className="text-neutral-700 truncate max-w-[130px]">
-                        Ref. {product.reference} ×{qty}
-                      </span>
-                      <span className="font-bold text-neutral-900 shrink-0">
-                        {formatCOP((isWholesale12
-                          ? product.price || Math.round(getSuggestedPrice(product) * WHOLESALE_FALLBACK)
-                          : isWholesale8
-                            ? Math.round(getSuggestedPrice(product) * 0.8)
-                            : getSuggestedPrice(product)) * qty)}
-                      </span>
-                    </div>
-                  ))}
+                  {selectedItems.map(({ product, qty }) => {
+                    const unit = financialSummary.units[String(product.id)];
+                    const amount = customSellMode ? (unit?.unitSell || 0) * qty : (unit?.unitCost || 0) * qty;
+                    return (
+                      <div key={product.id} className="flex justify-between items-center text-[11px]">
+                        <span className="text-neutral-700 truncate max-w-[130px]">
+                          Ref. {product.reference} ×{qty}
+                        </span>
+                        <span className="font-bold text-neutral-900 shrink-0">
+                          {formatCOP(amount)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

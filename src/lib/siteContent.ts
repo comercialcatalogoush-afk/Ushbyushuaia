@@ -58,7 +58,7 @@ const DRAFT_SECTION_LAYOUT_CACHE_KEY = 'ush_draft_section_layout_cache';
 // cada bloque que tiene data-editor-section.
 export const SECTION_PAGE_MAP: Record<string, string> = {
   'home-hero': 'home', 'home-benefits': 'home', 'home-trust': 'home',
-  'home-policies': 'home', 'home-distribuidores': 'home',
+  'home-policies': 'home', 'home-distribuidores': 'home', 'home-social': 'home',
   'outlet-header': 'outlet', 'outlet-card': 'outlet', 'outlet-buttons': 'outlet', 'outlet-hours': 'outlet',
   'cc-header': 'como-comprar', 'cc-process': 'como-comprar', 'cc-b2b': 'como-comprar', 'cc-scales': 'como-comprar', 'cc-contacto': 'como-comprar',
   'calc-header': 'calculadora', 'calc-panel': 'calculadora',
@@ -253,6 +253,36 @@ export const PAGE_SCHEMAS: PageSchema[] = buildSchemasWithSeo([
       { key: 'benefitsCard3Text', label: 'Tarjeta 3 — descripción', type: 'textarea', group: 'Beneficios', default: 'Seleccione cantidades específicas de cada referencia.' },
       { key: 'benefitsCard4Title', label: 'Tarjeta 4 — título', type: 'text', group: 'Beneficios', default: 'Atención Personalizada' },
       { key: 'benefitsCard4Text', label: 'Tarjeta 4 — descripción', type: 'textarea', group: 'Beneficios', default: 'Asesoría exclusiva para su logística y pedidos.' },
+
+      // Redes sociales (apartado como la tienda retail)
+      { key: 'socialEyebrow', label: 'Redes — etiqueta', type: 'text', group: 'Redes Sociales', default: 'SÍGUENOS EN REDES' },
+      { key: 'socialTitle', label: 'Redes — título', type: 'text', group: 'Redes Sociales', default: 'Nuestras Redes Sociales' },
+      { key: 'socialSub', label: 'Redes — subtítulo', type: 'textarea', group: 'Redes Sociales', default: 'Sigue a USH BY USHUAIA en Instagram, Facebook y TikTok. Novedades, lanzamientos y contenido exclusivo para aliados.' },
+      { key: 'instagramUrl', label: 'Instagram — enlace', type: 'url', group: 'Redes Sociales', default: 'https://www.instagram.com/ushuaiajeans.co' },
+      { key: 'instagramHandle', label: 'Instagram — usuario', type: 'text', group: 'Redes Sociales', default: '@ushuaiajeans.co' },
+      { key: 'facebookUrl', label: 'Facebook — enlace', type: 'url', group: 'Redes Sociales', default: 'https://www.facebook.com/ushuaiajeans' },
+      { key: 'facebookHandle', label: 'Facebook — página', type: 'text', group: 'Redes Sociales', default: 'Ushuaia Jeans' },
+      { key: 'tiktokUrl', label: 'TikTok — enlace', type: 'url', group: 'Redes Sociales', default: 'https://www.tiktok.com/@ushuaiajeans' },
+      { key: 'tiktokHandle', label: 'TikTok — usuario', type: 'text', group: 'Redes Sociales', default: '@ushuaiajeans' },
+      { key: 'whatsappUrl', label: 'WhatsApp — enlace', type: 'url', group: 'Redes Sociales', default: 'https://wa.me/573011393902?text=Hola%20USH%20BY%20USHUAIA' },
+      { key: 'whatsappHandle', label: 'WhatsApp — número', type: 'text', group: 'Redes Sociales', default: '+57 301 139 3902' },
+
+      // Reseñas positivas
+      { key: 'reviewsEyebrow', label: 'Reseñas — etiqueta', type: 'text', group: 'Reseñas Positivas', default: 'RESEÑAS DE CLIENTES' },
+      { key: 'reviewsTitle', label: 'Reseñas — título', type: 'text', group: 'Reseñas Positivas', default: 'Reseñas Positivas de Nuestros Aliados' },
+      { key: 'reviewsSub', label: 'Reseñas — subtítulo', type: 'textarea', group: 'Reseñas Positivas', default: 'Historias reales de comerciantes y boutiques que ya venden USH BY USHUAIA en todo el país.' },
+      { key: 'review1Name', label: 'Reseña 1 — nombre', type: 'text', group: 'Reseñas Positivas', default: 'Karen L.' },
+      { key: 'review1City', label: 'Reseña 1 — ciudad', type: 'text', group: 'Reseñas Positivas', default: 'Medellín, Antioquia' },
+      { key: 'review1Stars', label: 'Reseña 1 — estrellas (1-5)', type: 'text', group: 'Reseñas Positivas', default: '5' },
+      { key: 'review1Text', label: 'Reseña 1 — texto', type: 'textarea', group: 'Reseñas Positivas', default: 'Las telas son de excelente calidad y la asesoría es muy atenta. He surtido mi boutique dos veces y las prendas rotan muy bien.' },
+      { key: 'review2Name', label: 'Reseña 2 — nombre', type: 'text', group: 'Reseñas Positivas', default: 'Carlos M.' },
+      { key: 'review2City', label: 'Reseña 2 — ciudad', type: 'text', group: 'Reseñas Positivas', default: 'Bogotá D.C.' },
+      { key: 'review2Stars', label: 'Reseña 2 — estrellas (1-5)', type: 'text', group: 'Reseñas Positivas', default: '5' },
+      { key: 'review2Text', label: 'Reseña 2 — texto', type: 'textarea', group: 'Reseñas Positivas', default: 'Envíos muy oportunos y el empaque llega perfecto. Encargué 40 unidades y ya llevo tres pedidos seguidos.' },
+      { key: 'review3Name', label: 'Reseña 3 — nombre', type: 'text', group: 'Reseñas Positivas', default: 'Andrea R.' },
+      { key: 'review3City', label: 'Reseña 3 — ciudad', type: 'text', group: 'Reseñas Positivas', default: 'Cali, Valle del Cauca' },
+      { key: 'review3Stars', label: 'Reseña 3 — estrellas (1-5)', type: 'text', group: 'Reseñas Positivas', default: '5' },
+      { key: 'review3Text', label: 'Reseña 3 — texto', type: 'textarea', group: 'Reseñas Positivas', default: 'La mezclilla premium se nota. Mis clientas preguntan por los jeans y las bermudas cada semana.' },
     ],
   },
   {

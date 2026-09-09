@@ -29,7 +29,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await adminClient
     .from('orders')
-    .select('id, order_date, created_at, status, total, discount, items')
+    .select('id, order_date, created_at, status, total, items')
     .ilike('customer_email', email)
     .order('created_at', { ascending: false })
     .limit(100);

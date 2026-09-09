@@ -4,6 +4,7 @@ import { Benefits } from '@/components/Benefits';
 import { ProductGrid } from '@/components/ProductGrid';
 import { WholesaleInquiryForm } from '@/components/WholesaleInquiryForm';
 import { OutletSection } from '@/components/OutletSection';
+import { SocialReviewsSection } from '@/components/SocialReviewsSection';
 import { getPageContentServer, sectionStyleFromContent } from '@/lib/siteContent';
 import { Truck, Award, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
@@ -120,6 +121,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Redes Sociales y Reseñas Positivas */}
+      <SocialReviewsSection content={c} />
 
       {/* Nuestro Outlet — dirección, horarios y mapa */}
       <OutletSection />
