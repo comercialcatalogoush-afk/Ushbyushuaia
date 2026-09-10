@@ -45,6 +45,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
   const [activeFit, setActiveFit] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeCollection, setActiveCollection] = useState<string>('');
   const [tierInfoOpen, setTierInfoOpen] = useState(false);
 
   // Top sellers (rotación real: unidades vendidas en pedidos confirmados)
@@ -75,16 +76,18 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return () => { cancelled = true; };
   }, []);
 
-  // Lee los filtros del menú superior (?categoria=...&fit=...) y la búsqueda (?buscar=...)
+  // Lee los filtros del menú superior (?categoria=...&fit=...) y la búsqueda (?buscar=...&coleccion=2026)
   useEffect(() => {
     const cat = searchParams.get('categoria');
     const fit = searchParams.get('fit');
     const buscar = searchParams.get('buscar');
+    const coleccion = searchParams.get('coleccion');
     // Cada navegación reemplaza el estado completo: los parámetros ausentes
     // deben limpiar el filtro anterior y no quedarse pegados entre categorías.
     setActiveCategory(cat || 'Todos');
     setActiveFit(fit ? normalizeFitLabel(fit) : 'Todos');
     setSearchQuery(buscar || '');
+    setActiveCollection(coleccion || '');
   }, [searchParams]);
 
   // Supabase es la fuente de verdad: usamos los productos que trae el servidor
@@ -109,7 +112,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   // first page while the shopper was browsing.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [activeCategory, activeFit, searchQuery, sortBy]);
+  }, [activeCategory, activeFit, searchQuery, sortBy, activeCollection]);
 
   // Public grid: only complete products (photo + title + detailed description)
   const visibleProducts = displayProducts.filter((p) => isCompleteProduct(p));
@@ -124,6 +127,11 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     if (searchTerm) {
       const haystack = [name, ref, (p.fit || '').toLowerCase(), (p.category || '').toLowerCase(), (p.color || '').toLowerCase(), tags].join(' ');
       if (!haystack.includes(searchTerm)) return false;
+    }
+
+    // Filtro colección 2026: solo refs del set references2026
+    if (activeCollection === '2026') {
+      if (!isReference2026(p.reference)) return false;
     }
 
     if (activeCategory !== 'Todos') {
@@ -238,9 +246,17 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
           {/* Result count header */}
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-3 animate-fadeInUp">
             <div>
+              {activeCollection === '2026' && (
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center gap-1 bg-ush-pink text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm">
+                    <Sparkles size={9} />
+                    Colección 2026
+                  </span>
+                </div>
+              )}
               {showHeader && (
                 <h2 className="text-lg font-black text-[#1b2333] uppercase tracking-tight">
-                  Catálogo Completo
+                  {activeCollection === '2026' ? 'Nuevos 2026' : 'Catálogo Completo'}
                 </h2>
               )}
               <p className="text-[11px] text-neutral-500 mt-0.5">
@@ -345,9 +361,9 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
                 </button>
               ))}
 
-              {(activeCategory !== 'Todos' || activeFit !== 'Todos') && (
+              {(activeCategory !== 'Todos' || activeFit !== 'Todos' || activeCollection) && (
                 <button
-                  onClick={() => { handleCategoryChange('Todos'); setActiveFit('Todos'); }}
+                  onClick={() => { handleCategoryChange('Todos'); setActiveFit('Todos'); setActiveCollection(''); }}
                   className="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#d88193] hover:underline"
                 >
                   Limpiar filtros

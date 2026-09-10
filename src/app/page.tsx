@@ -6,6 +6,7 @@ import { HomePacksCarousel } from '@/components/HomePacksCarousel';
 import { WholesaleInquiryForm } from '@/components/WholesaleInquiryForm';
 import { OutletSection } from '@/components/OutletSection';
 import { SocialReviewsSection } from '@/components/SocialReviewsSection';
+import { NewCollection2026 } from '@/components/NewCollection2026';
 import { getPageContentServer, sectionStyleFromContent } from '@/lib/siteContent';
 import { Truck, Award, ShieldCheck, Clock } from 'lucide-react';
 import Link from 'next/link';
@@ -49,6 +50,9 @@ export default async function HomePage() {
 
       {/* Selecciones de 12 referencias antes de Más vendidas */}
       <HomePacksCarousel products={publicProducts} />
+
+      {/* Nueva Colección 2026 */}
+      <NewCollection2026 products={publicProducts} />
 
       {/* Main Catalog Grid */}
       <ProductGrid products={publicProducts} />
