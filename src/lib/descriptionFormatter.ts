@@ -16,6 +16,96 @@ const SPEC_KEYS = [
   'colores disponibles', 'talla', 'hecho en', 'origen', 'género',
 ];
 
+// Datos clave de decisión de compra que deben verse de inmediato, arriba de la descripción.
+// prefix = texto que se quita de la línea para dejar solo el valor.
+// searches = términos literales (minúscula) para localizar la clave en texto corrido.
+const KEY_FACT_PATTERNS: Array<{ label: string; regex: RegExp; prefix?: string; searches: string[] }> = [
+  { label: 'Modelo mide', regex: /^la\s+modelo\s+mide\s*:?\s*(.+)$/i, searches: ['la modelo mide', 'modelo mide'] },
+  { label: 'Tallas', regex: /^(?:disponible\s+)?(?:desde\s+la\s+talla|tallas?\s+disponibles?\s*:?)\s*(.+)$/i, searches: ['disponible desde la talla', 'desde la talla', 'tallas disponibles', 'talla disponible', 'talla'] },
+  { label: 'Fit', regex: /^fit\s*:\s*(.+)$/i, prefix: 'fit:', searches: ['fit'] },
+  { label: 'Denim', regex: /^tipo\s+de\s+denim\s*:\s*(.+)$/i, searches: ['tipo de denim'] },
+  { label: 'Elasticidad', regex: /^elasticidad\s*:\s*(.+)$/i, searches: ['elasticidad'] },
+  { label: 'Grosor', regex: /^grosor\s*:\s*(.+)$/i, prefix: 'grosor:', searches: ['grosor'] },
+  { label: 'Cierre', regex: /^cierre\s*:\s*(.+)$/i, prefix: 'cierre:', searches: ['cierre'] },
+  { label: 'Material', regex: /^(?:material|composici[oó]n)\s*:\s*(.+)$/i, searches: ['material', 'composición', 'composicion'] },
+  { label: 'Hecho en', regex: /^hecho\s+en\s+(.+)$/i, searches: ['hecho en'] },
+];
+
+/** Quita emojis decorativos que anteceden o cierran una línea (🇨🇴, 📏, 📐, etc.). */
+function stripEmojis(s: string): string {
+  return Array.from(s)
+    .map((ch) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const cp = ch.codePointAt(0)!;
+      const isEmoji =
+        (cp >= 0x1f000 && cp <= 0x1faff) ||
+        (cp >= 0x2600 && cp <= 0x27bf) ||
+        cp === 0xfe0f ||
+        (cp >= 0x1f1e6 && cp <= 0x1f1ff) ||
+        cp === 0x200d;
+      return isEmoji ? ' ' : ch;
+    })
+    .join('')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/** Detecta si una línea contiene un dato clave de decisión (modelo, tallas, fit, etc.). */
+function isKeyFactLine(line: string): boolean {
+  const lower = line.toLowerCase().trim();
+  return KEY_FACT_PATTERNS.some((p) => p.regex.test(lower));
+}
+
+export interface KeyFact {
+  label: string;
+  value: string;
+}
+
+/** Extrae los datos clave de compra para mostrarlos arriba, sin esperar el "Ver más". */
+export function extractKeyFacts(raw: string | null | undefined): KeyFact[] {
+  if (!raw || raw.trim().length === 0) return [];
+  const norm = stripEmojis(raw).replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const lower = norm.toLowerCase();
+
+  // Primera aparición de cada clave (scan en orden de prioridad por término).
+  const hits: Array<{ index: number; label: string; len: number }> = [];
+  for (const pattern of KEY_FACT_PATTERNS) {
+    for (const search of pattern.searches) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(`\\b${escaped}\\b`, 'i');
+      const m = re.exec(lower);
+      if (m) {
+        hits.push({ index: m.index, label: pattern.label, len: search.length });
+        break;
+      }
+    }
+  }
+  hits.sort((a, b) => a.index - b.index);
+
+  // Valor de cada hit: desde el término hasta la siguiente clave o "Etiqueta técnica:".
+  const facts: KeyFact[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < hits.length; i++) {
+    if (seen.has(hits[i].label)) continue;
+    const end = i + 1 < hits.length ? hits[i + 1].index : norm.length;
+    let value = norm.slice(hits[i].index + hits[i].len, end).replace(/^:?\s*/, '');
+    // Detener el valor en la primera etiqueta "Palabra:" que no era la clave.
+    const labelMatch = /^([\s\S]*?)\s+(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){0,3}:)/.exec(value);
+    if (labelMatch) value = labelMatch[1];
+    // Recortar si el valor incluye una frase narrativa que empieza con mayúscula
+    // (p. ej. "... hasta la 14 Un diseño ideal" o "... 1.65 m Disponible").
+    value = value.replace(/\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{1,}[\s\S]*$/, '');
+    value = value.trim().replace(/[.,;)\]}]+$/, '').trim();
+    if (!value) continue;
+    seen.add(hits[i].label);
+    facts.push({ label: hits[i].label, value });
+  }
+
+  // Devolver en el orden preferido de KEY_FACT_PATTERNS.
+  return KEY_FACT_PATTERNS.filter((p) => seen.has(p.label))
+    .map((p) => ({ label: p.label, value: facts.find((f) => f.label === p.label)!.value }));
+}
+
 /** Detecta si una línea es una especificación técnica (clave: valor). */
 function isSpecLine(line: string): boolean {
   const lower = line.toLowerCase().trim();
@@ -65,8 +155,11 @@ export function parseDescription(raw: string | null | undefined): DescriptionSec
   let note = '';
 
   for (const sentence of sentences) {
-    const clean = sentence.replace(/^\s*[•\-–—]\s*/, '').trim();
+    const clean = stripEmojis(sentence).replace(/^\s*[•\-–—]\s*/, '').trim();
     if (!clean || isEmojiLine(clean)) continue;
+
+    // Datos clave de decisión ya se muestran arriba como resumen; no repetirlos en el detalle.
+    if (isKeyFactLine(clean)) continue;
 
     const lower = clean.toLowerCase();
 

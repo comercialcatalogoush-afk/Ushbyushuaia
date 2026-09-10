@@ -211,6 +211,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             </span>
           </div>
         )}
+
+        {/* Etiqueta diagonal NUEVO 2026 (esquina superior derecha, sin tapar a la modelo) */}
+        {isReference2026(product.reference) && (
+          <span className="absolute -top-1 -right-10 rotate-45 bg-ush-pink text-white text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-10 py-1.5 shadow-md pointer-events-none">
+            Nuevo 2026
+          </span>
+        )}
+
+        {/* Etiqueta diagonal de descuento vs e-commerce (esquina inferior izquierda) */}
+        {discountPercent > 0 && (
+          <span className="absolute -bottom-1 -left-10 -rotate-45 bg-[#1b2333] text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-10 py-1.5 shadow-md pointer-events-none">
+            -{discountPercent}% Descuento
+          </span>
+        )}
       </Link>
 
       {/* Content Info Section — ALL BADGES PLACED OUTSIDE / BELOW THE IMAGE */}
@@ -218,11 +232,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         <div>
           {/* Badges Container OUTSIDE Image */}
           <div className="flex flex-wrap items-center gap-1 mb-1.5 sm:mb-2 min-h-[20px]">
-            {isReference2026(product.reference) && (
-              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-ush-pink text-white">
-                ✨ Nuevo 2026
-              </span>
-            )}
             {isBestSellerBadge && (
               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-[#1b2333] text-white">
                 🔥 Más vendido

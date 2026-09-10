@@ -17,7 +17,7 @@ import { WHOLESALE_FALLBACK, getSuggestedPrice } from '@/lib/pricing';
 import { gtagEvent } from '@/lib/analytics';
 import { formatVideoUrl } from '@/lib/videoUtils';
 import { addCustomerWatch } from '@/lib/customerBenefits';
-import { parseDescription, renderDescriptionHTML } from '@/lib/descriptionFormatter';
+import { parseDescription, renderDescriptionHTML, extractKeyFacts } from '@/lib/descriptionFormatter';
 import { getMenSizesForProduct } from '@/lib/menCatalog';
 
 interface ProductDetailClientProps {
@@ -668,12 +668,39 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </div>
             </div>
 
+            {/* ── DATOS CLAVE PARA DECIDIR DE UN VISTAZO ── */}
+            {(() => {
+              const desc = currentProduct.description || currentProduct.full_description;
+              const keyFacts = extractKeyFacts(desc);
+              if (keyFacts.length === 0) return null;
+              return (
+                <div className="bg-white border border-gray-200 rounded-2xl">
+                  <div className="flex items-center gap-1.5 px-3 py-2 border-b border-gray-100">
+                    <Sparkles size={13} className="text-ush-pink" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ush-navy">
+                      Datos clave de la prenda
+                    </span>
+                  </div>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 px-3 py-3">
+                    {keyFacts.map((fact) => (
+                      <div key={fact.label} className="flex items-baseline gap-1.5 text-xs">
+                        <dt className="font-black text-ush-pink uppercase tracking-wide shrink-0">
+                          {fact.label}:{' '}
+                        </dt>
+                        <dd className="text-neutral-800 font-semibold">{fact.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              );
+            })()}
+
             {/* Descriptions & Specs */}
             <div className="border-t border-b border-gray-100 py-4 space-y-3">
               {(() => {
                 const desc = currentProduct.description || currentProduct.full_description;
                 const sections = parseDescription(desc);
-                if (sections.length === 0) {
+                if (sections.length === 0 && !desc) {
                   return (
                     <div className="text-sm text-neutral-700 font-normal leading-relaxed">
                       Prenda de alta durabilidad confeccionada en mezclilla rígida de confección nacional.
@@ -698,7 +725,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   {descExpanded ? (
                     <><ChevronUp size={14} /> Ver menos</>
                   ) : (
-                    <><ChevronDown size={14} /> Ver más</>
+                    <><ChevronDown size={14} /> Ver más información</>
                   )}
                 </button>
               )}

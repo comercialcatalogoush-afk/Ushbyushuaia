@@ -1,8 +1,9 @@
 export function animateFlyToCart(sourceElement: HTMLElement | null) {
   if (typeof window === 'undefined' || !sourceElement) return;
 
-  // Locate the cart icon button in the header
-  const cartButton = document.querySelector('[aria-label="Carrito de compras"]');
+  // El carrito vive en el botón flotante inferior derecho (FloatingCartButton).
+  const cartButton = document.querySelector<HTMLElement>('[aria-label^="Abrir carrito"]') ||
+    document.querySelector<HTMLElement>('[aria-label="Carrito de compras"]');
   if (!cartButton) return;
 
   const sourceRect = sourceElement.getBoundingClientRect();
@@ -19,6 +20,7 @@ export function animateFlyToCart(sourceElement: HTMLElement | null) {
   clone.style.pointerEvents = 'none';
   clone.style.borderRadius = '8px';
   clone.style.boxShadow = '0 10px 25px rgba(216, 129, 147, 0.5)';
+  clone.style.margin = '0';
   clone.style.transition = 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
   clone.style.opacity = '0.95';
 
@@ -34,10 +36,19 @@ export function animateFlyToCart(sourceElement: HTMLElement | null) {
     clone.style.transform = 'scale(0.2) rotate(360deg)';
   });
 
-  // Pulse cart icon on arrival
+  // On arrival: remove clone and bounce the badge + pop the floating button
   setTimeout(() => {
     clone.remove();
-    cartButton.classList.add('animate-bounce');
-    setTimeout(() => cartButton.classList.remove('animate-bounce'), 600);
+
+    // Pop del botón flotante (keyframes .cart-pop ya definidos en FloatingCartButton)
+    cartButton.classList.add('cart-pop');
+    setTimeout(() => cartButton.classList.remove('cart-pop'), 600);
+
+    // Bounce del badge del contador
+    const badge = cartButton.querySelector('[class*="rounded-full"]');
+    if (badge && badge instanceof HTMLElement) {
+      badge.classList.add('animate-bounce');
+      setTimeout(() => badge.classList.remove('animate-bounce'), 600);
+    }
   }, 700);
 }

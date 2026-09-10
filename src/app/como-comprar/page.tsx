@@ -121,36 +121,7 @@ export default async function ComoComprarPage() {
           </Link>
         </div>
 
-        {/* Ruta rápida inspirada en catálogos digitales de venta asistida */}
-        <div className="mt-12 overflow-hidden rounded-2xl border border-[#1b2333]/10 bg-[#1b2333] text-white shadow-xl">
-          <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f3b3c0]">Pedido express por WhatsApp</span>
-              <h3 className="mt-2 text-xl font-black uppercase sm:text-2xl">Selecciona, revisa y envía tu solicitud</h3>
-              <p className="mt-2 max-w-2xl text-xs leading-relaxed text-white/70">Desde el carrito puedes revisar referencias, tallas, cantidades y subtotal antes de abrir WhatsApp. El asesor recibe el detalle ordenado y confirma disponibilidad, pago y despacho.</p>
-              <div className="mt-5 grid gap-2 sm:grid-cols-4">
-                {[
-                  ['01', 'Elige referencias'],
-                  ['02', 'Selecciona tallas'],
-                  ['03', 'Revisa tu carrito'],
-                  ['04', 'Envía y confirma'],
-                ].map(([number, label]) => (
-                  <div key={number} className="rounded-xl border border-white/10 bg-white/5 p-3">
-                    <span className="text-[10px] font-black text-[#f3b3c0]">{number}</span>
-                    <p className="mt-1 text-[10px] font-bold uppercase leading-tight text-white/90">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <a
-              href="/catalogo"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#d88193] px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-[#c06579]"
-            >
-              Empezar pedido <ArrowRight size={15} />
-            </a>
-          </div>
         </div>
-      </div>
 
       {/* Aliados Comerciales B2B — Diferenciales de Fábrica Directa */}
       <div data-editor-section="cc-b2b" className="bg-neutral-50 border-t border-b border-gray-200 text-neutral-900 py-20 px-4 sm:px-6 lg:px-8">

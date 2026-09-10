@@ -41,7 +41,7 @@ export const Header: React.FC = () => {
   const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'STRAIGHT', 'BOTA FLARE', 'SKINNY', 'MOM'];
   const pantalonesFits = ['WIDE LEG', 'STRAIGHT', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY', 'CARGO'];
 
-  // HOMBRES: menÃº principal hacia el catÃ¡logo filtrado por gÃ©nero.
+  // HOMBRES: menú principal hacia el catálogo filtrado por género.
   const hombreLinks = [
     ['VER TODO', '/catalogo?genero=hombre'],
     ['CAMISAS', '/catalogo?genero=hombre&categoria=Camisas'],
@@ -69,7 +69,7 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
       
-      {/* â”€â”€ Top Notice Bar (marquee) â”€â”€ */}
+      {/* ── Top Notice Bar (marquee) ── */}
       <div className="bg-[#d88193] text-white text-[11px] py-1.5 overflow-hidden">
         <div className="flex whitespace-nowrap animate-marquee">
           <span className="px-8 tracking-widest font-bold uppercase">
@@ -89,7 +89,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => isMobileMenuOpen ? closeMobileMenu() : setIsMobileMenuOpen(true)}
               className="p-2 text-neutral-800 hover:text-ush-pink focus:outline-none"
-              aria-label="MenÃº principal"
+              aria-label="Menú principal"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -115,7 +115,7 @@ export const Header: React.FC = () => {
               href="/catalogo"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
-              CATÃLOGO
+              CATÁLOGO
             </Link>
 
             {/* MUJER Mega Dropdown */}
@@ -265,7 +265,7 @@ export const Header: React.FC = () => {
                 href="/admin"
                 className="text-xs uppercase tracking-widest font-extrabold text-[#d88193] hover:underline py-2"
               >
-                ADMIN (CATÃLOGO)
+                ADMIN (CATÁLOGO)
               </Link>
             )}
           </nav>
@@ -287,7 +287,7 @@ export const Header: React.FC = () => {
               <Link
                 href="/admin"
                 className="p-2 text-ush-pink hover:text-ush-pinkHover transition-colors hidden sm:block font-bold"
-                title="Editar CatÃ¡logo (Admin)"
+                title="Editar Catálogo (Admin)"
               >
                 <Settings size={20} />
               </Link>
@@ -351,7 +351,7 @@ export const Header: React.FC = () => {
             onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            CATÃLOGO
+            CATÁLOGO
           </Link>
           <div className="border-b border-gray-50">
             <button
@@ -369,7 +369,7 @@ export const Header: React.FC = () => {
             </button>
 
             {isMobileMujerOpen && (
-              <div id="mobile-mujer-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="CategorÃ­as de Mujer">
+              <div id="mobile-mujer-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="Categorías de Mujer">
                 <Link
                   href="/catalogo"
                   onClick={closeMobileMenu}
@@ -489,7 +489,7 @@ export const Header: React.FC = () => {
             </button>
 
             {isMobileHombreOpen && (
-              <div id="mobile-hombre-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="CategorÃ­as de Hombre">
+              <div id="mobile-hombre-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="Categorías de Hombre">
                 {hombreLinks.map(([label, href]) => (
                   <Link
                     key={label}
@@ -523,7 +523,7 @@ export const Header: React.FC = () => {
               onClick={closeMobileMenu}
               className="flex items-center gap-2 text-ush-navy font-bold uppercase"
             >
-              <User size={18} /> Iniciar SesiÃ³n / Mi Cuenta
+              <User size={18} /> Iniciar Sesión / Mi Cuenta
             </Link>
           </div>
         </div>

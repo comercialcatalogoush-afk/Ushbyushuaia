@@ -54,8 +54,46 @@ export function abbreviateProductName(input: AbbrevInput): AbbreviatedName {
   else if (/bermuda/i.test(cat)) type = 'Bermuda';
   else if (/cargo/i.test(cat)) type = 'Cargo';
 
-  // Fit disponible en el producto
-  const fit = input.fit && input.fit !== 'No definido' ? input.fit : '';
+  // Fit: prefieren una palabra corta reconocible (Slim, Skinny, Regular, Recto...)
+  // que provenga del fit del producto o del propio nombre comercial.
+  const FIT_KEYWORDS: Array<{ test: RegExp; label: string }> = [
+    { test: /\bslim fit\b/i, label: 'Slim' },
+    { test: /\bslim\b/i, label: 'Slim' },
+    { test: /\bskinny\b/i, label: 'Skinny' },
+    { test: /\bbootcut\b/i, label: 'Bootcut' },
+    { test: /\brecto\b/i, label: 'Recto' },
+    { test: /\bstraight\b/i, label: 'Straight' },
+    { test: /\bregular\b/i, label: 'Regular' },
+    { test: /\bajustado\b/i, label: 'Ajustado' },
+    { test: /\boversize\b/i, label: 'Oversize' },
+    { test: /\brelaxed\b/i, label: 'Relaxed' },
+  ];
+
+  let fit = '';
+  // Prioridad: el fit del producto si es una palabra corta reconocible;
+  // si no, se busca en el nombre comercial ("Jean slim fit...").
+  if (input.fit && input.fit !== 'No definido') {
+    for (const fk of FIT_KEYWORDS) {
+      if (fk.test.test(input.fit)) {
+        fit = fk.label;
+        break;
+      }
+    }
+  }
+  if (!fit) {
+    for (const fk of FIT_KEYWORDS) {
+      if (fk.test.test(name)) {
+        fit = fk.label;
+        break;
+      }
+    }
+  }
+
+  // Género: "Hombre" o "Dama" cuando el nombre lo declara, para que el título
+  // no quede flojo ("Jean Hombre", "Camisa Dama").
+  let gender = '';
+  if (/hombre/i.test(name)) gender = 'Hombre';
+  else if (/\bdama\b/i.test(name) || /mujer/i.test(name)) gender = 'Dama';
 
   // Color: después de "color" o al final del nombre
   let color = extractColorFromName(name);
@@ -66,5 +104,5 @@ export function abbreviateProductName(input: AbbrevInput): AbbreviatedName {
       .join(' ');
   }
 
-  return { short: [type, fit].filter(Boolean).join(' '), color: color || undefined };
+  return { short: [type, fit, gender].filter(Boolean).join(' '), color: color || undefined };
 }
