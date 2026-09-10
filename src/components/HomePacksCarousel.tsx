@@ -85,7 +85,11 @@ const STANDARD_SIZES = ['6', '8', '10', '12', '14'];
 
 function availableSizes(product: Product) {
   const option = product.options?.find((item) => /talla/i.test(item.key));
-  return Array.from(new Set([...(option?.values || []), ...STANDARD_SIZES])).map((size) => size.trim()).filter(Boolean);
+  if (product.in_stock === false) return [];
+  return Array.from(new Set([...(option?.values || []), ...STANDARD_SIZES]))
+    .map((size) => size.trim())
+    .filter(Boolean)
+    .filter((size) => (product.stock_by_size || {})[size] !== 0);
 }
 
 function firstAvailableSize(product: Product) {
@@ -204,15 +208,25 @@ export function HomePacksCarousel({ products }: { products: Product[] }) {
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-black uppercase text-[#1b2333]">Ref. {product.reference}</p>
                         <p className="truncate text-[10px] text-neutral-500">{product.name}</p>
-                        <label className="mt-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-neutral-500">
-                          Talla
-                          <select value={selected} onChange={(event) => setSelectedPackSizes((current) => ({ ...current, [product.id]: event.target.value }))} className="min-w-20 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-xs font-black text-[#1b2333] outline-none focus:border-[#d88193]">
-                            {sizes.map((size) => {
-                              const soldOut = product.in_stock === false || (product.stock_by_size || {})[size] === 0;
-                              return <option key={size} value={size} disabled={soldOut}>{size}{soldOut ? ' · agotada' : ''}</option>;
-                            })}
-                          </select>
-                        </label>
+                        <div className="mt-2">
+                          <p className="text-[9px] font-bold uppercase tracking-wide text-neutral-500">Talla seleccionada: <span className="text-[#b5586c]">{selected || '—'}</span></p>
+                          {sizes.length > 0 ? (
+                            <div className="mt-1 flex flex-wrap gap-1" role="radiogroup" aria-label={`Tallas disponibles de la referencia ${product.reference}`}>
+                              {sizes.map((size) => (
+                                <button
+                                  key={size}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={selected === size}
+                                  onClick={() => setSelectedPackSizes((current) => ({ ...current, [product.id]: size }))}
+                                  className={`min-w-8 rounded border px-2 py-1 text-[10px] font-black transition ${selected === size ? 'border-[#d88193] bg-[#d88193] text-white' : 'border-neutral-200 bg-white text-[#1b2333] hover:border-[#d88193]'}`}
+                                >
+                                  {size}
+                                </button>
+                              ))}
+                            </div>
+                          ) : <p className="mt-1 text-[9px] text-red-500">Sin tallas disponibles</p>}
+                        </div>
                       </div>
                     </div>
                   );
@@ -305,6 +319,7 @@ export function HomePacksCarousel({ products }: { products: Product[] }) {
                       <div key={product.id} className="w-full shrink-0 px-1.5 sm:px-2" style={{ width: `${slideWidth}%` }}>
                         <Link href={`/producto/${product.slug}`} className="group block overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-[#d88193] hover:shadow-lg">
                           <div className="relative aspect-[3/4] overflow-hidden bg-neutral-100">
+                            {discountPercent > 0 && <span className="absolute right-2 top-2 z-10 bg-[#ff4e00] px-2.5 py-1 text-[10px] font-medium uppercase tracking-normal text-white">- {discountPercent}%</span>}
                             {image ? <img src={image} alt={product.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs text-neutral-400">Imagen pendiente</div>}
                             <span className="absolute left-2 top-2 rounded-full bg-[#1b2333]/90 px-2 py-1 text-[9px] font-black tracking-wider text-white">REF {product.reference}</span>
                           </div>
@@ -312,7 +327,6 @@ export function HomePacksCarousel({ products }: { products: Product[] }) {
                             <p className="line-clamp-2 min-h-8 text-[10px] font-black uppercase leading-tight text-[#1b2333]">{product.name}</p>
                             <div className="mt-2 flex items-center justify-between gap-2">
                               <p className="text-sm font-black text-[#b5586c]">{formatCOP(price)}</p>
-                              {discountPercent > 0 && <span title="Descuento frente al precio e-commerce" className="rounded-full bg-[#fff1f4] px-1.5 py-0.5 text-[9px] font-black text-[#b5586c]">-{discountPercent}% vs e-commerce</span>}
                             </div>
                           </div>
                         </Link>

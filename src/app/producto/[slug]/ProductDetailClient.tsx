@@ -152,19 +152,20 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
       : allowedSizes;
   // Conserva todas las tallas del producto (sin descartar las no estándar),
   // ordenando primero las estándar y luego el resto.
-  const availableSizes = Array.from(new Set(
+  const candidateSizes = Array.from(new Set(
     [...productSizes, ...rawSizes.map((s) => s.trim())]
   ));
 
   const soldOut = currentProduct.in_stock === false;
   const sizeStockOf = (s: string) => (currentProduct.stock_by_size || {})[s];
+  const availableSizes = candidateSizes.filter((size) => !soldOut && sizeStockOf(size) !== 0);
   // Por defecto, seleccionar la primera talla que tenga stock disponible
-  const defaultSize = availableSizes.find((s) => !soldOut && sizeStockOf(s) !== 0) || availableSizes[0] || '6';
+  const defaultSize = availableSizes[0] || candidateSizes[0] || '6';
   const [selectedSize, setSelectedSize] = useState<string>(defaultSize);
 
   // Hay al menos una talla con stock, y se protege el botón Agregar si la talla
   // actualmente seleccionada está agotada.
-  const anySizeAvailable = availableSizes.some((s) => !soldOut && sizeStockOf(s) !== 0);
+  const anySizeAvailable = availableSizes.length > 0;
   const selectedSizeSoldOut = soldOut || sizeStockOf(selectedSize) === 0;
 
   // Solo está agotado si el admin lo marca explícitamente en el editor
@@ -751,9 +752,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {availableSizes.map((size) => {
-                  const sizeStock = (currentProduct.stock_by_size || {})[size];
-                  const sizeSoldOut = soldOut || sizeStock === 0;
+                {availableSizes.length > 0 ? availableSizes.map((size) => {
                   return (
                     <button
                       key={size}
@@ -761,12 +760,9 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                         setSelectedSize(size);
                         setQuantity(1);
                       }}
-                      disabled={sizeSoldOut}
-                      title={sizeSoldOut ? 'Talla agotada' : undefined}
+                      title={`Talla ${size}`}
                       className={`relative w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
-                        sizeSoldOut
-                          ? 'border-gray-200 text-neutral-300 bg-neutral-100 cursor-not-allowed'
-                          : selectedSize === size
+                        selectedSize === size
                           ? 'border-ush-pink bg-ush-pink text-white shadow-md'
                           : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
                       }`}
@@ -774,7 +770,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                       {size}
                     </button>
                   );
-                })}
+                }) : <p className="text-xs text-neutral-500">No hay tallas disponibles para esta referencia.</p>}
               </div>
             </div>
 

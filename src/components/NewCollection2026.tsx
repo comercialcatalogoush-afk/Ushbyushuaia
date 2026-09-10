@@ -117,21 +117,21 @@ export const NewCollection2026: React.FC<NewCollection2026Props> = ({ products }
                 className="snap-start flex-shrink-0 w-[160px] sm:w-[200px] group"
               >
                 <div className="relative bg-white border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                  {/* Las etiquetas viven fuera de la foto para no cubrir la prenda. */}
-                  <div className="flex min-h-[42px] flex-col items-start gap-1 border-b border-neutral-100 bg-white px-2 py-1.5">
+                  {/* La novedad queda fuera; el porcentaje se muestra dentro de la foto en una esquina. */}
+                  <div className="flex min-h-[30px] flex-col items-start gap-1 border-b border-neutral-100 bg-white px-2 py-1.5">
                     <span className="inline-flex items-center gap-1 bg-ush-pink px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-[2px_2px_0_#1b2333]">
                       <Sparkles size={9} />
-                      Nuevo 2026
+                      Nuevo
                     </span>
-                    {discount > 0 && (
-                        <span className="inline-flex items-center bg-[#1b2333] px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-[2px_2px_0_#d88193]">
-                        -{discount}% off
-                      </span>
-                    )}
                   </div>
 
                   {/* Imagen */}
                   <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
+                    {discount > 0 && (
+                      <span className="absolute right-2 top-2 z-10 bg-[#ff4e00] px-2.5 py-1 text-[10px] font-medium uppercase tracking-normal text-white">
+                        - {discount}%
+                      </span>
+                    )}
                     {hasImages ? (
                       <img
                         src={img}

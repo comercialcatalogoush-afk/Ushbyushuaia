@@ -37,7 +37,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     : sizeOption?.values && sizeOption.values.length > 0
       ? sizeOption.values
       : allowedSizes;
-  const availableSizes = rawSizes.filter((s) => productSizes.includes(s) || productSizes.includes(s.trim()));
+  const availableSizes = rawSizes
+    .filter((s) => productSizes.includes(s) || productSizes.includes(s.trim()))
+    .filter((s) => product.in_stock !== false && (product.stock_by_size || {})[s] !== 0);
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   const [quantity, setQuantity] = useState<number>(1);
@@ -83,13 +85,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     setTimeout(() => setShowAddedToast(false), 2800);
   };
 
-  const showCardLabels = isReference2026(product.reference) || discountPercent > 0 || (compact && isBestSellerBadge);
+  const showCardLabels = isReference2026(product.reference) || (compact && isBestSellerBadge);
   const cardLabels = showCardLabels ? (
     <div className="flex flex-col items-start gap-1 border-b border-neutral-100 bg-white px-2 py-1.5">
       <div className="flex min-w-0 flex-col items-start gap-1">
         {isReference2026(product.reference) && (
           <span className="inline-flex items-center bg-ush-pink px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white shadow-[3px_3px_0_#1b2333]">
-            Nuevo 2026
+            Nuevo
           </span>
         )}
         {compact && isBestSellerBadge && !isReference2026(product.reference) && (
@@ -98,11 +100,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
           </span>
         )}
       </div>
-      {discountPercent > 0 && (
-        <span className="inline-flex shrink-0 items-center bg-[#1b2333] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white shadow-[3px_3px_0_#d88193]">
-          -{discountPercent}% off
-        </span>
-      )}
     </div>
   ) : null;
 
@@ -114,6 +111,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         {/* Imagen cuadrada completa (sin recorte), click → detalle para solicitar */}
         <Link href={`/producto/${product.slug}`} className="block">
           <div className="relative aspect-square overflow-hidden bg-neutral-100">
+          {discountPercent > 0 && (
+            <span className="absolute right-2 top-2 z-10 bg-[#ff4e00] px-2.5 py-1 text-[10px] font-medium uppercase tracking-normal text-white">
+              - {discountPercent}%
+            </span>
+          )}
           {hasImages ? (
             <Image
               src={mainImage}
@@ -164,7 +166,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             <span className="text-[9px] font-extrabold text-ush-pink uppercase">Precio mayorista:</span>
             <span className="flex items-center gap-1.5 text-sm font-black text-neutral-900">
               {formatCOP(wholesalePrice)}
-              {discountPercent > 0 && <span title="Descuento frente al precio e-commerce" className="rounded-full bg-[#fff1f4] px-1.5 py-0.5 text-[9px] font-black text-[#b5586c]">-{discountPercent}% vs e-commerce</span>}
             </span>
           </div>
           </div>
@@ -197,6 +198,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         onMouseEnter={() => product.images.length > 1 && setCurrentImageIndex(1)}
         onMouseLeave={() => setCurrentImageIndex(0)}
       >
+        {discountPercent > 0 && (
+          <span className="absolute right-2 top-2 z-10 bg-[#ff4e00] px-2.5 py-1 text-[10px] font-medium uppercase tracking-normal text-white">
+            - {discountPercent}%
+          </span>
+        )}
         {hasImages ? (
           <div className="absolute inset-0 overflow-hidden">
             <Image
@@ -287,7 +293,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               </span>
               <span className="flex items-center gap-1.5 text-base font-black text-neutral-900 whitespace-nowrap">
                 {formatCOP(wholesalePrice)}
-                {discountPercent > 0 && <span title="Descuento frente al precio e-commerce" className="rounded-full bg-[#fff1f4] px-1.5 py-0.5 text-[9px] font-black text-[#b5586c]">-{discountPercent}% vs e-commerce</span>}
               </span>
             </div>
           </div>
@@ -312,28 +317,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
             {/* Fila única de tallas — sin desbordamiento en móvil */}
             <div className="flex flex-nowrap gap-1 overflow-x-auto pb-0.5">
-              {availableSizes.map((size) => {
-                const sizeStock = (product.stock_by_size || {})[size];
-                const sizeOut = soldOut || sizeStock === 0;
+              {availableSizes.length > 0 ? availableSizes.map((size) => {
                 return (
                   <button
                     key={size}
                     type="button"
                     onClick={() => handleSizeChange(size)}
-                    disabled={sizeOut}
-                    title={sizeOut ? (soldOut ? 'Producto agotado' : 'Talla agotada') : `Talla ${size}`}
+                    title={`Talla ${size}`}
                     className={`relative shrink-0 text-[10px] sm:text-[11px] w-6 h-6 sm:w-7 sm:h-7 font-bold border transition-all flex items-center justify-center ${
                       selectedSize === size
                         ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
-                        : sizeOut
-                        ? 'border-gray-200 text-gray-300 bg-neutral-100 line-through cursor-not-allowed'
                         : 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
                     }`}
                   >
                     {size}
                   </button>
                 );
-              })}
+              }) : <span className="text-[10px] text-neutral-400">Sin tallas disponibles</span>}
             </div>
           </div>
 

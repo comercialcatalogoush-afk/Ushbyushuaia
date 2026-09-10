@@ -58,8 +58,8 @@ function catalogLabels(product: Product) {
     : '';
   const discount = value.match(/-\s*\d+\s*%/i)?.[0]?.replace(/\s+/g, '') || calculatedDiscount;
   return {
-    newLabel: isNew ? 'Nuevo 2026' : '',
-    discountLabel: discount || (!isNew ? value : ''),
+    newLabel: isNew ? 'Nuevo' : '',
+    discountLabel: discount,
   };
 }
 
@@ -431,13 +431,13 @@ export function LookbookClient() {
                       {selectedRefs.has(referenceOf(p)) ? 'Incluida' : 'Incluir'}
                     </label>
                   )}
-                  {(labels.newLabel || labels.discountLabel) && (
+                  {labels.newLabel && (
                     <div className="flex min-h-[42px] flex-col items-start gap-1 border-b border-neutral-100 bg-white px-3 py-1.5">
-                      {labels.newLabel && <span className="bg-[#d88193] px-2 py-1 text-[9px] font-medium uppercase tracking-wider text-white">{labels.newLabel}</span>}
-                      {labels.discountLabel && <span className="bg-[#1b2333] px-2 py-1 text-[9px] font-medium uppercase tracking-wider text-white">{labels.discountLabel}</span>}
+                      <span className="bg-[#d88193] px-2 py-1 text-[9px] font-medium uppercase tracking-wider text-white">{labels.newLabel}</span>
                     </div>
                   )}
                   <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
+                    {labels.discountLabel && <span className="absolute right-3 top-3 z-10 bg-[#ff4e00] px-2.5 py-1 text-[10px] font-medium uppercase tracking-normal text-white">{labels.discountLabel.replace('-', '- ')}</span>}
                     {p.images[0] && (
                       <Image
                         src={p.images[0]}
@@ -512,13 +512,13 @@ export function LookbookClient() {
                       {selectedRefs.has(referenceOf(p)) ? '✓' : '+'}
                     </label>
                   )}
-                  {(labels.newLabel || labels.discountLabel) && (
+                  {labels.newLabel && (
                     <div className="flex min-h-[42px] flex-col items-start gap-1 border-b border-neutral-100 bg-white px-2 py-1.5">
-                      {labels.newLabel && <span className="bg-[#d88193] px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-white">{labels.newLabel}</span>}
-                      {labels.discountLabel && <span className="bg-[#1b2333] px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-white">{labels.discountLabel}</span>}
+                      <span className="bg-[#d88193] px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-white">{labels.newLabel}</span>
                     </div>
                   )}
                   <div className="aspect-[3/4] relative bg-neutral-50">
+                    {labels.discountLabel && <span className="absolute right-2 top-2 z-10 bg-[#ff4e00] px-2 py-1 text-[9px] font-medium uppercase tracking-normal text-white">{labels.discountLabel.replace('-', '- ')}</span>}
                     {p.images[0] && (
                       <Image
                         src={p.images[0]}
