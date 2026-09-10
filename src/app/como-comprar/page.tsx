@@ -122,12 +122,12 @@ export default async function ComoComprarPage() {
         </div>
 
         {/* Ruta rápida para revisar y enviar el pedido por WhatsApp. */}
-        <div className="mt-12 overflow-hidden rounded-2xl border border-[#1b2333]/10 bg-[#1b2333] text-white shadow-xl">
+        <div className="mt-12 overflow-hidden rounded-2xl border border-[#d88193]/25 bg-white text-[#1b2333] shadow-xl">
           <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f3b3c0]">Pedido express por WhatsApp</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d88193]">Pedido express por WhatsApp</span>
               <h3 className="mt-2 text-xl font-black uppercase sm:text-2xl">Selecciona, revisa y envía tu solicitud</h3>
-              <p className="mt-2 max-w-2xl text-xs leading-relaxed text-white/70">Desde el carrito puedes revisar referencias, tallas, cantidades y subtotal antes de abrir WhatsApp. El asesor recibe el detalle ordenado y confirma disponibilidad, pago y despacho.</p>
+              <p className="mt-2 max-w-2xl text-xs leading-relaxed text-neutral-600">Desde el carrito puedes revisar referencias, tallas, cantidades y subtotal antes de abrir WhatsApp. El asesor recibe el detalle ordenado y confirma disponibilidad, pago y despacho.</p>
               <div className="mt-5 grid gap-2 sm:grid-cols-4">
                 {[
                   ['01', 'Elige referencias'],
@@ -135,9 +135,9 @@ export default async function ComoComprarPage() {
                   ['03', 'Revisa tu carrito'],
                   ['04', 'Envía y confirma'],
                 ].map(([number, label]) => (
-                  <div key={number} className="rounded-xl border border-white/10 bg-white/5 p-3">
-                    <span className="text-[10px] font-black text-[#f3b3c0]">{number}</span>
-                    <p className="mt-1 text-[10px] font-bold uppercase leading-tight text-white/90">{label}</p>
+                  <div key={number} className="rounded-xl border border-[#d88193]/20 bg-[#fff7f8] p-3">
+                    <span className="text-[10px] font-black text-[#d88193]">{number}</span>
+                    <p className="mt-1 text-[10px] font-bold uppercase leading-tight text-[#1b2333]">{label}</p>
                   </div>
                 ))}
               </div>

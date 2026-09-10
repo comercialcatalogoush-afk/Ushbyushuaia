@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { Product } from '@/types';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
-import { abbreviateProductName } from '@/lib/productName';
+import { abbreviateProductName, replaceMezclilla } from '@/lib/productName';
 
 export type LookbookGroupMode = 'category' | 'fit';
 export type LookbookPriceMode = 'wholesale' | 'ecommerce' | 'custom' | 'blank';
@@ -36,7 +36,7 @@ export function getAvailableProductSizes(product: Product) {
 }
 
 export function getLookbookProductName(product: Product) {
-  return abbreviateProductName({ name: product.name, category: product.category, fit: product.fit }).short || 'Prenda';
+  return replaceMezclilla(abbreviateProductName({ name: product.name, category: product.category, fit: product.fit }).short || 'Producto');
 }
 
 export function getLookbookPrice(product: Product, mode: LookbookPriceMode, customPrices: Record<string, string> = {}) {
@@ -229,7 +229,7 @@ export async function generateLookbookPdf(
     doc.setFontSize(8);
     doc.text(`REF: ${String(product.reference || product.id)}`, detailX, 48);
     doc.setFontSize(13);
-    doc.text(clipPdfText(doc, product.name, detailWidth, 2).map((line) => line.toUpperCase()), detailX, 58);
+    doc.text(clipPdfText(doc, getLookbookProductName(product), detailWidth, 2).map((line) => line.toUpperCase()), detailX, 58);
     doc.setTextColor(75, 80, 90);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);

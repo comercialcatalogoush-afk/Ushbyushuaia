@@ -23,6 +23,8 @@ export function animateFlyToCart(sourceElement: HTMLElement | null) {
   clone.style.margin = '0';
   clone.style.transition = 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
   clone.style.opacity = '0.95';
+  clone.style.willChange = 'left, top, width, height, opacity, transform';
+  clone.style.border = '2px solid rgba(216, 129, 147, 0.85)';
 
   document.body.appendChild(clone);
 
@@ -42,7 +44,9 @@ export function animateFlyToCart(sourceElement: HTMLElement | null) {
 
     // Pop del botón flotante (keyframes .cart-pop ya definidos en FloatingCartButton)
     cartButton.classList.add('cart-pop');
+    cartButton.setAttribute('data-cart-arrival', 'true');
     setTimeout(() => cartButton.classList.remove('cart-pop'), 600);
+    setTimeout(() => cartButton.removeAttribute('data-cart-arrival'), 650);
 
     // Rebote del contador usando un selector estable, no una clase visual cambiante.
     const badge = cartButton.querySelector('[data-cart-badge="true"]');

@@ -19,6 +19,7 @@ import { formatVideoUrl } from '@/lib/videoUtils';
 import { addCustomerWatch } from '@/lib/customerBenefits';
 import { parseDescription, renderDescriptionHTML, extractKeyFacts } from '@/lib/descriptionFormatter';
 import { getMenSizesForProduct } from '@/lib/menCatalog';
+import { abbreviateProductName, replaceMezclilla } from '@/lib/productName';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -631,7 +632,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 Ref. Oficial #{currentProduct.reference}
               </span>
               <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-                {currentProduct.name}
+                {replaceMezclilla(abbreviateProductName(currentProduct).short || currentProduct.name)}
               </h1>
 
               {/* Dual Price Display */}
@@ -703,7 +704,9 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 if (sections.length === 0 && !desc) {
                   return (
                     <div className="text-sm text-neutral-700 font-normal leading-relaxed">
-                      Prenda de alta durabilidad confeccionada en mezclilla rígida de confección nacional.
+                      { /teens/i.test(`${currentProduct.category || ''} ${currentProduct.name || ''}`)
+                        ? 'Jean niña de alta durabilidad, confeccionado con tela de calidad nacional.'
+                        : 'Producto de alta durabilidad confeccionado con tela rígida de producción nacional.'}
                     </div>
                   );
                 }

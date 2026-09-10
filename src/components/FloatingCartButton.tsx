@@ -32,13 +32,19 @@ const MESSAGES_FULL = [
 type Level = 'empty' | 'low' | 'mid' | 'full';
 
 /* Carrito SVG propio: se mantiene nítido en móvil y no depende de una imagen externa. */
-function CartMascot({ level }: { level: Level }) {
-  const basketColor = level === 'full' ? '#f59e0b' : level === 'mid' ? '#1b2333' : '#d88193';
+function CartMascot({ level, units }: { level: Level; units: number }) {
+  const fill = Math.min(1, units / 12);
+  const basketColor = level === 'full' ? '#f59e0b' : '#d88193';
   return (
-    <svg className="cart-mascot" viewBox="0 0 112 82" role="img" aria-label="Carrito animado">
+    <svg className="cart-mascot relative z-10" viewBox="0 0 112 82" role="img" aria-label="Carrito animado">
       <g className="cart-mascot-body">
         <path d="M12 13h11l9 42h53l11-31H32" fill="none" stroke="#1b2333" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M35 25h54l-7 24H40z" fill={basketColor} stroke="#1b2333" strokeWidth="4" strokeLinejoin="round" />
+        <path d="M35 25h54l-7 24H40z" fill="#fff" stroke="#1b2333" strokeWidth="4" strokeLinejoin="round" />
+        <g className="cart-mascot-items" opacity={fill > 0 ? 1 : 0}>
+          <path d="M43 28h13l-2 14H42z" fill="#d88193" stroke="#1b2333" strokeWidth="1.5" />
+          <path d="M56 27h14l3 15H57z" fill="#1b2333" stroke="#1b2333" strokeWidth="1.5" />
+          <path d="M70 29h12l-1 13H72z" fill={basketColor} stroke="#1b2333" strokeWidth="1.5" />
+        </g>
         <path d="M43 31h37M46 40h31" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".75" />
         <circle cx="48" cy="66" r="8" fill="#1b2333" />
         <circle cx="48" cy="66" r="3" fill="#fff" />
@@ -181,7 +187,7 @@ export const FloatingCartButton: React.FC = () => {
         }
         .cart-float { animation: float-ush 3.2s ease-in-out infinite; }
         .cart-pop   { animation: pop-ush 0.55s cubic-bezier(.36,.07,.19,.97) both; }
-        .cart-mascot { width: 44px; height: 36px; overflow: visible; }
+        .cart-mascot { width: 48px; height: 38px; overflow: visible; }
         .cart-mascot-body { transform-origin: 55px 42px; animation: mascot-bob 2.4s ease-in-out infinite; }
         .cart-mascot-sparkles { animation: mascot-sparkle 1.2s ease-in-out infinite; transform-origin: center; }
         @keyframes mascot-bob {
@@ -196,6 +202,11 @@ export const FloatingCartButton: React.FC = () => {
           background: linear-gradient(135deg,#f59e0b 0%,#d88193 50%,#f59e0b 100%);
           background-size: 200% auto;
           animation: shimmer-ush 3s linear infinite, glow-full 2s ease-in-out infinite;
+        }
+        .cart-mascot-items { transform-origin: 62px 38px; animation: clothes-bob 2s ease-in-out infinite; }
+        @keyframes clothes-bob {
+          0%, 100% { transform: translateY(1px); }
+          50% { transform: translateY(-2px); }
         }
         .msg-fade-in  { opacity: 1;  transform: translateY(0);    transition: opacity .3s, transform .3s; }
         .msg-fade-out { opacity: 0;  transform: translateY(4px);  transition: opacity .3s, transform .3s; }
@@ -241,13 +252,13 @@ export const FloatingCartButton: React.FC = () => {
             ${popping ? 'cart-pop' : 'cart-float'}
           `}
         >
-          {/* Relleno visual de la bolsa */}
+          {/* Relleno gradual: cada unidad aumenta visualmente el surtido del carrito. */}
           {level !== 'empty' && (
-            <div className="absolute inset-0 rounded-full overflow-hidden" aria-hidden="true">
+            <div className="absolute inset-0 z-0 rounded-full overflow-hidden" aria-hidden="true" data-cart-fill="true">
               <div
-                className="absolute bottom-0 left-0 right-0 bg-white/20 transition-all duration-700 ease-out"
+                className="absolute bottom-0 left-0 right-0 bg-[#d88193]/15 transition-all duration-700 ease-out"
                 style={{
-                  height: level === 'low' ? '28%' : level === 'mid' ? '58%' : '88%',
+                  height: `${Math.max(10, Math.min(100, (units / 12) * 100))}%`,
                 }}
               />
             </div>
@@ -258,8 +269,8 @@ export const FloatingCartButton: React.FC = () => {
             <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" aria-hidden="true" />
           )}
 
-          {/* Carrito tipo caricatura con ruedas y expresión propia. */}
-          <CartMascot level={level} />
+          {/* Carrito tipo caricatura con prendas visibles y llegada animada desde cada tarjeta. */}
+          <CartMascot level={level} units={units} />
 
           {/* Badge contador */}
           {level !== 'empty' && (

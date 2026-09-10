@@ -9,6 +9,11 @@ export interface AbbreviatedName {
   color?: string;
 }
 
+/** Texto seguro para mostrar en el catálogo sin cambiar el dato original. */
+export function replaceMezclilla(text: string): string {
+  return text.replace(/\bmezclilla\b/gi, 'tela');
+}
+
 const COLOR_KEYWORDS = [
   'azul claro', 'azul oscuro', 'azul medio', 'azul dirty', 'azul claro',
   'azul oscuro', 'azul medio', 'azul dirty', 'gris oscuro', 'gris humo',
@@ -45,8 +50,10 @@ export function abbreviateProductName(input: AbbrevInput): AbbreviatedName {
 
   // Tipo de prenda según categoría
   const cat = input.category || '';
+  const isTeens = /teens/i.test(`${cat} ${name}`);
   let type = 'Prenda';
-  if (/jean/i.test(cat)) type = 'Jean';
+  if (isTeens) type = 'Jean Niña';
+  else if (/jean/i.test(cat)) type = 'Jean';
   else if (/camisa/i.test(cat)) type = 'Camisa';
   else if (/pantal/i.test(cat)) type = 'Pantalón';
   else if (/fald/i.test(cat)) type = 'Falda';

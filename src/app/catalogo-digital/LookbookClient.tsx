@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Product } from '@/types';
 import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
 import { generateLookbookPdf, LookbookPriceMode } from '@/lib/lookbookPdf';
+import { abbreviateProductName, replaceMezclilla } from '@/lib/productName';
 import { Download, Share2, ChevronLeft, ChevronRight, Search, Grid3X3, BookOpen, ExternalLink, Calculator } from 'lucide-react';
 
 const CATEGORIES = ['Todas', 'Jeans', 'Pantalones', 'Shorts', 'Faldas', 'Cargos', 'Bermuda', 'Nuevo'];
@@ -41,6 +42,25 @@ function priceFor(product: Product, mode: PriceMode) {
   if (mode === 'none') return '';
   if (mode === 'ecommerce') return formatCOP(product.suggested_price);
   return formatCOP(product.price);
+}
+
+function displayName(product: Product) {
+  return replaceMezclilla(
+    abbreviateProductName({ name: product.name, fit: product.fit, category: product.category }).short || 'Producto',
+  );
+}
+
+function catalogLabels(product: Product) {
+  const value = replaceMezclilla(String(product.ribbon || '').trim());
+  const isNew = /nuevo/i.test(value);
+  const calculatedDiscount = product.suggested_price > product.price && product.price > 0
+    ? `-${Math.round((1 - product.price / product.suggested_price) * 100)}%`
+    : '';
+  const discount = value.match(/-\s*\d+\s*%/i)?.[0]?.replace(/\s+/g, '') || calculatedDiscount;
+  return {
+    newLabel: isNew ? 'Nuevo 2026' : '',
+    discountLabel: discount || (!isNew ? value : ''),
+  };
 }
 
 const PRICE_MODE_TO_LOOKBOOK: Record<PriceMode, LookbookPriceMode> = {
@@ -236,7 +256,7 @@ export function LookbookClient() {
   return (
     <>
       {/* Web UI */}
-      <div className="min-h-screen bg-[#f8f5f2] print:hidden">
+      <div className="min-h-screen bg-[#f8f5f2] font-sans-ui text-[#1b2333] print:hidden">
         {/* Header */}
         <div className="bg-[#1b2333] text-white py-12 px-4 text-center relative overflow-hidden">
           <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)', backgroundSize: '14px 14px' }} />
@@ -387,11 +407,14 @@ export function LookbookClient() {
         {view === 'lookbook' ? (
           <div className="max-w-7xl mx-auto px-4 pb-12">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-0.5">
-              {paginated.map((p) => (
+              {paginated.map((p) => {
+                const name = displayName(p);
+                const labels = catalogLabels(p);
+                return (
                 <Link
                   key={p.id}
                   href={`/producto/${p.slug}`}
-                  className="group relative aspect-[3/4] bg-neutral-100 overflow-hidden"
+                  className="group relative bg-white overflow-hidden"
                 >
                   {!isAdmin && (
                     <label
@@ -408,42 +431,44 @@ export function LookbookClient() {
                       {selectedRefs.has(referenceOf(p)) ? 'Incluida' : 'Incluir'}
                     </label>
                   )}
-                  {p.images[0] && (
-                    <Image
-                      src={p.images[0]}
-                      alt={p.name}
-                      fill
-                      unoptimized={p.images[0].startsWith('http://') || p.images[0].startsWith('https://')}
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
+                  {(labels.newLabel || labels.discountLabel) && (
+                    <div className="flex min-h-[42px] flex-col items-start gap-1 border-b border-neutral-100 bg-white px-3 py-1.5">
+                      {labels.newLabel && <span className="bg-[#d88193] px-2 py-1 text-[9px] font-medium uppercase tracking-wider text-white">{labels.newLabel}</span>}
+                      {labels.discountLabel && <span className="bg-[#1b2333] px-2 py-1 text-[9px] font-medium uppercase tracking-wider text-white">{labels.discountLabel}</span>}
+                    </div>
                   )}
-                  {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-3 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
+                    {p.images[0] && (
+                      <Image
+                        src={p.images[0]}
+                        alt={name}
+                        fill
+                        unoptimized={p.images[0].startsWith('http://') || p.images[0].startsWith('https://')}
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    )}
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-3 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d88193]">Ref. #{p.reference}</p>
-                    <p className="text-sm font-black uppercase mt-0.5 leading-tight">{p.name}</p>
+                    <p className="text-sm font-medium uppercase mt-0.5 leading-tight">{name}</p>
                     {priceMode !== 'none' && (
                       <p className="text-xs text-neutral-300 mt-1">
                         {priceMode === 'ecommerce' && 'E-commerce: '}
                         {priceForScreen(p)}
                       </p>
                     )}
-                  </div>
-                  {/* Ribbon */}
-                  {p.ribbon && (
-                    <div className="absolute top-3 left-0 bg-[#d88193] text-white text-[9px] font-black uppercase tracking-wider px-3 py-1">
-                      {p.ribbon}
                     </div>
-                  )}
+                  </div>
                   {/* Share quick button */}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       const url = `https://ushbyushuaia.vercel.app/producto/${p.slug}`;
-                      const msg = `👗 *${p.name}* (Ref. #${p.reference})\n💲 Mayorista: ${formatCOP(p.price)}\n🔗 ${url}`;
+                      const msg = `👗 *${name}* (Ref. #${p.reference})\n💲 Mayorista: ${formatCOP(p.price)}\n🔗 ${url}`;
                       if (navigator.share) {
-                        navigator.share({ title: p.name, text: msg, url }).catch(() => {});
+                        navigator.share({ title: name, text: msg, url }).catch(() => {});
                       } else {
                         navigator.clipboard.writeText(msg).then(() => alert('¡Enlace copiado!')).catch(() => {});
                       }
@@ -455,14 +480,18 @@ export function LookbookClient() {
                     <Share2 size={13} className="text-[#1b2333]" />
                   </button>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : (
           /* Grid view */
           <div className="max-w-7xl mx-auto px-4 pb-12">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {paginated.map((p) => (
+              {paginated.map((p) => {
+                const name = displayName(p);
+                const labels = catalogLabels(p);
+                return (
                 <Link
                   key={p.id}
                   href={`/producto/${p.slug}`}
@@ -483,32 +512,34 @@ export function LookbookClient() {
                       {selectedRefs.has(referenceOf(p)) ? '✓' : '+'}
                     </label>
                   )}
+                  {(labels.newLabel || labels.discountLabel) && (
+                    <div className="flex min-h-[42px] flex-col items-start gap-1 border-b border-neutral-100 bg-white px-2 py-1.5">
+                      {labels.newLabel && <span className="bg-[#d88193] px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-white">{labels.newLabel}</span>}
+                      {labels.discountLabel && <span className="bg-[#1b2333] px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-white">{labels.discountLabel}</span>}
+                    </div>
+                  )}
                   <div className="aspect-[3/4] relative bg-neutral-50">
                     {p.images[0] && (
                       <Image
                         src={p.images[0]}
-                        alt={p.name}
+                        alt={name}
                         fill
                         unoptimized={p.images[0].startsWith('http://') || p.images[0].startsWith('https://')}
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     )}
-                    {p.ribbon && (
-                      <span className="absolute top-2 left-0 bg-[#d88193] text-white text-[8px] font-black uppercase px-2 py-0.5">
-                        {p.ribbon}
-                      </span>
-                    )}
                   </div>
                   <div className="p-2.5">
                     <p className="text-[9px] text-neutral-400 font-bold uppercase">#{p.reference}</p>
-                    <p className="text-[11px] font-black uppercase text-[#1b2333] truncate mt-0.5">{p.name}</p>
+                    <p className="text-[11px] font-medium uppercase text-[#1b2333] truncate mt-0.5">{name}</p>
                     {priceMode !== 'none' && (
                       <p className="text-[11px] font-black text-[#d88193] mt-1">{priceForScreen(p)}</p>
                     )}
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

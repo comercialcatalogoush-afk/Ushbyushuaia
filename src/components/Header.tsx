@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import { Search, User, Menu, X, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { useSiteTheme } from '@/lib/siteContentHooks';
@@ -219,7 +219,6 @@ export const Header: React.FC = () => {
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2 flex items-center gap-1.5"
             >
               TEENS
-              <Sparkles size={12} className="text-[#d88193]" />
             </Link>
 
             {/* HOMBRES Mega Dropdown */}
@@ -471,7 +470,7 @@ export const Header: React.FC = () => {
             onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"
           >
-            TEENS <Sparkles size={13} className="text-[#d88193]" />
+            TEENS
           </Link>
           <div className="border-b border-gray-50">
             <button

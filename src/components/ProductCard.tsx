@@ -85,8 +85,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
   const showCardLabels = isReference2026(product.reference) || discountPercent > 0 || (compact && isBestSellerBadge);
   const cardLabels = showCardLabels ? (
-    <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-neutral-100 bg-white px-2 py-1.5">
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+    <div className="flex flex-col items-start gap-1 border-b border-neutral-100 bg-white px-2 py-1.5">
+      <div className="flex min-w-0 flex-col items-start gap-1">
         {isReference2026(product.reference) && (
           <span className="inline-flex items-center bg-ush-pink px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white shadow-[3px_3px_0_#1b2333]">
             Nuevo 2026
@@ -235,13 +235,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
       <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between bg-white">
         <div>
           {/* Badges Container OUTSIDE Image */}
-          <div className="flex flex-wrap items-center gap-1 mb-1.5 sm:mb-2 min-h-[20px]">
+          <div className="flex flex-col items-start gap-1 mb-1.5 sm:mb-2 min-h-[20px]">
             {isBestSellerBadge && (
               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-[#1b2333] text-white">
                 🔥 Más vendido
               </span>
             )}
-            {product.ribbon && !isBestSellerBadge && (
+            {product.ribbon && !isBestSellerBadge && !/nuevo|\d+%/i.test(product.ribbon) && (
               <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 text-white ${
                 product.ribbon.toLowerCase().includes('nuevo') ? 'bg-[#d88193]' : 'bg-[#1b2333]'
               }`}>
