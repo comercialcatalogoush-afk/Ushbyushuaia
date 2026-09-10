@@ -4,10 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Flame, ChevronDown, ChevronRight, Percent, ArrowUpRight, ArrowUpDown } from 'lucide-react';
+import { Flame, ChevronDown, ChevronRight, Percent, ArrowUpRight, ArrowUpDown, Sparkles } from 'lucide-react';
 import { isCompleteProduct, getTopSellingProducts } from '@/lib/supabase';
 import { useCatalogSync } from '@/lib/useCatalogSync';
 import { getCategoriesOrder, getCatalogProductsOrder } from '@/lib/siteContent';
+import { isReference2026 } from '@/data/references2026';
 
 interface CatalogGridProps {
   products: Product[];
@@ -159,11 +160,14 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return ['Todos', ...ordered, ...extra];
   }, [visibleProducts, customCategoriesOrder]);
 
+  /** Un producto tiene foto si al menos una imagen no está vacía. */
+  const hasPhoto = (p: Product) =>
+    Array.isArray(p.images) && p.images.length > 0 && !!p.images[0] && p.images[0].trim() !== '';
+
   const paginatedProducts = useMemo(() => {
     const sorted = [...catalogProducts];
     switch (sortBy) {
       case 'top': {
-        // Si hay un orden de catálogo manual definido por el admin, se respeta primero
         const orderMap = new Map<string, number>();
         if (customProductsOrder && customProductsOrder.length > 0) {
           customProductsOrder.forEach((id, idx) => orderMap.set(id, idx));
@@ -176,7 +180,6 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
           if (aManual !== undefined) return -1;
           if (bManual !== undefined) return 1;
 
-          // Si no tienen orden manual, ordenar por rotación / unidades vendidas
           const aTop = topUnitsById.get(a.id) ?? 0;
           const bTop = topUnitsById.get(b.id) ?? 0;
           if (bTop !== aTop) return bTop - aTop;
@@ -194,6 +197,25 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
         sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
         break;
     }
+
+    // Reordenación global: referencias 2026 al inicio, sin foto al final.
+    // Se aplica DESPUÉS del orden seleccionado por el usuario, de modo que
+    // dentro de cada bloque (2026 / resto / sin foto) se mantiene el sort elegido.
+    sorted.sort((a, b) => {
+      const a2026 = isReference2026(a.reference);
+      const b2026 = isReference2026(b.reference);
+      const aPhoto = hasPhoto(a);
+      const bPhoto = hasPhoto(b);
+
+      // Prioridad: 0 = 2026 con foto, 1 = 2026 sin foto, 2 = resto con foto, 3 = sin foto
+      const tier = (is2026: boolean, photo: boolean) =>
+        is2026 ? (photo ? 0 : 1) : (photo ? 2 : 3);
+
+      const ta = tier(a2026, aPhoto);
+      const tb = tier(b2026, bPhoto);
+      return ta - tb;
+    });
+
     return sorted.slice(0, visibleCount);
   }, [catalogProducts, sortBy, topUnitsById, customProductsOrder, visibleCount]);
   const hasMore = visibleCount < catalogProducts.length;

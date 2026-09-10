@@ -17,6 +17,7 @@ import { WHOLESALE_FALLBACK, getSuggestedPrice } from '@/lib/pricing';
 import { gtagEvent } from '@/lib/analytics';
 import { formatVideoUrl } from '@/lib/videoUtils';
 import { addCustomerWatch } from '@/lib/customerBenefits';
+import { parseDescription, renderDescriptionHTML } from '@/lib/descriptionFormatter';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -660,17 +661,24 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
             {/* Descriptions & Specs */}
             <div className="border-t border-b border-gray-100 py-4 space-y-3">
-              <div className={`text-sm text-neutral-700 font-normal leading-relaxed whitespace-pre-line ${descExpanded ? '' : 'line-clamp-4'}`}>
-                {currentProduct.description || currentProduct.full_description || 'Prenda de alta durabilidad confeccionada en mezclilla rígida de confección nacional.'}
-              </div>
-
-              {descExpanded && (
-                <div className="text-xs text-neutral-500 space-y-1 pt-2">
-                  <p>• <strong>Material:</strong> Mezclilla Rígida Premium (100% Algodón de alta resistencia).</p>
-                  <p>• <strong>Confección:</strong> Nacional estilizadora desde Itagüí, Antioquia.</p>
-                  <p>• <strong>Despachos:</strong> Envíos a todo el país con entrega coordinada.</p>
-                </div>
-              )}
+              {(() => {
+                const desc = currentProduct.description || currentProduct.full_description;
+                const sections = parseDescription(desc);
+                if (sections.length === 0) {
+                  return (
+                    <div className="text-sm text-neutral-700 font-normal leading-relaxed">
+                      Prenda de alta durabilidad confeccionada en mezclilla rígida de confección nacional.
+                    </div>
+                  );
+                }
+                const html = renderDescriptionHTML(sections);
+                return (
+                  <div
+                    className={`description-formatted ${descExpanded ? '' : 'line-clamp-4'}`}
+                    dangerouslySetInnerHTML={{ __html: html }}
+                  />
+                );
+              })()}
 
               {(currentProduct.description || currentProduct.full_description) && (
                 <button

@@ -10,6 +10,7 @@ import { SizeGuideModal } from './SizeGuideModal';
 import { animateFlyToCart } from '@/lib/flyToCart';
 import { abbreviateProductName } from '@/lib/productName';
 import { WHOLESALE_FALLBACK, getSuggestedPrice } from '@/lib/pricing';
+import { isReference2026 } from '@/data/references2026';
 
 interface ProductCardProps {
   product: Product;
@@ -52,6 +53,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
   const suggestedPrice = getSuggestedPrice(product);
   const wholesalePrice = product.price || Math.round(suggestedPrice * WHOLESALE_FALLBACK);
+  const discountPercent = suggestedPrice > wholesalePrice
+    ? Math.round((1 - wholesalePrice / suggestedPrice) * 100)
+    : 0;
 
   const isBestSellerBadge = isTopSeller || product.is_best_seller || product.ribbon?.toLowerCase().includes('más vendido') || product.ribbon?.toLowerCase().includes('mas vendido');
 
@@ -94,11 +98,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               <p className="text-[9px] font-black uppercase tracking-widest text-ush-navy">Foto Próximamente</p>
             </div>
           )}
-          {isBestSellerBadge && (
+          {isReference2026(product.reference) ? (
+            <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-ush-pink text-white shadow">
+              Nuevo 2026
+            </span>
+          ) : isBestSellerBadge ? (
             <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-[#d88193] text-white shadow">
               Más vendido
             </span>
-          )}
+          ) : null}
           {/* Hint al hacer hover */}
           <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="bg-white/95 text-ush-navy px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider shadow-lg">
@@ -130,7 +138,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
           })()}
           <div className="mt-2 pt-2 border-t border-gray-100 flex items-baseline justify-between gap-1">
             <span className="text-[9px] font-extrabold text-ush-pink uppercase">Precio mayorista:</span>
-            <span className="text-sm font-black text-neutral-900">{formatCOP(wholesalePrice)}</span>
+            <span className="flex items-center gap-1.5 text-sm font-black text-neutral-900">
+              {formatCOP(wholesalePrice)}
+              {discountPercent > 0 && <span title="Descuento frente al precio e-commerce" className="rounded-full bg-[#fff1f4] px-1.5 py-0.5 text-[9px] font-black text-[#b5586c]">-{discountPercent}% vs e-commerce</span>}
+            </span>
           </div>
         </div>
       </Link>
@@ -198,6 +209,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         <div>
           {/* Badges Container OUTSIDE Image */}
           <div className="flex flex-wrap items-center gap-1 mb-1.5 sm:mb-2 min-h-[20px]">
+            {isReference2026(product.reference) && (
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-ush-pink text-white">
+                ✨ Nuevo 2026
+              </span>
+            )}
             {isBestSellerBadge && (
               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 sm:px-2 py-0.5 bg-[#1b2333] text-white">
                 🔥 Más vendido
@@ -246,8 +262,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               <span className="text-[11px] font-extrabold text-ush-pink uppercase flex items-center gap-1">
                 <Sparkles size={11} /> 12+ uds:
               </span>
-              <span className="text-base font-black text-neutral-900 whitespace-nowrap">
+              <span className="flex items-center gap-1.5 text-base font-black text-neutral-900 whitespace-nowrap">
                 {formatCOP(wholesalePrice)}
+                {discountPercent > 0 && <span title="Descuento frente al precio e-commerce" className="rounded-full bg-[#fff1f4] px-1.5 py-0.5 text-[9px] font-black text-[#b5586c]">-{discountPercent}% vs e-commerce</span>}
               </span>
             </div>
           </div>

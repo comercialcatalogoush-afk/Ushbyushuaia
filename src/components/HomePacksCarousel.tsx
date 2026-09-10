@@ -298,6 +298,9 @@ export function HomePacksCarousel({ products }: { products: Product[] }) {
                   {packProducts.map((product) => {
                     const image = getGoogleDriveImageUrl(product.images?.[0] || '');
                     const price = product.price || product.suggested_price || 0;
+                    const discountPercent = product.suggested_price > price
+                      ? Math.round((1 - price / product.suggested_price) * 100)
+                      : 0;
                     return (
                       <div key={product.id} className="w-full shrink-0 px-1.5 sm:px-2" style={{ width: `${slideWidth}%` }}>
                         <Link href={`/producto/${product.slug}`} className="group block overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-[#d88193] hover:shadow-lg">
@@ -307,7 +310,10 @@ export function HomePacksCarousel({ products }: { products: Product[] }) {
                           </div>
                           <div className="p-3">
                             <p className="line-clamp-2 min-h-8 text-[10px] font-black uppercase leading-tight text-[#1b2333]">{product.name}</p>
-                            <p className="mt-2 text-sm font-black text-[#b5586c]">{formatCOP(price)}</p>
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              <p className="text-sm font-black text-[#b5586c]">{formatCOP(price)}</p>
+                              {discountPercent > 0 && <span title="Descuento frente al precio e-commerce" className="rounded-full bg-[#fff1f4] px-1.5 py-0.5 text-[9px] font-black text-[#b5586c]">-{discountPercent}% vs e-commerce</span>}
+                            </div>
                           </div>
                         </Link>
                       </div>
