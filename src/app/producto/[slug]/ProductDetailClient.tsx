@@ -18,6 +18,7 @@ import { gtagEvent } from '@/lib/analytics';
 import { formatVideoUrl } from '@/lib/videoUtils';
 import { addCustomerWatch } from '@/lib/customerBenefits';
 import { parseDescription, renderDescriptionHTML } from '@/lib/descriptionFormatter';
+import { getMenSizesForProduct } from '@/lib/menCatalog';
 
 interface ProductDetailClientProps {
   product: Product;
@@ -138,12 +139,20 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   // Lista estándar de tallas (orden preferido); también se muestran tallas nuevas no incluidas aquí.
   const allowedSizes = ['6', '8', '10', '12', '14'];
 
-  // Las tallas vienen del producto o de la lista estándar
-  const rawSizes = sizeOption?.values && sizeOption.values.length > 0 ? sizeOption.values : allowedSizes;
+  // Tallas de hombre: camisas S-M-L-XL, pantalones/jeans/bermudas 28-36.
+  const menSizes = getMenSizesForProduct(currentProduct.reference, currentProduct.category);
+  const productSizes = menSizes ?? allowedSizes;
+
+  // Las tallas vienen del producto o de la lista estándar; para hombre se usa la lista masculina.
+  const rawSizes = menSizes
+    ? menSizes.slice()
+    : sizeOption?.values && sizeOption.values.length > 0
+      ? sizeOption.values
+      : allowedSizes;
   // Conserva todas las tallas del producto (sin descartar las no estándar),
   // ordenando primero las estándar y luego el resto.
   const availableSizes = Array.from(new Set(
-    [...allowedSizes, ...rawSizes.map((s) => s.trim())]
+    [...productSizes, ...rawSizes.map((s) => s.trim())]
   ));
 
   const soldOut = currentProduct.in_stock === false;

@@ -47,6 +47,7 @@ export function abbreviateProductName(input: AbbrevInput): AbbreviatedName {
   const cat = input.category || '';
   let type = 'Prenda';
   if (/jean/i.test(cat)) type = 'Jean';
+  else if (/camisa/i.test(cat)) type = 'Camisa';
   else if (/pantal/i.test(cat)) type = 'Pantalón';
   else if (/fald/i.test(cat)) type = 'Falda';
   else if (/short/i.test(cat)) type = 'Short';

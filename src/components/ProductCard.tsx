@@ -11,6 +11,7 @@ import { animateFlyToCart } from '@/lib/flyToCart';
 import { abbreviateProductName } from '@/lib/productName';
 import { WHOLESALE_FALLBACK, getSuggestedPrice } from '@/lib/pricing';
 import { isReference2026 } from '@/data/references2026';
+import { getMenSizesForProduct } from '@/lib/menCatalog';
 
 interface ProductCardProps {
   product: Product;
@@ -26,9 +27,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const sizeOption = product.options?.find((o) => o.key.toLowerCase() === 'talla');
   const allowedSizes = ['6', '8', '10', '12', '14'];
 
-  // Las tallas vienen del producto o de la lista estándar
-  const rawSizes = sizeOption?.values && sizeOption.values.length > 0 ? sizeOption.values : allowedSizes;
-  const availableSizes = rawSizes.filter((s) => allowedSizes.includes(s) || allowedSizes.includes(s.trim()));
+  // Tallas de hombre: camisas S-M-L-XL, pantalones/jeans/bermudas 28-36.
+  const menSizes = getMenSizesForProduct(product.reference, product.category);
+  const productSizes = menSizes ?? allowedSizes;
+
+  // Las tallas vienen del producto o de la lista estándar; para hombre se usa la lista masculina.
+  const rawSizes = menSizes
+    ? menSizes.slice()
+    : sizeOption?.values && sizeOption.values.length > 0
+      ? sizeOption.values
+      : allowedSizes;
+  const availableSizes = rawSizes.filter((s) => productSizes.includes(s) || productSizes.includes(s.trim()));
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
   const [quantity, setQuantity] = useState<number>(1);

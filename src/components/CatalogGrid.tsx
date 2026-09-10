@@ -9,6 +9,7 @@ import { isCompleteProduct, getTopSellingProducts } from '@/lib/supabase';
 import { useCatalogSync } from '@/lib/useCatalogSync';
 import { getCategoriesOrder, getCatalogProductsOrder } from '@/lib/siteContent';
 import { isReference2026 } from '@/data/references2026';
+import { isMenReference } from '@/lib/menCatalog';
 
 interface CatalogGridProps {
   products: Product[];
@@ -46,6 +47,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const [activeFit, setActiveFit] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCollection, setActiveCollection] = useState<string>('');
+  const [activeGender, setActiveGender] = useState<string>('todos');
   const [tierInfoOpen, setTierInfoOpen] = useState(false);
 
   // Top sellers (rotación real: unidades vendidas en pedidos confirmados)
@@ -82,12 +84,14 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     const fit = searchParams.get('fit');
     const buscar = searchParams.get('buscar');
     const coleccion = searchParams.get('coleccion');
+    const genero = searchParams.get('genero');
     // Cada navegación reemplaza el estado completo: los parámetros ausentes
     // deben limpiar el filtro anterior y no quedarse pegados entre categorías.
     setActiveCategory(cat || 'Todos');
     setActiveFit(fit ? normalizeFitLabel(fit) : 'Todos');
     setSearchQuery(buscar || '');
     setActiveCollection(coleccion || '');
+    setActiveGender(genero || 'todos');
   }, [searchParams]);
 
   // Supabase es la fuente de verdad: usamos los productos que trae el servidor
@@ -112,7 +116,7 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   // first page while the shopper was browsing.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [activeCategory, activeFit, searchQuery, sortBy, activeCollection]);
+  }, [activeCategory, activeFit, searchQuery, sortBy, activeCollection, activeGender]);
 
   // Public grid: only complete products (photo + title + detailed description)
   const visibleProducts = displayProducts.filter((p) => isCompleteProduct(p));
@@ -132,6 +136,11 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     // Filtro colección 2026: solo refs del set references2026
     if (activeCollection === '2026') {
       if (!isReference2026(p.reference)) return false;
+    }
+
+    // Filtro de género Hombre: solo refs del set menCatalog
+    if (activeGender === 'hombre') {
+      if (!isMenReference(p.reference)) return false;
     }
 
     if (activeCategory !== 'Todos') {
@@ -361,9 +370,31 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
                 </button>
               ))}
 
-              {(activeCategory !== 'Todos' || activeFit !== 'Todos' || activeCollection) && (
+              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mr-1 ml-3">
+                Género:
+              </span>
+              {(['todos', 'hombre'] as const).map((g) => (
                 <button
-                  onClick={() => { handleCategoryChange('Todos'); setActiveFit('Todos'); setActiveCollection(''); }}
+                  key={g}
+                  onClick={() => {
+                    setActiveGender(g);
+                    setActiveCategory('Todos');
+                    setActiveFit('Todos');
+                    setVisibleCount(PAGE_SIZE);
+                  }}
+                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border transition-all ${
+                    activeGender === g
+                      ? 'bg-[#1b2333] text-white border-[#1b2333]'
+                      : 'bg-white text-neutral-600 border-gray-200 hover:border-[#d88193] hover:text-[#d88193]'
+                  }`}
+                >
+                  {g === 'todos' ? 'Todas' : 'Hombre'}
+                </button>
+              ))}
+
+              {(activeCategory !== 'Todos' || activeFit !== 'Todos' || activeCollection || activeGender !== 'todos') && (
+                <button
+                  onClick={() => { handleCategoryChange('Todos'); setActiveFit('Todos'); setActiveCollection(''); setActiveGender('todos'); }}
                   className="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#d88193] hover:underline"
                 >
                   Limpiar filtros

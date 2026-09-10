@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles, CalendarClock } from 'lucide-react';
+import { Search, User, Menu, X, Settings, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
 import { useSiteTheme } from '@/lib/siteContentHooks';
@@ -15,10 +14,10 @@ export const Header: React.FC = () => {
   const [isMobileMujerOpen, setIsMobileMujerOpen] = useState(false);
   const [isMobileJeansOpen, setIsMobileJeansOpen] = useState(false);
   const [isMobilePantalonesOpen, setIsMobilePantalonesOpen] = useState(false);
+  const [isMobileHombreOpen, setIsMobileHombreOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [comingSoonSection, setComingSoonSection] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { setIsCartOpen } = useCart();
@@ -42,6 +41,14 @@ export const Header: React.FC = () => {
   const jeansFits = ['WIDE LEG', 'BARREL', 'STRAIGHT BOOT', 'VAQUERO', 'STRAIGHT', 'BOTA FLARE', 'SKINNY', 'MOM'];
   const pantalonesFits = ['WIDE LEG', 'STRAIGHT', 'STRAIGHT BOOT', 'VAQUERO', 'BOTA FLARE', 'SKINNY', 'CARGO'];
 
+  // HOMBRES: menÃº principal hacia el catÃ¡logo filtrado por gÃ©nero.
+  const hombreLinks = [
+    ['VER TODO', '/catalogo?genero=hombre'],
+    ['CAMISAS', '/catalogo?genero=hombre&categoria=Camisas'],
+    ['JEANS', '/catalogo?genero=hombre&categoria=Jeans'],
+    ['PANTALONES', '/catalogo?genero=hombre&categoria=Pantalones'],
+  ];
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
@@ -56,12 +63,13 @@ export const Header: React.FC = () => {
     setIsMobileMujerOpen(false);
     setIsMobileJeansOpen(false);
     setIsMobilePantalonesOpen(false);
+    setIsMobileHombreOpen(false);
   };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-200">
       
-      {/* ── Top Notice Bar (marquee) ── */}
+      {/* â”€â”€ Top Notice Bar (marquee) â”€â”€ */}
       <div className="bg-[#d88193] text-white text-[11px] py-1.5 overflow-hidden">
         <div className="flex whitespace-nowrap animate-marquee">
           <span className="px-8 tracking-widest font-bold uppercase">
@@ -81,7 +89,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => isMobileMenuOpen ? closeMobileMenu() : setIsMobileMenuOpen(true)}
               className="p-2 text-neutral-800 hover:text-ush-pink focus:outline-none"
-              aria-label="Menú principal"
+              aria-label="MenÃº principal"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -107,7 +115,7 @@ export const Header: React.FC = () => {
               href="/catalogo"
               className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
             >
-              CATÁLOGO
+              CATÃLOGO
             </Link>
 
             {/* MUJER Mega Dropdown */}
@@ -214,13 +222,28 @@ export const Header: React.FC = () => {
               <Sparkles size={12} className="text-[#d88193]" />
             </Link>
 
-            <button
-              onClick={() => { setComingSoonSection('HOMBRES'); }}
-              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2 flex items-center gap-1.5"
-            >
-              HOMBRES
-              <Sparkles size={12} className="text-[#d88193]" />
-            </button>
+            {/* HOMBRES Mega Dropdown */}
+            <div className="relative group/hombre py-2">
+              <button
+                className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors flex items-center gap-1 py-1"
+              >
+                <span>HOMBRES</span>
+                <ChevronDown size={14} className="group-hover/hombre:rotate-180 transition-transform" />
+              </button>
+
+              {/* Submenu */}
+              <div className="absolute top-full left-0 bg-white border border-gray-200 shadow-xl w-48 py-2 z-50 invisible opacity-0 translate-y-1 group-hover/hombre:visible group-hover/hombre:opacity-100 group-hover/hombre:translate-y-0 transition-all duration-150">
+                {hombreLinks.map(([label, href]) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    className="block px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-neutral-700 hover:text-ush-pink hover:bg-rose-50"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
 
             <Link
               href="/como-comprar"
@@ -242,7 +265,7 @@ export const Header: React.FC = () => {
                 href="/admin"
                 className="text-xs uppercase tracking-widest font-extrabold text-[#d88193] hover:underline py-2"
               >
-                ADMIN (CATÁLOGO)
+                ADMIN (CATÃLOGO)
               </Link>
             )}
           </nav>
@@ -264,7 +287,7 @@ export const Header: React.FC = () => {
               <Link
                 href="/admin"
                 className="p-2 text-ush-pink hover:text-ush-pinkHover transition-colors hidden sm:block font-bold"
-                title="Editar Catálogo (Admin)"
+                title="Editar CatÃ¡logo (Admin)"
               >
                 <Settings size={20} />
               </Link>
@@ -328,7 +351,7 @@ export const Header: React.FC = () => {
             onClick={closeMobileMenu}
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
-            CATÁLOGO
+            CATÃLOGO
           </Link>
           <div className="border-b border-gray-50">
             <button
@@ -346,7 +369,7 @@ export const Header: React.FC = () => {
             </button>
 
             {isMobileMujerOpen && (
-              <div id="mobile-mujer-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="Categorías de Mujer">
+              <div id="mobile-mujer-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="CategorÃ­as de Mujer">
                 <Link
                   href="/catalogo"
                   onClick={closeMobileMenu}
@@ -450,12 +473,36 @@ export const Header: React.FC = () => {
           >
             TEENS <Sparkles size={13} className="text-[#d88193]" />
           </Link>
-          <button
-            onClick={() => { closeMobileMenu(); setComingSoonSection('HOMBRES'); }}
-            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50 flex items-center gap-2"
-          >
-            HOMBRES <Sparkles size={13} className="text-[#d88193]" />
-          </button>
+          <div className="border-b border-gray-50">
+            <button
+              type="button"
+              onClick={() => setIsMobileHombreOpen((open) => !open)}
+              className="w-full flex items-center justify-between text-left text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2"
+              aria-expanded={isMobileHombreOpen}
+              aria-controls="mobile-hombre-menu"
+            >
+              <span>HOMBRES</span>
+              <ChevronDown
+                size={18}
+                className={`text-[#d88193] transition-transform ${isMobileHombreOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isMobileHombreOpen && (
+              <div id="mobile-hombre-menu" className="pb-2 pl-4 space-y-1" role="group" aria-label="CategorÃ­as de Hombre">
+                {hombreLinks.map(([label, href]) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    onClick={closeMobileMenu}
+                    className="block text-xs font-bold uppercase tracking-wider text-neutral-700 py-2"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           <Link
             href="/como-comprar"
             onClick={closeMobileMenu}
@@ -476,65 +523,10 @@ export const Header: React.FC = () => {
               onClick={closeMobileMenu}
               className="flex items-center gap-2 text-ush-navy font-bold uppercase"
             >
-              <User size={18} /> Iniciar Sesión / Mi Cuenta
+              <User size={18} /> Iniciar SesiÃ³n / Mi Cuenta
             </Link>
           </div>
         </div>
-      )}
-
-      {/* ── Modal "Próximamente" (TEENS / HOMBRES) ── */}
-      {comingSoonSection && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#1b2333]/60 backdrop-blur-sm p-4"
-          onClick={() => setComingSoonSection(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="relative bg-white max-w-md w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 text-center shadow-2xl animate-fadeIn border-t-4 border-[#d88193]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setComingSoonSection(null)}
-              className="absolute top-3 right-3 p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
-              aria-label="Cerrar"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-rose-50 text-[#d88193] flex items-center justify-center animate-float">
-              <CalendarClock size={28} className="sm:w-[30px] sm:h-[30px]" />
-            </div>
-
-            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-[#d88193]">
-              Próximamente
-            </p>
-
-            <h3 className="mt-1.5 text-2xl sm:text-3xl font-black uppercase tracking-tight text-[#1b2333]">
-              Colección <span className="text-gradient-pink">{comingSoonSection}</span>
-            </h3>
-
-            <p className="mt-3 text-sm text-neutral-500 font-light leading-relaxed">
-              Estamos confeccionando con mucho amor y mezclilla rígida de alta calidad una colección exclusiva para <strong className="text-neutral-800">{comingSoonSection.toLowerCase()}</strong>.
-              ¡Muy pronto estará disponible con precios mayoristas y envíos a todo Colombia!
-            </p>
-
-            <div className="mt-5 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest text-neutral-400">
-              <Sparkles size={13} className="text-[#d88193]" />
-              <span>USH BY USHUAIA · Hecho en Itagüí, Antioquia</span>
-              <Sparkles size={13} className="text-[#d88193]" />
-            </div>
-
-            <Link
-              href="/catalogo"
-              onClick={() => setComingSoonSection(null)}
-              className="mt-6 inline-block w-full bg-[#1b2333] text-white text-xs font-bold uppercase tracking-widest px-8 py-4 hover:bg-[#d88193] transition-colors shadow-md"
-            >
-              Explorar colección Mujer →
-            </Link>
-          </div>
-        </div>,
-        document.body
       )}
     </header>
   );
