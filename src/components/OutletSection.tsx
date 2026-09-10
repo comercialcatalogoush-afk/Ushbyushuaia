@@ -76,7 +76,7 @@ export const OutletSection: React.FC = () => {
                   />
                 ) : (
                   <video
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain bg-black"
                     autoPlay
                     muted
                     loop

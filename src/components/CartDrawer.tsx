@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Layers, Check, Sparkles, Truck, Send } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { INITIAL_PRODUCTS } from '@/data/products';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
+import { getWhatsAppNumber, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
 
 const MIN_ORDER_UNITS = 8;
 const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
@@ -28,6 +29,12 @@ export const CartDrawer: React.FC = () => {
   } = useCart();
 
   const router = useRouter();
+  const [showWhatsAppConfirm, setShowWhatsAppConfirm] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    getWhatsAppNumber().then(setWhatsappNumber);
+  }, []);
 
   if (!isCartOpen) return null;
 
@@ -52,6 +59,10 @@ export const CartDrawer: React.FC = () => {
   // Fast Order vía WhatsApp comercial en 1 Clic (Propuesta 3)
   const handleWhatsAppFastOrder = () => {
     if (items.length === 0) return;
+    setShowWhatsAppConfirm(true);
+  };
+
+  const confirmWhatsAppOrder = () => {
     let msg = `¡Hola USH BY USHUAIA! 🛍️✨\nQuiero confirmar mi pedido mayorista directo:\n\n`;
     items.forEach((item, idx) => {
       const unitPrice = calculateItemUnitPrice(item);
@@ -66,7 +77,8 @@ export const CartDrawer: React.FC = () => {
     msg += `Por favor indíquenme los medios de pago para transferencia y coordinar el despacho desde Itagüí. ¡Muchas gracias!`;
 
     const encoded = encodeURIComponent(msg);
-    window.open(`https://wa.me/573011393902?text=${encoded}`, '_blank');
+    window.open(`https://wa.me/${whatsappNumber}?text=${encoded}`, '_blank');
+    setShowWhatsAppConfirm(false);
   };
 
   // Helper to get image URL with fallback to INITIAL_PRODUCTS + Drive conversion
@@ -86,6 +98,27 @@ export const CartDrawer: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
+      {showWhatsAppConfirm && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#1b2333]/80 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="bg-[#1b2333] p-5 text-white">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f3b3c0]">Solicitud rápida</p>
+              <h3 className="mt-1 text-xl font-black uppercase">Revisa antes de enviar</h3>
+              <p className="mt-2 text-xs leading-relaxed text-white/70">Se abrirá WhatsApp con las referencias, tallas, cantidades y total de tu carrito para que el asesor confirme disponibilidad y despacho.</p>
+            </div>
+            <div className="space-y-2 p-5">
+              <div className="flex items-center justify-between rounded-xl bg-neutral-50 p-3 text-xs"><span className="text-neutral-500">Referencias</span><strong className="text-[#1b2333]">{items.length}</strong></div>
+              <div className="flex items-center justify-between rounded-xl bg-neutral-50 p-3 text-xs"><span className="text-neutral-500">Unidades</span><strong className="text-[#1b2333]">{totalItemsCount}</strong></div>
+              <div className="flex items-center justify-between rounded-xl border border-rose-100 bg-[#fff8f9] p-3 text-xs"><span className="font-bold text-[#1b2333]">Subtotal estimado</span><strong className="text-lg text-[#b5586c]">{formatCOP(subtotalCOP)}</strong></div>
+              <p className="pt-1 text-[10px] leading-relaxed text-neutral-500">El envío del mensaje no realiza un pago. El pedido queda sujeto a confirmación de stock, talla y condiciones por el equipo comercial.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-neutral-100 bg-neutral-50 p-4 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setShowWhatsAppConfirm(false)} className="rounded-xl border border-neutral-300 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-neutral-600 transition hover:bg-white">Volver al carrito</button>
+              <button type="button" onClick={confirmWhatsAppOrder} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-[#1ebd5a]"><Send size={15} /> Confirmar y abrir WhatsApp</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Backdrop overlay */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"

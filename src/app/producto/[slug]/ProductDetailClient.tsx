@@ -91,7 +91,7 @@ function ProductFashionVideoPlayer({ video, productName }: { video: ReturnType<t
         loop
         playsInline
         onError={() => setUseFallbackIframe(true)}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-x-0 top-0 h-[calc(100%-2.75rem)] w-full object-contain bg-black"
       />
 
       {/* Indicador suave al tocar (desaparece en 600ms) */}
@@ -103,8 +103,8 @@ function ProductFashionVideoPlayer({ video, productName }: { video: ReturnType<t
         </div>
       )}
 
-      {/* Controles discretos en esquinas inferiores — NUNCA en el centro sobre la ropa */}
-      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-auto z-20">
+      {/* Controles separados en una barra inferior para no cubrir la prenda en móvil. */}
+      <div className="absolute bottom-0 left-0 right-0 flex h-11 items-center justify-between border-t border-white/10 bg-[#1b2333]/95 px-3 pointer-events-auto z-20">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}

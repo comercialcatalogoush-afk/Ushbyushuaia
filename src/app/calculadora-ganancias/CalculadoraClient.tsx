@@ -514,11 +514,12 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                           {customSellMode ? (
                             <>
                               <div className="flex items-center gap-1">
-                                <span className="text-[9px] font-bold uppercase text-neutral-400">Venta:</span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="1000"
+                                  <span className="text-[9px] font-bold uppercase text-neutral-500">Venta por unidad:</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="1000"
+                                    inputMode="numeric"
                                   value={customSellPrices[String(product.id)] || ''}
                                   onChange={(e) => {
                                     const value = e.target.value === '' ? 0 : Number(e.target.value);
@@ -526,7 +527,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                                   }}
                                   placeholder={String(suggested)}
                                   aria-label={`Precio de venta para ${product.name}`}
-                                  className="w-24 px-1.5 py-1 text-[11px] font-black text-[#1b2333] bg-rose-50 border border-[#d88193]/40 rounded focus:outline-none"
+                                  className="w-32 rounded-lg border border-[#d88193]/50 bg-white px-2.5 py-2 text-sm font-black text-[#1b2333] outline-none transition focus:border-[#d88193] focus:ring-2 focus:ring-[#d88193]/20 sm:w-36"
                                 />
                               </div>
                               <span className="text-[9px] text-neutral-400 line-through">
@@ -651,43 +652,37 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                 )}
               </div>
 
-              {/* Precio de venta personalizado */}
-              <button
-                type="button"
-                onClick={() => setCustomSellMode((v) => !v)}
-                aria-pressed={customSellMode}
-                className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-[11px] font-black uppercase tracking-wide transition-all ${
-                  customSellMode
-                    ? 'bg-[#1b2333] text-white'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                }`}
-              >
-                <span className="flex items-center gap-1.5"><Tag size={13} /> Precio de venta</span>
-                <span className="text-[9px] font-bold">{customSellMode ? 'Activo' : 'Sugerido'}</span>
-              </button>
-
-              {customSellMode && (
-                <div className="space-y-2 rounded-lg border border-rose-200 bg-rose-50 p-3">
-                  <div>
-                    <label htmlFor="global-sell-price" className="block text-[10px] font-bold uppercase tracking-wide text-neutral-500">
-                      Precio general (todas las prendas)
-                    </label>
-                    <input
-                      id="global-sell-price"
-                      type="number"
-                      min="0"
-                      step="1000"
-                      value={globalSellPrice || ''}
-                      onChange={(e) => setGlobalSellPrice(e.target.value === '' ? 0 : Number(e.target.value))}
-                      placeholder="Ej: 119000"
-                      className="mt-1 w-full px-3 py-2 text-xs font-black text-[#1b2333] bg-white border border-rose-200 rounded-lg focus:outline-none focus:border-[#d88193]"
-                    />
+              {/* Precio de venta personalizado: siempre visible para evitar que el cliente lo omita */}
+              <div className={`rounded-2xl border p-4 transition-all ${customSellMode ? 'border-[#d88193]/60 bg-[#fff8f9] shadow-sm' : 'border-neutral-200 bg-neutral-50'}`}>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d88193]/15 text-[#b5586c]"><Tag size={18} /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-[#1b2333]">¿A cuánto venderás cada prenda?</h3>
+                      <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider ${customSellMode ? 'bg-[#1b2333] text-white' : 'bg-white text-neutral-500'}`}>{customSellMode ? 'Precio personalizado' : 'Precio sugerido'}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">Escribe un valor general para tu vitrina. Después puedes ajustar referencias concretas desde cada tarjeta.</p>
+                    <label htmlFor="global-sell-price" className="mt-3 block text-[10px] font-black uppercase tracking-wider text-neutral-600">Precio de venta por unidad</label>
+                    <div className="mt-1 flex items-center rounded-xl border border-[#d88193]/40 bg-white shadow-sm focus-within:border-[#d88193] focus-within:ring-2 focus-within:ring-[#d88193]/20">
+                      <span className="pl-3 text-base font-black text-[#b5586c]">$</span>
+                      <input
+                        id="global-sell-price"
+                        type="number"
+                        min="0"
+                        step="1000"
+                        inputMode="numeric"
+                        value={globalSellPrice || ''}
+                        onChange={(e) => { setGlobalSellPrice(e.target.value === '' ? 0 : Number(e.target.value)); setCustomSellMode(true); }}
+                        placeholder="Ej. 119900"
+                        className="w-full bg-transparent px-2 py-3 text-lg font-black text-[#1b2333] outline-none"
+                      />
+                    </div>
+                    <button type="button" onClick={() => { setCustomSellMode((current) => !current); if (customSellMode) setGlobalSellPrice(0); }} className="mt-2 text-[10px] font-black uppercase tracking-wider text-[#b5586c] hover:underline">
+                      {customSellMode ? 'Volver al precio sugerido' : 'Usar precio sugerido del catálogo'}
+                    </button>
                   </div>
-                  <p className="text-[10px] leading-relaxed text-neutral-500">
-                    Define en cada tarjeta el precio por prenda si quieres valores distintos. Dejas el campo vacío en una prenda y se usará este valor general.
-                  </p>
                 </div>
-              )}
+              </div>
 
               {/* Métricas */}
               <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 space-y-3">

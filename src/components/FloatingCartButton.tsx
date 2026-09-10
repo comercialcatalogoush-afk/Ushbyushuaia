@@ -167,10 +167,10 @@ export const FloatingCartButton: React.FC = () => {
       {/* Contenedor fijo inferior-derecha con z-index seguro y espacio suficiente */}
       <div className="fixed bottom-4 right-3.5 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-1 pointer-events-none">
 
-        {/* ── Mensaje rotativo: visible en móvil y desktop con animación fluida ── */}
+        {/* En móvil se conserva solo el botón para no tapar textos ni controles multimedia. */}
         <div
           className={`
-            block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-lg select-none pointer-events-none max-w-[160px] sm:max-w-[200px] text-center truncate transition-all duration-300
+            hidden sm:block px-3 py-1 rounded-full text-xs font-bold shadow-lg select-none pointer-events-none max-w-[200px] text-center truncate transition-all duration-300
             ${msgClass}
             ${fade ? 'msg-fade-in' : 'msg-fade-out'}
           `}
