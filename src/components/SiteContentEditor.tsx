@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Save, CheckCircle, ChevronRight, ChevronDown, ChevronUp, Monitor, Tablet, Smartphone,
-  LayoutTemplate, Palette, FileText, Loader2, ExternalLink, Upload, RotateCcw, X, Pointer,
+  LayoutTemplate, Palette, FileText, Loader2, ExternalLink, RotateCcw, X, Pointer,
   Undo2, Redo2, FileClock, Package, Search, ArrowLeft, Eye, EyeOff, Plus, Trash2, RefreshCw, Star, Copy,
   ChevronLeft, GripVertical, History as HistoryIcon, Sparkles, CheckCircle2,
-  MousePointerClick, Edit3, SlidersHorizontal, Layers, Crop, Flame, Tag, ArrowLeftRight, Video,
+  MousePointerClick, Edit3, SlidersHorizontal, Layers, Flame, Tag, ArrowLeftRight, Video,
   Heading1, Heading2, AlignLeft, AlignCenter, AlignRight, Bold as BoldIcon, Italic as ItalicIcon
 } from 'lucide-react';
 import {
@@ -35,9 +35,8 @@ import {
   saveCatalogProductsOrder,
   getCatalogProductsOrder,
 } from '@/lib/siteContent';
-import { uploadProductImage, publishCatalogChange, fetchAllProductsAdmin, upsertProduct, deleteProductFromSupabase, logPriceChange } from '@/lib/supabase';
+import { publishCatalogChange, fetchAllProductsAdmin, upsertProduct, deleteProductFromSupabase, logPriceChange } from '@/lib/supabase';
 import { Product } from '@/types';
-import { ImageCropperModal } from './ImageCropperModal';
 
 // ── Opciones del editor de productos (iguales a las del panel admin) ──
 const PRODUCT_CATEGORIES_KEY = 'ush_admin_categories';
@@ -143,42 +142,9 @@ interface FieldInputProps {
   field: FieldDef;
   value: string;
   onChange: (value: string) => void;
-  uploadPath: string;
-  onOpenCropper?: (fileSrc: string, fieldKey: string) => void;
 }
 
-function FieldInput({ field, value, onChange, uploadPath, onOpenCropper }: FieldInputProps) {
-  const [uploading, setUploading] = useState(false);
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (onOpenCropper) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          onOpenCropper(String(ev.target.result), field.key);
-        }
-      };
-      reader.readAsDataURL(file);
-      e.target.value = '';
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const path = uploadPath || `content/${field.key}-${Date.now()}.jpg`;
-      const res = await uploadProductImage(file, path);
-      if (res.success && res.url) onChange(res.url);
-      else alert('No se pudo subir la imagen: ' + (res.error || 'error'));
-    } catch (err) {
-      alert('Error al subir la imagen');
-    }
-    setUploading(false);
-    e.target.value = '';
-  };
-
+function FieldInput({ field, value, onChange }: FieldInputProps) {
   if (field.type === 'color') {
     const valid = /^#[0-9a-fA-F]{6}$/.test(value);
     return (
@@ -218,29 +184,16 @@ function FieldInput({ field, value, onChange, uploadPath, onOpenCropper }: Field
           <div className="relative h-32 overflow-hidden rounded border border-neutral-200 bg-neutral-50 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt="" className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={() => onOpenCropper && onOpenCropper(value, field.key)}
-              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white text-xs font-bold transition-opacity"
-            >
-              <Crop size={14} /> Recortar foto
-            </button>
-            {uploading && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <Loader2 size={20} className="text-white animate-spin" />
-              </div>
-            )}
           </div>
         )}
-        <label className="flex items-center justify-center gap-2 border border-dashed border-neutral-300 px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 hover:border-[#d88193] hover:text-[#d88193] cursor-pointer rounded">
-          <Upload size={13} /> {value ? 'Reemplazar con recorte' : 'Subir con recorte'}
-          <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
-        </label>
+        <p className="text-[10px] leading-relaxed text-neutral-500">
+          Usa una URL externa de Drive/CDN. Las fotos no se suben ni se guardan en Supabase.
+        </p>
         <input
           type="url"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="https://... o /images/..."
+          placeholder="https://lh3.googleusercontent.com/d/..."
           className="w-full border border-neutral-200 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-[#d88193] rounded"
         />
       </div>
@@ -300,19 +253,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [revisions, setRevisions] = useState<RevisionEntry[]>([]);
 
-  // ── Modal de Recorte de Imagen (Cropper) ──
-  const [cropperModal, setCropperModal] = useState<{
-    isOpen: boolean;
-    imageSrc: string;
-    targetFieldKey?: string;
-    targetType?: 'field' | 'product_main' | 'product_gallery';
-    slotIndex?: number;
-    initialAspect?: number | null;
-  }>({
-    isOpen: false,
-    imageSrc: '',
-  });
-
   // ── Gestor de productos y Drag & Drop ──
   const [productsMode, setProductsMode] = useState(false);
   const [productViewMode, setProductViewMode] = useState<'grid' | 'reorder'>('grid');
@@ -325,7 +265,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
   const [isNewProduct, setIsNewProduct] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [productSaved, setProductSaved] = useState(false);
-  const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+  const [newGalleryUrl, setNewGalleryUrl] = useState('');
   const [newTagInput, setNewTagInput] = useState('');
 
   // Drag states for reordering
@@ -701,6 +641,7 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     setSelectedId(null);
     setProductDraft(null);
     setIsNewProduct(false);
+    setNewGalleryUrl('');
   };
 
   const patchDraft = (patch: Partial<Product>) => {
@@ -774,79 +715,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
     if (!productDraft) return;
     const currentTags = productDraft.tags || [];
     patchDraft({ tags: currentTags.filter((t) => t !== tagToRemove) });
-  };
-
-  // Image Cropping Handlers
-  const handleOpenCropperForField = (fileSrc: string, fieldKey: string) => {
-    setCropperModal({
-      isOpen: true,
-      imageSrc: fileSrc,
-      targetFieldKey: fieldKey,
-      targetType: 'field',
-      initialAspect: 16 / 9,
-    });
-  };
-
-  const handleOpenCropperForProductMain = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (ev.target?.result) {
-        setCropperModal({
-          isOpen: true,
-          imageSrc: String(ev.target.result),
-          targetType: 'product_main',
-          initialAspect: 3 / 4, // standard 3:4 for jeans portrait
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleOpenCropperForProductGallery = (file: File, index: number) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (ev.target?.result) {
-        setCropperModal({
-          isOpen: true,
-          imageSrc: String(ev.target.result),
-          targetType: 'product_gallery',
-          slotIndex: index,
-          initialAspect: 3 / 4,
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCropComplete = async (croppedBlob: Blob, croppedDataUrl: string) => {
-    if (cropperModal.targetType === 'field' && cropperModal.targetFieldKey) {
-      const fieldKey = cropperModal.targetFieldKey;
-      const path = `content/${fieldKey}-${Date.now()}.jpg`;
-      const res = await uploadProductImage(croppedBlob, path);
-      if (res.success && res.url) {
-        handleChange(fieldKey, res.url);
-      }
-    } else if (cropperModal.targetType === 'product_main' && productDraft) {
-      setUploadingSlot('main');
-      const path = `products/prod-${productDraft.reference || productDraft.id}-${Date.now()}-main.jpg`;
-      const res = await uploadProductImage(croppedBlob, path);
-      setUploadingSlot(null);
-      if (res.success && res.url) {
-        const others = (productDraft.images || []).slice(1);
-        patchDraft({ images: [res.url, ...others] });
-      }
-    } else if (cropperModal.targetType === 'product_gallery' && productDraft) {
-      const idx = cropperModal.slotIndex ?? 1;
-      setUploadingSlot(String(idx));
-      const path = `products/prod-${productDraft.reference || productDraft.id}-${Date.now()}-gal-${idx}.jpg`;
-      const res = await uploadProductImage(croppedBlob, path);
-      setUploadingSlot(null);
-      if (res.success && res.url) {
-        const current = [...(productDraft.images || [])];
-        current[idx] = res.url;
-        patchDraft({ images: current });
-      }
-    }
   };
 
   // Sync state changes con el borrador local para que el preview se actualice
@@ -1561,20 +1429,10 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={productDraft.images[0]} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-neutral-50 transition-colors">
-                        <Upload size={26} className="text-neutral-300" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Subir foto con recorte</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) handleOpenCropperForProductMain(f);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-neutral-50 px-6 text-center">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Agrega la URL de una foto externa</span>
+                        <span className="text-[9px] leading-relaxed text-neutral-400">Drive/CDN, no archivos locales ni Supabase Storage.</span>
+                      </div>
                     )}
 
                     {productDraft.images?.[0] && (
@@ -1595,26 +1453,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       </button>
                     )}
 
-                    {productDraft.images?.[0] && (
-                      <label className="absolute bottom-3 right-3 bg-white/95 shadow px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-neutral-600 hover:text-[#d88193] cursor-pointer rounded flex items-center gap-1 z-10">
-                        <Crop size={10} /> Cambiar / Recortar
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) handleOpenCropperForProductMain(f);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                    )}
-                    {uploadingSlot === 'main' && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Loader2 size={22} className="text-white animate-spin" />
-                      </div>
-                    )}
                   </div>
 
                   <input
@@ -1694,19 +1532,30 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                     </div>
                   )}
 
-                  <label className="w-full flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 py-2.5 text-[10px] font-black uppercase tracking-wider text-neutral-500 hover:border-[#d88193] hover:text-[#d88193] rounded-lg bg-white cursor-pointer transition-colors">
-                    <Plus size={12} /> Agregar otra foto con recorte (3:4)
+                  <p className="border border-dashed border-neutral-200 bg-white px-3 py-2.5 text-center text-[10px] leading-relaxed text-neutral-400">
+                    Las fotos se gestionan con URLs externas de Drive/CDN; no se suben archivos locales.
+                  </p>
+                  <div className="flex gap-2">
                     <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleOpenCropperForProductGallery(f, (productDraft.images || []).length);
-                        e.target.value = '';
-                      }}
+                      type="url"
+                      value={newGalleryUrl}
+                      onChange={(e) => setNewGalleryUrl(e.target.value)}
+                      placeholder="URL externa de foto adicional"
+                      className="min-w-0 flex-1 rounded border border-neutral-200 bg-white px-3 py-2 text-[11px] font-mono focus:border-[#d88193] focus:outline-none"
                     />
-                  </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = newGalleryUrl.trim();
+                        if (!url) return;
+                        patchDraft({ images: [...(productDraft.images || []), url] });
+                        setNewGalleryUrl('');
+                      }}
+                      className="inline-flex shrink-0 items-center gap-1 rounded bg-[#1b2333] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white transition hover:bg-[#d88193]"
+                    >
+                      <Plus size={12} /> Agregar
+                    </button>
+                  </div>
                 </div>
 
                 {/* Details Form (Wix Style) */}
@@ -2452,8 +2301,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
                       field={f}
                       value={values[f.key] ?? f.default}
                       onChange={(v) => handleChange(f.key, v)}
-                      uploadPath={`content/${pageId}-${f.key}.jpg`}
-                      onOpenCropper={handleOpenCropperForField}
                     />
                   </div>
                 ))}
@@ -2641,14 +2488,6 @@ export function SiteContentEditor({ onExit }: { onExit?: () => void }) {
         </div>
       )}
 
-      {/* ── IMAGE CROPPER MODAL INTEGRATION ── */}
-      <ImageCropperModal
-        isOpen={cropperModal.isOpen}
-        imageSrc={cropperModal.imageSrc}
-        initialAspectRatio={cropperModal.initialAspect ?? 3 / 4}
-        onClose={() => setCropperModal({ isOpen: false, imageSrc: '' })}
-        onCropComplete={handleCropComplete}
-      />
     </div>
   );
 }

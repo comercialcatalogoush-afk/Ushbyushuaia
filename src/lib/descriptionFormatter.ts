@@ -61,6 +61,21 @@ export interface KeyFact {
   value: string;
 }
 
+// Escapa el texto del catálogo antes de insertarlo en el HTML de la ficha.
+// Las descripciones vienen de datos editables y nunca deben interpretarse como código.
+function escapeHTML(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return entities[character] || character;
+  });
+}
+
 /** Extrae los datos clave de compra para mostrarlos arriba, sin esperar el "Ver más". */
 export function extractKeyFacts(raw: string | null | undefined): KeyFact[] {
   if (!raw || raw.trim().length === 0) return [];
@@ -234,20 +249,20 @@ export function renderDescriptionHTML(sections: DescriptionSection[]): string {
     .map((sec) => {
       switch (sec.kind) {
         case 'intro':
-          return `<p class="mb-3 text-sm text-neutral-700 leading-relaxed">${sec.items[0]}</p>`;
+          return `<p class="mb-3 text-sm text-neutral-700 leading-relaxed">${escapeHTML(sec.items[0] || '')}</p>`;
 
         case 'features':
           return `
             <div class="mb-3">
-              ${sec.title ? `<h4 class="text-[11px] font-black uppercase tracking-widest text-ush-navy mb-2">${sec.title}</h4>` : ''}
+              ${sec.title ? `<h4 class="text-[11px] font-black uppercase tracking-widest text-ush-navy mb-2">${escapeHTML(sec.title)}</h4>` : ''}
               <ul class="space-y-1.5">
                 ${sec.items
                   .map(
                     (item) =>
                       `<li class="flex items-start gap-2 text-sm text-neutral-600">
-                        <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-ush-pink flex-shrink-0"></span>
-                        <span>${item}</span>
-                      </li>`
+                         <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-ush-pink flex-shrink-0"></span>
+                         <span>${escapeHTML(item)}</span>
+                       </li>`
                   )
                   .join('')}
               </ul>
@@ -256,7 +271,7 @@ export function renderDescriptionHTML(sections: DescriptionSection[]): string {
         case 'specs':
           return `
             <div class="mb-3 bg-neutral-50 border border-gray-100 p-3">
-              <h4 class="text-[11px] font-black uppercase tracking-widest text-ush-navy mb-2">${sec.title || 'Detalles'}</h4>
+              <h4 class="text-[11px] font-black uppercase tracking-widest text-ush-navy mb-2">${escapeHTML(sec.title || 'Detalles')}</h4>
               <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                 ${sec.items
                   .map((item) => {
@@ -264,8 +279,8 @@ export function renderDescriptionHTML(sections: DescriptionSection[]): string {
                     const val = rest.join(':').trim();
                     return `
                       <div class="flex items-baseline gap-2 text-xs">
-                        <dt class="font-bold text-neutral-500 uppercase tracking-wide shrink-0">${key.trim()}:</dt>
-                        <dd class="text-neutral-800 font-medium">${val}</dd>
+                        <dt class="font-bold text-neutral-500 uppercase tracking-wide shrink-0">${escapeHTML(key.trim())}:</dt>
+                        <dd class="text-neutral-800 font-medium">${escapeHTML(val)}</dd>
                       </div>`;
                   })
                   .join('')}
@@ -273,7 +288,7 @@ export function renderDescriptionHTML(sections: DescriptionSection[]): string {
             </div>`;
 
         case 'note':
-          return `<p class="text-xs text-neutral-500 italic leading-relaxed mt-2">${sec.items[0]}</p>`;
+          return `<p class="text-xs text-neutral-500 italic leading-relaxed mt-2">${escapeHTML(sec.items[0] || '')}</p>`;
 
         default:
           return '';

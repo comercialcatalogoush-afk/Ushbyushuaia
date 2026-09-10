@@ -82,15 +82,36 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     setTimeout(() => setShowAddedToast(false), 2800);
   };
 
+  const cardLabels = (
+    <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-neutral-100 bg-white px-2 py-1.5">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        {isReference2026(product.reference) && (
+          <span className="inline-flex items-center bg-ush-pink px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white shadow-[3px_3px_0_#1b2333]">
+            Nuevo 2026
+          </span>
+        )}
+        {compact && isBestSellerBadge && !isReference2026(product.reference) && (
+          <span className="inline-flex items-center bg-[#1b2333] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white">
+            Más vendido
+          </span>
+        )}
+      </div>
+      {discountPercent > 0 && (
+        <span className="inline-flex shrink-0 items-center bg-[#1b2333] px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white shadow-[3px_3px_0_#d88193]">
+          -{discountPercent}% off
+        </span>
+      )}
+    </div>
+  );
+
   // ── MODO COMPACTO (carrusel Más Vendidos): foto cuadrada completa + nombre + ref + precio ──
   if (compact) {
     return (
-      <Link
-        href={`/producto/${product.slug}`}
-        className="group block bg-white border border-gray-200 hover:border-ush-pink hover:shadow-lg transition-all duration-300 relative"
-      >
+      <div className="group block bg-white border border-gray-200 hover:border-ush-pink hover:shadow-lg transition-all duration-300 relative">
+        {cardLabels}
         {/* Imagen cuadrada completa (sin recorte), click → detalle para solicitar */}
-        <div className="relative aspect-square overflow-hidden bg-neutral-100">
+        <Link href={`/producto/${product.slug}`} className="block">
+          <div className="relative aspect-square overflow-hidden bg-neutral-100">
           {hasImages ? (
             <Image
               src={mainImage}
@@ -107,25 +128,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               <p className="text-[9px] font-black uppercase tracking-widest text-ush-navy">Foto Próximamente</p>
             </div>
           )}
-          {isReference2026(product.reference) ? (
-            <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-ush-pink text-white shadow">
-              Nuevo 2026
-            </span>
-          ) : isBestSellerBadge ? (
-            <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-[#d88193] text-white shadow">
-              Más vendido
-            </span>
-          ) : null}
           {/* Hint al hacer hover */}
           <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="bg-white/95 text-ush-navy px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider shadow-lg">
               Ver para solicitar
             </span>
           </div>
-        </div>
+          </div>
 
-        {/* Nombre + referencia + precio */}
-        <div className="p-2.5">
+          {/* Nombre + referencia + precio */}
+          <div className="p-2.5">
           {(() => {
             const { short, color } = abbreviateProductName(product);
             const finalColor = product.color || color;
@@ -152,8 +164,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               {discountPercent > 0 && <span title="Descuento frente al precio e-commerce" className="rounded-full bg-[#fff1f4] px-1.5 py-0.5 text-[9px] font-black text-[#b5586c]">-{discountPercent}% vs e-commerce</span>}
             </span>
           </div>
-        </div>
-      </Link>
+          </div>
+        </Link>
+      </div>
     );
   }
 
@@ -173,7 +186,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
       {/* Size Guide Modal */}
       <SizeGuideModal isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
 
-      {/* Product Image Section — 100% CLEAN: NO OVERLAID TEXT BADGES ON MODEL */}
+      {/* Product Image Section: la foto queda libre de etiquetas y textos. */}
+      {cardLabels}
       <Link 
         href={`/producto/${product.slug}`} 
         className="block relative aspect-[3/4] overflow-hidden bg-neutral-100"
@@ -212,19 +226,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
           </div>
         )}
 
-        {/* Etiqueta diagonal NUEVO 2026 (esquina superior derecha, sin tapar a la modelo) */}
-        {isReference2026(product.reference) && (
-          <span className="absolute -top-1 -right-10 rotate-45 bg-ush-pink text-white text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-10 py-1.5 shadow-md pointer-events-none">
-            Nuevo 2026
-          </span>
-        )}
-
-        {/* Etiqueta diagonal de descuento vs e-commerce (esquina inferior izquierda) */}
-        {discountPercent > 0 && (
-          <span className="absolute -bottom-1 -left-10 -rotate-45 bg-[#1b2333] text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-10 py-1.5 shadow-md pointer-events-none">
-            -{discountPercent}% Descuento
-          </span>
-        )}
       </Link>
 
       {/* Content Info Section — ALL BADGES PLACED OUTSIDE / BELOW THE IMAGE */}

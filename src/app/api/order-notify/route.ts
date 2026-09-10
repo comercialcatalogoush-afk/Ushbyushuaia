@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 const RATE_LIMIT_MAX = 12;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const EMAIL_SENT_MARKER = '[USH_EMAIL_SENT]';
 const rateMap = new Map<string, number[]>();
 
 function isRateLimited(key: string) {
@@ -44,6 +45,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false }, { status: 404 });
     }
 
+    // Reclamo atómico para que el mismo pedido no dispare varios correos si el
+    // navegador reintenta o alguien repite la solicitud con el mismo ID.
+    const currentNotes = typeof order.notes === 'string' ? order.notes : null;
+    if (currentNotes?.includes(EMAIL_SENT_MARKER)) {
+      return NextResponse.json({ success: true, alreadySent: true });
+    }
+    const claimedNotes = currentNotes === null
+      ? EMAIL_SENT_MARKER
+      : `${currentNotes}\n${EMAIL_SENT_MARKER}`;
+    let claim = admin.from('orders').update({ notes: claimedNotes }).eq('id', orderId);
+    claim = currentNotes === null ? claim.is('notes', null) : claim.eq('notes', currentNotes);
+    const { data: claimed, error: claimError } = await claim.select('id').maybeSingle();
+    if (claimError || !claimed) {
+      return NextResponse.json({ success: false, alreadySent: true }, { status: 409 });
+    }
+
     const name = String(order.customer_name || 'Cliente').split('/')[0].trim();
     const catalogUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ushbyushuaia.vercel.app/catalogo';
     const sent = await sendBrevoEmail({
@@ -53,6 +70,10 @@ export async function POST(req: Request) {
       textContent: `Hola ${name}, recibimos tu pedido #${orderId}. Nuestro equipo te contactará para confirmar disponibilidad, pago y despacho.`,
       tags: ['order-received', 'transactional'],
     });
+
+    if (!sent.success) {
+      await admin.from('orders').update({ notes: currentNotes }).eq('id', orderId).eq('notes', claimedNotes);
+    }
 
     return NextResponse.json({ success: sent.success, configured: sent.configured });
   } catch (error) {

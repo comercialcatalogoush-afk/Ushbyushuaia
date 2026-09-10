@@ -140,13 +140,13 @@ function mergeWithInitial(supabaseProducts: Product[]): Product[] {
   return [...supabaseProducts, ...localOnly];
 }
 
-// Un producto es visible si tiene foto o nombre válido y no está marcado como oculto.
+// Un producto es visible públicamente solo cuando tiene nombre y foto comprobable.
 export function isCompleteProduct(p: Product): boolean {
   if (!p) return false;
   const hasImage = Array.isArray(p.images) && p.images.length > 0 && !!p.images[0] && p.images[0].trim() !== '';
   const title = (p.name || '').trim();
   const hasTitle = title.length > 0;
-  return hasImage || hasTitle;
+  return hasImage && hasTitle;
 }
 
 export async function fetchProductsFromSupabase(opts: { slim?: boolean } = {}): Promise<Product[]> {
@@ -272,41 +272,6 @@ export async function deleteProductFromSupabase(id: string): Promise<{ success: 
     return { success: false, error: err.message };
   }
 }
-
-// ── PRODUCT IMAGE STORAGE (Supabase Storage, public bucket) ──
-const PRODUCT_IMAGES_BUCKET = 'product-images';
-
-export async function uploadProductImage(
-  blob: Blob,
-  path: string
-): Promise<{ success: boolean; url?: string; error?: string }> {
-  try {
-    const { error } = await supabase.storage
-      .from(PRODUCT_IMAGES_BUCKET)
-      .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
-    return { success: true, url: data.publicUrl };
-  } catch (err: any) {
-    return { success: false, error: err.message };
-  }
-}
-
-export async function deleteProductImage(path: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { error } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove([path]);
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
-  }
-}
-
 
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
   // On the server localStorage is unavailable, so we query Supabase directly
