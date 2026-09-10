@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 /* ── Mensajes rotativos según estado del carrito ── */
 const MESSAGES_EMPTY = [
   '¡Estoy vacía! 🛍️',
   'Agrega tu primera prenda',
-  '90 refs te esperan 👖',
+  'Tu próximo surtido empieza aquí',
   '¡Empieza tu surtido!',
 ];
 const MESSAGES_LOW = [
@@ -31,6 +30,33 @@ const MESSAGES_FULL = [
 ];
 
 type Level = 'empty' | 'low' | 'mid' | 'full';
+
+/* Carrito SVG propio: se mantiene nítido en móvil y no depende de una imagen externa. */
+function CartMascot({ level }: { level: Level }) {
+  const basketColor = level === 'full' ? '#f59e0b' : level === 'mid' ? '#1b2333' : '#d88193';
+  return (
+    <svg className="cart-mascot" viewBox="0 0 112 82" role="img" aria-label="Carrito animado">
+      <g className="cart-mascot-body">
+        <path d="M12 13h11l9 42h53l11-31H32" fill="none" stroke="#1b2333" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M35 25h54l-7 24H40z" fill={basketColor} stroke="#1b2333" strokeWidth="4" strokeLinejoin="round" />
+        <path d="M43 31h37M46 40h31" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".75" />
+        <circle cx="48" cy="66" r="8" fill="#1b2333" />
+        <circle cx="48" cy="66" r="3" fill="#fff" />
+        <circle cx="78" cy="66" r="8" fill="#1b2333" />
+        <circle cx="78" cy="66" r="3" fill="#fff" />
+        <circle cx="56" cy="37" r="3" fill="#1b2333" />
+        <circle cx="72" cy="37" r="3" fill="#1b2333" />
+        <path d="M60 43q4 4 8 0" fill="none" stroke="#1b2333" strokeWidth="2.5" strokeLinecap="round" />
+      </g>
+      {level === 'full' && (
+        <g className="cart-mascot-sparkles" fill="#f59e0b">
+          <path d="M98 13l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />
+          <path d="M19 61l1.5 3.5L24 66l-3.5 1.5L19 71l-1.5-3.5L14 66l3.5-1.5z" />
+        </g>
+      )}
+    </svg>
+  );
+}
 
 function useRotatingMessage(messages: string[], intervalMs = 3000) {
   const [idx, setIdx] = useState(0);
@@ -155,6 +181,17 @@ export const FloatingCartButton: React.FC = () => {
         }
         .cart-float { animation: float-ush 3.2s ease-in-out infinite; }
         .cart-pop   { animation: pop-ush 0.55s cubic-bezier(.36,.07,.19,.97) both; }
+        .cart-mascot { width: 44px; height: 36px; overflow: visible; }
+        .cart-mascot-body { transform-origin: 55px 42px; animation: mascot-bob 2.4s ease-in-out infinite; }
+        .cart-mascot-sparkles { animation: mascot-sparkle 1.2s ease-in-out infinite; transform-origin: center; }
+        @keyframes mascot-bob {
+          0%, 100% { transform: translateY(1px) rotate(-2deg); }
+          50% { transform: translateY(-3px) rotate(2deg); }
+        }
+        @keyframes mascot-sparkle {
+          0%, 100% { opacity: .35; transform: scale(.8) rotate(0deg); }
+          50% { opacity: 1; transform: scale(1.1) rotate(12deg); }
+        }
         .cart-full  {
           background: linear-gradient(135deg,#f59e0b 0%,#d88193 50%,#f59e0b 100%);
           background-size: 200% auto;
@@ -192,10 +229,12 @@ export const FloatingCartButton: React.FC = () => {
         <button
           onClick={() => setIsCartOpen(true)}
           aria-label={`Abrir carrito de compras (${units} unidades)`}
+          data-cart-button="true"
           style={{ pointerEvents: 'all' }}
           className={`
-            relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center
+            relative w-16 h-16 sm:w-[76px] sm:h-[76px] rounded-full flex items-center justify-center
             transition-all duration-300 shadow-xl
+            border-2 border-[#d88193]/40 bg-white
             focus:outline-none focus-visible:ring-4 focus-visible:ring-[#d88193]/50
             ${level === 'full' ? 'cart-full' : btnClass}
             ${ringClass}
@@ -219,12 +258,8 @@ export const FloatingCartButton: React.FC = () => {
             <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" aria-hidden="true" />
           )}
 
-          {/* Icono bolsa */}
-          <ShoppingBag
-            size={level === 'empty' ? 20 : 22}
-            strokeWidth={level === 'full' ? 2.5 : 2}
-            className="relative z-10"
-          />
+          {/* Carrito tipo caricatura con ruedas y expresión propia. */}
+          <CartMascot level={level} />
 
           {/* Badge contador */}
           {level !== 'empty' && (
@@ -232,7 +267,9 @@ export const FloatingCartButton: React.FC = () => {
               absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full
               text-[10px] flex items-center justify-center z-20 shadow
               ${badgeClass}
-            `}>
+            `}
+              data-cart-badge="true"
+          >
               {totalItemsCount}
             </span>
           )}

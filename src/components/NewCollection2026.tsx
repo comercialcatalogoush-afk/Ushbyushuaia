@@ -108,6 +108,7 @@ export const NewCollection2026: React.FC<NewCollection2026Props> = ({ products }
             const discount = suggestedPrice > wholesalePrice
               ? Math.round((1 - wholesalePrice / suggestedPrice) * 100)
               : 0;
+            const isTeensTitle = /teens/i.test(`${product.category || ''} ${product.name || ''}`);
 
             return (
               <Link
@@ -116,15 +117,15 @@ export const NewCollection2026: React.FC<NewCollection2026Props> = ({ products }
                 className="snap-start flex-shrink-0 w-[160px] sm:w-[200px] group"
               >
                 <div className="relative bg-white border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                  {/* Badge */}
-                  <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-                    <span className="inline-flex items-center gap-1 bg-ush-pink text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm shadow-sm">
+                  {/* Las etiquetas viven fuera de la foto para no cubrir la prenda. */}
+                  <div className="flex min-h-[30px] items-center justify-between gap-1.5 border-b border-neutral-100 bg-white px-2 py-1.5">
+                    <span className="inline-flex items-center gap-1 bg-ush-pink px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-[2px_2px_0_#1b2333]">
                       <Sparkles size={9} />
                       Nuevo 2026
                     </span>
                     {discount > 0 && (
-                      <span className="bg-neutral-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm">
-                        -{discount}%
+                      <span className="inline-flex shrink-0 items-center bg-[#1b2333] px-2 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-[2px_2px_0_#d88193]">
+                        -{discount}% off
                       </span>
                     )}
                   </div>
@@ -151,6 +152,7 @@ export const NewCollection2026: React.FC<NewCollection2026Props> = ({ products }
                       Ref. {product.reference}
                     </p>
                     <p className="text-[11px] sm:text-xs font-bold text-neutral-900 leading-tight line-clamp-2 min-h-[28px]">
+                      {isTeensTitle && <span className="mr-1 text-ush-pink" aria-hidden="true">✦</span>}
                       {abbreviateProductName({ name: product.name, fit: product.fit ?? undefined, category: product.category ?? undefined }).short}
                     </p>
                     <div className="flex items-baseline gap-1.5">

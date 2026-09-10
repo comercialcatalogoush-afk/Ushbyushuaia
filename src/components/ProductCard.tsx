@@ -67,6 +67,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     : 0;
 
   const isBestSellerBadge = isTopSeller || product.is_best_seller || product.ribbon?.toLowerCase().includes('más vendido') || product.ribbon?.toLowerCase().includes('mas vendido');
+  const isTeensTitle = /teens/i.test(`${product.category || ''} ${product.name || ''}`);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -82,7 +83,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     setTimeout(() => setShowAddedToast(false), 2800);
   };
 
-  const cardLabels = (
+  const showCardLabels = isReference2026(product.reference) || discountPercent > 0 || (compact && isBestSellerBadge);
+  const cardLabels = showCardLabels ? (
     <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-neutral-100 bg-white px-2 py-1.5">
       <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         {isReference2026(product.reference) && (
@@ -102,7 +104,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         </span>
       )}
     </div>
-  );
+  ) : null;
 
   // ── MODO COMPACTO (carrusel Más Vendidos): foto cuadrada completa + nombre + ref + precio ──
   if (compact) {
@@ -144,6 +146,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
             return (
               <>
                 <h3 className="text-[13px] font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight">
+                  {isTeensTitle && <span className="mr-1 text-ush-pink" aria-hidden="true">✦</span>}
                   {short}
                   {finalColor && (
                     <span className="block text-[9px] font-extrabold text-[#d88193] mt-0.5 uppercase tracking-[0.12em]">
@@ -258,6 +261,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
               return (
                 <div>
                   <h3 className="text-xs sm:text-sm font-black text-[#1b2333] group-hover:text-ush-pink transition-colors uppercase tracking-wide leading-tight line-clamp-1 h-[1.2rem]">
+                    {isTeensTitle && <span className="mr-1 text-ush-pink" aria-hidden="true">✦</span>}
                     {short}
                   </h3>
                   <div className="text-[9px] sm:text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5 truncate h-[1rem]">

@@ -13,6 +13,7 @@ import { fetchProductsFromSupabase, supabase } from '@/lib/supabase';
 import { INITIAL_PRODUCTS } from '@/data/products';
 import { getGoogleDriveImageUrl } from '@/lib/drive';
 import { getSuggestedPrice, WHOLESALE_FALLBACK } from '@/lib/pricing';
+import { abbreviateProductName } from '@/lib/productName';
 import { useCart } from '@/context/CartContext';
 import { ContentValues } from '@/lib/siteContent';
 
@@ -377,15 +378,11 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
             {content.calcTitle || 'Calculadora de Inversión y Ganancias'}
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
-            {content.calcSubtitle || 'Proyecta tu inversión y ganancia antes de pedir.'}
+            {content.calcSubtitle || 'Elige prendas, indica tu precio de venta y mira cuánto puedes ganar.'}
           </p>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-600 pt-1">
-            <Sparkles size={13} className="text-[#d88193] shrink-0" />
-            <span>
-              <strong className="text-neutral-900">8+ uds</strong> = 20% OFF ·{' '}
-              <strong className="text-neutral-900">12+ uds</strong> = Precio mayorista +{' '}
-              <strong className="text-emerald-700 font-bold">Envío Gratis</strong>
-            </span>
+          <div className="flex flex-wrap gap-2 pt-1 text-[10px] font-black uppercase tracking-wide">
+            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[#b5586c]">8+ uds · 20% OFF</span>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">12+ uds · Envío gratis</span>
           </div>
         </div>
       </div>
@@ -398,6 +395,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
 
           {/* Filtros */}
           <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm">
+            <p className="text-[11px] font-black uppercase tracking-[.18em] text-[#1b2333]">1. Elige tus referencias</p>
             {/* Búsqueda */}
             <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
@@ -432,8 +430,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
           {!loadingProducts && products.length > 0 && (
             <div className="flex items-center justify-between text-[11px] text-neutral-500 px-1">
               <span>
-                Mostrando <strong>{visibleProducts.length}</strong> de{' '}
-                <strong>{filteredProducts.length}</strong> referencias
+                <strong>{filteredProducts.length}</strong> referencias disponibles
                 {selectedCategory !== 'Todas' && ` en ${selectedCategory}`}
               </span>
               {Object.keys(quantities).length > 0 && (
@@ -464,6 +461,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                   const suggested = getSuggestedPrice(product);
                   const wholesalePrice = product.price || Math.round(suggested * WHOLESALE_FALLBACK);
                   const img = product.images?.[0] ? getGoogleDriveImageUrl(product.images[0]) : '';
+                  const shortName = abbreviateProductName({ name: product.name, fit: product.fit ?? undefined, category: product.category ?? undefined }).short;
 
                   return (
                     <div
@@ -501,13 +499,10 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                           <span className="text-[10px] font-bold text-neutral-400 uppercase">
                             Ref. {product.reference || product.id}
                           </span>
-                          <span className="text-[9px] font-black uppercase text-[#d88193] bg-rose-50 px-1.5 py-0.5 rounded-full shrink-0 max-w-[130px] truncate">
-                            {product.fit || product.category}
-                          </span>
                         </div>
 
                         <p className="text-xs font-black text-neutral-900 truncate leading-tight">
-                          {product.name}
+                          {shortName}
                         </p>
 
                         <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -621,7 +616,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
               {/* Barra de progreso */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-neutral-600 font-medium">Prendas surtidas:</span>
+                  <span className="text-neutral-600 font-medium">Tu surtido:</span>
                   <span className="font-black text-neutral-900">
                     {totalUnits} <span className="text-neutral-400 font-normal">/ 12 uds</span>
                   </span>
@@ -639,15 +634,15 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                 {isWholesale12 ? (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 text-xs text-emerald-800 flex items-center gap-2">
                     <Sparkles size={13} className="text-emerald-600 shrink-0" />
-                    <span><strong>¡Precio mayorista!</strong> + Envío Gratis Nacional</span>
+                    <span><strong>¡Precio mayorista!</strong> · envío gratis</span>
                   </div>
                 ) : isWholesale8 ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-800">
-                    <strong>20% OFF activado</strong> — Faltan {12 - totalUnits} uds para envío gratis
+                    <strong>20% OFF activado</strong> · faltan {12 - totalUnits} uds para envío gratis
                   </div>
                 ) : (
                   <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-2.5 text-xs text-neutral-600">
-                    Agrega {8 - Math.min(totalUnits, 8)} prendas más para el primer descuento
+                    Agrega {8 - Math.min(totalUnits, 8)} prendas para activar el descuento
                   </div>
                 )}
               </div>
@@ -658,11 +653,11 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#d88193]/15 text-[#b5586c]"><Tag size={18} /></div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-sm font-black uppercase tracking-wide text-[#1b2333]">¿A cuánto venderás cada prenda?</h3>
+                      <h3 className="text-sm font-black uppercase tracking-wide text-[#1b2333]">2. Precio de venta</h3>
                       <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider ${customSellMode ? 'bg-[#1b2333] text-white' : 'bg-white text-neutral-500'}`}>{customSellMode ? 'Precio personalizado' : 'Precio sugerido'}</span>
                     </div>
-                    <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">Escribe un valor general para tu vitrina. Después puedes ajustar referencias concretas desde cada tarjeta.</p>
-                    <label htmlFor="global-sell-price" className="mt-3 block text-[10px] font-black uppercase tracking-wider text-neutral-600">Precio de venta por unidad</label>
+                    <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">Puedes usar un valor general y cambiarlo por referencia si lo necesitas.</p>
+                    <label htmlFor="global-sell-price" className="mt-3 block text-[10px] font-black uppercase tracking-wider text-neutral-600">Valor por unidad</label>
                     <div className="mt-1 flex items-center rounded-xl border border-[#d88193]/40 bg-white shadow-sm focus-within:border-[#d88193] focus-within:ring-2 focus-within:ring-[#d88193]/20">
                       <span className="pl-3 text-base font-black text-[#b5586c]">$</span>
                       <input
@@ -687,11 +682,11 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
               {/* Métricas */}
               <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-4 space-y-3">
                 <div className="flex justify-between text-xs">
-                  <span className="text-neutral-600">Tu inversión:</span>
+                  <span className="text-neutral-600">Inviertes:</span>
                   <span className="font-black text-neutral-900">{formatCOP(financialSummary.totalInvestment)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-neutral-600">Precio de venta:</span>
+                  <span className="text-neutral-600">Vendes:</span>
                   <span className="font-bold text-neutral-700">{formatCOP(financialSummary.totalSellValue)}</span>
                 </div>
                 {customSellMode && (
@@ -702,8 +697,8 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
                 )}
                 <div className="border-t border-neutral-200 pt-3 flex justify-between items-center">
                   <div>
-                    <p className="text-xs font-black text-emerald-700 uppercase">Ganancia Proyectada</p>
-                    <p className="text-[10px] text-neutral-500">Retorno neto estimado</p>
+                    <p className="text-xs font-black text-emerald-700 uppercase">Ganas:</p>
+                    <p className="text-[10px] text-neutral-500">estimado</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-black text-emerald-600">{formatCOP(financialSummary.netProfit)}</p>

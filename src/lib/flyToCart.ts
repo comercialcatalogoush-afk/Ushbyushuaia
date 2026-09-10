@@ -1,9 +1,9 @@
 export function animateFlyToCart(sourceElement: HTMLElement | null) {
   if (typeof window === 'undefined' || !sourceElement) return;
 
-  // El carrito vive en el botón flotante inferior derecho (FloatingCartButton).
-  const cartButton = document.querySelector<HTMLElement>('[aria-label^="Abrir carrito"]') ||
-    document.querySelector<HTMLElement>('[aria-label="Carrito de compras"]');
+  // El carrito vive en el botón flotante inferior derecho.
+  const cartButton = document.querySelector<HTMLElement>('[data-cart-button="true"]') ||
+    document.querySelector<HTMLElement>('[aria-label^="Abrir carrito"]');
   if (!cartButton) return;
 
   const sourceRect = sourceElement.getBoundingClientRect();
@@ -36,7 +36,7 @@ export function animateFlyToCart(sourceElement: HTMLElement | null) {
     clone.style.transform = 'scale(0.2) rotate(360deg)';
   });
 
-  // On arrival: remove clone and bounce the badge + pop the floating button
+  // Al llegar: quitar la copia y animar el contador y el carrito.
   setTimeout(() => {
     clone.remove();
 
@@ -44,8 +44,8 @@ export function animateFlyToCart(sourceElement: HTMLElement | null) {
     cartButton.classList.add('cart-pop');
     setTimeout(() => cartButton.classList.remove('cart-pop'), 600);
 
-    // Bounce del badge del contador
-    const badge = cartButton.querySelector('[class*="rounded-full"]');
+    // Rebote del contador usando un selector estable, no una clase visual cambiante.
+    const badge = cartButton.querySelector('[data-cart-badge="true"]');
     if (badge && badge instanceof HTMLElement) {
       badge.classList.add('animate-bounce');
       setTimeout(() => badge.classList.remove('animate-bounce'), 600);
