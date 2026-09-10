@@ -194,6 +194,9 @@ export async function fetchAllProductsAdmin(): Promise<Product[]> {
 
 // ── PERSISTENCE: Save / Update / Delete a product in Supabase ──
 export async function upsertProduct(product: Product): Promise<{ success: boolean; error?: string }> {
+  // Mantiene una sola fuente de verdad para la visibilidad: si el producto se
+  // guarda como publicado, no puede conservar el candado oculto, y viceversa.
+  const isPublic = product.hidden !== true && product.status !== 'draft';
   const buildPayload = (withColor: boolean) => ({
     id: product.id,
     name: product.name,
@@ -204,14 +207,14 @@ export async function upsertProduct(product: Product): Promise<{ success: boolea
     compare_price: product.compare_price || product.suggested_price || 0,
     ribbon: product.ribbon || '',
     fit: product.fit || 'Wide Leg',
-    status: product.status || (product.hidden ? 'draft' : 'published'),
+    status: isPublic ? 'published' : 'draft',
     stock_by_size: product.stock_by_size || {},
     is_best_seller: product.is_best_seller === true,
     description: product.description || '',
     full_description: product.full_description || '',
     video_url: product.video_url || '',
     in_stock: product.in_stock !== false,
-    hidden: product.hidden === true || product.status === 'draft',
+    hidden: !isPublic,
     options: product.options || [],
     images: product.images || [],
     tags: product.tags || [],

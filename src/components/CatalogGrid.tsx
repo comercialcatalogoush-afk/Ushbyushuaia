@@ -34,6 +34,19 @@ function normalizeFitLabel(label: string): string {
   return map[label.toUpperCase()] || label;
 }
 
+// Algunas categorías se muestran en plural, pero Supabase guarda el fit en
+// singular (por ejemplo, el menú dice "Cargos" y el producto usa "Cargo").
+function normalizeCategoryLabel(label: string): string {
+  const map: Record<string, string> = {
+    CARGOS: 'Cargo',
+    CARGO: 'Cargo',
+    BERMUDAS: 'Bermuda',
+    BERMUDA: 'Bermuda',
+  };
+  const clean = label.trim().toUpperCase();
+  return map[clean] || label.trim();
+}
+
 export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader = true }) => {
   const searchParams = useSearchParams();
   const syncedProducts = useCatalogSync(products);
@@ -144,8 +157,8 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     }
 
     if (activeCategory !== 'Todos') {
-      const cat = (p.category || '').toLowerCase();
-      const catActive = activeCategory.toLowerCase();
+      const cat = normalizeCategoryLabel(p.category || '').toLowerCase();
+      const catActive = normalizeCategoryLabel(activeCategory).toLowerCase();
       const fit = normalizeFitLabel(p.fit || '').toLowerCase();
       const matchCat = cat === catActive || fit === catActive || name.includes(catActive) || tags.includes(catActive);
       if (!matchCat) return false;
