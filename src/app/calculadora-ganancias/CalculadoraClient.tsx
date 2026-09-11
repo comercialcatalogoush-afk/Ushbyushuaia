@@ -15,6 +15,8 @@ import { getGoogleDriveImageUrl } from '@/lib/drive';
 import { getSuggestedPrice, WHOLESALE_FALLBACK } from '@/lib/pricing';
 import { abbreviateProductName } from '@/lib/productName';
 import { useCart } from '@/context/CartContext';
+import { getWhatsAppNumber, subscribeWhatsApp, DEFAULT_WHATSAPP_NUMBER } from '@/lib/siteConfig';
+import { getMenSizesForProduct } from '@/lib/menCatalog';
 import { ContentValues } from '@/lib/siteContent';
 
 /* ── Clave para el uso único de visitantes ── */
@@ -56,6 +58,14 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { addToCart, setIsCartOpen } = useCart();
   const [addedToCartToast, setAddedToCartToast] = useState(false);
+
+  /* ── WhatsApp dinámico ── */
+  const [whatsappNumber, setWhatsappNumber] = useState<string>(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    getWhatsAppNumber().then(setWhatsappNumber);
+    return subscribeWhatsApp(setWhatsappNumber);
+  }, []);
 
   /* ── Precio de venta personalizado: el cliente define a cuánto vende cada prenda ── */
   const [customSellMode, setCustomSellMode] = useState(false);
@@ -245,13 +255,15 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
       msg += `${i + 1}. Ref. ${product.reference || product.name} (${product.fit || product.category}): ${qty} uds × venta ${formatCOP(sell)} (costo ${formatCOP(cost)})\n`;
     });
     msg += `\n¿Pueden verificar disponibilidad de curvas/tallas? ¡Gracias!`;
-    window.open(`https://wa.me/573011393902?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleTransferToCart = () => {
     if (selectedItems.length === 0) return;
     selectedItems.forEach(({ product, qty }) => {
-      const defaultSize = product.options?.find(o => o.key.toLowerCase() === 'talla')?.values?.[0] || '10';
+      const menSizes = getMenSizesForProduct(product.reference, product.category);
+      const tallaOption = product.options?.find(o => o.key.toLowerCase() === 'talla');
+      const defaultSize = tallaOption?.values?.[0] || (menSizes && menSizes[0]) || 'Única';
       addToCart(product, defaultSize, product.color || '', qty);
     });
     setAddedToCartToast(true);
@@ -301,7 +313,7 @@ export function CalculadoraClient({ initialContent = {}, embedded = false }: Cal
             <div className="grid grid-cols-3 gap-3 text-left text-xs">
               {[
                 { icon: '📊', label: 'Calculadora ilimitada' },
-                { icon: '📄', label: 'Catálogo PDF propio' },
+                { icon: '🎯', label: 'Catálogo exclusivo para aliados' },
                 { icon: '🚚', label: 'Envío gratis desde 12 uds' },
               ].map((b) => (
                 <div key={b.label} className="bg-neutral-50 border border-neutral-200 rounded-xl p-3 text-center">

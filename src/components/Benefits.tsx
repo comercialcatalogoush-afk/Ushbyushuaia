@@ -17,9 +17,9 @@ export const Benefits: React.FC = () => {
     },
     {
       title: c.benefitsCard2Title || 'Descuentos por Volumen',
-      description: c.benefitsCard2Text || 'Mejor escala de precios desde 12 unidades por referencia elegida.',
+      description: c.benefitsCard2Text || '20% OFF desde 8 unidades por referencia elegida · precio de fábrica y envío gratis desde 12.',
       icon: TrendingDown,
-      tag: 'Desde 12 Uds'
+      tag: 'Desde 8 Uds'
     },
     {
       title: c.benefitsCard3Title || 'Compra por Referencia',

@@ -239,6 +239,7 @@ export default function RastreoPage() {
           <p data-field-key="trIntro" className="text-sm text-ush-pinkDark font-medium mt-2 max-w-lg mx-auto">
             {c.trIntro}
           </p>
+          <p className="text-[10px] text-ush-pinkDark/60 font-medium mt-1">Consulta con Coordinadora Mercantil — guías de 11 dígitos.</p>
         </div>
 
         {/* Search Box de marca */}

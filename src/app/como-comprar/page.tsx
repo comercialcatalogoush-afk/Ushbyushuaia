@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Benefits } from '@/components/Benefits';
 import { getPageContentServer, sectionStyleFromContent } from '@/lib/siteContent';
+import { getWhatsAppNumber } from '@/lib/siteConfig';
 import {
   CheckCircle2, HelpCircle, ArrowRight, ShieldCheck, Layers, Truck,
   Sparkles, Calculator, Send, Mail, MapPin, Clock, MessageSquare
@@ -18,7 +19,7 @@ export async function generateMetadata() {
 }
 
 export default async function ComoComprarPage() {
-  const c = await getPageContentServer('como-comprar');
+  const [c, wa] = await Promise.all([getPageContentServer('como-comprar'), getWhatsAppNumber()]);
 
   const headerStyle = sectionStyleFromContent('cc-header', c);
   const processStyle = sectionStyleFromContent('cc-process', c);
@@ -187,10 +188,10 @@ export default async function ComoComprarPage() {
                 <Truck size={20} />
               </div>
               <h3 data-field-key="b2bDiff2Title" className="text-sm font-bold uppercase text-neutral-900">
-                {c.b2bDiff2Title || 'Surtido Libre desde 12 Unidades'}
+                {c.b2bDiff2Title || 'Surtido Libre desde 8 Unidades'}
               </h3>
               <p data-field-key="b2bDiff2Desc" className="text-xs text-neutral-600 font-light leading-relaxed">
-                {c.b2bDiff2Desc || 'Combina referencias, siluetas y colores en un solo pedido con precio mayorista de fábrica y flete gratis.'}
+                {c.b2bDiff2Desc || 'Compra de 8 a 11 unidades con 20% OFF · desde 12 unidades obtienes precio de fábrica, surtido libre y flete gratis a todo el país.'}
               </p>
             </div>
 
@@ -230,7 +231,7 @@ export default async function ComoComprarPage() {
             </Link>
 
             <a
-              href="https://wa.me/573011393902?text=Hola%20USH%20BY%20USHUAIA,%20quisiera%20recibir%20asesoria%20comercial%20B2B%20para%20mi%20tienda"
+              href={`https://wa.me/${wa}?text=${encodeURIComponent('Hola USH BY USHUAIA, quisiera recibir asesoría comercial B2B para mi tienda')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] text-white font-bold px-8 py-4 text-xs uppercase tracking-widest transition-all shadow-md active:scale-95"
@@ -238,35 +239,6 @@ export default async function ComoComprarPage() {
               <Send size={16} />
               <span>Contactar Asesor B2B en WhatsApp</span>
             </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Invitación a la Calculadora Mayorista en Mi Cuenta */}
-      <div className="bg-white border-t border-b border-gray-200 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto bg-gradient-to-r from-rose-50 via-white to-rose-50 border border-rose-200/80 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 shadow-sm">
-          <div className="w-16 h-16 rounded-2xl bg-[#d88193]/15 text-[#d88193] flex items-center justify-center shrink-0">
-            <Calculator size={32} />
-          </div>
-          <div className="flex-1 text-center sm:text-left space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-[.25em] text-[#d88193]">
-              Herramienta Exclusiva para Aliados
-            </span>
-            <h3 className="text-lg sm:text-xl font-black uppercase text-neutral-900">
-              Calculadora de Inversión y Rentabilidad B2B
-            </h3>
-            <p className="text-xs text-neutral-600 font-light leading-relaxed">
-              Disponible dentro de tu cuenta para simular surtidos en tiempo real, proyectar margen de vitrina y flete gratis a todo el país.
-            </p>
-          </div>
-          <div className="shrink-0">
-            <Link
-              href="/calculadora-ganancias"
-              className="inline-flex items-center gap-2 bg-[#d88193] hover:bg-[#c06579] text-white font-bold px-6 py-3.5 rounded-full text-xs uppercase tracking-widest transition-all shadow-md active:scale-95"
-            >
-              <span>Probar Calculadora</span>
-              <ArrowRight size={14} />
-            </Link>
           </div>
         </div>
       </div>
@@ -312,7 +284,7 @@ export default async function ComoComprarPage() {
                 {c.ccContactPhone || '+57 301 139 3902'}
               </p>
               <a
-                href="https://wa.me/573011393902?text=Hola%20USH%20BY%20USHUAIA,%20estoy%20viendo%20la%20pagina%20de%20beneficios%20y%20quisiera%20asesoria%20mayorista"
+                href={`https://wa.me/${wa}?text=${encodeURIComponent('Hola USH BY USHUAIA, estoy viendo la página de beneficios y quisiera asesoría mayorista')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-emerald-700 hover:underline pt-1"
@@ -363,7 +335,7 @@ export default async function ComoComprarPage() {
 
           <div className="text-center pt-2">
             <a
-              href="https://wa.me/573011393902?text=Hola%20USH%20BY%20USHUAIA,%20estoy%20viendo%20la%20pagina%20de%20beneficios%20y%20quisiera%20asesoria%20mayorista"
+              href={`https://wa.me/${wa}?text=${encodeURIComponent('Hola USH BY USHUAIA, estoy viendo la página de beneficios y quisiera asesoría mayorista')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1ebd5a] text-white font-bold px-8 py-4 text-xs uppercase tracking-widest transition-all shadow-md active:scale-95"

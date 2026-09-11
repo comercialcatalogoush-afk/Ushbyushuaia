@@ -35,7 +35,6 @@ export const WholesaleInquiryForm: React.FC = () => {
     // La ciudad se selecciona con un control personalizado y por eso también
     // debe validarse aquí, además de la validación nativa del navegador.
     if (
-      !formData.date ||
       !formData.doc_type ||
       !formData.doc_number.trim() ||
       !formData.name.trim() ||
@@ -44,6 +43,11 @@ export const WholesaleInquiryForm: React.FC = () => {
       !formData.address.trim()
     ) {
       setError('Completa todos los campos obligatorios antes de enviar.');
+      return;
+    }
+    const digitsOnly = formData.phone.replace(/\D/g, '');
+    if (digitsOnly.length < 6 || digitsOnly.length > 15) {
+      setError('El teléfono debe contener entre 6 y 15 dígitos.');
       return;
     }
     if (!formData.department || !formData.city) {
@@ -94,7 +98,7 @@ export const WholesaleInquiryForm: React.FC = () => {
       </div>
 
       <p className="text-xs text-neutral-500 mb-6 leading-relaxed">
-        Déjanos tus datos de contacto y número de documento / NIT para enviarte el catálogo PDF actualizado con precios especiales y cotización de despacho.
+        Déjanos tus datos de contacto y número de documento / NIT para que un asesor comercial te atienda directamente con precios, disponibilidad y cotización de despacho.
       </p>
 
       {success ? (
@@ -123,11 +127,10 @@ export const WholesaleInquiryForm: React.FC = () => {
           {/* Fecha */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 mb-1">
-              Fecha de la Consulta *
+              Fecha de la Consulta <span className="text-neutral-400 font-normal">(opcional)</span>
             </label>
             <input
               type="date"
-              required
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink bg-white"

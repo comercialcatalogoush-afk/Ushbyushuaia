@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
           <div data-editor-section="footer-brand" style={secStyleBrand} className="space-y-3">
             <Logo variant="light" size="md" />
             <p data-field-key="footerDescription" className="text-xs text-white/80 leading-relaxed font-light">
-              {c.footerDescription || 'Marca líder en confección y distribución mayorista de prendas en mezclilla rígida. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.'}
+              {c.footerDescription || 'Marca líder en confección y distribución mayorista de prendas en tela de alta confección. Calidad, tendencia y volumen para tiendas y distribuidores en Colombia.'}
             </p>
             {/* Social Icons */}
             <div className="flex items-center gap-3 text-white pt-2">
@@ -116,15 +116,15 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin size={15} className="text-white/70 flex-shrink-0 mt-0.5" />
-                <span>Carrera 55 B # 72 a 02,<br />Itagüí, Antioquia — Colombia</span>
+                <span>Carrera 55 B # 72 a 02,<br />Itagüí, Antioquia, Colombia</span>
               </li>
             </ul>
 
             {/* Business hours */}
             <div data-editor-section="footer-hours" style={secStyleHours} className="bg-white/10 border border-white/20 p-3 text-xs">
               <p data-field-key="footerHoursTitle" className="font-bold text-white uppercase tracking-wider mb-1.5">🕐 {c.footerHoursTitle || 'Horario Canal Mayorista'}</p>
-              <p className="text-white/90 font-light">Lun – Jue: <span data-field-key="footerHoursWeek" className="font-bold">{c.footerHoursWeek || '7:00 AM – 4:00 PM'}</span></p>
-              <p className="text-white/90 font-light mt-0.5">Viernes: <span className="font-bold">7:00 AM – 3:30 PM</span></p>
+              <p className="text-white/90 font-light">Lun – Jue: <span data-field-key="footerHoursWeek" className="font-bold">{(() => { const raw = (c.footerHoursWeek || '7:00 AM – 4:00 PM').trim(); const stripped = /^Lun\s*[–-]\s*Jue\s*[:\s]+/i.test(raw) ? raw.replace(/^Lun\s*[–-]\s*Jue\s*[:\s]+/i, '').trim() : raw; const parts = stripped.split('|').map(s => s.trim()); return parts[0] || '7:00 AM – 4:00 PM'; })()}</span></p>
+              <p className="text-white/90 font-light mt-0.5">Viernes: <span className="font-bold">{(() => { const raw = (c.footerHoursWeek || '').trim(); const parts = raw.split('|').map(s => s.trim()); const fri = parts[1]; if (fri) { const stripped = /^V[ié]rnes?\s*[:\s]+/i.test(fri) ? fri.replace(/^V[ié]rnes?\s*[:\s]+/i, '').trim() : fri; return stripped || '7:00 AM – 3:30 PM'; } return '7:00 AM – 3:30 PM'; })()}</span></p>
               <p data-field-key="footerHoursNote" className="text-white/60 text-[10px] mt-1">{c.footerHoursNote || 'Sábados, domingos y festivos no hay atención.'}</p>
             </div>
           </div>
@@ -136,7 +136,7 @@ export const Footer: React.FC = () => {
                 {c.footerNoticeTitle || 'Atención a Mayoristas'}
               </h5>
               <p data-field-key="footerNoticeText" className="text-[11px] text-white/80 leading-normal font-light mb-3">
-                {c.footerNoticeText || 'Escala de precios especiales aplicable a partir de 12 unidades combinadas por pedido. Envío gratis incluido.'}
+                {c.footerNoticeText || 'Desde 8 unidades obtienes 20% OFF. Desde 12 unidades surtidas aplica precio mayorista de fábrica con envío gratis a todo el país.'}
               </p>
               <ul className="space-y-1.5 text-[11px] text-white/80 font-light">
                 <li>✓ Garantía 45 días por defectos de fábrica</li>

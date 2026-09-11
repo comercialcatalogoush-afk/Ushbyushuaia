@@ -2,18 +2,18 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Inicia tu Negocio — Pack Mayorista 12 Prendas | Ush By Ushuaia',
-  description: 'Pack oficial de 12 referencias surtidas de jeans, shorts y faldas de alta rotación. Flete 100% GRATIS a toda Colombia y retorno superior al 60%. Inicia tu negocio de moda hoy.',
+  title: 'Mayorista USH BY USHUAIA — 8 Uds 20% OFF · 12+ Precio de Fábrica | Ush By Ushuaia',
+  description: 'Compra mayorista desde 8 unidades con 20% de descuento. Desde 12 unidades obtienes precio de fábrica, surtido libre y envío gratis a toda Colombia.',
   keywords: [
-    'Pack mayorista jeans',
-    'Inicia tu negocio jeans Colombia',
-    'Mayorista ropa Medellín Itagüí',
+    'Mayorista jeans Colombia',
+    'Compra mayorista ropa Medellín Itagüí',
     'Ush By Ushuaia mayoristas',
-    'Jeans colombianos por mayor'
+    'Jeans colombianos por mayor',
+    'Surtido libre 12 unidades'
   ],
   openGraph: {
-    title: 'Pack Mayorista 12 Prendas | Ush By Ushuaia',
-    description: '12 referencias oficiales de alta rotación con envío 100% gratis a toda Colombia. Simula tu ganancia y pide por WhatsApp en 1 clic.',
+    title: 'Mayorista USH BY USHUAIA — Precio de Fábrica desde 12 Uds | Ush By Ushuaia',
+    description: '8 unidades con 20% OFF · desde 12 unidades precio de fábrica y envío gratis. Simula tu ganancia y pide por WhatsApp.',
     url: 'https://ushbyushuaia.vercel.app/pack-mayorista',
     siteName: 'USH BY USHUAIA',
     locale: 'es_CO',

@@ -570,7 +570,7 @@ export function LookbookClient() {
         {/* Footer note */}
         <div className="bg-[#1b2333] text-white text-center py-8 px-4">
           <p className="text-[10px] tracking-widest uppercase text-neutral-400">
-            USH BY USHUAIA · Catálogo Digital 2026 · Pedidos mínimos 12 unidades · Envío gratis desde 12 uds
+            USH BY USHUAIA · Catálogo Digital 2026 · 20% OFF desde 8 uds · Precio de fábrica y envío gratis desde 12 uds
           </p>
           <p className="text-[10px] tracking-wider text-neutral-500 mt-1">
             Itagüí, Antioquia, Colombia · ushbyushuaia.vercel.app

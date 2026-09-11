@@ -258,6 +258,13 @@ export const Header: React.FC = () => {
               RASTREAR
             </Link>
 
+            <Link
+              href="/contacto"
+              className="text-xs uppercase tracking-widest font-bold text-neutral-800 hover:text-ush-pink transition-colors py-2"
+            >
+              CONTACTO
+            </Link>
+
 
             {isAdminLoggedIn && (
               <Link
@@ -515,6 +522,13 @@ export const Header: React.FC = () => {
             className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
           >
             RASTREAR PEDIDO
+          </Link>
+          <Link
+            href="/contacto"
+            onClick={closeMobileMenu}
+            className="block text-sm font-bold uppercase tracking-wider text-neutral-800 hover:text-ush-pink py-2 border-b border-gray-50"
+          >
+            CONTACTO
           </Link>
           <div className="pt-2 flex items-center justify-between text-xs text-neutral-600">
             <Link
