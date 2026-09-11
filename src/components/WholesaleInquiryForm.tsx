@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { submitWholesaleLead } from '@/lib/supabase';
 import { Send, CheckCircle, AlertCircle, FileText, ChevronDown, Search } from 'lucide-react';
 import { COLOMBIA_DEPARTMENTS, COLOMBIA_MUNICIPALITIES, PHONE_COUNTRIES } from '@/lib/colombia';
+import { DataConsentCheckbox } from '@/components/DataConsentCheckbox';
 
 export const WholesaleInquiryForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ export const WholesaleInquiryForm: React.FC = () => {
     department: '',
     notes: ''
   });
+  const [consent, setConsent] = useState(false);
   const [cityQuery, setCityQuery] = useState('');
   const [cityOpen, setCityOpen] = useState(false);
   const [phoneCountry, setPhoneCountry] = useState<string>('+57');
@@ -54,6 +56,10 @@ export const WholesaleInquiryForm: React.FC = () => {
       setError('Selecciona el departamento y la ciudad / municipio.');
       return;
     }
+    if (!consent) {
+      setError('Debes aceptar el tratamiento de datos para continuar.');
+      return;
+    }
 
     setLoading(true);
 
@@ -62,6 +68,7 @@ export const WholesaleInquiryForm: React.FC = () => {
       formData.address && `Dirección: ${formData.address}`,
       formData.department && `Departamento: ${formData.department}`,
       formData.notes && `Notas / Referencias: ${formData.notes}`,
+      `Acepta tratamiento de datos (Ley 1581/2012): Sí`
     ].filter(Boolean);
 
     const res = await submitWholesaleLead({
@@ -83,6 +90,7 @@ export const WholesaleInquiryForm: React.FC = () => {
         phone: '', address: '', city: '', department: '', notes: ''
       });
       setCityQuery('');
+      setConsent(false);
     } else {
       setError('Hubo un error al enviar la solicitud. Intenta nuevamente.');
     }
@@ -410,6 +418,11 @@ export const WholesaleInquiryForm: React.FC = () => {
               placeholder="Indica cantidades aproximadas, despiece de tallas o inquietudes de envío..."
               className="w-full border border-gray-300 p-3 text-xs text-neutral-900 focus:outline-none focus:border-ush-pink"
             />
+          </div>
+
+          {/* Data Conset */}
+          <div className="pt-1">
+            <DataConsentCheckbox checked={consent} onChange={setConsent} labelClassName="bg-rose-50/40 border border-rose-100/60 p-3" />
           </div>
 
           <button

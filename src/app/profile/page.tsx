@@ -8,6 +8,7 @@ import { CustomerAccountBenefits } from '@/components/CustomerAccountBenefits';
 import { CustomerAudiovisualContent } from '@/components/CustomerAudiovisualContent';
 import { Product } from '@/types';
 import { CalculadoraClient } from '../calculadora-ganancias/CalculadoraClient';
+import { DataConsentCheckbox } from '@/components/DataConsentCheckbox';
 
 const ADMIN_EMAIL = 'comercialmayoristas@ushuaiajeans.com.co';
 const CANONICAL_SITE_URL = 'https://ushbyushuaia.vercel.app';
@@ -57,6 +58,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [isRecovery, setIsRecovery] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [dataConsent, setDataConsent] = useState(false);
   const [returnTo, setReturnTo] = useState('/');
   const [activeTab, setActiveTab] = useState<'perfil' | 'contenido' | 'calculadora'>('perfil');
   const [products, setProducts] = useState<Product[]>([]);
@@ -196,12 +198,13 @@ export default function ProfilePage() {
     setError(''); setSuccess('');
     if (!name || !email || !password) { setError('Por favor completa todos los campos.'); return; }
     if (password.length < 6) { setError('La contraseña debe tener mínimo 6 caracteres.'); return; }
+    if (!dataConsent) { setError('Debes aceptar el tratamiento de datos para crear tu cuenta.'); return; }
     setLoading(true);
     const normalizedEmail = email.trim().toLowerCase();
     const { data, error: err } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
-      options: { data: { full_name: name, marketing_opt_in: marketingOptIn, marketing_consent_at: marketingOptIn ? new Date().toISOString() : null } },
+      options: { data: { full_name: name, marketing_opt_in: marketingOptIn, marketing_consent_at: marketingOptIn ? new Date().toISOString() : null, data_consent: true, data_consent_at: new Date().toISOString() } },
     });
     if (err) { setError(friendlyAuthError(err)); setLoading(false); return; }
 
@@ -615,6 +618,8 @@ export default function ProfilePage() {
                 />
                 <span>Acepto recibir novedades del catálogo, reposiciones y fotos de producto en alta resolución por correo.</span>
               </label>
+
+              <DataConsentCheckbox checked={dataConsent} onChange={setDataConsent} labelClassName="bg-rose-50/40 border border-rose-100/60 p-3 rounded-xl" />
 
               <button
                 type="submit"
