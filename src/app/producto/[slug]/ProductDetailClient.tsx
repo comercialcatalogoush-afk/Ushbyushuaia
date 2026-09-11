@@ -714,7 +714,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 const html = renderDescriptionHTML(sections);
                 return (
                   <div
-                    className={`description-formatted ${descExpanded ? '' : 'line-clamp-4'}`}
+                    className={`description-formatted ${descExpanded ? '' : 'hidden'}`}
                     dangerouslySetInnerHTML={{ __html: html }}
                   />
                 );
