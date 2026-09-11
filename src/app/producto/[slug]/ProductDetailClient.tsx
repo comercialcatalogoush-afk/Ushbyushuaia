@@ -697,20 +697,15 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               );
             })()}
 
-            {/* Descriptions & Specs */}
+{/* Descriptions & Specs */}
             <div className="border-t border-b border-gray-100 py-4 space-y-3">
               {(() => {
                 const desc = currentProduct.description || currentProduct.full_description;
-                const sections = parseDescription(desc);
-                if (sections.length === 0 && !desc) {
-                  return (
-                    <div className="text-sm text-neutral-700 font-normal leading-relaxed">
-                      { /teens/i.test(`${currentProduct.category || ''} ${currentProduct.name || ''}`)
-                        ? 'Jean niña de alta durabilidad, confeccionado con tela de calidad nacional.'
-                        : 'Producto de alta durabilidad confeccionado con tela rígida de producción nacional.'}
-                    </div>
-                  );
-                }
+                const cleanDesc = desc && /^Referencia \d+ pendiente de completar detalles por el administrador\.?$/i.test(desc.trim())
+                  ? ''
+                  : desc;
+                const sections = parseDescription(cleanDesc);
+                if (sections.length === 0 && !cleanDesc) return null;
                 const html = renderDescriptionHTML(sections);
                 return (
                   <div
