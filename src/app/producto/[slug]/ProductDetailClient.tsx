@@ -142,19 +142,17 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   // Tallas de hombre: camisas S-M-L-XL, pantalones/jeans/bermudas 28-36.
   const menSizes = getMenSizesForProduct(currentProduct.reference, currentProduct.category);
-  const productSizes = menSizes ?? allowedSizes;
 
-  // Las tallas vienen del producto o de la lista estándar; para hombre se usa la lista masculina.
-  const rawSizes = menSizes
+  // Tallas activas del producto: las que marca el admin en el editor (opción
+  // "Talla"); para hombre se usa la lista masculina; si no hay opción se usa 6-14.
+  const activeSizes = menSizes
     ? menSizes.slice()
     : sizeOption?.values && sizeOption.values.length > 0
       ? sizeOption.values
       : allowedSizes;
-  // Conserva todas las tallas del producto (sin descartar las no estándar),
-  // ordenando primero las estándar y luego el resto.
-  const candidateSizes = Array.from(new Set(
-    [...productSizes, ...rawSizes.map((s) => s.trim())]
-  ));
+  // Se respetan las tallas activas (sin forzar 6-14 completas) y se conservan
+  // las no estándar (ej. 16 para TEENS), en el orden preferido.
+  const candidateSizes = Array.from(new Set(activeSizes.map((s) => s.trim())));
 
   const soldOut = currentProduct.in_stock === false;
   const sizeStockOf = (s: string) => (currentProduct.stock_by_size || {})[s];
@@ -460,14 +458,14 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                   Talla: <span className="text-ush-pink">{selectedSize}</span>
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {availableSizes.map((size) => {
+                  {candidateSizes.map((size) => {
                     const sizeStock = (currentProduct.stock_by_size || {})[size];
-                    const sizeSoldOut = soldOut || sizeStock === 0;
+                    const sizeSoldOut = soldOut || sizeStock === undefined || sizeStock === 0;
                     return (
                       <button
                         key={size}
                         type="button"
-                        onClick={() => { setSelectedSize(size); setQuantity(1); }}
+                        onClick={() => { if (sizeSoldOut) return; setSelectedSize(size); setQuantity(1); }}
                         disabled={sizeSoldOut}
                         className={`relative w-10 h-10 text-xs font-bold uppercase border transition-all flex items-center justify-center rounded-lg ${
                           sizeSoldOut
@@ -747,17 +745,17 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {availableSizes.length > 0 ? availableSizes.map((size) => {
+                {candidateSizes.length > 0 ? candidateSizes.map((size) => {
+                  const sizeOut = sizeStockOf(size) === undefined || sizeStockOf(size) === 0;
                   return (
                     <button
                       key={size}
-                      onClick={() => {
-                        setSelectedSize(size);
-                        setQuantity(1);
-                      }}
-                      title={`Talla ${size}`}
-                      className={`relative w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${
-                        selectedSize === size
+                      onClick={() => { if (sizeOut) return; setSelectedSize(size); setQuantity(1); }}
+                      title={sizeOut ? `Talla ${size} agotada` : `Talla ${size}`}
+                      disabled={sizeOut}
+                      className={`relative w-11 h-11 text-xs font-bold uppercase border transition-all flex items-center justify-center ${sizeOut
+                        ? 'border-gray-200 text-neutral-300 line-through cursor-not-allowed bg-neutral-50'
+                        : selectedSize === size
                           ? 'border-ush-pink bg-ush-pink text-white shadow-md'
                           : 'border-gray-300 text-neutral-700 hover:border-black bg-white'
                       }`}

@@ -17,7 +17,7 @@ const PRODUCTS_STORAGE_KEY = 'ush_products_override_v6';
 // la biblioteca audiovisual; el archivo nunca atraviesa Supabase.
 // `description` y `stock_by_size` se conservan porque el filtrado público y el
 // stock por talla los necesitan.
-export const PRODUCT_LIST_COLUMNS = `id,reference,slug,name,price,suggested_price,compare_price,ribbon,fit,is_best_seller,images,category,category_id,hidden,in_stock,status,description,stock_by_size,video_url`;
+export const PRODUCT_LIST_COLUMNS = `id,reference,slug,name,price,suggested_price,compare_price,ribbon,fit,is_best_seller,images,category,category_id,hidden,in_stock,status,description,stock_by_size,video_url,options`;
 
 export function getLocalProductsOverride(): Product[] | null {
   if (typeof window === 'undefined') return null;

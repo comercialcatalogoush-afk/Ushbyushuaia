@@ -37,8 +37,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     : sizeOption?.values && sizeOption.values.length > 0
       ? sizeOption.values
       : allowedSizes;
-  const availableSizes = rawSizes
-    .filter((s) => productSizes.includes(s) || productSizes.includes(s.trim()))
+  // Todas las tallas activas del producto (incluidas las agotadas para mostrar tachadas)
+  const allActiveSizes = rawSizes
+    .filter((s) => productSizes.includes(s) || productSizes.includes(s.trim()));
+  // Solo tallas con stock > 0 (para lógica de carrito y selección por defecto)
+  const availableSizes = allActiveSizes
     .filter((s) => product.in_stock !== false && (product.stock_by_size || {})[s] !== 0);
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || '6');
@@ -317,17 +320,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
 
             {/* Fila única de tallas — sin desbordamiento en móvil */}
             <div className="flex flex-nowrap gap-1 overflow-x-auto pb-0.5">
-              {availableSizes.length > 0 ? availableSizes.map((size) => {
+              {allActiveSizes.length > 0 ? allActiveSizes.map((size) => {
+                const sizeOutOfStock = soldOut || (product.stock_by_size || {})[size] === undefined || (product.stock_by_size || {})[size] === 0;
                 return (
                   <button
                     key={size}
                     type="button"
-                    onClick={() => handleSizeChange(size)}
-                    title={`Talla ${size}`}
+                    onClick={() => { if (sizeOutOfStock) return; handleSizeChange(size); }}
+                    title={sizeOutOfStock ? `Talla ${size} agotada` : `Talla ${size}`}
+                    disabled={sizeOutOfStock}
                     className={`relative shrink-0 text-[10px] sm:text-[11px] w-6 h-6 sm:w-7 sm:h-7 font-bold border transition-all flex items-center justify-center ${
-                      selectedSize === size
-                        ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
+                      sizeOutOfStock
+                        ? 'border-gray-200 text-gray-300 line-through cursor-not-allowed bg-neutral-50'
+                        : selectedSize === size
+                          ? 'border-ush-pink bg-ush-pink text-white shadow-sm'
+                          : 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
                     }`}
                   >
                     {size}
