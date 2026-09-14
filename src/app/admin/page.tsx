@@ -417,7 +417,7 @@ export default function AdminCatalogPage() {
     };
   }, [isAuthenticated]);
 
-  // Genera el PDF de la factura y lo sube al bucket público. Corre en segundo
+  // Genera el PDF de la cotización y lo sube al bucket público. Corre en segundo
   // plano con tiempos límite para nunca dejar la UI colgada.
   const prepareInvoice = async (order: any): Promise<string | null> => {
     setInvoiceBusyId(order.id);
@@ -427,7 +427,7 @@ export default function AdminCatalogPage() {
         new Promise<never>((_, rej) => setTimeout(() => rej(new Error('tiempo agotado generando PDF')), 30000)),
       ]) as any;
       if (!blob) {
-        setOrderMsg(`No se pudo generar la factura del pedido ${order.id}: ${error || 'error'}`);
+        setOrderMsg(`No se pudo generar la cotización del pedido ${order.id}: ${error || 'error'}`);
         return null;
       }
       const up = await Promise.race([
@@ -440,9 +440,9 @@ export default function AdminCatalogPage() {
         setInvoiceReady({ orderId: order.id, url: up.url });
         return up.url;
       }
-      setOrderMsg(`Factura generada pero no se pudo subir: ${up.error || 'error'}. Reintenta con el botón "Factura PDF".`);
+      setOrderMsg(`Cotización generada pero no se pudo subir: ${up.error || 'error'}. Reintenta con el botón "Cotización PDF".`);
     } catch (e) {
-      setOrderMsg(`Error generando la factura del pedido ${order.id}. Reintenta con el botón "Factura PDF".`);
+      setOrderMsg(`Error generando la cotización del pedido ${order.id}. Reintenta con el botón "Cotización PDF".`);
     } finally {
       setInvoiceBusyId(null);
     }
@@ -464,12 +464,12 @@ export default function AdminCatalogPage() {
       publishOrderChange();
       await loadOrders();
       await loadProducts();
-      // La confirmación NO espera a la factura: se genera en segundo plano
-      setOrderMsg(`Pedido ${order.id} confirmado: stock descontado y pago registrado. Generando factura…`);
+      // La confirmación NO espera a la cotización: se genera en segundo plano
+      setOrderMsg(`Pedido ${order.id} confirmado: stock descontado y pago registrado. Generando cotización…`);
       setConfirmingOrderId(null);
       prepareInvoice(order).then((url) => {
         if (url) {
-          setOrderMsg(`Pedido ${order.id} confirmado. Factura lista para enviar por WhatsApp.`);
+          setOrderMsg(`Pedido ${order.id} confirmado. Cotización lista para enviar por WhatsApp.`);
         }
       });
       return;
@@ -1497,13 +1497,13 @@ export default function AdminCatalogPage() {
                 </div>
               )}
 
-              {/* Factura lista: enviar por WhatsApp o descargar */}
+              {/* Cotización lista: enviar por WhatsApp o descargar */}
               {invoiceReady && (
                 <div className="mt-4 p-4 bg-white border-2 border-[#d88193] flex flex-wrap items-center gap-3">
                   <FileText size={18} className="text-[#d88193]" />
                   <div className="flex-1 min-w-[200px]">
                     <p className="text-xs font-black uppercase tracking-wider text-[#1b2333]">
-                      Factura del pedido {invoiceReady.orderId} lista
+                      Cotización del pedido {invoiceReady.orderId} lista
                     </p>
                     <p className="text-[11px] text-neutral-500">PDF con logo, referencias, descuentos y políticas. Envíala al cliente por WhatsApp.</p>
                   </div>
@@ -1715,7 +1715,7 @@ export default function AdminCatalogPage() {
                                   className="bg-[#1b2333] hover:bg-[#d88193] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 flex items-center gap-2 transition-colors"
                                 >
                                   <FileText size={14} />
-                                  {invoiceBusyId === order.id ? 'Generando…' : 'Factura PDF'}
+                                  {invoiceBusyId === order.id ? 'Generando…' : 'Cotización PDF'}
                                 </button>
                               )}
                               <button

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { supabase } from './supabase';
 import { Product } from '@/types';
+import { getSuggestedPrice } from './pricing';
 
 // ── Formato de moneda COP ──
 const fmtCOP = (v: number) => '$ ' + new Intl.NumberFormat('es-CO').format(Math.round(v || 0));
@@ -65,7 +66,11 @@ function buildRows(order: any, products: Product[]): InvoiceRow[] {
         name: String(it.name || prod?.name || ''),
         sizes: [],
         units: 0,
-        ecommercePrice: Math.max(0, Number(prod?.suggested_price) || 0),
+        ecommercePrice: getSuggestedPrice({
+          suggested_price: it.suggested_price ?? prod?.suggested_price,
+          compare_price: prod?.compare_price,
+          price: prod?.price,
+        }),
         wholesalePrice: Number(it.unit_price) || 0,
         total: 0,
       };
@@ -118,7 +123,7 @@ function drawInvoiceFooter(doc: jsPDF, page: number, totalPages: number) {
   doc.text(`Página ${page} de ${totalPages}`, 196, 289, { align: 'right' });
 }
 
-// ── Genera el PDF de la factura ──
+// ── Genera el PDF de la cotización ──
 export async function generateInvoicePdf(
   order: any,
   products: Product[]
@@ -168,7 +173,7 @@ export async function generateInvoicePdf(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(17);
     doc.setTextColor(...NAVY);
-    doc.text('FACTURA DE VENTA', M, y);
+    doc.text('COTIZACION', M, y);
     doc.setFillColor(...PALE_PINK);
     doc.roundedRect(M + W - 59, y - 9, 59, 10, 2, 2, 'F');
     doc.setFontSize(7.2);
@@ -326,7 +331,47 @@ export async function generateInvoicePdf(
       doc.text(`Notas: ${String(order.notes).slice(0, 90)}`, M, y + 11);
       y += 5;
     }
-    y += 12;
+    y += 6;
+
+    // ══ MEDIOS DE PAGO — TRANSFERENCIA (solo si el pedido es por transferencia) ══
+    if (String(order.payment_method || '') === 'transfer') {
+      const accH = 27;
+      if (y + accH + 16 > 248) { doc.addPage(); y = 16; }
+      y += 1;
+      doc.setFillColor(...LIGHT);
+      doc.setDrawColor(...GRID);
+      doc.setLineWidth(0.3);
+      doc.rect(M, y, W, accH, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...NAVY);
+      doc.text('MEDIOS DE PAGO — TRANSFERENCIA BANCARIA', M + 4, y + 5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.2);
+      doc.setTextColor(...PINK);
+      doc.text('ÚNICAMENTE CONSIGNAR EN CUENTAS A NOMBRE DE USHUAIA JEANS', M + 4, y + 10);
+      doc.setTextColor(...GRAY);
+      doc.text('Ushuaia Jeans S.A.S — NIT. 900285729-8', M + 4, y + 14);
+      const accRows = [
+        ['DAVIVIENDA', 'Cuenta corriente · 037269998888'],
+        ['BANCOLOMBIA', 'Cuenta corriente · 43250681875 — Convenio 30587'],
+        ['BANCO DE BOGOTÁ', 'Cuenta corriente · 811016450'],
+      ];
+      let ay = y + 16;
+      for (const [bank, acct] of accRows) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.6);
+        doc.setTextColor(...NAVY);
+        doc.text(bank, M + 78, ay);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...GRAY);
+        doc.text(acct, M + 118, ay);
+        ay += 4.2;
+      }
+      y += accH + 5;
+    }
+
+    y += 6;
 
     // ══ AGRADECIMIENTO ══
     if (y + 30 > 250) { doc.addPage(); y = 20; }
@@ -338,11 +383,11 @@ export async function generateInvoicePdf(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12.5);
     doc.setTextColor(...NAVY);
-    doc.text('Gracias por su compra', M + 9, y + 9.5);
+    doc.text('Gracias por su interés', M + 9, y + 9.5);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.2);
     doc.setTextColor(...GRAY);
-    doc.text('Su pedido fue confirmado con éxito y ya se encuentra en proceso de despacho.', M + 9, y + 15.2);
+    doc.text('Su cotización fue generada con éxito. Para confirmar su pedido y coordinar el pago y el despacho, escríbanos por WhatsApp.', M + 9, y + 15.2);
     doc.text('Para cambios, reposiciones o novedades escríbanos por WhatsApp; con gusto le asesoramos.', M + 9, y + 19.4);
     y += th + 11;
 
@@ -363,7 +408,7 @@ export async function generateInvoicePdf(
     doc.setFontSize(6.1);
     doc.setTextColor(...GRAY);
     const polItems = [
-      'Precios con IVA incluido. Los valores facturados corresponden al precio mayorista según la cantidad adquirida.',
+      'Precios con IVA incluido. Los valores cotizados corresponden al precio mayorista según la cantidad adquirida.',
       'Cambios y reposiciones dentro de los 3 días hábiles siguientes al recibo del pedido, con prendas sin uso y etiquetas intactas (Ley 1480 de 2011 y Decreto 587 de 2016).',
       'Despachos nacionales desde Carrera 55 B # 72 a 02, Itagüí, Antioquia. Los tiempos de entrega se cuentan a partir de la confirmación del pago.',
       'Tratamiento de datos personales conforme a la Ley 1581 de 2012 (Habeas Data).',
@@ -384,7 +429,7 @@ export async function generateInvoicePdf(
     }
 
     const blob = doc.output('blob');
-    return { blob, fileName: `Factura-${order.id}.pdf` };
+    return { blob, fileName: `Cotizacion-${order.id}.pdf` };
   } catch (e: any) {
     return { blob: null, fileName: '', error: e?.message || 'error generando PDF' };
   }
@@ -404,11 +449,11 @@ export async function uploadInvoicePdf(
     const { data } = supabase.storage.from('invoices').getPublicUrl(path);
     return { success: true, url: data?.publicUrl };
   } catch (e: any) {
-    return { success: false, error: e?.message || 'error subiendo factura' };
+    return { success: false, error: e?.message || 'error subiendo cotización' };
   }
 }
 
-// ── Link wa.me con mensaje prellenado + URL de la factura ──
+// ── Link wa.me con mensaje prellenado + URL de la cotización ──
 export function buildInvoiceWhatsAppUrl(
   phone: string,
   customerName: string,
@@ -418,8 +463,8 @@ export function buildInvoiceWhatsAppUrl(
   let digits = String(phone || '').replace(/\D/g, '');
   if (digits.length === 10) digits = '57' + digits;
   const msg =
-    `¡Hola ${customerName}! 🧾 Tu pedido ${orderId} fue confirmado con éxito.\n\n` +
-    `Aquí puedes ver y descargar tu factura:\n${invoiceUrl}\n\n` +
-    `Gracias por comprar en Ush By Ushuaia 💜 Quedamos atentos para tu próximo despacho.`;
+    `¡Hola ${customerName}! 🧾 Aquí tienes la cotización de tu pedido ${orderId}.\n\n` +
+    `Puedes ver y descargar tu cotización aquí:\n${invoiceUrl}\n\n` +
+    `Para confirmar el pedido, coordinar el pago y el despacho, responde este mensaje 💜 Quedamos atentos.`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
 }

@@ -55,7 +55,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
-  const [invoiceFileName, setInvoiceFileName] = useState('Factura-USH-BY-USHUAIA.pdf');
+  const [invoiceFileName, setInvoiceFileName] = useState('Cotizacion-USH-BY-USHUAIA.pdf');
   const [invoiceState, setInvoiceState] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Error de validación del teléfono (10 dígitos requeridos para Colombia)
@@ -92,7 +92,7 @@ export default function CheckoutPage() {
     }).catch(() => {});
   }, []);
 
-  // La factura se genera en el navegador después de registrar el pedido.
+  // La cotización se genera en el navegador después de registrar el pedido.
   // No se sube a Supabase Storage: el enlace vive solo durante esta sesión.
   useEffect(() => {
     if (!completedOrder) return;
@@ -113,7 +113,7 @@ export default function CheckoutPage() {
         }
         generatedUrl = URL.createObjectURL(blob);
         setInvoiceUrl(generatedUrl);
-        setInvoiceFileName(fileName || `Factura-${completedOrder.id}.pdf`);
+        setInvoiceFileName(fileName || `Cotizacion-${completedOrder.id}.pdf`);
         setInvoiceState('ready');
       })
       .catch(() => {
@@ -228,6 +228,7 @@ export default function CheckoutPage() {
         color: i.selectedColor,
         quantity: i.quantity,
         unit_price: calculateItemUnitPrice(i),
+        suggested_price: i.product.suggested_price || i.product.compare_price || i.product.price || null,
       })),
       is_wholesale: isWholesaleTier,
       notes: formData.notes,
@@ -307,7 +308,7 @@ export default function CheckoutPage() {
 
     const whatsappMsg = encodeURIComponent(
       `🛍️ *PEDIDO USH BY USHUAIA*\n` +
-      `📋 *Ref / Factura:* ${completedOrder.id}\n` +
+      `📋 *Ref / Cotización:* ${completedOrder.id}\n` +
       `📅 *Fecha:* ${completedOrder.order_date}\n` +
       `───────────────────────\n` +
       `👤 *Cliente:* ${completedOrder.customer_name}\n` +
@@ -338,13 +339,13 @@ export default function CheckoutPage() {
           
           <div>
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400">
-              Pedido Registrado
+              Cotización Registrada
             </span>
             <h1 className="text-2xl font-black uppercase text-ush-navy mt-1">
-              ¡Gracias por tu compra!
+              ¡Cotización generada!
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
-              Referencia de pedido / factura: <span className="font-bold text-black">{completedOrder.id}</span>
+              Referencia de cotización: <span className="font-bold text-black">{completedOrder.id}</span>
             </p>
           </div>
 
@@ -376,12 +377,12 @@ export default function CheckoutPage() {
                 className="w-full border border-ush-navy bg-white text-ush-navy hover:bg-ush-navy hover:text-white font-bold py-3 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
               >
                 <FileDown size={17} />
-                <span>Descargar factura PDF</span>
+                <span>Descargar cotización PDF</span>
               </a>
             ) : (
               <div className="w-full border border-neutral-200 bg-neutral-50 text-neutral-500 font-bold py-3 px-6 text-xs uppercase tracking-widest flex items-center justify-center gap-2">
                 {invoiceState === 'error' ? <FileDown size={17} /> : <Loader2 size={17} className="animate-spin" />}
-                <span>{invoiceState === 'error' ? 'Factura no disponible: solicítala a tu asesor' : 'Generando factura PDF…'}</span>
+                <span>{invoiceState === 'error' ? 'Cotización no disponible: solicítala a tu asesor' : 'Generando cotización PDF…'}</span>
               </div>
             )}
 
