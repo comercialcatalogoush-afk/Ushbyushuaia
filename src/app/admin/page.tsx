@@ -1707,7 +1707,7 @@ export default function AdminCatalogPage() {
                                   {confirmingOrderId === order.id ? 'Confirmando…' : 'Confirmar pago y descontar stock'}
                                 </button>
                               )}
-                              {statusKey === 'confirmed' && (
+                              {(statusKey === 'pending' || statusKey === 'confirmed') && (
                                 <button
                                   type="button"
                                   onClick={() => prepareInvoice(order)}
