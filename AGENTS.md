@@ -211,6 +211,46 @@ Estado conocido de Drive:
 - El código ya contiene enlaces externos para esas dos referencias.
 - No reemplazar esas referencias hasta recibir nuevas imágenes o enlaces válidos.
 
+## Reglas de visibilidad del catálogo (causales de errores ya corregidos)
+> Cómo decidir SIEMPRE si una prenda se ve o no en la web pública, y por qué
+> "visible en el panel" puede NO significar "visible en ushbyushuaia.vercel.app".
+
+- La web pública (`, /catalogo`, `/api/catalog`, home) lee SOLO la tabla `products` de
+  Supabase. **NUNCA** fusiona `INITIAL_PRODUCTS` (los 90 estáticos de
+  `src/data/products.ts`). Esos estáticos SOLO se usan en el panel admin
+  (`fetchAllProductsAdmin`) y como respaldo si Supabase falla o devuelve 0 filas.
+  → Si una ref no está como fila en Supabase o está oculta, NO se ve, aunque
+    aparezca en el admin o en `INITIAL_PRODUCTS`.
+- Para que una prenda se vea en la web deben cumplirse TODAS:
+  1. Filas en `products` con `hidden != true` y `status != 'draft'`
+     (`mapProductRow` convierte `status:'draft'` en `hidden:true`).
+  2. `isCompleteProduct`: `images[0]` no vacío Y `name` no vacío.
+     Precio/categoría/fit/stock NO son necesarios para aparecer.
+  3. El filtro de categoría/fit del grillo (`CatalogGrid`) usa el CAMPO REAL del
+     producto como fuente principal: `category` (para categoría) y `fit` (para
+     fit), con normalización de etiquetas del menú (`normalizeCategoryLabel` /
+     `normalizeFitLabel`). Solo si el producto NO tiene ese campo definido se cae
+     a coincidencia por palabra en nombre/tags. NUNCA volver a coincidencia de
+     texto suelta, porque genera falsos positivos (ej: fit "Vaquero" arrastraba
+     un "Jean vaquero flare" cuyo fit real era Flare).
+- Si una ref tiene nombre con la palabra buscada pero un campo categoría/fit
+  distinto, NO debe mostrarse en ese filtro.
+- El filtro "visible" del panel/MCP cuenta solo `hidden == false`; puede no coincidir
+  con lo que muestra la web si la fila está `draft`, sin foto o sin nombre.
+  Al reportar "visible/no visible" hay que corroborar contra `/api/catalog` o la
+  página `?categoria=...`, NO solo contra Supabase o el panel.
+- La categoría `TEENS` es solo datos: aparece lo que tenga `category='TEENS'` Y pase
+  los 3 filtros de arriba. Verificar siempre que las refs autorizadas (350095,
+  350102, 350105) estén `hidden:false`; si una "no se ve", mirar su fila en Supabase
+  antes de tocar código.
+- El caché Edge usa `s-maxage=300` + `stale-while-revalidate=86400`. Un cambio en
+  Supabase puede tardar hasta ~5 min en verse. Para forzar datos frescos al
+  comprobar: `/api/catalog?cb=<timestamp>`. La revalidación automática depende de
+  `REVALIDATE_SECRET` (variable de producción en Vercel, NO en `.env.local`).
+- Al publicar/ocultar una prenda con la herramienta MCP o por insert/update directo,
+  comprobar SIEMPRE el resultado en la web pública con cache-buster, no solo el OK
+  del write en Supabase.
+
 ## Supabase
 - Supabase contiene datos de productos, precios, stock, textos y configuración.
 - Las fotos deben continuar siendo referencias externas.

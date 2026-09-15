@@ -159,18 +159,30 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     if (activeCategory !== 'Todos') {
       const cat = normalizeCategoryLabel(p.category || '').toLowerCase();
       const catActive = normalizeCategoryLabel(activeCategory).toLowerCase();
-      const fit = normalizeFitLabel(p.fit || '').toLowerCase();
-      const matchCat = cat === catActive || fit === catActive || name.includes(catActive) || tags.includes(catActive);
-      if (!matchCat) return false;
+      // La categoría real del producto manda: solo se cae a coincidencia por
+      // nombre/tags cuando el producto no tiene categoría registrada. Esto
+      // evita que un "jean vaquero" de otra categoría aparezca bajo JEANS.
+      if (cat !== catActive) {
+        if (!cat) {
+          const catWord = new RegExp(`(^|[^a-z0-9])${catActive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i');
+          if (!(catWord.test(name) || catWord.test(tags))) return false;
+        } else {
+          return false;
+        }
+      }
     }
     if (activeFit !== 'Todos') {
       const fit = normalizeFitLabel(p.fit || '').toLowerCase();
       const fitActive = activeFit.toLowerCase();
-      // Coincidencia exacta de fit, o bien la palabra completa del fit en
-      // nombre/tags (evita que "Straight" arrastre "Straight Boot").
-      const word = new RegExp(`(^|[^a-z0-9])${fitActive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i');
-      const matchFit = fit === fitActive || word.test(name) || word.test(tags);
-      if (!matchFit) return false;
+      // El fit real del producto manda: solo se cae a coincidencia por
+      // nombre/tags cuando el producto no tiene fit declarado. Así "Vaquero"
+      // no arrastra un "Jean vaquero flare" cuyo fit real es Flare.
+      if (fit) {
+        if (fit !== fitActive) return false;
+      } else {
+        const word = new RegExp(`(^|[^a-z0-9])${fitActive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i');
+        if (!(word.test(name) || word.test(tags))) return false;
+      }
     }
     return true;
   });
