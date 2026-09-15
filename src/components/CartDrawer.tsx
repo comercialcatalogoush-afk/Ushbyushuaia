@@ -211,6 +211,9 @@ export const CartDrawer: React.FC = () => {
 
                       {/* Details */}
                       <div className="flex-1 min-w-0">
+                        <span className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400">
+                          Ref. #{item.product.reference}
+                        </span>
                         <h3 className="text-sm font-black text-ush-navy uppercase truncate">
                           {item.product.name}
                         </h3>
@@ -241,6 +244,9 @@ export const CartDrawer: React.FC = () => {
                             {formatCOP(unitPrice)}
                           </span>
                           <span className="text-[10px] text-gray-400">c/u</span>
+                          <span className="text-[11px] font-extrabold text-ush-pink ml-auto">
+                            Total: {formatCOP(unitPrice * item.quantity)}
+                          </span>
                         </div>
 
                         {/* Quantity Controls */}

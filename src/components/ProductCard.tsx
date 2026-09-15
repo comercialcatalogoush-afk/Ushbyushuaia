@@ -85,7 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
     setAddedAnimation(true);
     setShowAddedToast(true);
     setTimeout(() => setAddedAnimation(false), 1800);
-    setTimeout(() => setShowAddedToast(false), 2800);
+    setTimeout(() => setShowAddedToast(false), 3000);
   };
 
   const showCardLabels = isReference2026(product.reference) || (compact && isBestSellerBadge);

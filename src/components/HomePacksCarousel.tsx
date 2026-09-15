@@ -171,7 +171,7 @@ export function HomePacksCarousel({ products }: { products: Product[] }) {
     setSizePickerOpen(false);
     setAddedMessage('¡Las 12 referencias fueron agregadas individualmente a tu carrito!');
     setIsCartOpen(true);
-    window.setTimeout(() => setAddedMessage(''), 5000);
+    window.setTimeout(() => setAddedMessage(''), 3000);
   };
 
   if (!packProducts.length) return null;

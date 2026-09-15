@@ -87,7 +87,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToasts((prev) => [...prev, { id: toastId, message: msg, type: 'warning' }]);
         setTimeout(() => {
           setToasts((t) => t.filter((n) => n.id !== toastId));
-        }, 5000);
+        }, 3000);
         return;
       }
     }
@@ -126,7 +126,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ]);
         setTimeout(() => {
           setToasts((t) => t.filter((n) => n.id !== toastId));
-        }, 5000);
+        }, 3000);
       }
 
       return [...prev, { product, selectedSize, selectedColor, quantity }];

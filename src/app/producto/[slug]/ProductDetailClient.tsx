@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, BellRing, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Check, Shield, Truck, Ruler, Film, Sparkles, ChevronDown, ChevronUp, MessageCircle, ZoomIn, BellRing, Play, Pause, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from '@/components/SizeGuideModal';
@@ -175,6 +175,10 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
 
   const [quantity, setQuantity] = useState<number>(1);
   const [added, setAdded] = useState(false);
+  const [adding, setAdding] = useState(false);
+  // Guarda sincrónica contra doble clic: evita dos agregados aunque ambos
+  // eventos lleguen en el mismo instante antes de que React re-renderice.
+  const addingRef = useRef(false);
   const [watchSaved, setWatchSaved] = useState(false);
   const [watchLoading, setWatchLoading] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
@@ -300,11 +304,18 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
   }, [refreshFromApi]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
+    if (addingRef.current) return;
+    addingRef.current = true;
+    setAdding(true);
     const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
     if (mainImgEl) animateFlyToCart(mainImgEl as HTMLElement);
     addToCart(currentProduct, selectedSize, selectedColor || undefined, quantity);
     setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    setTimeout(() => setAdded(false), 3000);
+    setTimeout(() => {
+      addingRef.current = false;
+      setAdding(false);
+    }, 600);
   };
 
   const handleWatchAvailability = async () => {
@@ -486,10 +497,12 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={selectedSizeSoldOut || !anySizeAvailable}
+                disabled={selectedSizeSoldOut || !anySizeAvailable || adding}
                 className={`w-full py-3.5 px-4 rounded-xl text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 ${
                   selectedSizeSoldOut || !anySizeAvailable
                     ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                    : adding
+                    ? 'bg-[#1b2333] text-white opacity-80 cursor-wait'
                     : added
                     ? 'bg-emerald-600 text-white shadow-lg'
                     : 'bg-[#1b2333] text-white hover:bg-ush-pink active:scale-[0.98] shadow-md'
@@ -497,6 +510,8 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               >
                 {selectedSizeSoldOut || !anySizeAvailable ? (
                   <span>Agotado</span>
+                ) : adding ? (
+                  <><Loader2 size={16} className="animate-spin" /><span>Agregando...</span></>
                 ) : added ? (
                   <><Check size={16} /><span>¡Agregado al carrito!</span></>
                 ) : (
@@ -823,10 +838,12 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
             <div className="pt-4 space-y-2.5">
               <button
                 onClick={handleAddToCart}
-                disabled={selectedSizeSoldOut || !anySizeAvailable}
+                disabled={selectedSizeSoldOut || !anySizeAvailable || adding}
                 className={`w-full py-4 px-6 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all duration-200 shadow-md ${
                   selectedSizeSoldOut || !anySizeAvailable
                     ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                    : adding
+                    ? 'bg-ush-navy text-white opacity-80 cursor-wait'
                     : added
                     ? 'bg-emerald-600 text-white'
                     : 'bg-ush-navy text-white hover:bg-ush-pink active:scale-[0.99]'
@@ -834,6 +851,10 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
               >
                 {selectedSizeSoldOut || !anySizeAvailable ? (
                   <>Agotado</>
+                ) : adding ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" /> Agregando...
+                  </>
                 ) : added ? (
                   <>
                     <Check size={18} /> ¡Agregado ({quantity} unidades)!
