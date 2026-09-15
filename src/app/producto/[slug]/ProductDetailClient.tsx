@@ -646,7 +646,7 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
                 Ref. Oficial #{currentProduct.reference}
               </span>
               <h1 className="text-3xl font-black uppercase text-ush-navy tracking-tight">
-                {replaceMezclilla(abbreviateProductName(currentProduct).short || currentProduct.name)}
+                {replaceMezclilla(currentProduct.name)}
               </h1>
 
               {/* Dual Price Display */}

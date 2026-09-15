@@ -4,24 +4,18 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Product } from '@/types';
 import { ProductCard } from './ProductCard';
-import { Flame, ChevronDown, ChevronRight, Percent, ArrowUpRight, ArrowUpDown, Sparkles } from 'lucide-react';
+import { Flame, ChevronRight } from 'lucide-react';
 import { isCompleteProduct, getTopSellingProducts } from '@/lib/supabase';
 import { useCatalogSync } from '@/lib/useCatalogSync';
-import { getCategoriesOrder, getCatalogProductsOrder } from '@/lib/siteContent';
+import { getCatalogProductsOrder } from '@/lib/siteContent';
 import { isReference2026 } from '@/data/references2026';
 import { isMenReference } from '@/lib/menCatalog';
 
 interface CatalogGridProps {
   products: Product[];
-  showHeader?: boolean;
 }
 
 const PAGE_SIZE = 12;
-
-const RETAIL_URL = 'https://www.ushuaiajeans.com.co';
-
-// Categorías del sitio oficial (aparecen siempre que tengan productos en Supabase)
-const OFFICIAL_CATEGORY_ORDER = ['Jeans', 'Pantalones', 'Cargos', 'Shorts', 'Faldas', 'Bermudas', 'Camisas', 'TEENS'];
 
 // Normaliza la etiqueta del menú (ej: "VAQUERO", "WIDE LEG") al fit real del producto
 function normalizeFitLabel(label: string): string {
@@ -47,13 +41,13 @@ function normalizeCategoryLabel(label: string): string {
   return map[clean] || label.trim();
 }
 
-export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader = true }) => {
+export const CatalogGrid: React.FC<CatalogGridProps> = ({ products }) => {
   const searchParams = useSearchParams();
   const syncedProducts = useCatalogSync(products);
   const [displayProducts, setDisplayProducts] = useState<Product[]>(syncedProducts);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [customCategoriesOrder, setCustomCategoriesOrder] = useState<string[]>(OFFICIAL_CATEGORY_ORDER);
   const [customProductsOrder, setCustomProductsOrder] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'top' | 'price-asc' | 'price-desc' | 'name'>('top');
 
   // Filtros de prendas (estilo colecciones del sitio)
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
@@ -61,14 +55,11 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCollection, setActiveCollection] = useState<string>('');
   const [activeGender, setActiveGender] = useState<string>('todos');
-  const [tierInfoOpen, setTierInfoOpen] = useState(false);
 
   // Top sellers (rotación real: unidades vendidas en pedidos confirmados)
   const [topUnitsById, setTopUnitsById] = useState<Map<string, number>>(new Map());
-  const [sortBy, setSortBy] = useState<'top' | 'price-asc' | 'price-desc' | 'name'>('top');
 
   const refreshOrders = () => {
-    getCategoriesOrder().then(setCustomCategoriesOrder);
     getCatalogProductsOrder().then(setCustomProductsOrder);
   };
 
@@ -187,21 +178,6 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     return true;
   });
 
-  // Categorías reales presentes en el catálogo ordenadas por la lista personalizada del admin
-  const availableCategories = useMemo(() => {
-    const present = new Set<string>();
-    visibleProducts.forEach((p) => { if (p.category) present.add(p.category); });
-    
-    // Usar orden personalizado configurado por el admin
-    const baseOrder = customCategoriesOrder && customCategoriesOrder.length > 0
-      ? customCategoriesOrder
-      : OFFICIAL_CATEGORY_ORDER;
-
-    const ordered = baseOrder.filter((c) => present.has(c) || c === 'Cargos');
-    const extra = Array.from(present).filter((c) => !baseOrder.includes(c));
-    return ['Todos', ...ordered, ...extra];
-  }, [visibleProducts, customCategoriesOrder]);
-
   /** Un producto tiene foto si al menos una imagen no está vacía. */
   const hasPhoto = (p: Product) =>
     Array.isArray(p.images) && p.images.length > 0 && !!p.images[0] && p.images[0].trim() !== '';
@@ -266,167 +242,10 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({ products, showHeader =
     setVisibleCount((prev) => prev + PAGE_SIZE);
   };
 
-  const handleCategoryChange = (cat: string) => {
-    setActiveCategory(cat);
-    setActiveFit('Todos');
-    setVisibleCount(PAGE_SIZE);
-  };
-
   return (
     <section id="catalogo" className="scroll-mt-20 bg-white">
       <div className="py-4 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* Result count header */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-3 animate-fadeInUp">
-            <div>
-              {activeCollection === '2026' && (
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center gap-1 bg-ush-pink text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-sm">
-                    <Sparkles size={9} />
-                    Colección 2026
-                  </span>
-                </div>
-              )}
-              {showHeader && (
-                <h2 className="text-lg font-black text-[#1b2333] uppercase tracking-tight">
-                  {activeCollection === '2026' ? 'Nuevos 2026' : 'Catálogo Completo'}
-                </h2>
-              )}
-              <p className="text-[11px] text-neutral-500 mt-0.5">
-                {catalogProducts.length} referencias disponibles
-                {catalogProducts.length > visibleCount && ` · Mostrando ${paginatedProducts.length} de ${catalogProducts.length}`}
-              </p>
-            </div>
-
-            {/* Ordenar */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <ArrowUpDown size={12} className="text-neutral-400" />
-              <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
-                Ordenar:
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="border border-gray-200 bg-white px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-700 focus:outline-none focus:border-[#d88193] cursor-pointer"
-              >
-                <option value="top">Más vendidos</option>
-                <option value="price-asc">Precio: menor a mayor</option>
-                <option value="price-desc">Precio: mayor a menor</option>
-                <option value="name">Nombre (A-Z)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* ── Escala de precios mayorista (desde 8 unidades) ── */}
-          <div className="mb-3 animate-fadeInUp">
-            <div className="border border-gray-200 bg-neutral-50 overflow-hidden">
-              <button
-                onClick={() => setTierInfoOpen((o) => !o)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
-              >
-                <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-ush-navy">
-                  <Percent size={14} className="text-ush-pink" />
-                  Escala de precios mayorista
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="hidden md:inline text-[10px] text-neutral-500">
-                    8–11 uds: 20% OFF · 12+ uds: 35% a 42% OFF + envío gratis
-                  </span>
-                  <ChevronDown size={14} className={`text-neutral-400 transition-transform duration-300 ${tierInfoOpen ? 'rotate-180' : ''}`} />
-                </span>
-              </button>
-
-              {tierInfoOpen && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gray-200 border-t border-gray-200 animate-fadeInUp">
-                    <div className="bg-white p-4">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">1 a 7 unidades</p>
-                      <p className="mt-1 text-xs font-bold text-neutral-600">Precio al detal</p>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">Detal, sin descuento mayorista.</p>
-                    </div>
-                    <div className="bg-white p-4 border-t sm:border-t-0 border-gray-200 sm:border-l">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">8 a 11 unidades</p>
-                      <p className="mt-1 text-xs font-bold text-neutral-900">20% de descuento</p>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">Compra mínima mayorista. Aplica solo este 20%.</p>
-                    </div>
-                    <div className="bg-white p-4 border-t sm:border-t-0 border-gray-200 sm:border-l">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">12+ unidades</p>
-                      <p className="mt-1 text-xs font-bold text-neutral-900">35% a 42% de descuento</p>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">
-                        Precio mayorista + <strong className="text-emerald-700">ENVÍO GRATIS</strong>.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="px-4 py-2.5 text-[11px] text-neutral-500 border-t border-gray-200 bg-white animate-fadeIn">
-                    ¿Compras menos de 8 unidades? Visita nuestra tienda retail{' '}
-                    <a
-                      href={RETAIL_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-0.5 font-bold text-ush-pink hover:underline"
-                    >
-                      www.ushuaiajeans.com.co <ArrowUpRight size={11} />
-                    </a>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* ── Filtro de prendas (colecciones del sitio) ── */}
-          <div className="mb-4 animate-fadeInUp">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mr-1">
-                Categoría:
-              </span>
-              {availableCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => handleCategoryChange(cat)}
-                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border transition-all ${
-                    activeCategory === cat
-                      ? 'bg-[#1b2333] text-white border-[#1b2333]'
-                      : 'bg-white text-neutral-600 border-gray-200 hover:border-[#d88193] hover:text-[#d88193]'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-
-              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mr-1 ml-3">
-                Género:
-              </span>
-              {(['todos', 'hombre'] as const).map((g) => (
-                <button
-                  key={g}
-                  onClick={() => {
-                    setActiveGender(g);
-                    setActiveCategory('Todos');
-                    setActiveFit('Todos');
-                    setVisibleCount(PAGE_SIZE);
-                  }}
-                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border transition-all ${
-                    activeGender === g
-                      ? 'bg-[#1b2333] text-white border-[#1b2333]'
-                      : 'bg-white text-neutral-600 border-gray-200 hover:border-[#d88193] hover:text-[#d88193]'
-                  }`}
-                >
-                  {g === 'todos' ? 'Todas' : 'Hombre'}
-                </button>
-              ))}
-
-              {(activeCategory !== 'Todos' || activeFit !== 'Todos' || activeCollection || activeGender !== 'todos') && (
-                <button
-                  onClick={() => { handleCategoryChange('Todos'); setActiveFit('Todos'); setActiveCollection(''); setActiveGender('todos'); }}
-                  className="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#d88193] hover:underline"
-                >
-                  Limpiar filtros
-                </button>
-              )}
-            </div>
-          </div>
 
           {paginatedProducts.length > 0 ? (
             <>
