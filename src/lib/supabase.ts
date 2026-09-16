@@ -140,13 +140,16 @@ function mergeWithInitial(supabaseProducts: Product[]): Product[] {
   return [...supabaseProducts, ...localOnly];
 }
 
-// Un producto es visible públicamente solo cuando tiene nombre y foto comprobable.
+// Un producto es visible públicamente solo cuando tiene nombre, foto comprobable
+// y descripción real (regla del dueño: sin descripción no aparece en el catálogo).
 export function isCompleteProduct(p: Product): boolean {
   if (!p) return false;
   const hasImage = Array.isArray(p.images) && p.images.length > 0 && !!p.images[0] && p.images[0].trim() !== '';
   const title = (p.name || '').trim();
   const hasTitle = title.length > 0;
-  return hasImage && hasTitle;
+  const description = (p.description || '').trim();
+  const hasDescription = description.length > 0 && !/Referencia de .* disponible para pedido mayorista/.test(description);
+  return hasImage && hasTitle && hasDescription;
 }
 
 export async function fetchProductsFromSupabase(opts: { slim?: boolean } = {}): Promise<Product[]> {

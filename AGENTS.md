@@ -224,8 +224,11 @@ Estado conocido de Drive:
 - Para que una prenda se vea en la web deben cumplirse TODAS:
   1. Filas en `products` con `hidden != true` y `status != 'draft'`
      (`mapProductRow` convierte `status:'draft'` en `hidden:true`).
-  2. `isCompleteProduct`: `images[0]` no vacío Y `name` no vacío.
-     Precio/categoría/fit/stock NO son necesarios para aparecer.
+  2. `isCompleteProduct`: `images[0]` no vacío Y `name` no vacío Y `description`
+     real (no vacía y distinta del placeholder "Referencia de X disponible para
+     pedido mayorista"). Regla vigente del dueño (2026-09-16): sin descripción
+     NO aparece en el catálogo. Precio/categoría/fit/stock NO son necesarios
+     para aparecer.
   3. El filtro de categoría/fit del grillo (`CatalogGrid`) usa el CAMPO REAL del
      producto como fuente principal: `category` (para categoría) y `fit` (para
      fit), con normalización de etiquetas del menú (`normalizeCategoryLabel` /
