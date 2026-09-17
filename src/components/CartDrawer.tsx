@@ -285,108 +285,89 @@ export const CartDrawer: React.FC = () => {
             )}
           </div>
 
-          {/* Footer Summary — Clean & Minimalist */}
+          {/* Footer Summary — Compacto para dar máximo espacio a las prendas agregadas */}
           {items.length > 0 && (
-            <div className="p-6 border-t border-gray-100 bg-gray-50 space-y-4">
+            <div className="p-3.5 border-t border-gray-200 bg-white space-y-2 shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
 
-              {/* Simple Clean Summary */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-xs text-neutral-500">
-                  <span>Total Prendas:</span>
-                  <span className="font-bold text-neutral-900">{totalItemsCount} unidades</span>
+              {/* Resumen en 1 sola fila limpia y compacta */}
+              <div className="flex justify-between items-center bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-200">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Total:</span>
+                  <span className="text-xs font-black text-neutral-900 bg-white px-2 py-0.5 rounded border border-neutral-300">
+                    {totalItemsCount} {totalItemsCount === 1 ? 'prenda' : 'prendas'}
+                  </span>
                 </div>
-                <div className="flex justify-between items-baseline pt-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">Subtotal Estimado</span>
-                  <span className="text-xl font-black text-neutral-900">{formatCOP(subtotalCOP)}</span>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-neutral-400 block leading-tight">Subtotal Estimado</span>
+                  <span className="text-base font-black text-neutral-900 leading-tight">{formatCOP(subtotalCOP)}</span>
                 </div>
               </div>
 
-              {/* Tier progress bar */}
-              <div className="space-y-2">
+              {/* Barra de estado / Descuento ultra compacta */}
+              <div>
                 {totalItemsCount >= 12 ? (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1.5 animate-fadeIn">
-                    <div className="flex items-center gap-1.5 font-bold">
-                      <Sparkles size={13} className="text-emerald-600" /> ¡Precio mayorista + ENVÍO GRATIS activados!
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold">
-                      <Truck size={12} /> 12+ unidades · descuento mayorista de 35% a 42%
-                    </div>
+                  <div className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] rounded flex items-center justify-between font-bold">
+                    <span className="flex items-center gap-1"><Sparkles size={12} className="text-emerald-600" /> Precio Mayorista + Envío Gratis</span>
+                    <span className="text-emerald-600 text-[10px] font-black">✓ ACTIVO</span>
                   </div>
                 ) : totalItemsCount >= 8 ? (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1.5 animate-fadeIn">
-                    <div className="flex justify-between items-center text-[11px] font-bold">
-                      <span>✓ 20% de descuento activado</span>
-                      <span className="text-emerald-700">{totalItemsCount} / 12</span>
+                  <div className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] rounded space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span>✓ 20% OFF aplicado ({totalItemsCount}/12)</span>
+                      <span>Faltan {12 - totalItemsCount} para Envío Gratis</span>
                     </div>
-                    <div className="h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+                    <div className="h-1 bg-emerald-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-700 ease-out"
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, (totalItemsCount / 12) * 100)}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-emerald-700">
-                      Faltan {12 - totalItemsCount} unidad(es) para el precio mayorista (35%–42% OFF) + <strong>envío gratis</strong>.
-                    </p>
                   </div>
                 ) : (
-                  <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5 animate-fadeIn">
-                    <div className="flex justify-between items-center text-[11px] font-bold">
-                      <span>Descuento por cantidad</span>
-                      <span>{totalItemsCount} / 8</span>
+                  <div className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 text-[11px] rounded space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span>Compra mínima mayorista (8 prendas)</span>
+                      <span>Faltan {8 - totalItemsCount} uds</span>
                     </div>
-                    <div className="h-1.5 bg-amber-100 rounded-full overflow-hidden">
+                    <div className="h-1 bg-amber-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full transition-all duration-700 ease-out"
+                        className="h-full bg-amber-500 rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, (totalItemsCount / 8) * 100)}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-amber-800">
-                      Faltan {8 - totalItemsCount} unidad(es) para activar el <strong>20% de descuento</strong> (compra mínima de 8 unidades).
-                    </p>
-                    <p className="text-[11px] text-amber-800">
-                      ¿Compras menos de 8 unidades? Visita nuestra tienda retail:
-                      <a
-                        href={RETAIL_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-ush-pink hover:underline ml-1"
-                      >
-                        www.ushuaiajeans.com.co
-                      </a>
-                    </p>
                   </div>
                 )}
 
                 {coupon && discountCOP > 0 && (
-                  <div className="flex justify-between items-center text-[11px] text-emerald-700 font-semibold px-1">
+                  <div className="flex justify-between items-center text-[10px] text-emerald-700 font-semibold px-1 pt-1">
                     <span>Cupón {coupon.code} (−{Math.round(coupon.discount * 100)}%)</span>
                     <span>−{formatCOP(discountCOP)}</span>
                   </div>
                 )}
               </div>
 
-              {/* Acciones de Tramitación: Checkout Web + WhatsApp Fast Order (Propuesta 3) */}
-              <div className="space-y-2 pt-1">
+              {/* Botones de Tramitación compactos */}
+              <div className="space-y-1.5 pt-0.5">
                 <button
                   onClick={handleProceedToCheckout}
                   disabled={totalItemsCount < MIN_ORDER_UNITS}
-                  className={`w-full font-bold py-3.5 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.99] ${
+                  className={`w-full font-bold py-2.5 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded transition-all shadow-sm active:scale-[0.99] ${
                     totalItemsCount < MIN_ORDER_UNITS
-                      ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                      ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                       : 'bg-ush-navy text-white hover:bg-ush-pink'
                   }`}
                 >
                   <span>Tramitar en Línea</span>
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </button>
 
                 {totalItemsCount >= MIN_ORDER_UNITS && (
                   <button
                     onClick={handleWhatsAppFastOrder}
-                    className="w-full font-bold py-3 px-4 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm bg-[#25D366] hover:bg-[#1ebd5a] text-white active:scale-[0.99]"
+                    className="w-full font-bold py-2 px-4 text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 rounded transition-all shadow-xs bg-[#25D366] hover:bg-[#1ebd5a] text-white active:scale-[0.99]"
                   >
-                    <Send size={15} />
-                    <span>📲 Pedir por WhatsApp en 1 Clic</span>
+                    <Send size={13} />
+                    <span>Pedir por WhatsApp en 1 Clic</span>
                   </button>
                 )}
               </div>

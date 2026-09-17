@@ -309,13 +309,17 @@ export default function ProductDetailClient({ product, related = [] }: ProductDe
     setAdding(true);
     const mainImgEl = document.querySelector('.aspect-\\[3\\/4\\] img');
     if (mainImgEl) animateFlyToCart(mainImgEl as HTMLElement);
-    addToCart(currentProduct, selectedSize, selectedColor || undefined, quantity);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 3000);
+
+    // Carga de 2 segundos después de la animación de agregado antes de confirmar
     setTimeout(() => {
-      addingRef.current = false;
+      addToCart(currentProduct, selectedSize, selectedColor || undefined, quantity);
       setAdding(false);
-    }, 600);
+      setAdded(true);
+      setTimeout(() => {
+        setAdded(false);
+        addingRef.current = false;
+      }, 2500);
+    }, 2000);
   };
 
   const handleWatchAvailability = async () => {

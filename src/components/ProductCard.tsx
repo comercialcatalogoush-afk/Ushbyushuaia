@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, Eye, Check, Plus, Minus, Ruler, Truck, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { ShoppingBag, Eye, Check, Plus, Minus, Ruler, Truck, Sparkles, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { SizeGuideModal } from './SizeGuideModal';
@@ -48,6 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const [quantity, setQuantity] = useState<number>(1);
   const [addedAnimation, setAddedAnimation] = useState(false);
   const [showAddedToast, setShowAddedToast] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
@@ -77,15 +78,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (sizeSoldOut) return;
+    if (sizeSoldOut || isAdding) return;
+    setIsAdding(true);
     const imgEl = (e.currentTarget.closest('.group') as HTMLElement)?.querySelector('img');
     if (imgEl) animateFlyToCart(imgEl as HTMLElement);
-    const productColor = product.color || undefined;
-    addToCart(product, selectedSize, productColor, quantity);
-    setAddedAnimation(true);
-    setShowAddedToast(true);
-    setTimeout(() => setAddedAnimation(false), 1800);
-    setTimeout(() => setShowAddedToast(false), 3000);
+
+    // Carga de 2 segundos después de la animación antes de confirmar
+    setTimeout(() => {
+      const productColor = product.color || undefined;
+      addToCart(product, selectedSize, productColor, quantity);
+      setIsAdding(false);
+      setAddedAnimation(true);
+      setShowAddedToast(true);
+      setTimeout(() => setAddedAnimation(false), 1800);
+      setTimeout(() => setShowAddedToast(false), 3000);
+    }, 2000);
   };
 
   const showCardLabels = isReference2026(product.reference) || (compact && isBestSellerBadge);
@@ -378,10 +385,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          disabled={sizeSoldOut}
+          disabled={sizeSoldOut || isAdding}
           className={`mt-4 w-full py-3 px-4 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-200 ${
             sizeSoldOut
               ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+              : isAdding
+              ? 'bg-[#1b2333] text-white opacity-85 cursor-wait'
               : addedAnimation
               ? 'bg-emerald-600 text-white'
               : 'bg-ush-navy text-white hover:bg-ush-pink active:scale-[0.98]'
@@ -389,6 +398,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
         >
           {sizeSoldOut ? (
             <>Agotado</>
+          ) : isAdding ? (
+            <>
+              <Loader2 size={15} className="animate-spin text-ush-pink" /> Agregando...
+            </>
           ) : addedAnimation ? (
             <>
               <Check size={15} /> ¡Agregado ({quantity})!

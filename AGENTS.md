@@ -350,3 +350,13 @@ Al terminar cada tarea informar:
 7. Cualquier problema pendiente o decisión que requiera al usuario.
 
 Responder siempre en español, con lenguaje claro y sin ocultar limitaciones.
+
+## Reglas del dueño (emitidas el 2026-09-17) para el sistema de ventas WhatsApp
+1. **Historial a migrar**: todo desde el **18 de agosto de 2026** (la fecha mínima real del store
+   del bridge es 2026-08-18 14:16:08; no existe nada anterior, así que se migra completo).
+2. **Aprendizaje de la IA de WhatsApp**: el dueño habilitará la IA de WhatsApp del negocio para
+   que el asistente observe cómo se comporta y aprenda de ella. Ver los mensajes `is_from_me`
+   del historial como material de aprendizaje del tono y estilo de respuesta de la marca.
+3. **Los mensajes hacia el dueño son SIEMPRE SUGERENCIAS**: nunca ejecutar cambios en
+   producción (panel admin Catálogo, página web, pedidos, catálogo mayorista) sin que el dueño
+   apruebe la sugerencia de forma expresa. Informar qué se haría y esperar confirmación.
