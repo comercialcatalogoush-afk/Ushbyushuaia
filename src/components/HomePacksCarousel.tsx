@@ -319,14 +319,14 @@ export function HomePacksCarousel({ products }: { products: Product[] }) {
                       <div key={product.id} className="w-full shrink-0 px-1.5 sm:px-2" style={{ width: `${slideWidth}%` }}>
                         <Link href={`/producto/${product.slug}`} className="group block overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-[#d88193] hover:shadow-lg">
                           <div className="relative aspect-[3/4] overflow-hidden bg-neutral-100">
-                            {discountPercent > 0 && <span className="absolute right-2 top-2 z-10 bg-[#ff4e00] px-2.5 py-1 text-[10px] font-medium uppercase tracking-normal text-white">- {discountPercent}%</span>}
+                            {discountPercent > 0 && <span className="absolute right-2 top-2 z-10 bg-[#ff4e00] px-2 py-0.5 text-[9px] font-medium uppercase tracking-normal text-white">- {discountPercent}%</span>}
                             {image ? <img src={image} alt={product.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs text-neutral-400">Imagen pendiente</div>}
-                            <span className="absolute left-2 top-2 rounded-full bg-[#1b2333]/90 px-2 py-1 text-[9px] font-black tracking-wider text-white">REF {product.reference}</span>
                           </div>
-                          <div className="p-3">
-                            <p className="line-clamp-2 min-h-8 text-[10px] font-black uppercase leading-tight text-[#1b2333]">{product.name}</p>
-                            <div className="mt-2 flex items-center justify-between gap-2">
-                              <p className="text-sm font-black text-[#b5586c]">{formatCOP(price)}</p>
+                          <div className="p-2.5">
+                            <span className="block text-[9px] font-bold uppercase tracking-wider text-neutral-400">Ref. #{product.reference}</span>
+                            <p className="line-clamp-1 text-[10px] font-black uppercase leading-tight text-[#1b2333] mt-0.5">{product.name}</p>
+                            <div className="mt-1 flex items-center justify-between gap-1">
+                              <p className="text-xs font-black text-[#b5586c]">{formatCOP(price)}</p>
                             </div>
                           </div>
                         </Link>

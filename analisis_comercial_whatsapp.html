@@ -3,1192 +3,545 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Análisis Comercial WhatsApp — Ush by Ushuaia · Canal Mayorista · Sep 2026</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>Análisis Comercial WhatsApp — Ush by Ushuaia (Canal Mayorista)</title>
 <style>
-/* ── Reset & Variables ── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07090f;
-  --bg2:#0d1019;
-  --panel:#111420;
-  --panel2:#161926;
-  --border:#1e2440;
-  --border2:#252b48;
-  --txt:#dde3f8;
-  --muted:#6b7599;
-  --dim:#3d4566;
-
-  --green:#22d47b;
-  --green-bg:#081f14;
-  --green-border:#0f3d26;
-
-  --yellow:#f5c842;
-  --yellow-bg:#1c1600;
-  --yellow-border:#3d3000;
-
-  --red:#f04f5a;
-  --red-bg:#1c0509;
-  --red-border:#3d0d13;
-
-  --orange:#f2894a;
-  --orange-bg:#1c0d04;
-  --orange-border:#3d1e09;
-
-  --blue:#5b8fff;
-  --blue-bg:#050f2e;
-  --blue-border:#0e2060;
-
-  --purple:#a97dff;
-  --purple-bg:#0e0820;
-  --purple-border:#2a1660;
-
-  --pink:#ff6fbc;
-  --teal:#3dd9c8;
-
-  --ush-rosa:#ff6fbc;
-  --ush-navy:#1a2d5a;
+  --bg:#0f1220; --panel:#171b2e; --panel2:#1e2338; --line:#2a3050;
+  --txt:#e8eaf2; --muted:#9aa3c0; --accent:#5b8cff; --green:#34c77b;
+  --yellow:#f2c14e; --red:#ef5350; --orange:#f28c4e; --violet:#b084ff;
 }
-
-html{scroll-behavior:smooth}
-body{
-  font-family:'Inter',system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--txt);
-  line-height:1.6;
-  font-size:14px;
-}
-
-/* ── Layout ── */
-.wrap{max-width:1360px;margin:0 auto;padding:0 20px 80px}
-
-/* ── Header ── */
-.site-header{
-  background:linear-gradient(135deg,#0a0d1e 0%,#0f1630 50%,#0a0e20 100%);
-  border-bottom:1px solid var(--border2);
-  padding:28px 0 24px;
-  position:sticky;top:0;z-index:100;
-  backdrop-filter:blur(12px);
-}
-.header-inner{
-  max-width:1360px;margin:0 auto;padding:0 20px;
-  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
-}
-.logo-block h1{font-size:20px;font-weight:800;letter-spacing:-.3px;color:#fff}
-.logo-block h1 span{color:var(--ush-rosa)}
-.logo-block .sub{font-size:12px;color:var(--muted);margin-top:2px}
-.header-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:11px;font-weight:600;border-radius:20px;
-  padding:4px 10px;border:1px solid;white-space:nowrap;
-}
-.badge-warn{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-border)}
-.badge-ok  {background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
-.badge-neu {background:var(--panel2);color:var(--muted);border-color:var(--border)}
-.badge-red {background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
-.badge-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border)}
-
-/* ── Nav Tabs ── */
-.nav-tabs{
-  display:flex;gap:2px;background:var(--panel);border:1px solid var(--border);
-  border-radius:12px;padding:4px;margin:20px 0;flex-wrap:wrap;
-}
-.nav-tab{
-  padding:8px 16px;border-radius:9px;font-size:13px;font-weight:500;
-  cursor:pointer;transition:all .2s;color:var(--muted);border:none;background:none;
-  white-space:nowrap;
-}
-.nav-tab.active,.nav-tab:hover{background:var(--panel2);color:var(--txt)}
-.nav-tab.active{color:#fff;font-weight:600}
-
-.tab-content{display:none}
-.tab-content.active{display:block;animation:fadeIn .25s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-/* ── KPI Cards ── */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:20px 0}
-.kpi{
-  background:var(--panel);border:1px solid var(--border);border-radius:14px;
-  padding:18px 16px;position:relative;overflow:hidden;
-}
-.kpi::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-}
-.kpi.green::before{background:var(--green)}
-.kpi.yellow::before{background:var(--yellow)}
-.kpi.red::before{background:var(--red)}
-.kpi.blue::before{background:var(--blue)}
-.kpi.orange::before{background:var(--orange)}
-.kpi.purple::before{background:var(--purple)}
-.kpi.pink::before{background:var(--ush-rosa)}
-
-.kpi .num{font-size:30px;font-weight:800;line-height:1;margin-bottom:4px}
-.kpi.green .num{color:var(--green)}
-.kpi.yellow .num{color:var(--yellow)}
-.kpi.red .num{color:var(--red)}
-.kpi.blue .num{color:var(--blue)}
-.kpi.orange .num{color:var(--orange)}
-.kpi.purple .num{color:var(--purple)}
-.kpi.pink .num{color:var(--ush-rosa)}
-.kpi .lbl{font-size:11px;color:var(--muted);font-weight:500;line-height:1.3}
-.kpi .sub-num{font-size:12px;color:var(--dim);margin-top:6px}
-
-/* ── Section ── */
-.section{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:16px;padding:22px;margin:16px 0;
-}
-.section-title{
-  font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;
-  display:flex;align-items:center;gap:8px;
-}
-.section-title .icon{font-size:18px}
-.section-lead{font-size:13px;color:var(--muted);margin-bottom:16px}
-
-/* ── Alert boxes ── */
-.alert{border-radius:12px;padding:14px 16px;margin:10px 0;font-size:13px;border:1px solid;line-height:1.5}
-.alert.crit{background:var(--red-bg);border-color:var(--red-border);color:#ffb3b9}
-.alert.warn{background:var(--yellow-bg);border-color:var(--yellow-border);color:#ffe8a0}
-.alert.info{background:var(--blue-bg);border-color:var(--blue-border);color:#b3caff}
-.alert.ok  {background:var(--green-bg);border-color:var(--green-border);color:#a0ffcd}
-.alert strong{display:block;font-weight:700;margin-bottom:4px}
-
-/* ── Funnel visual ── */
-.funnel{display:flex;flex-direction:column;gap:0;margin:16px auto;max-width:500px}
-.funnel-step{
-  display:flex;align-items:center;gap:12px;padding:12px 20px;
-  border-radius:8px;margin-bottom:4px;position:relative;
-}
-.funnel-step:not(:last-child)::after{
-  content:'▼';position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);
-  color:var(--dim);font-size:10px;z-index:1;
-}
-.funnel-step .fn-n{font-size:22px;font-weight:800;min-width:50px;text-align:right}
-.funnel-step .fn-l{font-size:13px}
-.funnel-step .fn-pct{font-size:11px;color:var(--muted);margin-top:2px}
-.fn-1{background:rgba(91,143,255,.12);border:1px solid rgba(91,143,255,.2)}
-.fn-1 .fn-n{color:var(--blue)}
-.fn-2{background:rgba(242,137,74,.12);border:1px solid rgba(242,137,74,.2)}
-.fn-2 .fn-n{color:var(--orange)}
-.fn-3{background:rgba(245,200,66,.12);border:1px solid rgba(245,200,66,.2)}
-.fn-3 .fn-n{color:var(--yellow)}
-.fn-4{background:rgba(169,125,255,.12);border:1px solid rgba(169,125,255,.2)}
-.fn-4 .fn-n{color:var(--purple)}
-.fn-5{background:rgba(34,212,123,.12);border:1px solid rgba(34,212,123,.2)}
-.fn-5 .fn-n{color:var(--green)}
-.fn-6{background:rgba(240,79,90,.12);border:1px solid rgba(240,79,90,.2)}
-.fn-6 .fn-n{color:var(--red)}
-
-/* ── Pipeline Table ── */
-.tools-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
-.tool-input{
-  background:var(--panel2);border:1px solid var(--border);color:var(--txt);
-  padding:8px 12px;border-radius:10px;font-size:13px;flex:1;min-width:180px;
-  font-family:inherit;outline:none;
-}
-.tool-input:focus{border-color:var(--blue)}
-.tool-select{
-  background:var(--panel2);border:1px solid var(--border);color:var(--txt);
-  padding:8px 10px;border-radius:10px;font-size:13px;font-family:inherit;outline:none;
-  cursor:pointer;
-}
-
-.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 20px 60px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:8px}
+h1{font-size:22px;margin:0}
+h1 small{display:block;color:var(--muted);font-size:13px;font-weight:400;margin-top:2px}
+.badge{margin-left:10px;font-size:11px;background:#233;border:1px solid #355;color:#bfe;padding:3px 8px;border-radius:20px;vertical-align:middle}
+.date{color:var(--muted);font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card .v{font-size:24px;font-weight:700}
+.card .l{color:var(--muted);font-size:12px;margin-top:2px}
+.card.g .v{color:var(--green)} .card.y .v{color:var(--yellow)} .card.o .v{color:var(--orange)} .card.r .v{color:var(--red)} .card.b .v{color:var(--accent)}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;margin:20px 0}
+section h2{font-size:16px;margin:0 0 4px}
+section h2 span{color:var(--muted);font-weight:400;font-size:12px}
+.lead{color:var(--muted);font-size:13px;margin:0 0 12px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 14px}
+.tools input,.tools select,.tools label.btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:10px;font-size:13px}
+.tools input{flex:1;min-width:180px}
+.tools label.btn{cursor:pointer;user-select:none}
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{
-  background:var(--panel2);padding:10px 12px;text-align:left;
-  color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;
-  letter-spacing:.05em;white-space:nowrap;cursor:pointer;user-select:none;
-  border-bottom:1px solid var(--border);
-}
-thead th:hover{color:var(--txt)}
-tbody td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:rgba(255,255,255,.02)}
-
-/* ── Pill ── */
-.pill{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:11px;font-weight:700;border-radius:20px;
-  padding:3px 9px;white-space:nowrap;border:1px solid;
-}
-.pill-HOT    {background:#0e2a1a;color:#22d47b;border-color:#1a4d30}
-.pill-Seguimiento{background:#1c1600;color:#f5c842;border-color:#3d3000}
-.pill-Reactivar  {background:#1a0812;color:#ff6fbc;border-color:#3d1030}
-.pill-Visita     {background:#050f2e;color:#5b8fff;border-color:#0e2060}
-.pill-B2B        {background:#0e0820;color:#a97dff;border-color:#2a1660}
-.pill-Referido   {background:#081810;color:#3dd9c8;border-color:#0f3326}
-.pill-Internacional{background:#081420;color:#5be4ff;border-color:#0f2d40}
-.pill-Perdido    {background:#1c0509;color:#f04f5a;border-color:#3d0d13}
-
-/* ── Score bar ── */
-.score-wrap{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.score-num{font-size:14px;font-weight:700;min-width:26px}
-.score-bar{width:52px;height:5px;border-radius:3px;background:var(--panel2)}
-.score-fill{height:100%;border-radius:3px}
-.s-hot{color:var(--green)} .s-hot .score-fill{background:var(--green)}
-.s-warm{color:var(--yellow)} .s-warm .score-fill{background:var(--yellow)}
-.s-cool{color:var(--orange)} .s-cool .score-fill{background:var(--orange)}
-.s-cold{color:var(--red)} .s-cold .score-fill{background:var(--red)}
-
-/* ── Message box ── */
-.msg-box p{color:var(--txt);font-size:13px;line-height:1.5;max-width:380px}
-.msg-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.btn-copy{
-  background:var(--panel2);border:1px solid var(--border);color:var(--muted);
-  border-radius:8px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit;
-  transition:all .15s;
-}
-.btn-copy:hover{border-color:var(--blue);color:var(--txt)}
-.btn-copy.copied{border-color:var(--green);color:var(--green)}
-.btn-wa{
-  background:#0a1e14;border:1px solid #1a4d30;color:#22d47b;
-  border-radius:8px;padding:5px 11px;font-size:12px;cursor:pointer;
-  text-decoration:none;display:inline-block;transition:all .15s;font-family:inherit;
-}
-.btn-wa:hover{background:#0f2e1e}
-
-/* ── Grid 2 cols ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
-
-/* ── Mini card ── */
-.mini{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px}
-.mini h3{font-size:13px;font-weight:700;color:#fff;margin-bottom:8px}
-.mini p{font-size:13px;color:#b0b8d8;line-height:1.5;margin-bottom:6px}
-.mini ul{padding-left:18px;color:#b0b8d8;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);padding:8px 8px;cursor:pointer;white-space:nowrap}
+td{border-bottom:1px solid #1d2340;padding:9px 8px;vertical-align:top}
+tr:hover td{background:#1b2034}
+.pill{display:inline-block;font-size:11px;font-weight:600;border-radius:20px;padding:2px 9px;white-space:nowrap}
+.p-hot{background:#123c2a;color:#35d07c;border:1px solid #1e5c40}
+.p-Seguimiento{background:#3a3410;color:#f2c14e;border:1px solid #5c4f1e}
+.p-Reactivar{background:#3a1e2c;color:#ff8fa3;border:1px solid #5c2c40}
+.p-Visita{background:#16324a;color:#6cb6ff;border:1px solid #20507a}
+.p-B2B{background:#2e2145;color:#c2a2ff;border:1px solid #4a3369}
+.p-Referido{background:#253a2c;color:#8fd0a8;border:1px solid #3a5c4a}
+.p-Internacional{background:#143a46;color:#7fd4e8;border:1px solid #205c6e}
+.sc{font-weight:700;white-space:nowrap}
+.sc>i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.s80{color:var(--green)} .s65{color:var(--yellow)} .s50{color:var(--orange)} .s0{color:var(--red)}
+.s80>i{background:var(--green)} .s65>i{background:var(--yellow)} .s50>i{background:var(--orange)} .s0>i{background:var(--red)}
+.msg{max-width:380px}
+.msg p{margin:0 0 6px;color:#cfd5ea}
+.btns{display:flex;gap:6px;margin-top:4px}
+.btn{display:inline-block;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;text-decoration:none}
+.btn:hover{background:#283050}
+.btn.wa{background:#17392a;border-color:#1f5b3f;color:#7fe0ad}
+.btn.wa:hover{background:#1d4735}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.mini{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.mini h3{margin:0 0 6px;font-size:13px}
+.mini ul{margin:0;padding-left:18px;color:#cfd5ea;font-size:13px}
 .mini li{margin-bottom:5px}
-
-/* ── Insight box ── */
-.insight{
-  display:flex;gap:12px;align-items:flex-start;
-  background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px;
-  margin:8px 0;
-}
-.insight .ico{font-size:20px;flex-shrink:0;line-height:1}
-.insight .body{font-size:13px;color:#b0b8d8;line-height:1.5}
-.insight .body strong{color:#fff;display:block;margin-bottom:3px}
-
-/* ── Week plan ── */
-.week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0}
-@media(max-width:900px){.week-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:500px){.week-grid{grid-template-columns:1fr}}
-.day-card{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px}
-.day-card h4{font-size:12px;font-weight:700;color:var(--ush-rosa);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
-.day-card ul{list-style:none;font-size:12px;color:#b0b8d8}
-.day-card li{padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:flex-start}
-.day-card li:last-child{border-bottom:none}
-.day-card li::before{content:'→';color:var(--ush-rosa);flex-shrink:0;margin-top:1px}
-
-/* ── Objecion block ── */
-.obj-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:700px){.obj-grid{grid-template-columns:1fr}}
-.obj-card{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px}
-.obj-card .q{font-size:13px;color:var(--yellow);font-weight:600;margin-bottom:8px}
-.obj-card .r{font-size:13px;color:#b0b8d8;line-height:1.5}
-.obj-card .tag{font-size:11px;color:var(--muted);margin-top:8px}
-
-/* ── Diagnosis ── */
-.diag{display:flex;gap:10px;padding:12px;border-radius:10px;margin:6px 0;font-size:13px;border:1px solid}
-.diag.ok{background:var(--green-bg);border-color:var(--green-border)}
-.diag.bad{background:var(--red-bg);border-color:var(--red-border)}
-.diag.warn{background:var(--yellow-bg);border-color:var(--yellow-border)}
-.diag .di{font-size:18px;flex-shrink:0}
-.diag .dt{color:#ccc;line-height:1.5}
-.diag .dt strong{color:#fff;display:block;margin-bottom:2px}
-
-/* ── Mono ── */
-code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:2px 6px}
-
-/* ── Footer ── */
-.site-footer{text-align:center;color:var(--dim);font-size:12px;padding:30px 0 10px}
+.kv{font-size:13px;color:#cfd5ea;margin:0 0 4px}
+code{background:#0c0f1c;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:12px}
+.nota{background:#2b2117;border:1px solid #5c4a22;border-radius:12px;padding:12px 14px;font-size:13px;color:#e6d3a8}
+.ok{background:#172b1f;border:1px solid #2c5238;border-radius:12px;padding:12px 14px;font-size:13px;color:#a7e6c0}
+.foot{color:var(--muted);font-size:12px;margin-top:22px;text-align:center}
+.scoreline{height:6px;border-radius:4px;background:#262c48;overflow:hidden;max-width:70px}
+.scoreline>i{display:block;height:100%}
 </style>
 </head>
 <body>
-
-<header class="site-header">
-  <div class="header-inner">
-    <div class="logo-block">
-      <h1>Análisis Comercial WhatsApp <span>Ush by Ushuaia</span></h1>
-      <div class="sub">Canal Mayorista · 18 ago → 08 sep 2026 · 272 chats · 1.333 mensajes · Generado 15/09/2026</div>
-    </div>
-    <div class="header-meta">
-      <span class="badge badge-warn">⚠ 0 ventas nuevas cerradas</span>
-      <span class="badge badge-ok">✓ 2 pedidos reales activos</span>
-      <span class="badge badge-red">Embudo roto en etapa 3</span>
-      <span class="badge badge-blue">162 refs en catálogo</span>
-    </div>
-  </div>
-</header>
-
 <div class="wrap">
 
-<nav class="nav-tabs" id="navTabs">
-  <button class="nav-tab active" data-tab="resumen">📊 Resumen ejecutivo</button>
-  <button class="nav-tab" data-tab="embudo">🔻 Embudo real</button>
-  <button class="nav-tab" data-tab="pipeline">🎯 Pipeline</button>
-  <button class="nav-tab" data-tab="mensajes">💬 Mensajes listos</button>
-  <button class="nav-tab" data-tab="objeciones">🛡 Objeciones</button>
-  <button class="nav-tab" data-tab="diagnostico">🔬 Diagnóstico</button>
-  <button class="nav-tab" data-tab="plan">📅 Plan 7 días</button>
-  <button class="nav-tab" data-tab="estrategia" style="background:rgba(255,111,188,0.12);border:1px solid rgba(255,111,188,0.3);color:var(--ush-rosa);font-weight:700">🚀 Máquina de Ventas Diarias</button>
-</nav>
+<header>
+  <h1>Análisis comercial de WhatsApp — Canal Mayorista
+    <span class="badge">Ush by Ushuaia</span><span class="badge">rama: principal</span>
+  </h1>
+  <div class="date">Emitido: 2026-09-08 · Ventana analizada: 18/08/2026 → 08/09/2026 · Base: 270 chats · 1.310 mensajes</div>
+</header>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 1: RESUMEN EJECUTIVO -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content active" id="tab-resumen">
+<div class="cards" id="kpis"></div>
 
-  <div class="kpi-grid">
-    <div class="kpi blue"><div class="num">272</div><div class="lbl">Chats únicos analizados</div><div class="sub-num">Ventana: 18 ago → 08 sep 2026</div></div>
-    <div class="kpi orange"><div class="num">1.333</div><div class="lbl">Mensajes totales capturados</div><div class="sub-num">~4,9 msgs/chat promedio</div></div>
-    <div class="kpi yellow"><div class="num">74</div><div class="lbl">Conversaciones reales<br>(≥2 mensajes del cliente)</div><div class="sub-num">27% del total de chats</div></div>
-    <div class="kpi green"><div class="num">2</div><div class="lbl">Pedidos reales confirmados</div><div class="sub-num">$1.502.700 + $843.800 = $2.346.500</div></div>
-    <div class="kpi red"><div class="num">0%</div><div class="lbl">Tasa de cierre en canal digital</div><div class="sub-num">De 272 leads → 2 ventas (0,7%)</div></div>
-    <div class="kpi purple"><div class="num">8</div><div class="lbl">Leads HOT identificados</div><div class="sub-num">Con intención real de compra</div></div>
+<section>
+  <h2>1. Resumen ejecutivo</h2>
+  <p class="lead">Lo que muestran los chats reales (mensajes de texto de los clientes, el canal digital y el catálogo en producción).</p>
+  <ul>
+    <li>El canal mayorista recibe leads de publicidad y referidos casi todos los días, pero <b>hasta hoy no hay ninguna venta nueva cerrada en el canal digital</b>: se ven 2 pedidos reales (Lis por $843.800 y "Guantes Para Encajarte" por $1.502.700) iniciados en agosto, más 2 pedidos de prueba internos.</li>
+    <li>Hay <b>5 conversaciones calientes hoy mismo</b> (8/9): Juliana Molina preguntó por mayor en la mañana, Jenny Cortes volvió a escribir, y siguen abiertos la lead de Costa Rica (envío a Bogotá), Urda y Juli (personalizados).</li>
+    <li><b>El embudo se pierde en el mismo punto:</b> el cliente pide catálogo, recibe el link, y de ahí no hay un siguiente paso concreto. La mayoría de los follow-ups repiten "¿Pudiste mirar el catálogo?" sin ofrecer una simulación de pedido ni preguntar tallas. Eso cambia con los mensajes de las secciones 4 y 5.</li>
+    <li><b>Dos objeciones repetidas que hacen perder clientes:</b> "pago contra entrega" (Bibiana, Jamundí) y "tallas grandes / no manejan 16" (Bibiana y Ada Oficial). Ambas tienen remedio comercial (sección 6, mensajes F y E).</li>
+    <li><b>Oportunidad de alto valor sin explotar:</b> Juli preguntó por <b>pantalones personalizados para su marca de ropa</b> (7/9). Es un deal B2B grande y nadie la ha seguido.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>2. Pipeline de oportunidades <span>( según score 0–100 )</span></h2>
+  <p class="lead">Use el buscador o filtre por etapa. Botón "WhatsApp" abre el chat con el mensaje ya escrito; "Copiar" copia el texto.</p>
+  <div class="tools">
+    <input type="text" id="q" placeholder="Buscar por nombre, ciudad o acción...">
+    <select id="stage">
+      <option value="">Todas las etapas</option>
+      <option value="HOT">Hot</option>
+      <option value="Seguimiento">Seguimiento</option>
+      <option value="Reactivar">Reactivar</option>
+      <option value="Visita">Visita / llamada</option>
+      <option value="B2B">B2B por correo</option>
+      <option value="Referido">Referido</option>
+      <option value="Internacional">Internacional</option>
+    </select>
+    <label class="btn"><input type="checkbox" id="telf"> Solo con teléfono</label>
   </div>
+  <div style="overflow-x:auto">
+  <table id="tbl">
+    <thead>
+      <tr>
+        <th data-k="k">Score</th>
+        <th data-k="n">Contacto / ciudad</th>
+        <th data-k="s">Etapa</th>
+        <th data-k="l">Última actividad</th>
+        <th data-k="m">Msgs</th>
+        <th>Siguiente acción</th>
+        <th>Mensaje listo para enviar</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  </div>
+</section>
 
-  <div class="section">
-    <div class="section-title"><span class="icon">🔭</span> Lo que realmente está pasando — sin filtros</div>
-    <div class="section-lead">Diagnóstico basado en los 1.333 mensajes reales. No en suposiciones.</div>
-
-    <div class="g2">
-      <div>
-        <div class="insight">
-          <div class="ico">🚰</div>
-          <div class="body">
-            <strong>El embudo tiene un agujero enorme en la etapa 3</strong>
-            272 personas escribieron. 74 tuvieron conversación real. Solo 2 compraron. El problema no es la captación (se reciben leads todos los días), el problema es que la conversación muere justo después de enviar el catálogo. El cliente dice "lo estoy mirando" y el asesor desaparece o repite el mismo follow-up genérico.
-          </div>
-        </div>
-        <div class="insight">
-          <div class="ico">🤖</div>
-          <div class="body">
-            <strong>Los mensajes de prospección suenan a bot, no a asesor</strong>
-            Se detectó un patrón de contacto B2B masivo en donde el mismo mensaje se envió literalmente 40+ veces cambiando solo el nombre de la tienda (BYBLA, Cytrik, Colors, Chavis, Pinkberry…). Si el receptor lo ve, sabe que es masivo. La mayoría ni respondió. Los que respondieron, tampoco compraron.
-          </div>
-        </div>
-        <div class="insight">
-          <div class="ico">💡</div>
-          <div class="body">
-            <strong>La oportunidad real está en los leads entrantes, no en la prospección fría</strong>
-            Los 8 HOT más importantes llegaron solos por publicidad o referidos (Juliana Molina, Costa Rica, Urda, Luisa Nariño, Isabel Medellín, etc.). Ahí la conversación es de mayor calidad. El B2B masivo genera ruido pero poco valor.
-          </div>
-        </div>
-      </div>
-      <div>
-        <div class="insight">
-          <div class="ico">💬</div>
-          <div class="body">
-            <strong>El follow-up de "¿pudiste mirar el catálogo?" está destruyendo conversiones</strong>
-            Se detectó este mensaje o variantes exactas en al menos 15 conversaciones. Es el peor follow-up posible: no aporta valor, no pregunta por tallas, no cierra. Hace que el lead sienta que el asesor no tiene más recursos que esa pregunta.
-          </div>
-        </div>
-        <div class="insight">
-          <div class="ico">🏆</div>
-          <div class="body">
-            <strong>Oportunidad B2B de alto valor sin explotar: Juli (personalizados)</strong>
-            La lead de personalización de pantalones para su marca (7/sep) es un deal potencial de 6 cifras si tiene volumen. Solo hubo 3 mensajes y quedó abierta sin cierre. Nadie le preguntó cuántas unidades ni le envió fotos. Es la mejor oportunidad sin trabajar.
-          </div>
-        </div>
-        <div class="insight">
-          <div class="ico">📍</div>
-          <div class="body">
-            <strong>Dos objeciones matan ventas repetidamente y tienen solución directa</strong>
-            "Pago contra entrega" (Bibiana/Atelier) y "no tienen tallas 16+" (Ada Oficial, Bella Ocasión). Ambas tienen respuesta en el repertorio pero no se están usando con fluidez. Bibiana fue el caso más claro: objeción identificada, no se manejó, se perdió el lead.
-          </div>
-        </div>
-      </div>
+<section>
+  <h2>3. Clientes activos (pedidos / garantías en curso)</h2>
+  <div class="grid2">
+    <div class="mini">
+      <h3>Angie — cliente grande (2 pedidos)</h3>
+      <ul>
+        <li>Cambios y garantía manejados desde el 20/8 (guía 48490023633); hubo envíos con referencia/talla equivocada y la última pieza pedida (552890) está por llegar.</li>
+        <li>Pidió modelos de <b>hombres</b> y opciones de niños; se le prometió avisar al decidir qué se sube al catálogo mayorista (24/8).</li>
+        <li><b>Siguiente paso:</b> cerrar la garantía y aprovechar que está en contacto para venderle un pedido de reposición con las tallas 8 a 14 que más rota.</li>
+      </ul>
+    </div>
+    <div class="mini">
+      <h3>Lis / Liceth — pedido web de $843.800 (12 uds)</h3>
+      <ul>
+        <li>Pedido FE5420-MT0DXWZS (Ricardo Henao) a Salamina, Caldas. Guía 48490023612; entrega se atrasó por la situación del sismo (la unidad se cubre por Manizales).</li>
+        <li>Pendiente: gestión de garantía / recogida de una prenda. Cliente pidió envío por Interrapidísimo (31/8).</li>
+        <li><b>Siguiente paso:</b> resolver el caso para que deje reseña 5 estrellas y considere un segundo pedido (es buena revendedora local).</li>
+      </ul>
     </div>
   </div>
+</section>
 
-  <div class="section">
-    <div class="section-title"><span class="icon">📈</span> Pedidos reales en el período</div>
-    <div class="g2">
-      <div class="mini">
-        <h3>🛒 Pedido #1 — Guantes Para Encajarte · $1.502.700</h3>
-        <p><strong>Ref:</strong> FE2667-MT7JX12D · 24/08/2026</p>
-        <p><strong>Detalle:</strong> REF 556289 (Talla 12, 6u) + REF 556288 (Talla 12, 5u) + REF 552868 Azul Oscuro (Talla 8, 12u)</p>
-        <p><strong>Ciudad:</strong> Fortul, Arauca · Pago: Transferencia Bancaria</p>
-        <p><strong>Estado:</strong> <span class="badge badge-warn">⚠ Garantía/cambio pendiente</span></p>
-        <p><strong>Acción:</strong> Resolver cambio pendiente → pedir reseña 5★ → oferta de reposición con tallas 8-14 más vendidas.</p>
-      </div>
-      <div class="mini">
-        <h3>🛒 Pedido #2 — Lis / Liceth Ricardo Henao · $843.800</h3>
-        <p><strong>Ref:</strong> FE5420-MT0DXWZS · Ago 2026</p>
-        <p><strong>Detalle:</strong> 12 uds · Salamina, Caldas</p>
-        <p><strong>Transportadora:</strong> Guía 48490023612 · Retraso por sismo zona Manizales</p>
-        <p><strong>Estado:</strong> <span class="badge badge-warn">⚠ Garantía/recogida pendiente (Interrapidísimo)</span></p>
-        <p><strong>Acción:</strong> Resolver garantía → cliente es revendedora local → ideal para segundo pedido con referencias nuevas 2026.</p>
-      </div>
+<section>
+  <h2>4. Retomar calientes y tibios (copiar y pegar)</h2>
+  <p class="lead">Estos mensajes asumen que el lead YA vio algo (catálogo, pack, fotos). El objetivo es pasar de "lo vio" a "dame tallas y referencias".</p>
+  <div class="grid2">
+
+    <div class="mini"><h3>A · Retoma directa con simulación de 12 uds</h3>
+      <p class="kv">"Hola [Nombre]. Te armé la simulación de tu primer pedido mayorista: 12 prendas surtidas de las referencias que más se venden, desde $813.896 con envío gratis (precio de fábrica, 30-42% OFF). Te la envío por acá para que elijas referencias y tallas."</p></div>
+
+    <div class="mini"><h3>B · Retoma pack oficial 12 prendas</h3>
+      <p class="kv">"Hola [Nombre]. Te aparté el pack oficial de 12 prendas en $813.896 con envío 100% gratis, con las 12 siluetas que más rotan (jeans, shorts y faldas): https://ushbyushuaia.vercel.app/pack-mayorista Mira las fotos, elige tus tallas y me avisas para despacharlo prioritario."</p></div>
+
+    <div class="mini"><h3>C · Retoma a quien pidió el catálogo pero no abrió (más de 5 días)</h3>
+      <p class="kv">"Hola [Nombre]. ¿Cómo estás? Retomamos el catálogo que te compartí. Si no te quedó claro, las 12 unidades pueden ser surtidas (mezcla de jeans, shorts y faldas), te armo la simulación con costos y tu margen. ¿Cuáles tallas son las que más te piden?"</p></div>
+
+    <div class="mini"><h3>D · Cierre a quien ya preguntó detalles</h3>
+      <p class="kv">"Hola [Nombre]. Te confirmo con datos reales: las 12 unidades pueden ser de referencias surtidas, el descuento mayorista es del 30-42% según la referencia, y tu envío a [ciudad] llega en 3-4 días. Te mando la lista de las más vendidas con precios y tallas para que elijas."</p></div>
+
+    <div class="mini"><h3>E · Retoma tibio que "se quedó mirando" (Valledupar / catálogo sin preguntas)</h3>
+      <p class="kv">"Hola [Nombre]. Vi que estuviste mirando el catálogo. De las referencias que tenemos, estas 3 son las que más se venden en tienda y con mayor margen: Jean wide leg (552851) $94.900, Jean straight con destellos (552850) $89.900 y la falda licrada (558079) $54.900 (precio mayorista). ¿Te gusta alguna para empezar?"</p></div>
+
+    <div class="mini"><h3>F · Retoma caliente con disponibilidad por talla</h3>
+      <p class="kv">"Hola [Nombre]. Te dejé el pack armado. Para confirmarte disponibilidad real por talla solo dime: ¿qué refs te gustaron y qué tallas te piden más tus clientas? Hoy las tallas principales van hasta 14 y en algunas referencias hay 16."</p></div>
+
+  </div>
+</section>
+
+<section>
+  <h2>5. Romper el hielo en fríos (copiar y pegar)</h2>
+  <p class="lead">Para leads que no han vuelto a escribir o que solo recibieron catálogo. Primero aportan algo concreto (lo que MÁS se vende), luego preguntan tallas. Nada de "¿pudiste mirar el catálogo?" suelto.</p>
+  <div class="grid2">
+
+    <div class="mini"><h3>G · Primer recontacto frío (con lo más vendido)</h3>
+      <p class="kv">"Hola [Nombre]. Te dejé el catálogo y no quiero insistirte sin darte algo útil: esta es la lista de las 3 referencias que más rotan en tiendas aliadas, con su precio para revendedor. ¿Te la envío con fotos y tallas?"</p></div>
+
+    <div class="mini"><h3>H · Frío que preguntó hace +10 días (sin respuesta)</h3>
+      <p class="kv">"Hola [Nombre]. Te escribo por si seguís armando tu surtido. Hoy tenemos el pack oficial de 12 prendas en $813.896 con envío gratis y precio de fábrica. Solo dime si quieres que te lo deje armado con tallas típicas."</p></div>
+
+    <div class="mini"><h3>I · Rompehielos por ciudad / negocio (personalizado)</h3>
+      <p class="kv">"Hola [Nombre]. Vi que estás en [ciudad]. Por si te sirve como referencia: el pedido inicial más común de nuestras revendedoras es el pack de 12 prendas surtidas ($813.896 con envío gratis). ¿Te interesa verlo con precios para revender?"</p></div>
+
+    <div class="mini"><h3>J · Frío con objeción previa de "cantidad mínima"</h3>
+      <p class="kv">"Hola [Nombre]. Lo bueno es que no necesitas comprar mucho para probar: la escala mayorista empieza con solo 8 unidades (20% OFF) y desde 12 unidades tienes precio de fábrica con envío gratis. ¿Te armo un mix pequeño de prueba?"</p></div>
+
+    <div class="mini"><h3>K · Frío B2B / boutique (marco institucional)</h3>
+      <p class="kv">"Hola [Marca]. Les escribo de Ush by Ushuaia (denim colombiano de fábrica, Itagüí). Tenemos 90 referencias visibles de dama (jeans, shorts, faldas) con precio mayorista y envío gratis desde 12 unidades. ¿Les comparto el catálogo digital para que lo revisen directo?"</p></div>
+
+    <div class="mini"><h3>L · Frío internacional (Costa Rica, Ecuador)</h3>
+      <p class="kv">"Hola [Nombre]. Para [país] coordinamos despacho: el pedido sale de Itagüí y se recibe en 3-4 días a Bogotá y de ahí se despacha a tu ciudad. Envíame el código postal de tu ciudad para confirmarte el tiempo y el costo exacto de tu pedido de 12 uds."</p></div>
+
+  </div>
+</section>
+
+<section>
+  <h2>6. Manejo de objeciones y casos B2B</h2>
+  <div class="grid2">
+
+    <div class="mini"><h3>M · Objeción "tallas grandes"</h3>
+      <p class="kv">"Hola [Nombre]. Hoy las tallas principales llegan hasta 14 y en algunas referencias hay 16. Nuestros fits wide leg, barrel y straight en 14 se adaptan muy bien a clientas de 16. Te confirmo disponibilidad en 14 de las referencias más anchas y te mando fotos reales."</p></div>
+
+    <div class="mini"><h3>N · Objeción "pago contra entrega"</h3>
+      <p class="kv">"Entiendo, [Nombre]. Por eso te comparto nuestro catálogo oficial https://ushbyushuaia.vercel.app, el Instagram @ushuaiajeans.co con el proceso real, y la política de cambios, garantía y retracto publicada en la página. También puedes visitarnos en Itagüí (Carrera 55B #72a-02) y pagar presencial. ¿Te ayudo a armar tu pedido con envío asegurado?"</p></div>
+
+    <div class="mini"><h3>O · Personalizados / maquila (caso Juli)</h3>
+      <p class="kv">"Hola [Nombre]. Te tengo fotos de nuestras referencias wide leg muy parecidas a tu diseño. Estamos en Itagüí: dime cuántas unidades estimas por talla y color y te preparo una propuesta de personalización con su tiempo de entrega."</p></div>
+
+    <div class="mini"><h3>P · Visita a fábrica (Itagüí)</h3>
+      <p class="kv">"Hola [Nombre]. Te agendo una visita a nuestra fábrica en Itagüí (Carrera 55B #72a-02, hora: Lun-Jue 7:00 AM-4:00 PM, Vie hasta 3:30 PM) para que veas las referencias en físico y cierres tu pedido. ¿Te sirve esta semana?"</p></div>
+
+    <div class="mini"><h3>Q · Propuesta B2B por correo (Onde Half / Ocho43)</h3>
+      <p class="kv">"Hola [Marca]. Les enviamos nuestra propuesta mayorista (catálogo digital + tarifas vigentes + referencias más comerciales) al correo que nos indicaron. Quedamos atentos para agendar una llamada breve de 10 minutos. ¡Gracias!"</p></div>
+
+    <div class="mini"><h3>R · Referido (El Vestidor de Manuela → 301 428 2719)</h3>
+      <p class="kv">"Hola. ¡Soy asesor mayorista de Ush by Ushuaia! Dani, de El Vestidor de Manuela, me dio tu contacto para mostrarte nuestra colección de jeans y moda femenina al por mayor (precio de fábrica desde 12 unidades + envío gratis). ¿Te comparto el catálogo?"</p></div>
+
+  </div>
+</section>
+
+<section>
+  <h2>7. Catálogo completo: las 276 referencias <span>(90 visibles + 54 ocultas ya cargadas + 132 pendientes)</span></h2>
+  <p class="lead">Las 54 ocultas ya están en el catálogo digital con foto cargada (estado "oculto" en Supabase, no se ven en la tienda). Las 132 pendientes son las de "Referencias nuevas" aún sin agregar; 113 ya tienen foto en Drive y 19 no. Los 13 "solo Excel" están únicamente en precios ecommerce.xlsx (sin carpeta en Drive ni catálogo).</p>
+  <div class="tools">
+    <input type="text" id="rq" placeholder="Buscar por referencia, nombre o categoría...">
+    <select id="rst">
+      <option value="">Todos los estados</option>
+      <option value="VISIBLE">Visible (90)</option>
+      <option value="OCULTO">Oculta ya cargada (54)</option>
+      <option value="NO_AGREGADO">Pendiente de agregar (132)</option>
+      <option value="SE">Solo en Excel (13)</option>
+    </select>
+    <select id="rfo">
+      <option value="">Fotos: todas</option>
+      <option value="1">Con fotos</option>
+      <option value="0">Sin fotos</option>
+    </select>
+    <label class="btn"><input type="checkbox" id="rbest"> Solo más vendidas</label>
+  </div>
+  <div style="overflow-x:auto">
+  <table id="rtbl">
+    <thead>
+      <tr>
+        <th data-rk="ref">Referencia</th>
+        <th data-rk="n">Nombre / descripción</th>
+        <th data-rk="cat">Categoría</th>
+        <th data-rk="l">Línea</th>
+        <th data-rk="est">Estado</th>
+        <th data-rk="fotos">Fotos</th>
+        <th data-rk="pre">Precio mayorista</th>
+        <th data-rk="sug">Precio sugerido</th>
+      </tr>
+    </thead>
+    <tbody id="rtbody"></tbody>
+  </table>
+  </div>
+  <p class="lead" id="rcount" style="margin-top:10px"></p>
+  <div class="grid2" style="margin-top:14px">
+    <div class="mini">
+      <h3>Datos clave verificados</h3>
+      <p class="kv">Escala vigente en el sitio: 1-7 uds detal · 8-11 uds 20% OFF · 12+ uds precio de fábrica (30-42% OFF) + envío gratis · Pack oficial 12 prendas $813.896.</p>
+      <p class="kv">8 más vendidas (precio mayorista): wide leg 552851 $94.900 · straight destellos 552850 $89.900 · wide leg negro 552810 $84.900 · barrel kaki 552691 $84.900 · barrel dirty 552739 $84.900 · straight baby blue 552697 $72.900 · straight negro 552699 $72.900 · falda 558079 $54.900. (marcadas con ★ en la tabla)</p>
     </div>
-    <div class="alert warn" style="margin-top:14px"><strong>⚠ Pedido de prueba interno detectado</strong>El pedido FE4639-MTKH58JC (Ush By Ushuaia Comercial, Istmina Chocó, $658.800) es un pedido de prueba interno con datos falsos (dirección "csdfsdgdsg", teléfono "39292929292"). Verifica que no haya afectado el inventario real ni las métricas de ventas en el panel admin.</div>
+    <div class="mini">
+      <h3>Comparativa con precios ecommerce.xlsx</h3>
+      <p class="kv">95 refs con igual precio · 18 con precio menor en el Excel · 3 con precio mayor (552736, 552771, 556214) · 28 del catálogo sin precio en el Excel · 13 refs que solo existen en el Excel (sin Drive ni catálogo).</p>
+      <p class="kv">Fotos verificadas 8/9: 144/144 con carpeta OK; 600691 y 600693 con 2 fotos (resto 3+). Referencias 558063 y 558066 ya con enlace correcto en código.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>8. Hallazgos operativos (corregir esta semana)</h2>
+
+  <div class="mini">
+    <h3>1 · Un solo dominio oficial: ushbyushuaia.vercel.app</h3>
+    <p class="kv">El catálogo digital oficial es únicamente <code>https://ushbyushuaia.vercel.app</code>. No hay otro dominio en uso; las plantillas y mensajes deben usar siempre este. El link del pack mayorista es <code>https://ushbyushuaia.vercel.app/pack-mayorista</code>.</p>
   </div>
 
-</div><!-- /tab-resumen -->
+  <div class="mini">
+    <h3>2 · Error de tipeo de precio enviado a un lead (Urda, 4/9)</h3>
+    <p class="kv">Se envió "total de $813,1936" (formato inválido en pesos). Un número mal formateado daña la credibilidad en una negociación mayorista. <b>Acción:</b> recalcular los totales con formato colombiano (ej. $813.896) antes de reenviar al lead caliente.</p>
+  </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 2: EMBUDO -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-embudo">
-  <div class="section">
-    <div class="section-title"><span class="icon">🔻</span> Embudo de conversión real — 18 ago al 08 sep 2026</div>
-    <div class="section-lead">Cada etapa muestra cuántos leads pasaron y cuántos se perdieron. Los números son reales, de la base de datos.</div>
+  <div class="mini">
+    <h3>3 · Follow-ups planos y repetidos</h3>
+    <p class="kv">La mayoría de los prospectos recibe: catálogo + "¿Pudiste mirar el catálogo?" + la misma frase a todos (parece bot). Los que sí están viendo el catálogo quedan sin siguiente pregunta (caso Valledupar "Estoy mirando" → sin cierre). <b>Acción:</b> sustituir por los mensajes de las secciones 4 y 5, que cierran con pregunta concreta (simulación / tallas / disponibilidad).</p>
+  </div>
 
-    <div class="funnel">
-      <div class="funnel-step fn-1">
-        <div class="fn-n">272</div>
-        <div><div class="fn-l"><strong>LEADS CAPTADOS</strong> — Chats únicos abiertos en el período</div><div class="fn-pct">100% · Publicidad paga + referidos + prospección outbound</div></div>
-      </div>
-      <div class="funnel-step fn-2">
-        <div class="fn-n">198</div>
-        <div><div class="fn-l"><strong>CONTACTO INICIAL</strong> — Mensaje de bienvenida enviado</div><div class="fn-pct">73% · La mayoría recibió el saludo automático de Kevin</div></div>
-      </div>
-      <div class="funnel-step fn-3">
-        <div class="fn-n">74</div>
-        <div><div class="fn-l"><strong>CONVERSACIÓN REAL</strong> — Respondieron con ≥2 mensajes propios</div><div class="fn-pct">27% → <strong class="badge badge-red" style="font-size:11px">73% se pierde aquí: no responden al primer contacto</strong></div></div>
-      </div>
-      <div class="funnel-step fn-4">
-        <div class="fn-n">22</div>
-        <div><div class="fn-l"><strong>CATÁLOGO VISTO</strong> — Mencionaron ver el catálogo o piden precios</div><div class="fn-pct">8% · Recibieron el link pero la mayoría no pidió más info</div></div>
-      </div>
-      <div class="funnel-step fn-5">
-        <div class="fn-n">8</div>
-        <div><div class="fn-l"><strong>INTENCIÓN CLARA</strong> — Preguntaron tallas, precio, disponibilidad o pedido</div><div class="fn-pct">3% · HOT activos: Juliana M., Costa Rica, Urda, Leidi, Juli, Carlita, Isabel, Jenny</div></div>
-      </div>
-      <div class="funnel-step fn-6">
-        <div class="fn-n">2</div>
-        <div><div class="fn-l"><strong>VENTA CERRADA</strong> — Pedido generado y confirmado</div><div class="fn-pct">0,7% de conversión total · Valor: $2.346.500</div></div>
-      </div>
+  <div class="mini">
+    <h3>4 · Autorespuesta y asesor duplican mensajes en el mismo minuto</h3>
+    <p class="kv">En varios chats (Ana María, Isabel) se ve la autorespuesta "estamos fuera de horario" junto con la respuesta humana inmediata. Confunde al cliente sobre si el canal está o no atendido. <b>Acción:</b> desactivar la autorespuesta en el horario en que hay un asesor activo.</p>
+  </div>
+
+  <div class="mini">
+    <h3>5 · Información clave en audios sin registro</h3>
+    <p class="kv">Urda, Costa Rica, Angie, Lis y yuliht resolvieron temas comerciales por audio; esos datos quedan perdidos para el análisis y el seguimiento. <b>Acción:</b> transcribir o resumir en texto dentro del CRM/hoja de seguimiento tras cada llamada de audio.</p>
+  </div>
+
+  <div class="mini">
+    <h3>6 · Seguimos enviando catálogo a fabricantes/competidores (networking mal dirigido)</h3>
+    <p class="kv">Real Daga, Jeans Colombia, Buckler y Mundo Urbano son fabricantes o venden sus propias marcas (real Daga incluso devolvió su catálogo propio). Manu ya lo marcó: "ya no le insistas". <b>Acción:</b> retirar de la lista de prospección y enfocar en boutiques y revendedoras reales.</p>
+  </div>
+
+  <div class="mini">
+    <h3>7 · Oportunidades B2B pendientes de correo (sin costo de tiempo)</h3>
+    <p class="kv">Onde Half pidió propuesta a <code>hi@onehalf.com.co</code>; Ocho43 pidió portafolio a <code>info@ocho43.com</code>; El Vestidor de Manuela derivó al <b>301 428 2719</b>. Ninguno está contactado. Son 3 acuerdos potenciales con una sola tanda de mensajes.</p>
+  </div>
+
+</section>
+
+<section>
+  <h2>9. Plan de acción 7 días</h2>
+  <div class="grid2">
+    <div class="mini"><h3>Día 1 (hoy, 8/9)</h3>
+      <ul>
+        <li>Juliana Molina: enviar simulación de 12 uds (mensaje A).</li>
+        <li>Jenny Cortes: responder y ofrecer simulación.</li>
+        <li>Lead Costa Rica: confirmar tallas y envío internacional (mensaje L).</li>
+        <li>Urda: corregir el total y reenviar la lista de 12 más vendidas.</li>
+        <li>Juli: enviar fotos de wide legs parecidos + pregunta de volumen.</li>
+        <li>yuliht: enviar el PDF y los precios de las fotos que ya vio.</li>
+        <li>Presentar este dashboard en la reunión con Manu (movida a las 10:30).</li>
+      </ul>
     </div>
-
-    <div class="g2" style="margin-top:20px">
-      <div>
-        <div class="alert crit"><strong>📍 Cuello de botella crítico #1 — Etapa 3→4</strong>El 73% de los leads NO responde al primer contacto. Esto es un problema de <strong>calidad del primer mensaje</strong>, no de cantidad. El saludo "¡Hola! Bienvenida a Ush by Ushuaia. Soy Kevin, del canal mayorista..." se repite idéntico para todos. No hay personalización, no hay urgencia, no hay pregunta que invite a responder.</div>
-        <div class="alert crit"><strong>📍 Cuello de botella crítico #2 — Etapa 4→5</strong>De los que vieron el catálogo, solo 8 mostraron intención real. El "¿pudiste mirar el catálogo?" como único follow-up es la causa directa. No pregunta qué referencias le gustaron, no ofrece simulación, no crea urgencia.</div>
-      </div>
-      <div>
-        <div class="alert warn"><strong>🟡 Oportunidad sin aprovechar: Prospección B2B masiva</strong>Se enviaron 60+ mensajes idénticos a tiendas de moda (BYBLA, Cytrik, Colors, Elizza, etc.) con respuesta ~0%. El mensaje de prospección fría está bien escrito pero carece de personalización real. Solo mencionan el nombre de la tienda. No hay seguimiento posterior a ninguno de estos leads B2B.</div>
-        <div class="alert ok"><strong>✅ Lo que SÍ funciona</strong>Los leads de publicidad que llegan solos muestran mayor calidad e intención: Juliana Molina (Jamundí), la lead de Costa Rica, Urda, y la lead de personalización (Juli) llegaron con intención explícita. Ahí hay terreno fértil.</div>
-      </div>
+    <div class="mini"><h3>Días 2-3</h3>
+      <ul>
+        <li>Pack mayorista a los que no respondieron el 7/9 (mensaje B).</li>
+        <li>Simulación a Isabel (Medellín) y a la lead de Valledupar (mensaje E).</li>
+        <li>Enviar mensajes M y N a Atelier/Bibiana (tallas + pago).</li>
+        <li>Agendar visita con Marcela (Medellín) y Marco (cuando viaje).</li>
+      </ul>
     </div>
-
-    <div class="section" style="margin-top:16px">
-      <div class="section-title"><span class="icon">🔑</span> Los 5 errores que están matando el embudo — con evidencia</div>
-      <div class="g2">
-        <div class="diag bad"><div class="di">❌</div><div class="dt"><strong>Error 1: Primer mensaje genérico para todos</strong>"¡Hola! Bienvenida a Ush by Ushuaia. Soy Kevin, del canal mayorista. Emprende desde 12 unidades con 30% - 42% OFF. Elige tus tallas en el link..." — exactamente igual para 150+ contactos. Un buen primer mensaje pregunta algo específico sobre el negocio del lead.</div></div>
-        <div class="diag bad"><div class="di">❌</div><div class="dt"><strong>Error 2: Follow-up de "¿pudiste mirar el catálogo?"</strong>Sin valor. Sin pregunta cerrada. Sin oferta. Sin urgencia. Hace que el lead sienta que el asesor no tiene más recursos. Lo detectamos en al menos 15 conversaciones como único mensaje de seguimiento.</div></div>
-        <div class="diag bad"><div class="di">❌</div><div class="dt"><strong>Error 3: No se pregunta por tallas en la primera conversación</strong>De los 74 chats con respuesta real, solo 5 tienen una pregunta directa sobre tallas. Las tallas son la pregunta de cierre más poderosa: "¿qué tallas son las que más te piden?" convierte curiosidad en conversación de compra.</div></div>
-        <div class="diag bad"><div class="di">❌</div><div class="dt"><strong>Error 4: Autorespuesta + asesor activo en el mismo minuto</strong>En varios chats (Ana María, Isabel) la autorespuesta de "fuera de horario" llega al mismo tiempo que la respuesta humana. Genera confusión y hace dudar sobre si el canal está atendido o no.</div></div>
-        <div class="diag bad"><div class="di">❌</div><div class="dt"><strong>Error 5: B2B pendiente sin contacto</strong>Onde Half solicitó propuesta a <code>hi@onehalf.com.co</code>. Ocho43 a <code>info@ocho43.com</code>. El Vestidor de Manuela derivó a <code>301 428 2719</code>. Ninguno fue contactado. Son 3 deals potenciales que solo necesitan un correo.</div></div>
-        <div class="diag ok"><div class="di">✅</div><div class="dt"><strong>Lo correcto: el caso de Guantes Para Encajarte</strong>Llegaron por WhatsApp → conversación directa con Kevin → pedido de $1.502.700 en el mismo canal. Esto es el modelo a replicar: lead inbound, conversación personalizada, cierre en el chat.</div></div>
-      </div>
+    <div class="mini"><h3>Días 4-5</h3>
+      <ul>
+        <li>Ronda de reactivación a clientes fríos del 20-27/8 (Luisa, Elizza, sandrita, Ana María, Mayorista, Janethy, etc.) con los mensajes G-H.</li>
+        <li>Envíos B2B: Onde Half, Ocho43, y referido El Vestidor (301 428 2719).</li>
+        <li>Seguir a Juliana Hoyos por Instagram y retomar propuesta.</li>
+      </ul>
+    </div>
+    <div class="mini"><h3>Días 6-7</h3>
+      <ul>
+        <li>Decidir si las 54 ocultas se publican (hombres, bermudas, licrados) y organizar con "Referencias nuevas" qué se agrega.</li>
+        <li>Crear lista de espera de tallas 16+ y comunicar fecha estimada (recupera a Bibiana y Ada).</li>
+        <li>Medir conversión: cuántos pasaron de "viendo catálogo" a "simulación enviada" con los nuevos mensajes.</li>
+        <li>Decidir con el equipo si se activa la venta de hombres al canal mayorista (Angie ya lo pidió).</li>
+      </ul>
     </div>
   </div>
+</section>
+
+<div class="ok">
+  <b>Catálogo verificado hoy (8/9):</b> 144 referencias con foto OK (ninguna carpeta vacía), 90 visibles, 54 ocultas, pack oficial 12 prendas $813.896 con envío gratis, y un solo dominio (https://ushbyushuaia.vercel.app). WhatsApp oficial: 301 139 3902 · Itagüí (Carrera 55B #72a-02).
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 3: PIPELINE -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-pipeline">
-  <div class="section">
-    <div class="section-title"><span class="icon">🎯</span> Pipeline de oportunidades activas</div>
-    <div class="section-lead">Ordenar por score. El botón WhatsApp abre el chat con el mensaje ya escrito. "Copiar" copia el texto.</div>
-    <div class="tools-row">
-      <input type="text" class="tool-input" id="pq" placeholder="Buscar por nombre, ciudad o acción...">
-      <select class="tool-select" id="pstage">
-        <option value="">Todas las etapas</option>
-        <option value="HOT">🔥 HOT</option>
-        <option value="Seguimiento">⏳ Seguimiento</option>
-        <option value="Reactivar">🔄 Reactivar</option>
-        <option value="Visita">📍 Visita/llamada</option>
-        <option value="B2B">🏢 B2B</option>
-        <option value="Referido">🤝 Referido</option>
-        <option value="Internacional">🌎 Internacional</option>
-        <option value="Perdido">❌ Perdido/Descalificado</option>
-      </select>
-      <select class="tool-select" id="pfil">
-        <option value="">Todos</option>
-        <option value="tel">Solo con teléfono</option>
-      </select>
-    </div>
-    <div class="tbl-wrap">
-      <table id="ptbl">
-        <thead>
-          <tr>
-            <th data-pk="k">Score ↓</th>
-            <th data-pk="n">Contacto / ciudad</th>
-            <th data-pk="s">Etapa</th>
-            <th data-pk="l">Última actividad</th>
-            <th>Días sin respuesta</th>
-            <th>Siguiente acción concreta</th>
-            <th>Mensaje listo</th>
-          </tr>
-        </thead>
-        <tbody id="ptbody"></tbody>
-      </table>
-    </div>
-    <p id="pcount" style="font-size:12px;color:var(--muted);margin-top:10px"></p>
-  </div>
+<div class="nota">
+  <b>Limitaciones de este análisis:</b> los audios de WhatsApp no están transcritos en la base del puente, por lo que algunos intercambios (Urda, Costa Rica, Angie, Lis) se interpretan por contexto. Los precios se tomaron del catálogo en producción (Supabase) y de las escalas mayoristas del sitio; el cruce con el Excel de precios de agosto mostró las 21 diferencias señaladas. No se realizaron envíos ni se modificó la tienda: este documento es solo lectura y propuesta de gestión.
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 4: MENSAJES LISTOS -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-mensajes">
-  <div class="section">
-    <div class="section-title"><span class="icon">💬</span> Arsenal de mensajes — copiar y pegar directo en WhatsApp</div>
-    <div class="section-lead">Basados en las conversaciones reales. Cada mensaje resuelve un problema específico detectado en los chats.</div>
-
-    <div class="g2">
-      <div class="mini">
-        <h3>🔥 A · Retoma caliente con simulación de pedido</h3>
-        <p id="mA">"Hola [Nombre] 👋 Te tengo lista la simulación de tu primer pedido mayorista: 12 prendas surtidas de las referencias que más se venden este mes, con envío 100% gratis y precio de fábrica (30-42% OFF). ¿Me dices qué tallas son las que más te piden y te la mando al instante?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mA',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🔥 B · Catálogo ya enviado, sin respuesta (&lt;5 días)</h3>
-        <p id="mB">"Hola [Nombre], ¿qué tal vas? Revisando el catálogo de nuestras 162 referencias, separé las 3 que más se venden esta semana: Jean Wide Leg #552851 ($94.900), Pantalón Straight #552850 ($89.900) y Falda licrada #558079 ($54.900). ¿Alguna de estas va con tu tienda? Te confirmo disponibilidad de tallas en minutos."</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mB',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>⏳ C · Follow-up poderoso (reemplaza el "¿pudiste mirar?")</h3>
-        <p id="mC">"Hola [Nombre] 👋 Sé que el catálogo tiene muchas referencias y puede abrumar. Para ayudarte dime una cosa: ¿tu clientela pide más jeans, pantalones, faldas o shorts? Con eso te armo en 5 minutos el mix de 12 prendas más vendidas según lo que más rota."</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mC',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>⏳ D · Cierre directo a quien ya preguntó precios</h3>
-        <p id="mD">"[Nombre], te confirmo: el primer pedido de 12 unidades va a precio de fábrica (30-42% OFF según la referencia) con envío 100% gratis. Tu pedido llegaría a [ciudad] en 5-8 días hábiles. Solo necesito saber: ¿qué tallas te piden más tus clientes para que te arme el surtido?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mD',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🔄 E · Reactivar frío (&gt;7 días sin respuesta)</h3>
-        <p id="mE">"Hola [Nombre] 👋 No quiero insistirte sin darte algo útil. Esta semana llegaron 12 referencias nuevas 2026 al catálogo (jeans, pantalones y faldas), con descuento de hasta 42%. ¿Te las comparto con fotos y precios? Sin compromiso, solo para que veas qué hay nuevo."</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mE',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🔄 F · Reactivar muy frío (&gt;15 días)</h3>
-        <p id="mF">"Hola [Nombre], última vez que te escribo sin que me respondas 😊 El mes cerró con estas 3 referencias más vendidas entre nuestras revendedoras: Wide Leg negro (#552810), Straight baby blue (#552697) y Falda licrada (#558079). Si en algún momento retomas el surtido, acá estamos. ¿Cuándo es un buen momento para volver a hablar?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mF',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🏢 G · Primer contacto B2B boutique (reemplaza el masivo)</h3>
-        <p id="mG">"Hola [Nombre de la tienda] 👋 Vi su propuesta de moda femenina en [red social] y me llamó la atención [algo específico de su tienda]. Soy Kevin de Ush by Ushuaia (denim colombiano de fábrica, Itagüí). Tenemos 162 referencias de jeans, shorts, faldas y pantalones con precio mayorista y envío gratis desde 12 unidades. ¿Les comparto las 5 referencias que más rotan en tiendas similares a la suya?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mG',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🌎 H · Lead internacional (Costa Rica / Ecuador)</h3>
-        <p id="mH">"Hola [Nombre] 👋 Para [país] coordinamos el despacho: el pedido sale de Itagüí → llega a Bogotá en 3-4 días → de ahí se coordina el envío internacional contigo. El mínimo es 12 unidades con precio de fábrica. Para darte el costo exacto de tu pedido necesito: ciudad de destino y las referencias que te interesan del catálogo. ¿Te las comparto?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mH',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🛡 I · Manejo de objeción "pago contra entrega"</h3>
-        <p id="mI">"Entiendo perfectamente, [Nombre]. Para que puedas verificarnos antes de cualquier pago, te comparto: catálogo oficial en https://ushbyushuaia.vercel.app, Instagram @ushuaiajeans.co con los pedidos reales de otras revendedoras, y nuestra política de cambios y garantía publicada en la página. También puedes venir a vernos en Itagüí (Cra. 55B #72a-02) y pagar presencial. ¿Te ayudo a armar tu pedido con pago confirmado antes del despacho?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mI',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🛡 J · Manejo de objeción "no tienen talla 16+"</h3>
-        <p id="mJ">"Hola [Nombre] 👋 Hoy las tallas principales van de la 6 a la 14. Pero te cuento algo importante: nuestros fits Wide Leg, Barrel y Straight en talla 14 son muy amplios y se adaptan muy bien a clientas que normalmente usan 16. Te mando fotos reales de cómo queda la 14 en esos modelos. ¿Quieres que te comparta cuáles son los más favorecedores para tallas grandes?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mJ',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>🏭 K · Personalización/maquila (caso Juli)</h3>
-        <p id="mK">"Hola Juli 👋 Para la propuesta de pantalones personalizados para tu marca, lo más útil es que me digas: (1) ¿Cuántas unidades por talla estimarías por pedido? (2) ¿Qué colores principales? (3) ¿Tienes alguna imagen de referencia del diseño que buscas? Con eso te preparo una propuesta formal de personalización con tiempo de entrega y costos. Tenemos referencias muy parecidas a lo que mostraste 👖"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mK',this)">Copiar</button></div>
-      </div>
-
-      <div class="mini">
-        <h3>📍 L · Invitación a visita fábrica (Medellín/Itagüí)</h3>
-        <p id="mL">"Hola [Nombre] 👋 Como estás en [Medellín/cerca de Itagüí], te propongo una visita a la fábrica para que veas las referencias en físico, toques las telas y cierres tu primer pedido al precio de fábrica. Estamos en Cra. 55B #72a-02, Itagüí (Barrio Hortensia) · Lun-Jue 7:00-16:00 · Vie 7:00-15:30. ¿Te funciona esta semana o la que viene?"</p>
-        <div class="msg-actions"><button class="btn-copy" onclick="cp('mL',this)">Copiar</button></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 5: OBJECIONES -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-objeciones">
-  <div class="section">
-    <div class="section-title"><span class="icon">🛡</span> Manejo de objeciones — detectadas en chats reales</div>
-    <div class="section-lead">Cada objeción tiene el contexto real donde apareció y la respuesta recomendada para cerrar, no para defenderse.</div>
-
-    <div class="obj-grid">
-      <div class="obj-card">
-        <div class="q">💳 "¿Tienen pago contra entrega?"</div>
-        <div class="r">Esta objeción destruye el lead si no se maneja bien. No es desconfianza — es protocolo de seguridad del comprador nuevo.<br><br><strong>Respuesta que cierra:</strong> Mostrar prueba social ANTES de pedir el pago: catálogo oficial, Instagram con pedidos reales, política de garantía pública, y la opción de visita presencial. Terminar siempre con una pregunta de avance: "¿Te ayudo a armar tu pedido?"</div>
-        <div class="tag">📍 Detectado en: Bibiana (Atelier/Jamundí), varios chats nuevos. Bisagra que perdió a Bibiana.</div>
-      </div>
-
-      <div class="obj-card">
-        <div class="q">📏 "No manejan talla 16, mis clientas usan 16+"</div>
-        <div class="r">El catálogo llega hasta 14. Pero Wide Leg, Barrel y Straight en 14 son equivalentes funcionales de la 16 en la mayoría de marcas.<br><br><strong>Respuesta que cierra:</strong> "La 14 en nuestros fits anchos se adapta perfecto a clientas de 16. Te mando fotos reales de cómo queda." → enviar foto de modelo en talla 14 de ref wide leg. Si el cliente insiste, ofrecer lista de espera para tallas 16+ en nueva colección.</div>
-        <div class="tag">📍 Detectado en: Ada Oficial, Bibiana (Atelier), Bella Ocasión</div>
-      </div>
-
-      <div class="obj-card">
-        <div class="q">💰 "¿Cuáles son los precios?"</div>
-        <div class="r">Cuando preguntan por precio sin contexto, la mayoría espera que sea caro y está lista para rechazar. No dar un rango — dar <strong>un precio ancla específico con la mejor referencia</strong>.<br><br><strong>Respuesta que cierra:</strong> "Las referencias van desde $54.900 (falda wide leg) hasta $94.900 (jean wide leg) con 12+ unidades y envío gratis. ¿Quieres que te arme la simulación con las más comerciales y sus márgenes de reventa?"</div>
-        <div class="tag">📍 Detectado en múltiples chats donde simplemente se daba el rango "$39.900-$99.900" y el lead no avanzaba</div>
-      </div>
-
-      <div class="obj-card">
-        <div class="q">📦 "Solo quiero una o dos prendas"</div>
-        <div class="r">El lead no entiende el modelo mayorista o está probando si puede comprar menos.<br><br><strong>Respuesta que cierra:</strong> "El modelo mayorista empieza desde 8 unidades (20% OFF) y desde 12 tienes precio de fábrica + envío gratis. Lo bueno es que puedes surtir surtido libre — por ejemplo 3 jeans + 3 pantalones + 3 faldas + 3 shorts, sin necesidad de comprar 12 de lo mismo. ¿Con 8 unidades de prueba te animas a conocer la calidad?"</div>
-        <div class="tag">📍 Detectado como pregunta implícita en varios leads que no pasaban a conversación real</div>
-      </div>
-
-      <div class="obj-card">
-        <div class="q">🏭 "¿Trabajan con maquila/pantalones personalizados para mi marca?"</div>
-        <div class="r">Pregunta de alto valor — este lead tiene una marca propia y volumen potencial mucho mayor que un revendedor estándar.<br><br><strong>Respuesta que cierra:</strong> No decir "sí" sin preguntar detalles primero. Preguntar volumen, diseño y colores → preparar propuesta formal con tiempos y costos. Usar mensaje K del repertorio. Escalarlo a la dirección si el volumen es de 100+ unidades.</div>
-        <div class="tag">📍 Detectado en: Juli (7/sep) — caso HOT sin trabajar, el mejor del período</div>
-      </div>
-
-      <div class="obj-card">
-        <div class="q">🌎 "Estoy en [Costa Rica/Ecuador], ¿pueden despachar?"</div>
-        <div class="r">El lead internacional tiene intención real pero necesita saber que el proceso funciona antes de comprometerse.<br><br><strong>Respuesta que cierra:</strong> Dar el proceso exacto (Itagüí → Bogotá → país destino), el tiempo estimado y pedir ciudad+referencias de interés para cotizar el envío. No mencionar el precio del envío sin saber el destino exacto. Usar mensaje H del repertorio.</div>
-        <div class="tag">📍 Detectado en: Lead Costa Rica (8 mensajes, HOT score 88, sin cierre)</div>
-      </div>
-
-      <div class="obj-card">
-        <div class="q">😶 Silencio después de recibir el catálogo</div>
-        <div class="r">La objeción más común y más costosa. No es rechazo — es que el catálogo tiene 162 referencias y el lead no sabe por dónde empezar.<br><br><strong>Respuesta que cierra:</strong> NO usar "¿pudiste mirar el catálogo?". Usar el mensaje C: preguntar por tipo de prenda que más vende → armar el mix personalizado → dar 3 opciones concretas. El catálogo es una herramienta, no el cierre.</div>
-        <div class="tag">📍 El patrón más repetido del período. Detectado en +15 conversaciones activas</div>
-      </div>
-
-      <div class="obj-card">
-        <div class="q">🔄 "Ya tenemos proveedores / manejamos otra marca"</div>
-        <div class="r">No es un no definitivo — es un "convénceme de cambiar o complementar".<br><br><strong>Respuesta que cierra:</strong> "Perfecto, no vengo a reemplazar a nadie. Te propongo algo: déjame enviarte las 5 referencias que más se venden en tiendas que ya trabajan con otras marcas. Son complemento, no competencia. ¿Cuál es el jean o pantalón que más le piden a tu tienda esta temporada?"</div>
-        <div class="tag">📍 Detectado en: Real Daga Jeans, Fiara Jeans (fabricantes propios)</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 6: DIAGNÓSTICO -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-diagnostico">
-  <div class="section">
-    <div class="section-title"><span class="icon">🔬</span> Diagnóstico operativo — Lo que está bien y lo que hay que cambiar</div>
-
-    <div class="g2" style="margin-top:8px">
-      <div>
-        <h3 style="color:var(--red);font-size:13px;margin-bottom:10px;font-weight:700">❌ Problemas críticos a corregir esta semana</h3>
-        <div class="diag bad"><div class="di">1</div><div class="dt"><strong>Primer mensaje idéntico para TODOS los contactos</strong>El mismo texto de bienvenida para publicidad, referidos, B2B outbound y contactos propios. Un mensaje para todos = un mensaje para nadie. <strong>Solución:</strong> 3 versiones distintas según la fuente (inbound publicidad / B2B outbound / referido).</div></div>
-        <div class="diag bad"><div class="di">2</div><div class="dt"><strong>"¿Pudiste mirar el catálogo?" como único follow-up</strong>Detectado en 15+ conversaciones. No aporta valor, no cierra, no pregunta. <strong>Solución:</strong> Usar mensaje C del arsenal — preguntar por tipo de prenda → armar mix personalizado.</div></div>
-        <div class="diag bad"><div class="di">3</div><div class="dt"><strong>Autorespuesta activa mientras hay asesor humano disponible</strong>En chats de Ana María e Isabel: autorespuesta + respuesta humana en el mismo minuto. <strong>Solución:</strong> Desactivar la autorespuesta de "fuera de horario" cuando hay asesor activo en el horario comercial.</div></div>
-        <div class="diag bad"><div class="di">4</div><div class="dt"><strong>Link del catálogo desactualizado en prospección B2B</strong>Los mensajes outbound usaban <code>ushbyushuaia-catalogo-mayorista.vercel.app</code> (el antiguo). El vigente es <code>ushbyushuaia.vercel.app/catalogo</code>. <strong>Urgente corregir en toda la plantilla de mensajes.</strong></div></div>
-        <div class="diag bad"><div class="di">5</div><div class="dt"><strong>B2B pendiente sin contactar: 3 deals de correo</strong>Onde Half (<code>hi@onehalf.com.co</code>), Ocho43 (<code>info@ocho43.com</code>), referido El Vestidor de Manuela (<code>301 428 2719</code>). <strong>Acción:</strong> 3 correos / mensajes hoy, con el repertorio Q-R.</div></div>
-      </div>
-      <div>
-        <h3 style="color:var(--green);font-size:13px;margin-bottom:10px;font-weight:700">✅ Lo que está funcionando — conservar y escalar</h3>
-        <div class="diag ok"><div class="di">✓</div><div class="dt"><strong>El canal digital genera leads todos los días</strong>Publicidad funcionando. El volumen de captación no es el problema. 272 leads en 21 días es una cifra sólida para un canal mayorista en etapa temprana.</div></div>
-        <div class="diag ok"><div class="di">✓</div><div class="dt"><strong>El catálogo digital es profesional y funcional</strong>162 referencias visibles, filtros por categoría y fit, imágenes de calidad, cotización PDF. Está por encima del estándar del mercado mayorista colombiano. Usarlo como herramienta de cierre, no como reemplazo del asesor.</div></div>
-        <div class="diag ok"><div class="di">✓</div><div class="dt"><strong>Kevin tiene buena actitud comercial</strong>Responde rápido, es amable y usa emojis con criterio. El problema no es la persona sino el sistema y las herramientas que usa. Con las plantillas correctas, su tasa de cierre puede triplicarse.</div></div>
-        <div class="diag ok"><div class="di">✓</div><div class="dt"><strong>El modelo de negocio es competitivo</strong>Precio de fábrica (30-42% OFF), envío gratis desde 12 uds, tallas 6-14, 162 referencias, colección 2026 nueva. La propuesta de valor es sólida. El problema es la comunicación, no el producto.</div></div>
-        <div class="diag warn"><div class="di">⚠</div><div class="dt"><strong>Los audios ocultan información comercial clave</strong>Urda, Costa Rica, Angie y Lis negociaron temas críticos por audio de WhatsApp. Esa información queda invisible para el análisis y el seguimiento. <strong>Solución:</strong> Resumir en texto cada audio importante al terminar la llamada.</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 7: PLAN 7 DÍAS -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-plan">
-  <div class="section">
-    <div class="section-title"><span class="icon">📅</span> Plan de acción — Próximos 7 días (a partir del 15/09)</div>
-    <div class="section-lead">Priorizado por impacto en cierre de ventas. Lo urgente primero, lo importante después.</div>
-
-    <div class="week-grid">
-      <div class="day-card">
-        <h4>Día 1 · Hoy</h4>
-        <ul>
-          <li>Juliana Molina (Jamundí): enviar mensaje A con simulación de 12 uds</li>
-          <li>Lead Costa Rica: enviar mensaje H con proceso de envío internacional</li>
-          <li>Juli (personalización): enviar mensaje K con preguntas de volumen</li>
-          <li>Urda: reenviar total corregido en pesos colombianos + mensaje A</li>
-          <li>Jenny Cortes: retomar + ofrecer simulación de pedido</li>
-        </ul>
-      </div>
-      <div class="day-card">
-        <h4>Días 2-3</h4>
-        <ul>
-          <li>Carlita/Catalina (Cali): guiarla para armar pedido en catálogo digital</li>
-          <li>Isabel (Medellín): oferta de visita a Itagüí + simulación 12 uds (mensaje L)</li>
-          <li>Atelier/Bibiana: mensajes I y J (pago + tallas grandes)</li>
-          <li>Correo a Onde Half (<code>hi@onehalf.com.co</code>) con propuesta mayorista</li>
-          <li>Correo a Ocho43 (<code>info@ocho43.com</code>) con portafolio</li>
-        </ul>
-      </div>
-      <div class="day-card">
-        <h4>Días 4-5</h4>
-        <ul>
-          <li>Ronda de reactivación: Luisa Nariño, Elizza Boutique, Sandra Carvajal, Ana María Boyacá (mensaje E)</li>
-          <li>Referido El Vestidor → escribir al 301 428 2719 (mensaje R)</li>
-          <li>Bella Ocasión (tallas 6-24): mensaje J + propuesta wide leg talla 14</li>
-          <li>Marcela González (Medellín): agendar visita a Itagüí</li>
-          <li>Cerrar garantía de Lis/Liceth → pedir reseña + segundo pedido</li>
-        </ul>
-      </div>
-      <div class="day-card">
-        <h4>Días 6-7</h4>
-        <ul>
-          <li>Angie (2 pedidos, garantía activa): cerrar garantía + oferta reposición</li>
-          <li>Medir conversión nueva: ¿cuántos leads respondieron con los nuevos mensajes?</li>
-          <li>Actualizar plantillas de autorespuesta con el link vigente: <code>ushbyushuaia.vercel.app</code></li>
-          <li>Decidir activación de línea hombres para canal mayorista (Angie ya la pidió)</li>
-          <li>Configurar horario de autorespuesta para no solapar con asesor activo</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="section" style="margin-top:16px">
-      <div class="section-title"><span class="icon">🎯</span> Meta de los próximos 7 días</div>
-      <div class="kpi-grid">
-        <div class="kpi green"><div class="num">3</div><div class="lbl">Pedidos nuevos cerrados</div><div class="sub-num">Con los leads HOT actuales</div></div>
-        <div class="kpi blue"><div class="num">$2.5M</div><div class="lbl">Objetivo de ventas brutas</div><div class="sub-num">~3 pedidos promedio $813K</div></div>
-        <div class="kpi yellow"><div class="num">15%</div><div class="lbl">Meta de tasa de respuesta</div><div class="sub-num">Con nuevas plantillas de mensaje</div></div>
-        <div class="kpi purple"><div class="num">2</div><div class="lbl">Propuestas B2B enviadas</div><div class="sub-num">Onde Half + Ocho43</div></div>
-        <div class="kpi pink"><div class="num">1</div><div class="lbl">Deal maquila en proceso</div><div class="sub-num">Juli — mayor potencial</div></div>
-        <div class="kpi orange"><div class="num">0</div><div class="lbl">"¿pudiste mirar?" enviados</div><div class="sub-num">Reemplazados por mensajes C/D</div></div>
-      </div>
-    </div>
-
-    <div class="alert info" style="margin-top:14px">
-      <strong>📌 Nota de metodología</strong>
-      Este análisis cubre 272 chats del 18/08 al 08/09/2026. A partir del 09/09 el bridge de WhatsApp estuvo desconectado — los mensajes de ese período no están en la base de datos local. Los HOT activos pueden haber tenido actividad adicional no capturada. Recomendación: reconectar el bridge permanentemente y revisarlo cada lunes.
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 8: MÁQUINA DE VENTAS DIARIAS (ESTRATEGIA & CAPTACIÓN) -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-estrategia">
-
-  <div class="alert info" style="margin-bottom:14px;background:rgba(255,111,188,0.08);border-color:rgba(255,111,188,0.3);color:#fff">
-    <strong style="color:var(--ush-rosa);font-size:14px">🎯 ENFOQUE COMERCIAL: 100% BOUTIQUES PERSONALES Y EMPRENDEDORAS NATURALES</strong>
-    Tus clientes son personas reales e independientes: la dueña del local o boutique de ropa femenina, la chica que tiene un showroom en su casa o apartamento, y la persona natural que vende jeans a sus clientas por redes, catálogo o WhatsApp. <strong>Cero empresas corporativas, cero licitaciones y cero fabricantes.</strong> Venta directa de fábrica al que revende al detalle con margen del 50% al 60%.
-  </div>
-
-  <div class="kpi-grid">
-    <div class="kpi pink"><div class="num">3 a 5</div><div class="lbl">Pedidos diarios meta</div><div class="sub-num">~36 a 60 prendas/día</div></div>
-    <div class="kpi green"><div class="num">$81M</div><div class="lbl">Facturación mensual objetivo</div><div class="sub-num">~3 pedidos/día promedio $900K</div></div>
-    <div class="kpi yellow"><div class="num">7,5%</div><div class="lbl">Tasa de conversión meta</div><div class="sub-num">Vs 0,7% actual (multiplicar x10)</div></div>
-    <div class="kpi blue"><div class="num">20</div><div class="lbl">Boutiques contactadas/día</div><div class="sub-num">10 inbound + 10 outbound</div></div>
-    <div class="kpi purple"><div class="num">55%</div><div class="lbl">Margen para la dueña de boutique</div><div class="sub-num">Tu principal argumento de venta</div></div>
-    <div class="kpi orange"><div class="num">162</div><div class="lbl">Refs vivas en catálogo web</div><div class="sub-num">Fábrica directa en Itagüí</div></div>
-  </div>
-
-  <!-- SECCIÓN 1: DÓNDE PUBLICAR EL CATÁLOGO -->
-  <div class="section">
-    <div class="section-title"><span class="icon">🌐</span> Dónde publicar y distribuir tu catálogo digital para captar boutiques y emprendedoras</div>
-    <div class="section-lead">Tener el catálogo en la web es solo el primer paso. Para vender todos los días necesitas ponerlo frente a miles de dueñas de tiendas de ropa y mujeres emprendedoras que buscan proveedor confiable en Medellín.</div>
-
-    <div class="g2">
-      <!-- Canal 1 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h3 style="color:var(--ush-rosa);font-size:14px">1. Red de Revendedoras y Emprendedoras (Dropi / Catálogo Personal)</h3>
-          <span class="badge badge-ok">Impacto Masivo</span>
-        </div>
-        <p><strong>Qué es:</strong> Miles de personas naturales en Colombia que quieren tener su propio negocio de ropa sin invertir millones de pesos en bodegas.</p>
-        <p><strong>Cómo funciona para ti:</strong></p>
-        <ul>
-          <li><strong>En Dropi (<a href="https://dropi.co" target="_blank" style="color:var(--blue);text-decoration:none">dropi.co</a>):</strong> Te registras como proveedor. Chicas y chicos emprendedores eligen tus jeans, los ofrecen en sus redes personales a sus clientas, y tú despachas desde Itagüí con recaudo contra entrega.</li>
-          <li><strong>Venta directa a revendedoras:</strong> Con tu catálogo web (`ushbyushuaia.vercel.app`), cualquier persona natural puede comprarte desde <strong>8 unidades combinadas</strong> con el 20% OFF o desde <strong>12 unidades a precio de fábrica con flete gratis</strong>.</li>
-          <li><strong>Resultado:</strong> Cada revendedora se convierte en tu vendedora externa en su ciudad o pueblo.</li>
-        </ul>
-      </div>
-
-      <!-- Canal 2 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h3 style="color:var(--blue);font-size:14px">2. Google Mi Negocio (Fábrica en Itagüí)</h3>
-          <span class="badge badge-blue">Tráfico Gratis</span>
-        </div>
-        <p><strong>Qué es:</strong> Ficha oficial verificada en Google Maps para que las dueñas de tiendas que viajan a Medellín o buscan proveedor te encuentren directo.</p>
-        <p><strong>Configuración exacta:</strong></p>
-        <ul>
-          <li><strong>Nombre comercial:</strong> <code>Ushuaia Jeans - Fábrica Mayorista para Boutiques y Tiendas</code></li>
-          <li><strong>Dirección:</strong> Carrera 55 B # 72 a 02, Itagüí, Antioquia.</li>
-          <li><strong>Categoría principal:</strong> Mayorista de prendas de vestir / Proveedor de moda femenina.</li>
-          <li><strong>Botón de acción:</strong> "Ver Catálogo Digital" enlazando a <code>https://ushbyushuaia.vercel.app/catalogo</code>.</li>
-          <li><strong>Beneficio:</strong> Cada dueña de boutique en Colombia que busque en Google <em>"proveedor de jeans para boutiques"</em> o <em>"fábrica de jeans Medellín al por mayor"</em> te verá con fotos de la horma y botón directo al chat.</li>
-        </ul>
-      </div>
-
-      <!-- Canal 3 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h3 style="color:var(--yellow);font-size:14px">3. Directorios y Conexión con Almacenes de Provincia</h3>
-          <span class="badge badge-warn">Boutiques Reales</span>
-        </div>
-        <p><strong>Dónde captar dueñas de boutiques:</strong></p>
-        <ul>
-          <li><strong><a href="https://directoriodefabricas.com" target="_blank" style="color:var(--yellow);text-decoration:none">Directoriodefabricas.com</a>:</strong> Sección "Fabricantes de Jeans en Colombia". Las dueñas de tiendas en Cali, Bucaramanga, Pasto, Neiva, Montería y Cúcuta usan este directorio para no pagar intermediarios ni revendedores del centro.</li>
-          <li><strong><a href="https://mayoristas.com.co" target="_blank" style="color:var(--yellow);text-decoration:none">Mayoristas.com.co</a>:</strong> Registro directo en la categoría de moda y jeans de dama.</li>
-          <li><strong>Boutiques Personales en el Exterior (Costa Rica, Ecuador, Panamá, EE.UU.):</strong> Dueñas de tiendas latinas en el exterior que compran por docenas el jean levanta cola colombiano porque sus clientas pagan entre $40 y $70 USD por cada prenda. (Como el lead de Costa Rica ya registrado en tu WhatsApp).</li>
-        </ul>
-      </div>
-
-      <!-- Canal 4 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <h3 style="color:var(--purple);font-size:14px">4. Grupos de Boutiques y Redes Sociales</h3>
-          <span class="badge badge-neu">Prospección Diaria</span>
-        </div>
-        <p><strong>Ecosistema de alta afinidad:</strong></p>
-        <ul>
-          <li><strong>Grupos de Facebook de Boutiques:</strong> "Boutiques y Tiendas de Ropa Colombia", "Emprendedoras de Moda Colombia", "Mayoristas de Moda Femenina". Son comunidades de dueñas de tiendas buscando novedades cada semana.</li>
-          <li><strong>TikTok Orgánico (Detrás de Cámaras):</strong> Videos de 20 segundos mostrando cómo se confecciona la pretina, la prueba de horma en modelo real y cómo empacas los pedidos para tiendas de provincia.</li>
-          <li><strong>Instagram DM Outbound:</strong> Buscar 15 tiendas de ropa femenina al día en pueblos y ciudades intermedias (vía <code>#boutiquepereira</code>, <code>#ropamonteria</code>, <code>#modaneiva</code>) con invitación cálida y directa a ver el catálogo.</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECCIÓN 2: PROTOCOLO DE CIERRE EN WHATSAPP -->
-  <div class="section">
-    <div class="section-title"><span class="icon">💬</span> El Protocolo de WhatsApp para pasar del 0,7% al 8% de Cierre</div>
-    <div class="section-lead">El 99,3% de los prospectos se perdía porque se les mandaba el catálogo y nadie hacía seguimiento estructurado. Este protocolo de 4 pasos asegura que cada conversación tenga rumbo y cierre.</div>
-
-    <div class="g2">
-      <div class="diag ok">
-        <div class="di">1️⃣</div>
-        <div class="dt">
-          <strong>Paso 1: Saludo con Filtro de Negocio (En los primeros 60 segundos)</strong>
-          Nunca mandes el catálogo sin antes hacer una pregunta de calificación. El cliente debe identificarse:
-          <em>"¡Hola! Bienvenida a Ush by Ushuaia, fabricantes directos en Itagüí. Para darte la escala de precios y las referencias que más rotan: ¿tienes tienda física, vendes por redes o estás iniciando tu propio negocio?"</em>
-        </div>
-      </div>
-
-      <div class="diag ok">
-        <div class="di">2️⃣</div>
-        <div class="dt">
-          <strong>Paso 2: Entrega de Catálogo Digital + Anclaje al Pack de 12</strong>
-          No dejes que el cliente se ahogue entre 162 referencias. Dale el enlace al catálogo pero sugiérele el <strong>Pack Arranque de 12 unidades</strong> de la portada:
-          <em>"Aquí tienes nuestro catálogo digital interactivo con fotos y disponibilidad: <code>https://ushbyushuaia.vercel.app</code>. Si quieres ir a la fija, te recomiendo nuestro PACK ARRANQUE de 12 prendas más vendidas. Te sale a precio de fábrica con flete 100% gratis y le ganas más del 50%."</em>
-        </div>
-      </div>
-
-      <div class="diag warn">
-        <div class="di">3️⃣</div>
-        <div class="dt">
-          <strong>Paso 3: Seguimiento Implacable a las 4h y 24h (Prohibido decir "¿pudiste mirar?")</strong>
-          El 80% de las ventas ocurren en el seguimiento:
-          <ul style="margin-top:6px;padding-left:16px">
-            <li><strong>A las 4 horas:</strong> <em>"¿Pudiste entrar al catálogo? ¿Te gustaron más los bota ancha (Wide Leg/Cargo) o los cortes clásicos?"</em></li>
-            <li><strong>A las 24 horas (Prueba social):</strong> <em>"Saliendo despacho para [ciudad]. Nos quedan pocas unidades de la ref [XXX] en talla 8 y 10. ¿Te aparto tu pedido para despachártelo hoy?"</em></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="diag ok">
-        <div class="di">4️⃣</div>
-        <div class="dt">
-          <strong>Paso 4: Cierre con Cotización Formal PDF y Cuentas Oficiales</strong>
-          Para disipar la desconfianza por estafas en internet:
-          Genera de inmediato la <strong>Cotización PDF</strong> desde el panel admin con el desglose exacto, el -40% de descuento mayorista y las cuentas bancarias oficiales a nombre de <strong>Ushuaia Jeans S.A.S. (NIT 900285729-8)</strong> en Bancolombia, Davivienda y Banco de Bogotá. Eso da 100% de tranquilidad y cierra el pago.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECCIÓN 3: SCRIPTECA INTERACTIVA (PLANTILLAS CON BOTÓN DE COPIAR) -->
-  <div class="section">
-    <div class="section-title"><span class="icon">📋</span> Scripteca Comercial — Copia y pega con 1 clic</div>
-    <div class="section-lead">Mensajes redactados por expertos en ventas mayoristas de moda. Listos para usar en tus redes y en WhatsApp:</div>
-
-    <div class="g2">
-      <!-- Script 1 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h4 style="color:var(--ush-rosa);font-size:13px">A. Prospección por Instagram DM a Boutiques</h4>
-          <button class="btn-copy" onclick="cpTxt(this, 'Hola 👋 Estuvimos viendo su boutique y nos encantó la curaduría que manejan. Somos Ush by Ushuaia, fabricantes directos de jeans en Itagüí. Manejamos siluetas en tendencia (Wide Leg, Cargo, Straight, Skinny) con horma levanta cola colombiana y precios mayoristas especiales para tiendas desde 8 unidades (flete gratis desde 12). Les comparto nuestro catálogo digital para que lo revisen sin compromiso: https://ushbyushuaia.vercel.app/catalogo ¿Manejan pedidos mayoristas para surtir su tienda?')">Copiar</button>
-        </div>
-        <p style="font-size:12px;color:var(--txt);line-height:1.5;background:var(--panel);padding:10px;border-radius:8px;border:1px solid var(--border)">
-          Hola 👋 Estuvimos viendo su boutique y nos encantó la curaduría que manejan. Somos Ush by Ushuaia, fabricantes directos de jeans en Itagüí. Manejamos siluetas en tendencia (Wide Leg, Cargo, Straight, Skinny) con horma levanta cola colombiana y precios mayoristas especiales para tiendas desde 8 unidades (flete gratis desde 12). Les comparto nuestro catálogo digital para que lo revisen sin compromiso: <code>https://ushbyushuaia.vercel.app/catalogo</code> ¿Manejan pedidos mayoristas para surtir su tienda?
-        </p>
-      </div>
-
-      <!-- Script 2 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h4 style="color:var(--blue);font-size:13px">B. Post para Grupos de Facebook Mayoristas</h4>
-          <button class="btn-copy" onclick="cpTxt(this, '👖 ¡ATENCIÓN TIENDAS Y BOUTIQUES DE COLOMBIA! 🇨🇴\n¿Buscas jeans con horma garantizada y precio directo de fábrica?\n\nSomos Ush by Ushuaia, fabricantes en Itagüí, Antioquia.\n✨ Siluetas en tendencia: Wide Leg, Cargo, Straight, Mom, Flare y Shorts.\n📦 Surtido libre desde solo 8 unidades.\n🚚 Flete 100% GRATIS a nivel nacional desde 12 unidades.\n💰 Márgenes reales del 50% al 60% para tu negocio.\n\nPuedes ver todo nuestro catálogo con fotos y stock disponible aquí: https://ushbyushuaia.vercel.app\nO escríbenos directamente al WhatsApp para enviarte la lista de precios mayoristas: 301 139 3902')">Copiar</button>
-        </div>
-        <p style="font-size:12px;color:var(--txt);line-height:1.5;background:var(--panel);padding:10px;border-radius:8px;border:1px solid var(--border)">
-          👖 ¡ATENCIÓN TIENDAS Y BOUTIQUES DE COLOMBIA! 🇨🇴<br>
-          ¿Buscas jeans con horma garantizada y precio directo de fábrica?<br><br>
-          Somos Ush by Ushuaia, fabricantes en Itagüí, Antioquia.<br>
-          ✨ Siluetas en tendencia: Wide Leg, Cargo, Straight, Mom, Flare y Shorts.<br>
-          📦 Surtido libre desde solo 8 unidades.<br>
-          🚚 Flete 100% GRATIS a nivel nacional desde 12 unidades.<br>
-          💰 Márgenes reales del 50% al 60% para tu negocio.<br><br>
-          Catálogo digital: <code>https://ushbyushuaia.vercel.app</code><br>
-          WhatsApp directo: <code>301 139 3902</code>
-        </p>
-      </div>
-
-      <!-- Script 3 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h4 style="color:var(--green);font-size:13px">C. Saludo + Catálogo + Recomendación de Pack</h4>
-          <button class="btn-copy" onclick="cpTxt(this, '¡Hola! Qué gusto saludarte 👋 Bienvenida a Ush by Ushuaia, fábrica mayorista en Itagüí.\n\nTe comparto nuestro catálogo digital interactivo donde puedes ver fotos, hormas y disponibilidad en vivo: https://ushbyushuaia.vercel.app/catalogo\n\n💡 Para empezar con pie derecho, la mayoría de nuestras tiendas aliadas eligen nuestro PACK ARRANQUE de 12 referencias (las más vendidas en este momento). Te sale a precio directo de fábrica con flete 100% gratis.\n\nCuéntame, ¿qué tallas son las que más te piden tus clientas normalmente?')">Copiar</button>
-        </div>
-        <p style="font-size:12px;color:var(--txt);line-height:1.5;background:var(--panel);padding:10px;border-radius:8px;border:1px solid var(--border)">
-          ¡Hola! Qué gusto saludarte 👋 Bienvenida a Ush by Ushuaia, fábrica mayorista en Itagüí.<br><br>
-          Te comparto nuestro catálogo digital interactivo con fotos y disponibilidad: <code>https://ushbyushuaia.vercel.app/catalogo</code><br><br>
-          💡 Para empezar con pie derecho, la mayoría de nuestras tiendas eligen nuestro PACK ARRANQUE de 12 referencias (las más vendidas). Te sale con flete 100% gratis y margen del 55%.<br><br>
-          ¿Qué tallas son las que más te piden tus clientas normalmente?
-        </p>
-      </div>
-
-      <!-- Script 4 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h4 style="color:var(--yellow);font-size:13px">D. Seguimiento 24h con Prueba Social</h4>
-          <button class="btn-copy" onclick="cpTxt(this, 'Hola 👋 Te cuento que estamos preparando los despachos de hoy para varias boutiques del país y nos quedan pocas unidades de las referencias bota ancha en tallas 8 y 10. Si quieres asegurar tu surtido con el precio mayorista y flete gratis, ¿te armo la cotización formal en PDF con las que te gustaron para reservar tu despacho?')">Copiar</button>
-        </div>
-        <p style="font-size:12px;color:var(--txt);line-height:1.5;background:var(--panel);padding:10px;border-radius:8px;border:1px solid var(--border)">
-          Hola 👋 Te cuento que estamos preparando los despachos de hoy para varias boutiques del país y nos quedan pocas unidades de las referencias bota ancha en tallas 8 y 10. Si quieres asegurar tu surtido con precio mayorista y flete gratis, ¿te armo la cotización formal en PDF para reservar tu despacho hoy?
-        </p>
-      </div>
-
-      <!-- Script 5 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h4 style="color:var(--ush-rosa);font-size:13px">E. Para Persona Natural / Emprendedora que inicia</h4>
-          <button class="btn-copy" onclick="cpTxt(this, '¡Hola! Qué alegría que quieras emprender en moda 👋 Con nosotros no necesitas millones para empezar tu negocio: puedes iniciar con solo 8 prendas surtidas (jeans, faldas, shorts) y te damos el 20% OFF, o desde 12 prendas a precio directo de fábrica con flete 100% GRATIS a tu casa.\n\nCada jean lo puedes revender ganándole entre $40.000 y $55.000 limpios por prenda. Te dejo nuestro catálogo digital interactivo para que escojas las que más te gusten: https://ushbyushuaia.vercel.app ¿Quieres que te asesore con las 5 referencias que más rápido se le venden a las chicas que están empezando?')">Copiar</button>
-        </div>
-        <p style="font-size:12px;color:var(--txt);line-height:1.5;background:var(--panel);padding:10px;border-radius:8px;border:1px solid var(--border)">
-          ¡Hola! Qué alegría que quieras emprender en moda 👋 Con nosotros no necesitas millones para empezar: puedes iniciar con solo 8 prendas surtidas y te damos el 20% OFF, o desde 12 prendas a precio directo de fábrica con flete 100% GRATIS a tu casa.<br><br>
-          Cada jean lo revendes ganándole entre $40.000 y $55.000 limpios. Mira el catálogo: <code>https://ushbyushuaia.vercel.app</code><br><br>
-          ¿Quieres que te asesore con las 5 referencias que más rápido se venden para empezar?
-        </p>
-      </div>
-
-      <!-- Script 6 -->
-      <div class="mini">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <h4 style="color:var(--blue);font-size:13px">F. Para Dueña de Boutique Física (Renovación de Colección)</h4>
-          <button class="btn-copy" onclick="cpTxt(this, 'Hola [Nombre] 👋 Como dueña de boutique sabes que lo que más fideliza a una clienta en jeans es la HORMA. Nuestras siluetas son confeccionadas 100% en Itagüí con tiro alto, pretina anatómica y levanta cola real. Te enviamos directamente desde fábrica para que aumentes tu margen al 55% en tienda sin pasar por intermediarios del centro.\n\nPuedes ver nuestra colección 2026 aquí: https://ushbyushuaia.vercel.app/catalogo?coleccion=2026 ¿Manejamos una docena de prueba para tu tienda?')">Copiar</button>
-        </div>
-        <p style="font-size:12px;color:var(--txt);line-height:1.5;background:var(--panel);padding:10px;border-radius:8px;border:1px solid var(--border)">
-          Hola [Nombre] 👋 Como dueña de boutique sabes que lo que más fideliza a una clienta en jeans es la HORMA. Nuestras siluetas son confeccionadas 100% en Itagüí con tiro alto, pretina anatómica y levanta cola real. Te enviamos directamente desde fábrica para que aumentes tu margen al 55% en tienda sin intermediarios.<br><br>
-          Colección 2026: <code>https://ushbyushuaia.vercel.app/catalogo?coleccion=2026</code><br><br>
-          ¿Manejamos una docena de prueba para tu tienda?
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECCIÓN 4: LA RUTINA DIARIA DE VENTAS PASO A PASO -->
-  <div class="section">
-    <div class="section-title"><span class="icon">⏰</span> La Rutina Diaria del Asesor para Vender Todos los Días</div>
-    <div class="section-lead">Las ventas no son suerte, son un proceso disciplinado día tras día. Si ejecutas este horario rigurosamente, tendrás pedidos diarios sin falta:</div>
-
-    <div class="week-grid" style="grid-template-columns:repeat(5,1fr)">
-      <div class="day-card">
-        <h4 style="color:var(--blue)">08:00 - 09:30</h4>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">CACERÍA OUTBOUND</p>
-        <ul>
-          <li>Buscar 15 boutiques en Instagram (#boutiquecolombia, #ropacali)</li>
-          <li>Enviar Plantilla A a cada tienda</li>
-          <li>Publicar en 2 grupos mayoristas de Facebook</li>
-        </ul>
-      </div>
-
-      <div class="day-card">
-        <h4 style="color:var(--green)">09:30 - 11:30</h4>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">ATENCIÓN EN CALIENTE</p>
-        <ul>
-          <li>Responder leads nuevos de WhatsApp (&lt;5 min)</li>
-          <li>Aplicar Saludo Calificador (Paso 1)</li>
-          <li>Enviar link de catálogo + Pack de 12</li>
-        </ul>
-      </div>
-
-      <div class="day-card">
-        <h4 style="color:var(--yellow)">11:30 - 13:00</h4>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">SEGUIMIENTO 24H</p>
-        <ul>
-          <li>Revisar chats de ayer que quedaron en "lo miro"</li>
-          <li>Enviar mensaje de escasez o prueba social</li>
-          <li>Ofrecer simulación de pedido personalizada</li>
-        </ul>
-      </div>
-
-      <div class="day-card">
-        <h4 style="color:var(--purple)">14:00 - 15:30</h4>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">CIERRES Y COTIZACIONES</h4>
-        <ul>
-          <li>Generar cotizaciones en PDF desde el admin</li>
-          <li>Enviar PDF con cuentas oficiales Ushuaia Jeans S.A.S.</li>
-          <li>Confirmar comprobantes de transferencia</li>
-        </ul>
-      </div>
-
-      <div class="day-card">
-        <h4 style="color:var(--ush-rosa)">15:30 - 17:00</h4>
-        <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">DESPACHO & PRUEBA SOCIAL</h4>
-        <ul>
-          <li>Grabar video corto de las cajas empacadas</li>
-          <li>Subir video a Estados de WhatsApp e Stories</li>
-          <li>Reportar guías de rastreo a clientes del día</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECCIÓN 5: CÓMO APROVECHAR LOS ACTIVOS DEL CATÁLOGO ACTUAL -->
-  <div class="section">
-    <div class="section-title"><span class="icon">🛠</span> Activos Clave de tu Catálogo Web para Cerrar Ventas</div>
-    <div class="section-lead">Tu catálogo en <code>ushbyushuaia.vercel.app</code> ya tiene herramientas listas para vender más rápido. Úsalas así:</div>
-
-    <div class="g3">
-      <div class="mini">
-        <h4 style="color:var(--ush-rosa);font-size:13px;margin-bottom:6px">📦 Packs de 12 en Portada</h4>
-        <p>Los 6 packs de portada (Arranque, Rotación, Impacto en Jeans y Faldas) son tu mejor herramienta para clientes indecisos. Les resuelven la duda de qué escoger y les aseguran el flete gratis de inmediato.</p>
-        <code>ushbyushuaia.vercel.app</code>
-      </div>
-
-      <div class="mini">
-        <h4 style="color:var(--green);font-size:13px;margin-bottom:6px">🧮 Calculadora de Ganancias</h4>
-        <p>Cuando un cliente dude de si el negocio es rentable, mándale directo el enlace de la calculadora. Podrá mover el margen y ver que se gana más de $600.000 limpios por cada 12 prendas.</p>
-        <code>/calculadora-ganancias</code>
-      </div>
-
-      <div class="mini">
-        <h4 style="color:var(--blue);font-size:13px;margin-bottom:6px">📑 Cotización PDF con Cuentas</h4>
-        <p>Genera la cotización oficial en PDF para pedidos pendientes desde tu panel admin. Muestra el descuento del 38-40% y las cuentas de Bancolombia, Davivienda y Bogotá a nombre de Ushuaia Jeans S.A.S.</p>
-        <code>Panel Admin → Cotización PDF</code>
-      </div>
-    </div>
-  </div>
+<div class="foot">Ush by Ushuaia · Canal mayorista · Generado desde datos del puente de WhatsApp (18/08 al 08/09/2026) y catálogo Supabase · No reemplaza el sistema de pedidos.</div>
 
 </div>
 
-</div><!-- /wrap -->
-
-<div class="site-footer">Ush by Ushuaia · Canal Mayorista · Análisis generado 15/09/2026 desde datos reales del bridge WhatsApp · No reemplaza el sistema de pedidos ni el panel admin.</div>
-
+<script src="analisis_refs276.js"></script>
 <script>
-// ═══ Datos del pipeline ═══
-const WANUM = '573011393902';
-const LEADS = [
-  {t:'573103562623',n:'Juliana Molina',c:'Jamundí, Valle del Cauca',s:'HOT',l:'2026-09-08',dias:7,k:92,a:'Enviar simulación 12 uds HOY — espera respuesta desde el 08/09',x:'Hola Juliana 👋 Te tengo lista la simulación de tu primer pedido mayorista: 12 prendas surtidas de las que más se venden, con envío 100% gratis y 30-42% OFF. ¿Me dices qué tallas son las que más te piden tus clientas y te la mando al instante?'},
-  {t:'50660941723',n:'Lead Costa Rica',c:'Costa Rica → Bogotá',s:'HOT',l:'2026-09-04',dias:11,k:88,a:'Confirmar proceso de envío internacional + tallas de interés',x:'Hola 👋 Para Costa Rica coordinamos el despacho: sale de Itagüí → llega a Bogotá en 3-4 días → de ahí lo coordinas tú. El mínimo es 12 unidades con precio de fábrica. Para cotizarte el envío exacto necesito tu ciudad de destino y las referencias que te interesan del catálogo. ¿Te las comparto?'},
-  {t:'573104003791',n:'Urda',c:'Colombia',s:'HOT',l:'2026-09-04',dias:11,k:84,a:'Reenviar total corregido en pesos + simulación de las 12 más vendidas',x:'Urda, perdón por el error de formato en el total anterior. Te reenvío las 12 referencias más vendidas con precios bien calculados en pesos: Jean Wide Leg $94.900 · Pantalón Straight $89.900 · Falda Licrada $54.900. ¿Te aparto el pack con tus tallas?'},
-  {t:'573125669235',n:'Juli (personalización/marca)',c:'Marca de ropa propia',s:'HOT',l:'2026-09-07',dias:8,k:82,a:'Enviar mensaje K — preguntar volumen y diseño URGENTE',x:'Hola Juli 👋 Para la propuesta de pantalones personalizados para tu marca necesito 3 datos: (1) ¿Cuántas unidades por talla estimarías? (2) ¿Qué colores? (3) ¿Tienes imagen del diseño? Con eso te preparo propuesta formal con costos y tiempos. Tenemos referencias muy parecidas a lo que mostraste 👖'},
-  {t:'',n:'Leidi Villalobos',c:'Arauca',s:'HOT',l:'2026-09-04',dias:11,k:80,a:'Simulación de pedido — lead sin teléfono confirmado',x:'Leidi, te tengo 12 jeans surtidos de las referencias que más se venden, con precio de fábrica (30-42% OFF) y envío gratis. ¿Me dices tus tallas preferidas para reservar tu despacho prioritario?'},
-  {t:'573234116689',n:'Jenny Cortes',c:'—',s:'HOT',l:'2026-09-08',dias:7,k:78,a:'Retomar hoy + simulación de pedido',x:'Jenny, seguimos 👋 ¿Qué referencias y tallas necesitas? Te confirmo disponibilidad y te armo la simulación con precio de fábrica para que veas costos y margen.'},
-  {t:'573128698689',n:'Carlita / Carla Minatti',c:'Cali',s:'Seguimiento',l:'2026-09-03',dias:12,k:77,a:'Guiarla paso a paso para armar pedido en catálogo digital',x:'Carlita 👋 El catálogo está en https://ushbyushuaia.vercel.app/catalogo — tiene 162 referencias con filtros por tipo. Si me dices qué te gusta más (jeans, faldas, shorts) te ayudo a armar el pedido directo. ¿Qué tallas son las que más te piden?'},
-  {t:'573165596349',n:'Luisa Fernanda Erazo',c:'Nariño',s:'Reactivar',l:'2026-09-04',dias:11,k:76,a:'Retomar con referencias nuevas 2026',x:'Luisa, retomamos lo del pedido mayorista 👋 Esta semana llegaron referencias nuevas 2026 al catálogo. ¿Te comparto las 5 más vendidas con fotos y precios? Sin compromiso, para que veas qué hay nuevo.'},
-  {t:'573006453758',n:'Isabel',c:'Medellín',s:'Seguimiento',l:'2026-09-05',dias:10,k:76,a:'Simular pedido + proponer visita a Itagüí',x:'Isabel, como estás en Medellín te propongo algo: visita a nuestra fábrica en Itagüí (Cra. 55B #72a-02) para que veas las referencias en físico y cierres tu pedido al precio de fábrica. ¿Te funciona esta semana o la siguiente?'},
-  {t:'573215644002',n:'Marcela González',c:'Medellín',s:'Visita',l:'2026-09-02',dias:13,k:72,a:'Agendar visita a Itagüí esta semana',x:'Marcela 👋 ¿Cuándo te sirve venir a la fábrica en Itagüí? Te agendo para que veas las referencias en físico y cerramos el pedido ese mismo día. Estamos Lun-Jue 7:00-16:00 y Vie hasta las 15:30.'},
-  {t:'573112446657',n:'Marco',c:'Bucaramanga',s:'Visita',l:'2026-09-04',dias:11,k:70,a:'Ofrecer visita cuando viaje a Medellín',x:'Marco 👋 ¿Cuándo vienes a Medellín? Te agendo una visita rápida a la fábrica en Itagüí para ver las referencias en físico. Cierra tu primer pedido ese mismo día con precio de fábrica.'},
-  {t:'573175662512',n:'Atelier / Bibiana',c:'Jamundí, Valle del Cauca',s:'Seguimiento',l:'2026-09-05',dias:10,k:70,a:'Manejar objeción pago + objeción talla 16 (mensajes I y J)',x:'Bibi 👋 Para que puedas verificarnos antes del pago: catálogo en https://ushbyushuaia.vercel.app, Instagram @ushuaiajeans.co con pedidos reales. También puedes venir a Itagüí (Cra. 55B #72a-02) y pagar presencial. Sobre las tallas: la 14 en nuestros fits Wide Leg y Barrel es perfecta para clientas de 16. ¿Te mando fotos?'},
-  {t:'573044502008',n:'Onde Half',c:'—',s:'B2B',l:'2026-08-24',dias:22,k:68,a:'URGENTE: Enviar propuesta a hi@onehalf.com.co',x:'Hola Onde Half 👋 Les enviamos nuestra propuesta mayorista completa (catálogo + tarifas + referencias más comerciales) al correo hi@onehalf.com.co. ¿Podemos agendar una llamada de 10 minutos esta semana para presentarles la colección en detalle?'},
-  {t:'573116267546',n:'Elizza Boutique (Elizabeth)',c:'—',s:'Reactivar',l:'2026-08-24',dias:22,k:65,a:'Reactivar con referencias nuevas 2026',x:'Elizabeth 👋 Retomamos. Esta semana tenemos 12 referencias nuevas 2026 en el catálogo — jeans y pantalones de la colección AYA. ¿Te las comparto con fotos y precios? Sin compromiso, solo para que veas qué hay nuevo para tu boutique.'},
-  {t:'573219613727',n:'Ana María',c:'Moniquirá, Boyacá',s:'Reactivar',l:'2026-08-24',dias:22,k:58,a:'Aclarar que 12 uds son surtidas + armar mix',x:'Ana 👋 Las 12 unidades pueden ser surtidas — mezcla libre de jeans, faldas, shorts y pantalones. No necesitas 12 del mismo. ¿Te armo el mix de más vendidas con tallas y precios para que veas cómo quedaría tu primer pedido?'},
-  {t:'573187144702',n:'Sandra Carvajal',c:'Lebrija, Santander',s:'Reactivar',l:'2026-08-26',dias:20,k:58,a:'Cerrar la disponibilidad de tallas que pidió y no se le confirmó',x:'Sandra 👋 Quedé pendiente de confirmarte la disponibilidad de tallas que preguntaste. ¿Cuál referencia te interesa? Te confirmo ahora mismo el stock por talla.'},
-  {t:'573136676499',n:'Pietrok Boutique',c:'Cali',s:'B2B',l:'2026-08-31',dias:15,k:50,a:'Seguir el catálogo propio que enviaron — propuesta formal',x:'Hola Pietrok Boutique 👋 Les comparto nuestra colección mayorista actualizada: https://ushbyushuaia.vercel.app/catalogo. ¿Les sirve agendar una videollamada o visita para ver las referencias en físico?'},
-  {t:'573147986387',n:'Bella Ocasión',c:'—',s:'B2B',l:'2026-08-31',dias:15,k:52,a:'Propuesta específica: wide leg y barrel talla 14 para clientas de talla grande',x:'Hola Bella Ocasión 👋 Vi que manejan tallas 6-24, perfecto para nuestros fits Wide Leg y Barrel — en talla 14 son amplios y funcionan muy bien para clientas de 16+. ¿Les comparto las referencias más favorables con fotos reales?'},
-  {t:'573014317120',n:'El Vestidor de Manuela (referido)',c:'—',s:'Referido',l:'2026-08-20',dias:26,k:60,a:'Escribir al 301 428 2719 — referido de Dani',x:'Hola 👋 Soy Kevin, asesor mayorista de Ush by Ushuaia. Dani de El Vestidor de Manuela me pasó tu contacto para mostrarte nuestra colección de jeans y moda femenina al por mayor. ¿Te comparto el catálogo?'},
-  {t:'573052492397',n:'Ocho43',c:'—',s:'B2B',l:'2026-08-18',dias:28,k:45,a:'Enviar portafolio a info@ocho43.com',x:'Hola Ocho43 👋 Les enviamos nuestro portafolio al correo info@ocho43.com como indicaron. Quedamos atentos para agendar una llamada breve de 10 minutos. ¡Gracias!'},
+const WANUM='573011393902';
+const DATA=[
+ {t:"573103562623",n:"Juliana Molina",c:"Jamundí, Valle del Cauca",s:"HOT",l:"2026-09-08",m:12,k:92,a:"Enviar simulación de 12 uds hoy",x:"Juliana, te armé la simulación de tu primer pedido mayorista: 12 prendas surtidas de las más vendidas, con envío gratis. Para que elijas referencias y tallas te envío la lista de las más vendidas con sus precios mayoristas."},
+ {t:"50660941723",n:"Lead Costa Rica (envío a Bogotá)",c:"Costa Rica → Bogotá",s:"HOT",l:"2026-09-04",m:34,k:88,a:"Confirmar tallas + envío internacional",x:"Hola. Confirmamos tu envío a Bogotá en 3-4 días y de ahí se despacha a tu ciudad. Te envío la tabla de tallas y la lista de las más vendidas para cerrar tu primer pedido de 12 unidades."},
+ {t:"573104003791",n:"Urda",c:"Colombia",s:"HOT",l:"2026-09-04",m:32,k:84,a:"Reenviar total corregido de las 12 más vendidas",x:"Urda, perdón por el error de formato en el total. Te reenvío la lista de las 12 referencias más vendidas con los valores bien calculados. ¿Te aparto el pack con tus tallas?"},
+ {t:"",n:"Leidi Villalobos",c:"Arauca",s:"HOT",l:"2026-09-04",m:14,k:82,a:"Simulación de pedido y cerrar",x:"Leidi, te tengo 12 jeans surtidos de las referencias que más se venden, con el precio de fábrica (30-42% OFF) y envío gratis. ¿Te mando la simulación con tus tallas preferidas?"},
+ {t:"573125669235",n:"Juli (personalizados)",c:"Marca de ropa",s:"HOT",l:"2026-09-07",m:7,k:80,a:"Enviar fotos de refs parecidas + preguntar volumen",x:"Juli, te tengo fotos de nuestras referencias wide leg muy parecidas a tu diseño. ¿Cuántas unidades estimas por talla y color? Te preparo una propuesta de personalización."},
+ {t:"",n:"Lead Valledupar (estaba mirando)",c:"Valledupar",s:"HOT",l:"2026-09-03",m:17,k:78,a:"Preguntar qué refs le gustaron y cerrar tallas",x:"Hola. De las referencias que estuviste mirando, las 3 que más se venden hoy son el wide leg (552851), el straight con destellos (552850) y la falda licrada (558079). ¿Te gusta alguna para armar tu pedido?"},
+ {t:"573106989543",n:"Contacto @#-&! (recibió simulación)",c:"—",s:"HOT",l:"2026-09-03",m:8,k:78,a:"Pedir OK sobre simulación y tallas",x:"Recibiste la simulación de 12 unidades, envío gratis. Dime qué referencias y tallas confirmamos para dejar tu pedido agendado."},
+ {t:"573128698689",n:"Carlita / Catalina (Carla Minatti)",c:"Cali",s:"Seguimiento",l:"2026-09-03",m:10,k:77,a:"Guiarla para armar pedido en el catálogo digital",x:"Carlita, puedes armar tu pedido en el catálogo digital y me avisas; yo reviso la disponibilidad de cada talla antes de enviar."},
+ {t:"573006453758",n:"Isabel",c:"Medellín",s:"Seguimiento",l:"2026-09-05",m:6,k:76,a:"Simulación de 12 uds (es local)",x:"Isabel, como eres de Medellín te coordino envío rápido o visita. ¿Te armo la simulación de 12 unidades con el precio de fábrica?"},
+ {t:"573165596349",n:"Luisa Fernanda Erazo",c:"Nariño",s:"Reactivar",l:"2026-09-04",m:24,k:76,a:"Retomar pedido que prometió",x:"Luisa, retomamos lo del pedido mayorista. Esta semana las 12 más vendidas van con envío gratis. ¿Te armo la simulación con tus tallas?"},
+ {t:"573249659908",n:"Contacto 😎😎 (emprendimiento)",c:"—",s:"Seguimiento",l:"2026-09-03",m:5,k:72,a:"Armar primer pedido surtido",x:"Para tu emprendimiento te propongo arrancar con 12 unidades surtidas (precio de fábrica y envío gratis). ¿Desde qué ciudad nos escribes y cuáles tallas son las más demandadas?"},
+ {t:"573215644002",n:"Marcela González",c:"Medellín",s:"Visita",l:"2026-09-02",m:6,k:71,a:"Agendar visita a Itagüí",x:"Marcela, te agendo una visita a nuestra fábrica en Itagüí (Carrera 55B #72a-02) para ver las referencias en físico. ¿Te sirve esta semana?"},
+ {t:"573112446657",n:"Marco",c:"Bucaramanga",s:"Visita",l:"2026-09-04",m:11,k:70,a:"Ofrecer visita cuando viaje a Medellín",x:"Marco, cuando vengas a Medellín te agendo la visita a la fábrica en Itagüí. ¿Qué día planeas viajar?"},
+ {t:"573234116689",n:"Jenny Cortes",c:"—",s:"HOT",l:"2026-09-08",m:4,k:70,a:"Responder hoy + simulación",x:"Jenny, seguimos: ¿qué referencias y tallas necesitas? Te confirmo disponibilidad y te armo la simulación con el precio de fábrica."},
+ {t:"573175662512",n:"Atelier (Bibiana)",c:"Jamundí, Valle del Cauca",s:"Seguimiento",l:"2026-09-05",m:15,k:70,a:"Manejar objeción tallas y pago (mensajes M y N)",x:"Bibi, te confirmo disponibilidad en talla 14 de las referencias más anchas y te mando fotos reales. Sobre el pago, puedes verificar nuestro catálogo oficial, el Instagram @ushuaiajeans.co y la política de cambios, garantía y retracto publicada."},
+ {t:"573106623631",n:"Manuela Peña",c:"Medellín",s:"Seguimiento",l:"2026-09-03",m:6,k:68,a:"Ofrecer simulación",x:"Manuela, ¿avanzamos con la simulación de 12 unidades para que veas costos y margen? Te mando el mix de más vendidas."},
+ {t:"573214247966",n:"yuliht",c:"—",s:"Seguimiento",l:"2026-09-07",m:10,k:68,a:"Enviar PDF y precios de las fotos que vio",x:"Te envío el catálogo en PDF y las fotos de las referencias que te mostré con precios y tallas. ¿Cuáles te gustan?"},
+ {t:"573127765372",n:"Juliana Hoyos Boutique",c:"Pereira",s:"Seguimiento",l:"2026-09-05",m:5,k:65,a:"Seguir por Instagram y retomar propuesta",x:"Juliana, vi que nos buscaste por Instagram. Te dejo el catálogo digital para ver referencias y precios mayoristas. ¿Te ayudo con algo?"},
+ {t:"",n:"Contacto 80…22205 (revisaba catálogo)",c:"—",s:"Seguimiento",l:"2026-09-07",m:7,k:65,a:"Pack ya enviado; pedir tallas",x:"Te aparto el pack de 12 prendas surtidas con envío gratis. ¿Me dices tus tallas para reservar tu despacho prioritario?"},
+ {t:"573116267546",n:"Elizza Boutique (Elizabeth)",c:"—",s:"Reactivar",l:"2026-08-24",m:7,k:65,a:"Reactivar con las 12 más vendidas",x:"Elizabeth, te mando las 12 referencias que más se venden este mes con su talla más pedida. ¿Te armo un mix para tu tienda?"},
+ {t:"",n:"Adriana",c:"Ibagué",s:"Seguimiento",l:"2026-09-03",m:5,k:63,a:"Proponer surtido inicial de 12",x:"Adriana, ¿qué tipo de prendas te piden más en Ibagué? Te propongo un surtido inicial de 12 unidades con envío gratis."},
+ {t:"573008040262",n:"Majo Painchault",c:"Barranquilla",s:"Seguimiento",l:"2026-09-04",m:8,k:63,a:"Enviar wide legs disponibles",x:"Majo, te envío los wide legs disponibles con precios y tallas. ¿Cuál te gusta para empezar tu pedido?"},
+ {t:"",n:"Milena",c:"—",s:"Seguimiento",l:"2026-09-04",m:4,k:62,a:"Pack + pregunta abierta",x:"Milena, ¿pudiste ver el pack que te dejé? Elige tus tallas y te lo aparto para despacho prioritario."},
+ {t:"573106267900",n:"fabiola",c:"Barranquilla",s:"Seguimiento",l:"2026-09-03",m:6,k:62,a:"Ofrecer simulación",x:"fabiola, ¿te armo el mix de las 12 más vendidas como referencia? Sin compromiso, para que veas costos y precios."},
+ {t:"",n:"Dalys",c:"Fonseca, La Guajira",s:"Seguimiento",l:"2026-09-03",m:7,k:62,a:"Confirmar disponibilidad de tallas",x:"Dalys, ¿avanzamos? Te confirmo la disponibilidad de tallas de las referencias que te gustaron."},
+ {t:"573164200126",n:"Diana - Fernando",c:"—",s:"Seguimiento",l:"2026-09-03",m:10,k:62,a:"Retomar (contacto referido)",x:"Diana, quedé pendiente de ti. ¿Te comparto la lista de las referencias más comerciales con tallas y precios?"},
+ {t:"",n:"Lina",c:"Bogotá",s:"Seguimiento",l:"2026-09-02",m:5,k:61,a:"Ayudarla a elegir surtido",x:"Lina, ¿pudiste mirar el catálogo? Te ayudo a elegir un primer surtido de 12 unidades."},
+ {t:"573102204554",n:"Gina",c:"Bogotá",s:"Reactivar",l:"2026-09-02",m:7,k:60,a:"Retomar con enfoque en pedido",x:"Gina, retomamos: tengo el catálogo actualizado. ¿Prefieres simular un pedido o que te cuente los más vendidos?"},
+ {t:"573187144702",n:"Sandra Carvajal (sandrita)",c:"Lebrija, Santander",s:"Reactivar",l:"2026-08-26",m:10,k:60,a:"Cerrar la disponibilidad que pidió",x:"Sandra, te quedó pendiente la disponibilidad de tallas que pediste. ¿Qué referencia te interesa? Te confirmo ahora mismo."},
+ {t:"573138995439",n:"Mayito",c:"Bogotá",s:"Seguimiento",l:"2026-09-03",m:8,k:60,a:"Resolver duda del grupo y enviar tops",x:"Mayito, no tenemos grupo público todavía, pero por este chat te envío los más vendidos con fotos para que se los muestres a tus clientes."},
+ {t:"573173477820",n:"Martha del Valle",c:"—",s:"Seguimiento",l:"2026-09-02",m:7,k:60,a:"Enviar top ventas con tallas",x:"Marta, te envío el top de las referencias más vendidas con tallas disponibles. ¿Cuál te llama la atención?"},
+ {t:"573213715383",n:"Leslie (Dah Barrera)",c:"Bogotá",s:"Seguimiento",l:"2026-09-02",m:5,k:60,a:"Confirmar si revisó el catálogo",x:"Leslie, ¿pudiste revisar el catálogo? Te confirmo disponibilidad de las referencias que elijas."},
+ {t:"573044700080",n:"Contacto 🙏",c:"—",s:"Seguimiento",l:"2026-09-04",m:4,k:60,a:"Pack + cierre",x:"Te aparté el pack de 12 prendas surtidas con envío gratis. ¿Me dices tus tallas para el despacho prioritario?"},
+ {t:"573157500960",n:"Aura Zafiro",c:"—",s:"Seguimiento",l:"2026-09-04",m:4,k:58,a:"Pack + cierre",x:"Aura, seguimos con tu emprendimiento. Te dejo el pack de inicio con envío gratis; dime tus tallas."},
+ {t:"573117993314",n:"Grupo Integral LDOP",c:"—",s:"Seguimiento",l:"2026-09-02",m:5,k:58,a:"Retomar (preguntó por ubicación)",x:"No olvides que estamos en Itagüí, Carrera 55B #72a-02. ¿Te mando el catálogo y te agendo una visita?"},
+ {t:"573219613727",n:"Ana María",c:"Moniquirá, Boyacá",s:"Reactivar",l:"2026-08-24",m:12,k:58,a:"Aclarar que 12 pueden ser surtidas y armar mix",x:"Ana, retomamos: las 12 unidades pueden ser surtidas. ¿Te armo el mix de más vendidas con tallas y precios?"},
+ {t:"573222865613",n:"Janethy",c:"—",s:"Reactivar",l:"2026-08-20",m:7,k:57,a:"Reactivar con disponibilidad",x:"Janethy, ¿pudiste revisar el catálogo? Te confirmo disponibilidad de las referencias que elijas."},
+ {t:"573246239919",n:"Angie Belén",c:"Chocó",s:"Reactivar",l:"2026-08-24",m:5,k:55,a:"Reactivar con estilos",x:"Angie, retomamos el catálogo que te compartí. ¿Te interesa algún estilo en especial? Te mando fotos."},
+ {t:"573014282719",n:"Contacto Mayorista",c:"—",s:"Reactivar",l:"2026-08-20",m:6,k:55,a:"Reactivar con mix",x:"Hola, retomo lo del catálogo. ¿Te sirvió la referencia de los más vendidos? Te armo el mix que necesites."},
+ {t:"573169474854",n:"Tani",c:"—",s:"Seguimiento",l:"2026-09-04",m:4,k:55,a:"Pack + tallas",x:"Tani, ¿pudiste ver el pack? Dime tus tallas para apartarlo."},
+ {t:"573209362920",n:"Contacto 💯❤️🙏",c:"—",s:"Seguimiento",l:"2026-09-04",m:4,k:55,a:"Pack + tallas",x:"Te aparté el pack de 12 prendas surtidas con el precio de fábrica y envío gratis. ¿Me dices tus tallas?"},
+ {t:"573114823664",n:"Aleida (referida por Angela)",c:"—",s:"Reactivar",l:"2026-08-27",m:5,k:55,a:"Reactivar con más vendidos",x:"Aleida, Angela me pasó tu contacto. ¿Te envío las referencias más comerciales con disponibilidad de tallas?"},
+ {t:"593992912389",n:"Jordy Carpio",c:"Ecuador",s:"Internacional",l:"2026-08-20",m:4,k:50,a:"Evaluar envío a Ecuador",x:"Jordy, para Ecuador coordinamos el envío. ¿Cuántas unidades y desde qué ciudad te interesaría?"},
+ {t:"573147986387",n:"Bella Ocasión",c:"—",s:"B2B",l:"2026-08-31",m:4,k:52,a:"Ofrecer propuesta (tallas 6-24)",x:"Hola. Vi que manejan tallas 6-24, ideal para nuestros wide leg y barrel. ¿Les comparto una propuesta con las referencias más anchas?"},
+ {t:"573136676499",n:"Pietrok Boutique",c:"Cali",s:"B2B",l:"2026-08-31",m:4,k:50,a:"Seguir el catálogo propio que enviaron",x:"Hola. Les compartimos la colección mayorista actualizada: https://ushbyushuaia.vercel.app/catalogo. ¿Les sirve coordinar una visita o un pedido de prueba?"},
+ {t:"573138452303",n:"Morena Clara",c:"—",s:"B2B",l:"2026-09-04",m:4,k:48,a:"Contactar a la encargada",x:"Hola. Nos indicaron que la encargada les guía el proceso. ¿Nos conectan con ella para enviarles nuestra propuesta?"},
+ {t:"573044502008",n:"Onde Half",c:"—",s:"B2B",l:"2026-08-24",m:18,k:55,a:"Enviar propuesta a hi@onehalf.com.co",x:"Hola. Les enviamos nuestra propuesta mayorista (catálogo digital + tarifas vigentes + más vendidos) al correo hi@onehalf.com.co. ¿Podemos coordinar una llamada breve esta semana?"},
+ {t:"573014317120",n:"El Vestidor de Manuela (referido)",c:"—",s:"Referido",l:"2026-08-20",m:7,k:60,a:"Escribir al 301 428 2719",x:"Hola. Soy asesor mayorista de Ush by Ushuaia. Dani de El Vestidor de Manuela me dio tu contacto para mostrarte nuestra colección al por mayor. ¿Te comparto el catálogo?"},
+ {t:"573052492397",n:"Ocho43",c:"—",s:"B2B",l:"2026-08-18",m:5,k:45,a:"Enviar portafolio a info@ocho43.com",x:"Hola. Les enviamos nuestro portafolio a info@ocho43.com como indicaron. Quedamos atentos si quieren agendar una llamada."}
 ];
 
-const STA = {
-  HOT:{c:'pill-HOT'},Seguimiento:{c:'pill-Seguimiento'},Reactivar:{c:'pill-Reactivar'},
-  Visita:{c:'pill-Visita'},B2B:{c:'pill-B2B'},Referido:{c:'pill-Referido'},
-  Internacional:{c:'pill-Internacional'},Perdido:{c:'pill-Perdido'}
+const STA={
+ HOT:{c:"p-hot"},
+ Seguimiento:{c:"p-Seguimiento"},
+ Reactivar:{c:"p-Reactivar"},
+ Visita:{c:"p-Visita"},
+ B2B:{c:"p-B2B"},
+ Referido:{c:"p-Referido"},
+ Internacional:{c:"p-Internacional"}
 };
+const scClass=k=>k>=80?"s80":k>=65?"s65":k>=50?"s50":"s0";
+const scColor=k=>k>=80?"#34c77b":k>=65?"#f2c14e":k>=50?"#f28c4e":"#ef5350";
 
-function scCls(k){return k>=80?'s-hot':k>=65?'s-warm':k>=50?'s-cool':'s-cold'}
-function scoreHTML(k){
-  const cls=scCls(k);
-  return `<div class="score-wrap ${cls}"><div class="score-num">${k}</div><div class="score-bar"><div class="score-fill" style="width:${k}%"></div></div></div>`;
+let sortK="k",sortD=-1;
+function fmt(n){return "$"+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,".")}
+
+function kpis(){
+ const activos=DATA.filter(d=>d.k>=50);
+ const hot=DATA.filter(d=>d.k>=80);
+ const pendTxt=DATA.filter(d=>["HOT","Seguimiento"].includes(d.s)).length;
+ const pot=hot.length*813896;
+ document.getElementById("kpis").innerHTML=
+  '<div class="card b"><div class="v">'+(activos.length+3)+'</div><div class="l">Contactos en gestión (incluye 3 B2B/referidos y 2 clientes VIP)</div></div>'+
+  '<div class="card g"><div class="v">'+hot.length+'</div><div class="l">Leads calientes (score ≥ 80)</div></div>'+
+  '<div class="card y"><div class="v">'+pendTxt+'</div><div class="l">Conversaciones con seguimiento abierto</div></div>'+
+  '<div class="card o"><div class="v">'+fmt(pot)+'</div><div class="l">Monto potencial inmediato (hot × pack tipo $813.896)</div></div>'+
+  '<div class="card r"><div class="v">0</div><div class="l">Ventas nuevas cerradas en el canal digital (desde 18/08)</div></div>';
 }
 
-let pSortK='k',pSortD=-1;
-
-function pRender(){
-  const q=(document.getElementById('pq').value||'').toLowerCase();
-  const st=document.getElementById('pstage').value;
-  const fil=document.getElementById('pfil').value;
-  let rows=LEADS.filter(d=>{
-    if(fil==='tel'&&!d.t)return false;
-    if(st&&d.s!==st)return false;
-    if(q&&!(d.n.toLowerCase().includes(q)||d.c.toLowerCase().includes(q)||d.a.toLowerCase().includes(q)))return false;
-    return true;
-  });
-  rows.sort((a,b)=>{const va=a[pSortK],vb=b[pSortK];return(va>vb?1:va<vb?-1:0)*pSortD;});
-  const tb=document.getElementById('ptbody');
-  tb.innerHTML=rows.map(d=>{
-    const wa=d.t?`<a class="btn-wa" href="https://wa.me/${d.t}?text=${encodeURIComponent(d.x)}" target="_blank">WhatsApp</a>`:'';
-    const urgTag=d.dias>=14?`<span class="badge badge-red" style="font-size:10px">+${d.dias}d</span>`:(d.dias>=7?`<span class="badge badge-warn" style="font-size:10px">${d.dias}d</span>`:``);
-    return `<tr>
-      <td>${scoreHTML(d.k)}</td>
-      <td><b>${d.n}</b><div style="color:var(--muted);font-size:12px">${d.c}</div></td>
-      <td><span class="pill ${STA[d.s]?.c||''}">${d.s}</span></td>
-      <td style="white-space:nowrap;font-size:12px">${d.l}</td>
-      <td>${urgTag||`<span style="color:var(--muted);font-size:12px">${d.dias}d</span>`}</td>
-      <td style="font-size:12px;max-width:200px">${d.a}</td>
-      <td><div class="msg-box"><p>${d.x}</p><div class="msg-actions"><button class="btn-copy" onclick="cpTxt(this,'${d.x.replace(/'/g,"\\'")}')">Copiar</button>${wa}</div></div></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('pcount').textContent=`${rows.length} lead(s) mostrados`;
+function render(){
+ const q=document.getElementById("q").value.toLowerCase();
+ const st=document.getElementById("stage").value;
+ const telf=document.getElementById("telf").checked;
+ let rows=DATA.filter(d=>{
+   if(telf&&!d.t)return false;
+   if(st&&d.s!==st)return false;
+   if(q&&!(d.n.toLowerCase().includes(q)||d.c.toLowerCase().includes(q)||d.a.toLowerCase().includes(q)))return false;
+   return true;
+ });
+ rows.sort((a,b)=>{const va=a[sortK],vb=b[sortK];return (va>vb?1:va<vb?-1:0)*sortD;});
+ const tb=document.getElementById("tbody");
+ tb.innerHTML=rows.map(d=>{
+   const wa=d.t?('&nbsp;<a class="btn wa" target="_blank" href="https://wa.me/'+WANUM+'?text='+encodeURIComponent(d.x)+'">WhatsApp</a>'):"";
+   const bar='<span class="sc '+scClass(d.k)+'"><i></i>'+d.k+'</span><div class="scoreline"><i style="width:'+d.k+'%;background:'+scColor(d.k)+'"></i></div>';
+   return '<tr>'+
+    '<td>'+bar+'</td>'+
+    '<td><b>'+d.n+'</b><div style="color:var(--muted);font-size:12px">'+d.c+'</div></td>'+
+    '<td><span class="pill '+STA[d.s].c+'">'+d.s+'</span></td>'+
+    '<td style="white-space:nowrap">'+d.l+'</td>'+
+    '<td>'+d.m+'</td>'+
+    '<td>'+d.a+'</td>'+
+    '<td class="msg"><p>'+d.x+'</p><div class="btns"><button class="btn" onclick="cp(this)">Copiar</button>'+wa+'</div></td>'+
+    '</tr>';
+ }).join("");
 }
 
-document.querySelectorAll('#ptbl th').forEach(th=>th.addEventListener('click',()=>{
-  const k=th.dataset.pk;if(!k)return;
-  if(pSortK===k)pSortD*=-1;else{pSortK=k;pSortD=k==='n'||k==='s'?1:-1;}
-  pRender();
+function cp(btn){
+ const p=btn.closest("td").querySelector("p").textContent;
+ navigator.clipboard.writeText(p).then(()=>{btn.textContent="Copiado";setTimeout(()=>btn.textContent="Copiar",1200);});
+}
+document.querySelectorAll("#tbl th").forEach(th=>th.addEventListener("click",()=>{
+ const k=th.dataset.k;if(!k)return;
+ if(sortK===k)sortD*=-1;else{sortK=k;sortD=k==="n"||k==="s"?1:-1;}
+ render();
 }));
-document.getElementById('pq').addEventListener('input',pRender);
-document.getElementById('pstage').addEventListener('change',pRender);
-document.getElementById('pfil').addEventListener('change',pRender);
+document.getElementById("q").addEventListener("input",render);
+document.getElementById("stage").addEventListener("change",render);
+document.getElementById("telf").addEventListener("change",render);
 
-// ═══ Copy helpers ═══
-function cp(id,btn){
-  const p=document.getElementById(id).textContent;
-  navigator.clipboard.writeText(p).then(()=>{btn.textContent='Copiado ✓';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('copied')},1500);});
+kpis();render();
+
+// ===== Tabla de 276 referencias =====
+let rSortK="ref",rSortD=1;
+const RST_LABEL={VISIBLE:'<span class="pill" style="background:#123c2a;color:#35d07c;border:1px solid #1e5c40">Visible</span>',OCULTO:'<span class="pill" style="background:#3a3410;color:#f2c14e;border:1px solid #5c4f1e">Oculta (cargada)</span>',NO_AGREGADO:'<span class="pill" style="background:#3a1e2c;color:#ff8fa3;border:1px solid #5c2c40">Pendiente</span>',SE:'<span class="pill" style="background:#16324a;color:#6cb6ff;border:1px solid #20507a">Solo Excel</span>'};
+const RST_VAL={VISIBLE:'VISIBLE',OCULTO:'OCULTO',NO_AGREGADO:'NO_AGREGADO',SE:'SE'};
+const rfmt=n=>n==null?'—':'$'+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+function rrender(){
+ const q=(document.getElementById("rq").value||"").toLowerCase();
+ const st=document.getElementById("rst").value;
+ const fo=document.getElementById("rfo").value;
+ const best=document.getElementById("rbest").checked;
+ let rows=REFS276.filter(d=>{
+   if(!st)return true;
+   if(st==="SE")return d.se;
+   return d.est===st&&!d.se;
+ });
+ if(fo!=="")rows=rows.filter(d=>(fo==="1"?d.fotos>0:d.fotos===0));
+ if(best)rows=rows.filter(d=>d.best);
+ if(q)rows=rows.filter(d=>(d.ref+" "+d.n+" "+d.cat+" "+(d.l||"")).toLowerCase().includes(q));
+ rows.sort((a,b)=>{const va=a[rSortK]==null?"":a[rSortK],vb=b[rSortK]==null?"":b[rSortK];const r=(va>vb?1:va<vb?-1:0);return r*rSortD;});
+ document.getElementById("rtbody").innerHTML=rows.map(d=>{
+   const fotos=d.fotos>1?d.fotos+' fotos':(d.fotos===1?'Sí':'<b style="color:var(--red)">No</b>');
+   const bestM=d.best?' ★':'';
+   return '<tr>'+
+    '<td><b>'+d.ref+'</b>'+bestM+'</td>'+
+    '<td>'+d.n+'</td>'+
+    '<td>'+d.cat+'</td>'+
+    '<td>'+(d.l||'—')+'</td>'+
+    '<td>'+(d.se?RST_LABEL.SE:RST_LABEL[d.est]||d.est)+'</td>'+
+    '<td>'+fotos+'</td>'+
+    '<td>'+rfmt(d.pre)+'</td>'+
+    '<td>'+rfmt(d.sug)+'</td>'+
+   '</tr>';
+ }).join("");
+ const vis=rows.filter(d=>!d.se&&d.est==="VISIBLE").length;
+ const oc=rows.filter(d=>!d.se&&d.est==="OCULTO").length;
+ const pend=rows.filter(d=>!d.se&&d.est==="NO_AGREGADO").length;
+ const se=rows.filter(d=>d.se).length;
+ document.getElementById("rcount").innerHTML='<b>'+rows.length+'</b> referencia(s) mostradas · Visible <b>'+vis+'</b> · Oculta cargada <b>'+oc+'</b> · Pendiente <b>'+pend+'</b>'+(se?' · Solo Excel <b>'+se+'</b>':'');
 }
-function cpTxt(btn,txt){
-  navigator.clipboard.writeText(txt).then(()=>{btn.textContent='Copiado ✓';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('copied')},1500);});
-}
-
-// ═══ Tabs ═══
-document.querySelectorAll('.nav-tab').forEach(tab=>{
-  tab.addEventListener('click',()=>{
-    const id=tab.dataset.tab;
-    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('tab-'+id).classList.add('active');
-  });
-});
-
-// Init
-pRender();
+document.querySelectorAll("#rtbl th").forEach(th=>th.addEventListener("click",()=>{
+ const k=th.dataset.rk;if(!k)return;
+ if(rSortK===k)rSortD*=-1;else{rSortK=k;rSortD=k==="ref"||k==="l"||k==="n"||k==="cat"?1:-1;}
+ rrender();
+}));
+["rq","rst","rfo"].forEach(id=>document.getElementById(id).addEventListener("input",rrender));
+document.getElementById("rbest").addEventListener("change",rrender);
+rrender();
 </script>
 </body>
 </html>

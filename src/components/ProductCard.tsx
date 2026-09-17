@@ -289,19 +289,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isTopSeller, 
           </Link>
 
           {/* Price Display Block */}
-          <div className="mt-2.5 bg-neutral-50 p-2.5 border border-gray-100 space-y-1">
+          <div className="mt-2 bg-neutral-50 p-2 border border-gray-100 space-y-0.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-neutral-600 font-bold uppercase">Precio al detal:</span>
-              <span className="text-xs text-neutral-800 font-extrabold whitespace-nowrap">
+              <span className="text-[10px] text-neutral-500 font-bold uppercase">Precio detal:</span>
+              <span className="text-[11px] text-neutral-800 font-extrabold whitespace-nowrap">
                 {formatCOP(suggestedPrice)}
               </span>
             </div>
 
             <div className="flex items-center justify-between pt-1 border-t border-gray-200">
-              <span className="text-[11px] font-extrabold text-ush-pink uppercase flex items-center gap-1">
-                <Sparkles size={11} /> 12+ uds:
+              <span className="text-[10px] font-extrabold text-ush-pink uppercase flex items-center gap-0.5">
+                <Sparkles size={10} /> 12+ uds:
               </span>
-              <span className="flex items-center gap-1.5 text-base font-black text-neutral-900 whitespace-nowrap">
+              <span className="flex items-center gap-1 text-sm font-black text-neutral-900 whitespace-nowrap">
                 {formatCOP(wholesalePrice)}
               </span>
             </div>
